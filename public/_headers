@@ -1,9 +1,15 @@
-# Redirect .pages.dev URLs to custom domains
+# Block all .pages.dev URLs from search engines
+# This includes main deployments and preview deployments (commit-based URLs)
+*.pages.dev/*
+  X-Robots-Tag: noindex, nofollow, noarchive, nosnippet
+
+# Main production deployment redirect
 https://zefile-frontend.pages.dev/*
   X-Robots-Tag: noindex
   ! Host: zefile-frontend.pages.dev
   Location: https://zefile.io/:splat 301
 
+# Main staging deployment redirect
 https://zefile-dev.pages.dev/*
   X-Robots-Tag: noindex
   ! Host: zefile-dev.pages.dev
