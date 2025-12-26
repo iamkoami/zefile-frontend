@@ -31,18 +31,16 @@ export async function onRequest(context: {
     }
   }
 
-  // Handle SPA routes - serve 404.html for dynamic routes
+  // Handle SPA routes - rewrite to 404.html for dynamic routes
   if (pathname.startsWith('/z-') || (pathname.startsWith('/downloads/') && pathname !== '/downloads')) {
-    // Fetch the 404.html file
-    const notFoundUrl = new URL('/404.html', url);
-    const notFoundRequest = new Request(notFoundUrl, context.request);
-    const response = await context.env.ASSETS.fetch(notFoundRequest);
-
-    // Return 404.html with 200 status (SPA pattern)
-    return new Response(response.body, {
-      status: 200,
-      headers: response.headers,
+    // Create a new request for /404.html but keep the original URL
+    const rewriteUrl = new URL('/404.html', url.origin);
+    const rewriteRequest = new Request(rewriteUrl.toString(), {
+      method: context.request.method,
+      headers: context.request.headers,
     });
+
+    return context.env.ASSETS.fetch(rewriteRequest);
   }
 
   // Continue to next middleware or page
