@@ -31,16 +31,16 @@ export async function onRequest(context: {
     }
   }
 
-  // Handle SPA routes - rewrite to 404.html for dynamic routes
+  // Handle SPA routes - serve redirect page for dynamic routes
   if (pathname.startsWith('/z-') || (pathname.startsWith('/downloads/') && pathname !== '/downloads')) {
-    // Create a new request for /404.html but keep the original URL
-    const rewriteUrl = new URL('/404.html', url.origin);
-    const rewriteRequest = new Request(rewriteUrl.toString(), {
+    // Serve the z-redirect.html file for client-side routing
+    const redirectUrl = new URL('/z-redirect.html', url.origin);
+    const redirectRequest = new Request(redirectUrl.toString(), {
       method: context.request.method,
       headers: context.request.headers,
     });
 
-    return context.env.ASSETS.fetch(rewriteRequest);
+    return context.env.ASSETS.fetch(redirectRequest);
   }
 
   // Continue to next middleware or page

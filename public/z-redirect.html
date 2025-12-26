@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+  <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet">
+  <title>Redirecting - ZeFile</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background-color: #f9fafb;
+    }
+    .loading {
+      text-align: center;
+    }
+    .spinner {
+      border: 3px solid #e5e7eb;
+      border-top: 3px solid #2563eb;
+      border-radius: 50%;
+      width: 48px;
+      height: 48px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 16px;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .text {
+      color: #4b5563;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="loading">
+    <div class="spinner"></div>
+    <p class="text">Redirecting to your transfer...</p>
+  </div>
+
+  <script>
+    (function() {
+      // Get the current path
+      const path = window.location.pathname;
+      const search = window.location.search;
+
+      // Extract short code from /z-{code} or /downloads/{code}
+      let shortCode = '';
+
+      if (path.startsWith('/z-')) {
+        shortCode = path.substring(3); // Remove '/z-'
+      } else if (path.startsWith('/downloads/')) {
+        shortCode = path.substring(11); // Remove '/downloads/'
+      }
+
+      if (shortCode) {
+        // Redirect to downloads page with code parameter
+        const targetUrl = '/downloads?code=' + encodeURIComponent(shortCode) +
+                         (search ? search.substring(1) : '');
+        window.location.replace(targetUrl);
+      } else {
+        // No valid code, redirect to homepage
+        window.location.replace('/');
+      }
+    })();
+  </script>
+</body>
+</html>
