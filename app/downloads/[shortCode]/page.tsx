@@ -9,6 +9,14 @@ import { TransferEntity, TrackingParams } from '@/features/storage/domain/entiti
 import { DownloadPage } from '@/features/storage/presentation/components/DownloadPage';
 
 /**
+ * Generate static params for static export
+ * Returns empty array to rely on client-side rendering for all short codes
+ */
+export function generateStaticParams() {
+  return [];
+}
+
+/**
  * Download Landing Page
  * Full landing page with transfer details and download options
  * URL: /downloads/{shortCode}?z_exp=...&z_sid=...
