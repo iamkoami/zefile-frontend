@@ -3,7 +3,7 @@
 
 name = "zefile"
 compatibility_date = "2025-12-25"
-pages_build_output_dir = ".vercel/output/static"
+pages_build_output_dir = ".next"
 
 # Custom domains will be configured in Cloudflare Pages dashboard
 # Primary: zefile.io
