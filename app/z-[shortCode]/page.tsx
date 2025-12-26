@@ -5,6 +5,14 @@ import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import Head from 'next/head';
 
 /**
+ * Generate static params for static export
+ * Returns empty array to rely on client-side rendering for all short codes
+ */
+export function generateStaticParams() {
+  return [];
+}
+
+/**
  * Short Link Handler Page
  * Handles incoming short links from zefile.co/z-{code}
  * Redirects to the full download page with tracking parameters
