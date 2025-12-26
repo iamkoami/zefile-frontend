@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import Head from 'next/head';
+import Link from 'next/link';
 import { getTransferByCodeUseCase } from '@/features/storage/domain/usecases/get_transfer_by_code.usecase';
 import { TransferEntity, TrackingParams } from '@/features/storage/domain/entities/transfer.entity';
 import { DownloadPage } from '@/features/storage/presentation/components/DownloadPage';
@@ -44,6 +45,7 @@ export default function TransferDownloadPage() {
 
     // Fetch transfer information
     fetchTransfer(shortCode);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params, searchParams]);
 
   const fetchTransfer = async (shortCode: string, pwd?: string) => {
@@ -58,17 +60,18 @@ export default function TransferDownloadPage() {
 
       setTransfer(transferData);
       setPasswordRequired(false);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error fetching transfer:', err);
+      const error = err as Error;
 
       // Check if password is required
-      if (err.message?.includes('password') || err.message?.includes('401')) {
+      if (error.message?.includes('password') || error.message?.includes('401')) {
         setPasswordRequired(true);
         setError('This transfer is password protected');
-      } else if (err.message?.includes('404') || err.message?.includes('not found')) {
+      } else if (error.message?.includes('404') || error.message?.includes('not found')) {
         setError('Transfer not found or expired');
       } else {
-        setError(err.message || 'Failed to load transfer');
+        setError(error.message || 'Failed to load transfer');
       }
     } finally {
       setLoading(false);
@@ -125,12 +128,12 @@ export default function TransferDownloadPage() {
               </svg>
               <h1 className="text-2xl font-bold text-gray-900 mb-2">Transfer Not Available</h1>
               <p className="text-gray-600 mb-6">{error}</p>
-              <a
+              <Link
                 href="/"
                 className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
                 Go to Homepage
-              </a>
+              </Link>
             </div>
           </div>
         </div>
