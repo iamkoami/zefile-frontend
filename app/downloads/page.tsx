@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useParams, useSearchParams } from 'next/navigation';
+import { useEffect, useState, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Head from 'next/head';
 import Link from 'next/link';
 import { getTransferByCodeUseCase } from '@/features/storage/domain/usecases/get_transfer_by_code.usecase';
@@ -9,20 +9,10 @@ import { TransferEntity, TrackingParams } from '@/features/storage/domain/entiti
 import { DownloadPage } from '@/features/storage/presentation/components/DownloadPage';
 
 /**
- * Generate static params for static export
- * Returns empty array to rely on client-side rendering for all short codes
+ * Download Landing Page Component
+ * Wrapped in Suspense to handle useSearchParams
  */
-export function generateStaticParams() {
-  return [];
-}
-
-/**
- * Download Landing Page
- * Full landing page with transfer details and download options
- * URL: /downloads/{shortCode}?z_exp=...&z_sid=...
- */
-export default function TransferDownloadPage() {
-  const params = useParams();
+function TransferDownloadContent() {
   const searchParams = useSearchParams();
 
   const [transfer, setTransfer] = useState<TransferEntity | null>(null);
@@ -33,7 +23,12 @@ export default function TransferDownloadPage() {
   const [password, setPassword] = useState('');
 
   useEffect(() => {
-    const shortCode = params?.shortCode as string;
+    // Get short code from query parameter or path
+    const shortCodeFromQuery = searchParams?.get('code');
+    const pathParts = typeof window !== 'undefined' ? window.location.pathname.split('/') : [];
+    const shortCodeFromPath = pathParts.length > 2 ? pathParts[2] : null;
+
+    const shortCode = shortCodeFromQuery || shortCodeFromPath;
 
     if (!shortCode) {
       setError('Invalid transfer link');
@@ -54,7 +49,7 @@ export default function TransferDownloadPage() {
     // Fetch transfer information
     fetchTransfer(shortCode);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params, searchParams]);
+  }, [searchParams]);
 
   const fetchTransfer = async (shortCode: string, pwd?: string) => {
     try {
@@ -88,7 +83,10 @@ export default function TransferDownloadPage() {
 
   const handlePasswordSubmit = (pwd: string) => {
     setPassword(pwd);
-    const shortCode = params?.shortCode as string;
+    const shortCodeFromQuery = searchParams?.get('code');
+    const pathParts = typeof window !== 'undefined' ? window.location.pathname.split('/') : [];
+    const shortCodeFromPath = pathParts.length > 2 ? pathParts[2] : null;
+    const shortCode = shortCodeFromQuery || shortCodeFromPath || '';
     fetchTransfer(shortCode, pwd);
   };
 
@@ -164,5 +162,27 @@ export default function TransferDownloadPage() {
         error={error}
       />
     </>
+  );
+}
+
+/**
+ * Download Landing Page
+ * Full landing page with transfer details and download options
+ * URL: /downloads?code={shortCode}&z_exp=...&z_sid=...
+ */
+export default function TransferDownloadPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading transfer...</p>
+          </div>
+        </div>
+      }
+    >
+      <TransferDownloadContent />
+    </Suspense>
   );
 }
