@@ -1,0 +1,18 @@
+# Cloudflare Pages Configuration for ZeFile Frontend
+# This file configures deployment to Cloudflare Pages
+
+name = "zefile"
+compatibility_date = "2025-12-25"
+pages_build_output_dir = ".vercel/output/static"
+
+# Custom domains will be configured in Cloudflare Pages dashboard
+# Primary: zefile.io
+# Staging: demo.zefile.io (optional)
+
+[env.production]
+# Production environment
+vars = { }
+
+[env.preview]
+# Preview/staging environment
+vars = { }
