@@ -1,0 +1,10 @@
+# Redirect .pages.dev URLs to custom domains
+https://zefile-frontend.pages.dev/*
+  X-Robots-Tag: noindex
+  ! Host: zefile-frontend.pages.dev
+  Location: https://zefile.io/:splat 301
+
+https://zefile-dev.pages.dev/*
+  X-Robots-Tag: noindex
+  ! Host: zefile-dev.pages.dev
+  Location: https://demo.zefile.io/:splat 301
