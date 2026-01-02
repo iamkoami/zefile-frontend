@@ -1,0 +1,4 @@
+# SPA fallback - serve 404.html for all non-existent paths
+# This enables client-side routing for dynamic routes via not-found.tsx
+/z-* /404.html 200
+/downloads/* /404.html 200
