@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Lottie, { LottieRefCurrentProps } from 'lottie-react';
+import zefileLogoAnimation from '@/public/lotties/zefile_logo.json';
 
 interface LoadingFullscreenProps {
   message?: string;
@@ -9,22 +10,12 @@ interface LoadingFullscreenProps {
 
 const LoadingFullscreen: React.FC<LoadingFullscreenProps> = ({ message }) => {
   const lottieRef = React.useRef<LottieRefCurrentProps>(null);
-  const [animationData, setAnimationData] = React.useState<object | null>(null);
-
-  React.useEffect(() => {
-    fetch('/lotties/zefile_logo.json')
-      .then(response => response.json())
-      .then(data => setAnimationData(data))
-      .catch(error => console.error('Failed to load animation:', error));
-  }, []);
 
   React.useEffect(() => {
     if (lottieRef.current) {
       lottieRef.current.setSpeed(1.5);
     }
-  }, [animationData]);
-
-  if (!animationData) return null;
+  }, []);
 
   return (
     <div
@@ -33,7 +24,7 @@ const LoadingFullscreen: React.FC<LoadingFullscreenProps> = ({ message }) => {
     >
       <Lottie
         lottieRef={lottieRef}
-        animationData={animationData}
+        animationData={zefileLogoAnimation}
         loop={true}
         autoplay={true}
         style={{ width: 102, height: 102 }}

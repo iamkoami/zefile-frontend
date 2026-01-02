@@ -6,12 +6,12 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Lottie from 'lottie-react';
 import { useTranslations } from 'next-intl';
+import paymentAnimation from '@/public/lotties/payment_zefile.json';
 
 export default function PaymentProcessingPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const t = useTranslations('payment');
-  const [animationData, setAnimationData] = useState<object | null>(null);
   const [paymentReference, setPaymentReference] = useState<string>('');
 
   useEffect(() => {
@@ -44,12 +44,6 @@ export default function PaymentProcessingPage() {
       }
     };
 
-    // Load Lottie animation
-    fetch('/lotties/payment_zefile.json')
-      .then(response => response.json())
-      .then(data => setAnimationData(data))
-      .catch(error => console.error('Failed to load animation:', error));
-
     // Get payment reference from URL
     const reference = searchParams.get('reference');
     if (reference) {
@@ -64,22 +58,12 @@ export default function PaymentProcessingPage() {
     }
   }, [searchParams, router]);
 
-  if (!animationData) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-[#87E64B] border-t-transparent rounded-full animate-spin mx-auto" />
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-white">
       {/* Lottie Animation */}
       <div className="mb-8">
         <Lottie
-          animationData={animationData}
+          animationData={paymentAnimation}
           loop={true}
           autoplay={true}
           style={{ width: 172, height: 172 }}

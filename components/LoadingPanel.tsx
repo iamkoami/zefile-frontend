@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Lottie, { LottieRefCurrentProps } from 'lottie-react';
+import zefileLogoAnimation from '@/public/lotties/zefile_logo.json';
 
 interface LoadingPanelProps {
   message?: string;
@@ -10,28 +11,18 @@ interface LoadingPanelProps {
 
 const LoadingPanel: React.FC<LoadingPanelProps> = ({ message, className = '' }) => {
   const lottieRef = React.useRef<LottieRefCurrentProps>(null);
-  const [animationData, setAnimationData] = React.useState<object | null>(null);
-
-  React.useEffect(() => {
-    fetch('/lotties/zefile_logo.json')
-      .then(response => response.json())
-      .then(data => setAnimationData(data))
-      .catch(error => console.error('Failed to load animation:', error));
-  }, []);
 
   React.useEffect(() => {
     if (lottieRef.current) {
       lottieRef.current.setSpeed(1.5);
     }
-  }, [animationData]);
-
-  if (!animationData) return null;
+  }, []);
 
   return (
     <div className={`flex flex-col items-center justify-center py-8 ${className}`}>
       <Lottie
         lottieRef={lottieRef}
-        animationData={animationData}
+        animationData={zefileLogoAnimation}
         loop={true}
         autoplay={true}
         style={{ width: 102, height: 102 }}
