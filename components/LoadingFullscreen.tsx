@@ -9,7 +9,7 @@ interface LoadingFullscreenProps {
 
 const LoadingFullscreen: React.FC<LoadingFullscreenProps> = ({ message }) => {
   // Use the local JSON file
-  const [animationData, setAnimationData] = React.useState<any>(null);
+  const [animationData, setAnimationData] = React.useState<object | null>(null);
 
   React.useEffect(() => {
     fetch('/lotties/zefile_logo.json')

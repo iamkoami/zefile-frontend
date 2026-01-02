@@ -22,19 +22,44 @@ export default function TransferLandingPage() {
   const [error, setError] = useState<string>('');
   const [email, setEmail] = useState<string>('');
   const [otp, setOtp] = useState<string>('');
-  const [isVerified, setIsVerified] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [otpExpiry, setOtpExpiry] = useState<number>(0);
   const [resendCooldown, setResendCooldown] = useState<number>(0);
   const [showPreview, setShowPreview] = useState<boolean>(false);
   const [isPaid, setIsPaid] = useState<boolean>(false);
 
   // Load transfer data
   useEffect(() => {
+    const loadTransfer = async () => {
+      try {
+        setPageState('loading');
+        const response = await transferApi.getTransferByShortCode(shortCode);
+
+        if (response.success && response.data) {
+          setTransfer(response.data);
+
+          // Check if transfer is expired
+          if (response.data.status === 'expired') {
+            setError(t('transferExpired'));
+            setPageState('error');
+            return;
+          }
+
+          setPageState('email-input');
+        } else {
+          setError(t('transferNotFound'));
+          setPageState('error');
+        }
+      } catch (err: unknown) {
+        const errorMessage = err instanceof Error ? err.message : t('transferNotFound');
+        setError(errorMessage);
+        setPageState('error');
+      }
+    };
+
     if (shortCode) {
       loadTransfer();
     }
-  }, [shortCode]);
+  }, [shortCode, t]);
 
   // Cooldown timer for resend
   useEffect(() => {
