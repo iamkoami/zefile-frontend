@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
-    "build:cloudflare": "next build && npx open-next build",
+    "build:cloudflare": "next build && npx open-next build --skip-build",
     "start": "next start",
     "lint": "next lint",
     "deploy:cloudflare": "wrangler pages deploy .next"
