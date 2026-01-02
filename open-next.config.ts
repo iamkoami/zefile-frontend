@@ -1,6 +1,4 @@
-import type { OpenNextConfig } from 'open-next/types/open-next';
-
-const config: OpenNextConfig = {
+const config = {
   default: {
     override: {
       wrapper: 'cloudflare',
