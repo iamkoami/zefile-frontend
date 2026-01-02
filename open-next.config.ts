@@ -2,6 +2,7 @@ const config = {
   default: {
     override: {
       wrapper: 'cloudflare',
+      converter: 'edge',
     },
   },
 };
