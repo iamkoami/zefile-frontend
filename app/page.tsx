@@ -1,5 +1,7 @@
 'use client';
 
+export const runtime = 'edge';
+
 import React, { useState, useEffect } from 'react';
 import Header from '@/features/home/components/Header';
 import UploadPanel from '@/features/home/components/UploadPanel';
