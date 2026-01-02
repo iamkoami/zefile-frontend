@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "test \"$OPEN_NEXT_BUILD\" = \"true\" && echo 'Skipping build (OpenNext will handle it)' || next build",
-    "build:cloudflare": "OPEN_NEXT_BUILD=true npx open-next build",
+    "build": "if [ \"$SKIP_NEXT_BUILD\" != \"true\" ]; then next build; fi",
+    "build:cloudflare": "next build && SKIP_NEXT_BUILD=true npx open-next build",
     "start": "next start",
     "lint": "next lint",
     "deploy:cloudflare": "wrangler pages deploy .next"
