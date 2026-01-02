@@ -30,7 +30,6 @@ const LoadingFullscreen: React.FC<LoadingFullscreenProps> = ({ message }) => {
         loop={true}
         autoplay={true}
         style={{ width: 102, height: 102 }}
-        speed={1.5}
       />
       {message && (
         <p className="mt-4 px-4 text-sm text-center text-gray-600 max-w-md">{message}</p>
