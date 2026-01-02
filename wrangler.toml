@@ -1,9 +1,9 @@
 # Cloudflare Pages Configuration for ZeFile Frontend
-# This file configures deployment to Cloudflare Pages with OpenNext
+# This file configures deployment to Cloudflare Pages with @cloudflare/next-on-pages
 
 name = "zefile"
 compatibility_date = "2025-12-25"
-pages_build_output_dir = ".open-next/cloudflare"
+pages_build_output_dir = ".vercel/output/static"
 
 # Build command for Cloudflare Pages dashboard:
 # npm run build:cloudflare
