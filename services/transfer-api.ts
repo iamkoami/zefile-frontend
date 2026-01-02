@@ -26,6 +26,7 @@ export interface TransferDto {
   shortCode: string;
   senderId: string;
   recipientEmails: string[]; // Changed to array
+  title?: string;
   price?: number;
   currency?: string;
   currencyName?: string; // Localized currency name from backend
