@@ -1,0 +1,109 @@
+# ZeFile robots.txt
+# Blocks search engines from indexing download pages
+# while allowing public pages to be indexed
+
+User-agent: *
+
+# ============================================
+# ALLOW: Public marketing/info pages
+# ============================================
+Allow: /
+Allow: /$
+Allow: /about
+Allow: /about/
+Allow: /features
+Allow: /features/
+Allow: /pricing
+Allow: /pricing/
+Allow: /contact
+Allow: /contact/
+Allow: /help
+Allow: /help/
+Allow: /privacy
+Allow: /privacy/
+Allow: /terms
+Allow: /terms/
+Allow: /blog
+Allow: /blog/
+
+# ============================================
+# DISALLOW: Download pages (privacy protection)
+# ============================================
+
+# Block short code patterns (8 alphanumeric characters)
+# Assuming SHORT_CODE_LENGTH=8 (configurable in backend)
+Disallow: /[a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]
+Disallow: /[a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]/
+
+# Block all download-related paths
+Disallow: /download/
+Disallow: /download/*
+Disallow: /transfer/
+Disallow: /transfer/*
+Disallow: /t/
+Disallow: /t/*
+
+# Block query parameters that might contain transfer codes
+Disallow: /*?code=
+Disallow: /*?transfer=
+Disallow: /*?shortCode=
+Disallow: /*?download=
+
+# ============================================
+# DISALLOW: User account pages
+# ============================================
+Disallow: /dashboard
+Disallow: /dashboard/
+Disallow: /account
+Disallow: /account/
+Disallow: /profile
+Disallow: /profile/
+Disallow: /settings
+Disallow: /settings/
+Disallow: /admin
+Disallow: /admin/
+
+# ============================================
+# DISALLOW: API endpoints (if exposed on same domain)
+# ============================================
+Disallow: /api/
+Disallow: /api/*
+
+# ============================================
+# SITEMAP
+# ============================================
+Sitemap: https://zefile.io/sitemap.xml
+
+# ============================================
+# Specific bot instructions
+# ============================================
+
+# Google
+User-agent: Googlebot
+Disallow: /download/
+Disallow: /transfer/
+Disallow: /dashboard/
+Disallow: /[a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]
+
+# Bing
+User-agent: Bingbot
+Disallow: /download/
+Disallow: /transfer/
+Disallow: /dashboard/
+Disallow: /[a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]
+
+# Block AI crawlers from downloading transfer files
+User-agent: GPTBot
+Disallow: /
+
+User-agent: ChatGPT-User
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+User-agent: Claude-Web
+Disallow: /

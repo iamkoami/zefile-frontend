@@ -1,0 +1,10 @@
+{
+  "/_not-found/page": "app/_not-found/page.js",
+  "/downloads/page": "app/downloads/page.js",
+  "/payment/callback/page": "app/payment/callback/page.js",
+  "/page": "app/page.js",
+  "/payment/failed/page": "app/payment/failed/page.js",
+  "/payment/processing/page": "app/payment/processing/page.js",
+  "/payment/success/page": "app/payment/success/page.js",
+  "/t/[shortCode]/page": "app/t/[shortCode]/page.js"
+}
