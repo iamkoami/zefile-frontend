@@ -3,7 +3,7 @@
 
 name = "zefile"
 compatibility_date = "2025-12-25"
-pages_build_output_dir = ".open-next/worker"
+pages_build_output_dir = ".open-next/cloudflare"
 
 # Build command for Cloudflare Pages dashboard:
 # npm run build:cloudflare
