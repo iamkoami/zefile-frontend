@@ -34,7 +34,7 @@ export default function TransferLandingPage() {
         setPageState('loading');
         const response = await transferApi.getTransferByShortCode(shortCode);
 
-        if (response.success && response.data) {
+        if (!response.error && response.data) {
           setTransfer(response.data);
 
           // Check if transfer is expired
@@ -46,7 +46,7 @@ export default function TransferLandingPage() {
 
           setPageState('email-input');
         } else {
-          setError(t('transferNotFound'));
+          setError(response.error?.message || t('transferNotFound'));
           setPageState('error');
         }
       } catch (err: unknown) {
@@ -69,32 +69,6 @@ export default function TransferLandingPage() {
     }
   }, [resendCooldown]);
 
-  const loadTransfer = async () => {
-    try {
-      setPageState('loading');
-      const response = await transferApi.getTransferByShortCode(shortCode);
-
-      if (response.success && response.data) {
-        setTransfer(response.data);
-
-        // Check if transfer is expired
-        if (response.data.status === 'expired') {
-          setError(t('transferExpired'));
-          setPageState('error');
-          return;
-        }
-
-        setPageState('email-input');
-      } else {
-        setError(t('transferNotFound'));
-        setPageState('error');
-      }
-    } catch (err: any) {
-      setError(err.message || t('transferNotFound'));
-      setPageState('error');
-    }
-  };
-
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !transfer) return;
@@ -109,9 +83,8 @@ export default function TransferLandingPage() {
         purpose: 'transfer-access'
       });
 
-      if (response.success) {
-        setOtpExpiry(response.expiresIn || 1800);
-        setResendCooldown(response.cooldown || 60);
+      if ((response as any).success) {
+        setResendCooldown((response as any).cooldown || 60);
         setPageState('otp-verification');
       }
     } catch (err: any) {
@@ -135,8 +108,7 @@ export default function TransferLandingPage() {
         otp: otp.trim()
       });
 
-      if (response.success) {
-        setIsVerified(true);
+      if ((response as any).success) {
         setPageState('transfer-details');
       }
     } catch (err: any) {
@@ -159,9 +131,8 @@ export default function TransferLandingPage() {
         purpose: 'transfer-access'
       });
 
-      if (response.success) {
-        setOtpExpiry(response.expiresIn || 1800);
-        setResendCooldown(response.cooldown || 60);
+      if ((response as any).success) {
+        setResendCooldown((response as any).cooldown || 60);
         setOtp('');
       }
     } catch (err: any) {
