@@ -2,83 +2,108 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
+import { useTranslations } from 'next-intl';
+import LanguageSwitcher from './LanguageSwitcher';
 
 const Header = () => {
+  const t = useTranslations('header');
+  const tCommon = useTranslations('common');
   const [activeMenu, setActiveMenu] = useState<string>('');
+  const [hoverMenu, setHoverMenu] = useState<string>('');
 
   const mainMenuItems = [
-    { label: "Centre d'aide", href: '/help' },
-    { label: 'Comment ça marche', href: '/how-it-works' },
-    { label: 'Annonceurs', href: '/advertisers' },
-    { label: 'À propos', href: '/about' },
+    { label: t('helpCenter'), href: '/help' },
+    { label: t('howItWorks'), href: '/how-it-works' },
+    { label: t('advertisers'), href: '/advertisers' },
+    { label: t('about'), href: '/about' },
   ];
 
   const connectMenuItems = [
-    { label: 'Se connecter', href: '/login' },
-    { label: "S'inscrire - c'est gratuit", href: '/signup', isPrimary: true },
+    { label: t('login'), href: '/login' },
+    {
+      label: t('signup'),
+      href: '/signup',
+      isPrimary: true,
+      renderLabel: () => (
+        <>
+          <span className="font-bold">{t('signupBold')}</span>
+          {t('signupSuffix')}
+        </>
+      )
+    },
   ];
 
+  const getMenuItemStyle = (itemLabel: string) => ({
+    backgroundColor: hoverMenu === itemLabel || activeMenu === itemLabel ? '#E5E5E5' : 'transparent',
+    color: '#171717',
+    borderRadius: '8px',
+    transition: 'background-color 0.2s ease'
+  });
+
   return (
-    <header className="w-full bg-white border-b border-gray-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <div className="flex-shrink-0">
-            <Link href="/" className="text-2xl font-bold text-gray-900">
-              Ze File
-            </Link>
+    <header id="ze-header" className="ze-header">
+      <div className="ze-header-container">
+        {/* Logo */}
+        <div id="ze-header-logo" className="ze-header-logo flex-shrink-0">
+          <Link href="/" className="flex items-center">
+            <Image
+              src="/zefile-logo.svg"
+              alt={tCommon('appName')}
+              width={120}
+              height={33}
+              priority
+            />
+          </Link>
+        </div>
+
+        {/* Navigation */}
+        <nav id="ze-header-nav" className="ze-header-nav flex items-center space-x-1">
+          {/* Main Menu */}
+          <div id="ze-main-menu" className="ze-main-menu flex items-center space-x-1">
+            {mainMenuItems.map((item) => (
+              <Link
+                key={item.label}
+                href={item.href}
+                className="ze-menu-item"
+                onMouseEnter={() => setHoverMenu(item.label)}
+                onMouseLeave={() => setHoverMenu('')}
+              >
+                {item.label}
+              </Link>
+            ))}
           </div>
 
-          {/* Navigation */}
-          <nav className="flex items-center space-x-1">
-            {/* Main Menu */}
-            <div className="flex items-center space-x-1">
-              {mainMenuItems.map((item) => (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  className={`px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 hover:text-gray-900 transition-colors rounded-lg ${
-                    activeMenu === item.label ? 'bg-gray-200' : ''
-                  }`}
-                  onMouseEnter={() => setActiveMenu(item.label)}
-                  onMouseLeave={() => setActiveMenu('')}
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </div>
+          {/* Separator */}
+          <div id="ze-menu-separator" className="ze-menu-separator h-6 mx-2 w-px bg-gray-300" />
 
-            {/* Separator */}
-            <div className="h-6 w-px bg-gray-300 mx-2" />
+          {/* Language Switcher */}
+          <div className="ml-4">
+            <LanguageSwitcher />
+          </div>
 
-            {/* Connect Menu */}
-            <div className="flex items-center space-x-1">
-              {connectMenuItems.map((item) => (
-                <React.Fragment key={item.label}>
-                  {item.isPrimary ? (
-                    <Link
-                      href={item.href}
-                      className="px-4 py-2 text-sm font-medium text-white bg-green-500 hover:bg-green-600 transition-colors rounded"
-                    >
-                      {item.label}
-                    </Link>
-                  ) : (
-                    <Link
-                      href={item.href}
-                      className={`px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 hover:text-gray-900 transition-colors rounded-lg ${
-                        activeMenu === item.label ? 'bg-gray-200' : ''
-                      }`}
-                      onMouseEnter={() => setActiveMenu(item.label)}
-                      onMouseLeave={() => setActiveMenu('')}
-                    >
-                      {item.label}
-                    </Link>
-                  )}
-                </React.Fragment>
-              ))}
-            </div>
-          </nav>
-        </div>
+          {/* Connect Menu */}
+          <div id="ze-connect-menu" className="ze-connect-menu flex items-center space-x-1 ml-4">
+            {connectMenuItems.map((item: any) => (
+              <React.Fragment key={item.label}>
+                {item.isPrimary ? (
+                  <Link href={item.href} className="ze-button-primary">
+                    {item.renderLabel ? item.renderLabel() : item.label}
+                  </Link>
+                ) : (
+                  <Link
+                    href={item.href}
+                    className="ze-menu-item"
+                    onMouseEnter={() => setHoverMenu(item.label)}
+                    onMouseLeave={() => setHoverMenu('')}
+                  >
+                    {item.label}
+                  </Link>
+                )}
+              </React.Fragment>
+            ))}
+          </div>
+        </nav>
       </div>
     </header>
   );
