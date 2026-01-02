@@ -1,14 +1,14 @@
 'use client';
 
 import React from 'react';
-import Lottie from 'lottie-react';
+import Lottie, { LottieRefCurrentProps } from 'lottie-react';
 
 interface LoadingFullscreenProps {
   message?: string;
 }
 
 const LoadingFullscreen: React.FC<LoadingFullscreenProps> = ({ message }) => {
-  // Use the local JSON file
+  const lottieRef = React.useRef<LottieRefCurrentProps>(null);
   const [animationData, setAnimationData] = React.useState<object | null>(null);
 
   React.useEffect(() => {
@@ -18,6 +18,12 @@ const LoadingFullscreen: React.FC<LoadingFullscreenProps> = ({ message }) => {
       .catch(error => console.error('Failed to load animation:', error));
   }, []);
 
+  React.useEffect(() => {
+    if (lottieRef.current) {
+      lottieRef.current.setSpeed(1.5);
+    }
+  }, [animationData]);
+
   if (!animationData) return null;
 
   return (
@@ -26,6 +32,7 @@ const LoadingFullscreen: React.FC<LoadingFullscreenProps> = ({ message }) => {
       style={{ backgroundColor: '#FFFFFF' }}
     >
       <Lottie
+        lottieRef={lottieRef}
         animationData={animationData}
         loop={true}
         autoplay={true}

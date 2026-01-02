@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import Lottie from 'lottie-react';
+import Lottie, { LottieRefCurrentProps } from 'lottie-react';
 
 interface LoadingPanelProps {
   message?: string;
@@ -9,7 +9,7 @@ interface LoadingPanelProps {
 }
 
 const LoadingPanel: React.FC<LoadingPanelProps> = ({ message, className = '' }) => {
-  // Use the local JSON file
+  const lottieRef = React.useRef<LottieRefCurrentProps>(null);
   const [animationData, setAnimationData] = React.useState<object | null>(null);
 
   React.useEffect(() => {
@@ -19,11 +19,18 @@ const LoadingPanel: React.FC<LoadingPanelProps> = ({ message, className = '' }) 
       .catch(error => console.error('Failed to load animation:', error));
   }, []);
 
+  React.useEffect(() => {
+    if (lottieRef.current) {
+      lottieRef.current.setSpeed(1.5);
+    }
+  }, [animationData]);
+
   if (!animationData) return null;
 
   return (
     <div className={`flex flex-col items-center justify-center py-8 ${className}`}>
       <Lottie
+        lottieRef={lottieRef}
         animationData={animationData}
         loop={true}
         autoplay={true}
