@@ -119,4 +119,260 @@
   body {
     @apply bg-background text-foreground;
   }
+  button {
+    font-weight: 600;
+  }
+}
+
+/* ZeFile Custom Styles */
+@layer components {
+  /* Header */
+  .ze-header {
+    @apply w-full bg-white;
+  }
+
+  .ze-header-container {
+    @apply flex items-center justify-between h-16;
+    padding-left: calc(28px + 1.5rem + 12px);
+    padding-right: calc(28px + 1.5rem + 12px);
+  }
+
+  /* Content Panel */
+  .ze-content-panel {
+    @apply rounded-2xl flex items-center;
+    background-color: #ECF0F4;
+    margin: 5px 28px 28px 28px;
+    min-height: calc(100vh - 64px - 28px - 5px);
+    padding: 1rem 1.5rem;
+  }
+
+  /* Panels Container */
+  .ze-panels-container {
+    @apply flex flex-row items-start w-full;
+    margin-left: 12px;
+    gap: 0;
+    position: relative;
+  }
+
+  /* Upload Panel */
+  .ze-upload-panel {
+    @apply w-full bg-white;
+    padding: 24px;
+    max-width: 320px;
+    border: 2px solid #171717;
+    border-radius: 12px;
+    position: relative;
+    z-index: 2;
+  }
+
+  /* Menu Items */
+  .ze-menu-item {
+    @apply px-3 py-2 text-sm font-medium transition-colors;
+    color: #171717;
+    border-radius: 8px;
+  }
+
+  .ze-menu-item:hover {
+    background-color: #E5E5E5;
+  }
+
+  /* Primary Button */
+  .ze-button-primary {
+    @apply px-4 text-sm transition-colors flex items-center;
+    background-color: #87E64B;
+    color: #000000;
+    border-radius: 4px;
+    height: 40px;
+    font-weight: 600;
+  }
+
+  .ze-button-primary:hover {
+    background-color: #75D43A;
+  }
+
+  /* Transfer Button */
+  .ze-transfer-button {
+    @apply flex-1 py-3 px-4 transition-colors;
+    background-color: #87E64B;
+    color: #000000;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+
+  .ze-transfer-button:hover:not(:disabled) {
+    background-color: #75D43A;
+  }
+
+  .ze-transfer-button:disabled {
+    background-color: #D1D5DB;
+    color: #9CA3AF;
+    cursor: not-allowed;
+  }
+
+  /* Options Button */
+  .ze-options-button {
+    @apply px-4 py-3 transition-colors;
+    border: 1px solid #D1D5DB;
+    border-radius: 4px;
+    background-color: #FFFFFF;
+  }
+
+  .ze-options-button:hover {
+    background-color: #F9FAFB;
+  }
+
+  /* Form Controls */
+  .ze-form-select,
+  .ze-form-input {
+    @apply w-full px-4 focus:outline-none transition-all;
+    background-color: #FFFFFF;
+    border: 1px solid #171717;
+    border-radius: 4px;
+    color: #000000;
+    height: 50px;
+    font-size: 14px;
+  }
+
+  .ze-form-select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%23171717' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+    padding-right: 40px;
+  }
+
+  .ze-form-select:focus,
+  .ze-form-input:focus {
+    border-color: #87E64B;
+    box-shadow: 0 0 0 2px rgba(135, 230, 75, 0.1);
+  }
+
+  /* Upload Area */
+  .ze-upload-area {
+    @apply border border-dashed cursor-pointer transition-colors;
+    border-radius: 12px;
+    border-color: #D1D5DB;
+    background-color: #FFF5ED;
+    padding: 24px 20px;
+  }
+
+  .ze-upload-area.dragging {
+    border-color: #87E64B;
+    background-color: #F0FDF4;
+  }
+
+  /* Options Panel */
+  .ze-options-panel {
+    @apply transition-all ease-in-out;
+    width: 320px;
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 0;
+    opacity: 0;
+    transition-duration: 800ms;
+  }
+
+  .ze-options-panel.visible {
+    left: 344px;
+    opacity: 1;
+  }
+
+  .ze-options-panel.has-files-selected {
+    left: 344px;
+  }
+
+  .ze-options-panel.has-files-selected.visible {
+    left: 688px;
+  }
+
+  .ze-options-panel-content {
+    @apply p-6;
+    background-color: #FFFFFF;
+    border-radius: 12px;
+    border: 1px solid #E5E7EB;
+    width: 320px;
+  }
+
+  /* File Preview Panel */
+  .ze-file-preview-panel {
+    @apply transition-all ease-in-out;
+    width: 320px;
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 1;
+    opacity: 0;
+    transition-duration: 800ms;
+  }
+
+  .ze-file-preview-panel.visible {
+    left: 344px;
+    opacity: 1;
+  }
+
+  .ze-file-preview-content {
+    @apply p-6;
+    background-color: #FFFFFF;
+    border-radius: 12px;
+    border: 1px solid #E5E7EB;
+    width: 320px;
+  }
+
+  .ze-file-item {
+    @apply transition-all;
+    padding: 16px;
+  }
+
+  .ze-file-item:hover {
+    background-color: #E5E5E5;
+  }
+
+  .ze-add-more-section {
+    background-color: #FFF5ED;
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+@keyframes checkmark {
+  0% {
+    stroke-dasharray: 0, 200;
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dasharray: 200, 200;
+    stroke-dashoffset: 0;
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.animate-scaleIn {
+  animation: scaleIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.animate-checkmark {
+  stroke-dasharray: 200;
+  stroke-dashoffset: 200;
+  animation: checkmark 0.6s ease-in-out 0.2s forwards;
 }

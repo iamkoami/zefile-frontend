@@ -7,8 +7,9 @@ import { apiClient, ApiResponse } from './api-client';
 
 export interface CreateTransferDto {
   senderId: string;
-  recipientEmail: string;
-  amount?: number;
+  recipientEmails: string[]; // Changed to array (1-10 emails)
+  title: string; // Required by backend
+  price?: number;
   currency?: string;
   message?: string;
   password?: string;
@@ -24,9 +25,10 @@ export interface TransferDto {
   id: string;
   shortCode: string;
   senderId: string;
-  recipientEmail: string;
-  amount?: number;
+  recipientEmails: string[]; // Changed to array
+  price?: number;
   currency?: string;
+  currencyName?: string; // Localized currency name from backend
   message?: string;
   status: 'pending' | 'active' | 'completed' | 'expired' | 'cancelled';
   expiryDate: string;
@@ -53,6 +55,48 @@ export interface UpdateTransferDto {
   message?: string;
 }
 
+export interface RequestTransferOtpDto {
+  senderEmail: string;
+  recipientEmail: string;
+  title?: string;
+  price: number;
+  message?: string;
+}
+
+export interface RequestTransferOtpResponse {
+  message: string;
+  expiresIn: number;
+  chargeInfo: {
+    price: number;
+    receivedAmount: number;
+    serviceCharge: number;
+    serviceChargePercentage: number;
+  };
+}
+
+export interface VerifyTransferOtpDto {
+  senderEmail: string;
+  otp: string;
+  recipientEmail: string;
+  title?: string;
+  price: number;
+  message?: string;
+  fileNames: string[];
+}
+
+export interface VerifyTransferOtpResponse {
+  message: string;
+  verified: boolean;
+  transferData: {
+    senderEmail: string;
+    recipientEmail: string;
+    title?: string;
+    price: number;
+    message?: string;
+    fileNames: string[];
+  };
+}
+
 export class TransferApi {
   /**
    * Create a new transfer
@@ -72,8 +116,11 @@ export class TransferApi {
 
     // Add transfer data
     formData.append('senderId', data.senderId);
-    formData.append('recipientEmail', data.recipientEmail);
-    if (data.amount) formData.append('amount', data.amount.toString());
+    // Send recipientEmails as JSON string for FormData
+    formData.append('recipientEmails', JSON.stringify(data.recipientEmails));
+    // Title is required by backend - ensure it's always present
+    formData.append('title', data.title || 'Untitled Transfer');
+    if (data.price) formData.append('price', data.price.toString());
     if (data.currency) formData.append('currency', data.currency);
     if (data.message) formData.append('message', data.message);
     if (data.password) formData.append('password', data.password);
@@ -149,6 +196,20 @@ export class TransferApi {
    */
   async getTransferByShortCode(shortCode: string): Promise<ApiResponse<TransferDto>> {
     return apiClient.get<TransferDto>(`/transfers/code/${shortCode}`);
+  }
+
+  /**
+   * Request OTP for transfer creation
+   */
+  async requestTransferOTP(data: RequestTransferOtpDto): Promise<ApiResponse<RequestTransferOtpResponse>> {
+    return apiClient.post<RequestTransferOtpResponse>('/transfers/request-otp', data);
+  }
+
+  /**
+   * Verify OTP for transfer creation
+   */
+  async verifyTransferOTP(data: VerifyTransferOtpDto): Promise<ApiResponse<VerifyTransferOtpResponse>> {
+    return apiClient.post<VerifyTransferOtpResponse>('/transfers/verify-otp', data);
   }
 }
 
