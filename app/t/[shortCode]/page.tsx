@@ -169,7 +169,7 @@ export default function TransferLandingPage() {
     if (!transfer) return;
 
     // If free, mark as paid immediately
-    if (!transfer.amount || transfer.amount === 0) {
+    if (!transfer.price || transfer.price === 0) {
       setIsPaid(true);
       return;
     }
@@ -183,7 +183,7 @@ export default function TransferLandingPage() {
   };
 
   const handleDownload = () => {
-    if (!isPaid && transfer?.amount && transfer.amount > 0) {
+    if (!isPaid && transfer?.price && transfer.price > 0) {
       alert('Please complete payment first');
       return;
     }
@@ -331,7 +331,7 @@ export default function TransferLandingPage() {
     const fileCount = transfer.files?.length || 0;
     const totalSize = getTotalSize();
     const expiryDays = calculateExpiryDays();
-    const price = transfer.amount || 0;
+    const price = transfer.price || 0;
     const isFree = price === 0;
 
     return (
