@@ -5,6 +5,9 @@ name = "zefile"
 compatibility_date = "2025-12-25"
 pages_build_output_dir = ".open-next/worker"
 
+# Build command for Cloudflare Pages dashboard:
+# npm run build && npx open-next build
+
 # Custom domains will be configured in Cloudflare Pages dashboard
 # Primary: zefile.io
 # Staging: demo.zefile.io (optional)
