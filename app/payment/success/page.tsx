@@ -1,13 +1,12 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
 export default function PaymentSuccessPage() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const t = useTranslations('payment');
   const [reference, setReference] = useState<string>('');
 
