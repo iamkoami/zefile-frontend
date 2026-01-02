@@ -4,6 +4,8 @@ import createNextIntlPlugin from 'next-intl/plugin';
 const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
 
 const nextConfig: NextConfig = {
+  // Enable standalone output for OpenNext
+  output: 'standalone',
   // Disable image optimization for static export
   images: {
     unoptimized: true,
