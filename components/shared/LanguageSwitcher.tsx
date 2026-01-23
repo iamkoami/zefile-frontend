@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { useLocale } from 'next-intl';
+import React, { useState } from "react";
+import { useLocale } from "next-intl";
 
 const LanguageSwitcher = () => {
   const currentLocale = useLocale();
@@ -18,7 +18,7 @@ const LanguageSwitcher = () => {
   };
 
   // Only show the language that is NOT currently selected
-  const alternativeLocale = currentLocale === 'en' ? 'fr' : 'en';
+  const alternativeLocale = currentLocale === "en" ? "fr" : "en";
   const alternativeLabel = alternativeLocale.toUpperCase();
 
   return (

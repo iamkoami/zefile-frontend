@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { useTranslations } from 'next-intl';
+import React, { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 
 interface CancelConfirmationPanelProps {
   progress: number; // Current progress percentage to display
@@ -12,67 +12,106 @@ interface CancelConfirmationPanelProps {
 const CancelConfirmationPanel: React.FC<CancelConfirmationPanelProps> = ({
   progress,
   onConfirmCancel,
-  onContinue
+  onContinue,
 }) => {
-  const t = useTranslations('upload');
+  const t = useTranslations("upload");
+  const [displayProgress, setDisplayProgress] = useState(Math.round(progress));
+  const [isCancelling, setIsCancelling] = useState(false);
+
+  // Sync displayProgress with actual progress
+  useEffect(() => {
+    setDisplayProgress(Math.round(progress));
+  }, [progress]);
+
+  const handleConfirmCancel = async () => {
+    setIsCancelling(true);
+    try {
+      await onConfirmCancel();
+    } catch (error) {
+      console.error("Cancel error:", error);
+      setIsCancelling(false);
+    }
+  };
 
   return (
-    <div className="flex flex-col items-center justify-center">
-      {/* Progress Circle with Percentage */}
-      <div className="relative mb-6">
-        <svg className="w-32 h-32 transform -rotate-90">
-          {/* Background circle */}
-          <circle
-            cx="64"
-            cy="64"
-            r="56"
-            fill="none"
-            stroke="#E5E7EB"
-            strokeWidth="8"
-          />
-          {/* Progress circle */}
-          <circle
-            cx="64"
-            cy="64"
-            r="56"
-            fill="none"
-            stroke="#87E64B"
-            strokeWidth="8"
-            strokeDasharray={`${2 * Math.PI * 56}`}
-            strokeDashoffset={`${2 * Math.PI * 56 * (1 - progress / 100)}`}
-            strokeLinecap="round"
-          />
-        </svg>
-        {/* Percentage text */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-4xl font-bold text-[#87E64B]">
-            {Math.round(progress)}%
-          </span>
-        </div>
+    <div className="flex flex-col items-center justify-center pt-[60px]">
+      {/* Progress Number - Same style as UploadProgressPanel */}
+      <div className="relative mb-6 flex items-center justify-center">
+        <span
+          className="font-bold transition-all duration-100"
+          style={{
+            fontSize: "140px",
+            lineHeight: "0.9",
+            background:
+              "linear-gradient(180deg, rgba(135, 230, 75, 0.5) 0%, #87E64B 100%)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            backgroundClip: "text",
+            fontWeight: "700",
+          }}
+        >
+          {displayProgress}
+        </span>
+        <span
+          className="font-bold"
+          style={{
+            fontSize: "18px",
+            lineHeight: "0.9",
+            transform: "translateY(30px)",
+            color: "#87E64B",
+            marginLeft: "8px",
+            fontWeight: "700",
+          }}
+        >
+          %
+        </span>
       </div>
 
       {/* Cancel Confirmation Message */}
-      <h2 className="text-lg font-bold text-black mb-6 text-center">
-        {t('cancelThisTransfer')}
+      <h2 className="text-lg font-bold text-black mb-12 text-center">
+        {t("cancelThisTransfer")}
       </h2>
 
-      {/* Action Buttons */}
+      {/* Action Buttons - Side by side like reference */}
       <div className="flex items-center gap-3 w-full">
-        {/* No Button */}
+        {/* No Button - White with black border */}
         <button
           onClick={onContinue}
-          className="flex-1 py-3 px-4 bg-white border-2 border-[#171717] rounded-lg font-semibold text-[#171717] hover:bg-gray-50 transition-colors"
+          disabled={isCancelling}
+          className="flex-1 py-4 px-4 bg-white border border-[#171717] rounded font-semibold text-[#171717] hover:bg-gray-50 transition-colors disabled:opacity-50"
         >
-          {t('no')}
+          {t("no")}
         </button>
 
-        {/* Yes Button */}
+        {/* Yes Button - Green */}
         <button
-          onClick={onConfirmCancel}
-          className="flex-1 py-3 px-4 rounded-lg font-semibold text-[#171717] hover:opacity-90 transition-opacity"
-          style={{ backgroundColor: '#87E64B' }}
+          onClick={handleConfirmCancel}
+          disabled={isCancelling}
+          className="flex-1 py-4 px-4 rounded font-semibold text-[#171717] hover:opacity-90 transition-opacity disabled:opacity-50"
+          style={{ backgroundColor: "#87E64B" }}
         >
-          {t('yes')}
+          {isCancelling ? (
+            <span className="flex items-center justify-center gap-2">
+              <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                  fill="none"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
+              </svg>
+            </span>
+          ) : (
+            t("yes")
+          )}
         </button>
       </div>
     </div>

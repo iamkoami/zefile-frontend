@@ -1,7 +1,5 @@
 'use client';
 
-export const runtime = 'edge';
-
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -154,14 +152,20 @@ export default function TransferLandingPage() {
 
   const getTotalSize = (): string => {
     if (!transfer?.files) return '0 MB';
-    const total = transfer.files.reduce((sum, file) => sum + file.size, 0);
+    const total = transfer.files.reduce((sum, file) => {
+      const size = typeof file.size === 'string' ? parseInt(file.size, 10) : (file.size || 0);
+      return sum + size;
+    }, 0);
     return formatFileSize(total);
   };
 
   const calculateExpiryDays = (): number => {
     if (!transfer) return 0;
+    const expiryDateStr = transfer.expireAt || transfer.expiryDate;
+    if (!expiryDateStr) return 0;
     const now = new Date();
-    const expiry = new Date(transfer.expiryDate);
+    const expiry = new Date(expiryDateStr);
+    if (isNaN(expiry.getTime())) return 0;
     const diffTime = expiry.getTime() - now.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return Math.max(0, diffDays);
@@ -406,7 +410,13 @@ export default function TransferLandingPage() {
           {/* Preview Modal */}
           {transfer.files && transfer.files.length > 0 && (
             <TransferPreviewModal
-              files={transfer.files}
+              files={transfer.files.map(file => ({
+                id: file.id,
+                filename: file.filename || file.fileName || 'Unknown file',
+                size: typeof file.size === 'string' ? parseInt(file.size, 10) : (file.size || file.fileSize || 0) as number,
+                mimeType: file.mimeType || file.fileType || 'application/octet-stream',
+                thumbnailUrl: file.thumbnailUrl,
+              }))}
               isOpen={showPreview}
               onClose={() => setShowPreview(false)}
               isPaid={isPaid}

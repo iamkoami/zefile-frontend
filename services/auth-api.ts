@@ -57,6 +57,11 @@ export class AuthApi {
       if (typeof window !== 'undefined') {
         localStorage.setItem('refresh_token', response.data.refreshToken);
         localStorage.setItem('user', JSON.stringify(response.data.user));
+
+        // Dispatch custom event to notify components (e.g., Header) about auth state change
+        window.dispatchEvent(new CustomEvent('auth-state-change', {
+          detail: { isAuthenticated: true, user: response.data.user }
+        }));
       }
     }
 
@@ -128,7 +133,17 @@ export class AuthApi {
   getStoredUser(): AuthResponseDto['user'] | null {
     if (typeof window === 'undefined') return null;
     const userStr = localStorage.getItem('user');
-    return userStr ? JSON.parse(userStr) : null;
+    if (!userStr) return null;
+
+    try {
+      return JSON.parse(userStr);
+    } catch {
+      // Clear corrupted user data
+      localStorage.removeItem('user');
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      return null;
+    }
   }
 }
 

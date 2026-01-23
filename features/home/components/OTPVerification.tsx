@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { useTranslations } from 'next-intl';
-import { NavArrowLeft } from 'iconoir-react';
+import React, { useState } from "react";
+import { useTranslations } from "next-intl";
+import { NavArrowLeft } from "iconoir-react";
 
 interface OTPVerificationProps {
   email: string;
@@ -13,14 +13,14 @@ interface OTPVerificationProps {
 const OTPVerification: React.FC<OTPVerificationProps> = ({
   email,
   onBack,
-  onVerify
+  onVerify,
 }) => {
-  const otpLength = parseInt(process.env.NEXT_PUBLIC_OTP_LENGTH || '6', 10);
-  const t = useTranslations('otp');
-  const tCommon = useTranslations('common');
-  const [otpCode, setOtpCode] = useState('');
+  const otpLength = parseInt(process.env.NEXT_PUBLIC_OTP_LENGTH || "6", 10);
+  const t = useTranslations("otp");
+  const tCommon = useTranslations("common");
+  const [otpCode, setOtpCode] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
-  const [error, setError] = useState<string>('');
+  const [error, setError] = useState<string>("");
 
   // Format OTP for display (e.g., "123456" -> "123 456")
   const formatOTPDisplay = (value: string): string => {
@@ -28,16 +28,46 @@ const OTPVerification: React.FC<OTPVerificationProps> = ({
     return `${value.slice(0, 3)} ${value.slice(3)}`;
   };
 
+  // Parse backend error message and return translated version
+  const getTranslatedError = (errorMessage: string): string => {
+    // Check for "Invalid verification code. X attempts remaining."
+    const attemptsMatch = errorMessage.match(/(\d+)\s*attempts?\s*remaining/i);
+    if (attemptsMatch) {
+      const attempts = parseInt(attemptsMatch[1], 10);
+      return t("invalidCodeWithAttempts", { attempts });
+    }
+
+    // Check for "Please wait X seconds before requesting"
+    const waitMatch = errorMessage.match(/wait\s*(\d+)\s*seconds/i);
+    if (waitMatch) {
+      const seconds = parseInt(waitMatch[1], 10);
+      return t("waitBeforeResend", { seconds });
+    }
+
+    // Check for common error patterns
+    if (errorMessage.toLowerCase().includes("invalid") && errorMessage.toLowerCase().includes("code")) {
+      return t("invalidCode");
+    }
+
+    if (errorMessage.toLowerCase().includes("expired")) {
+      return t("invalidCode");
+    }
+
+    // Fallback to original message or generic error
+    return errorMessage || t("invalidCode");
+  };
+
   const handleSubmit = async () => {
     if (otpCode.length !== otpLength) return;
 
     setIsVerifying(true);
-    setError('');
+    setError("");
     try {
       await onVerify(otpCode);
     } catch (err: any) {
-      // Display error message from API
-      setError(err.message || t('invalidCode'));
+      // Parse and translate error message from API
+      const translatedError = getTranslatedError(err.message || "");
+      setError(translatedError);
     } finally {
       setIsVerifying(false);
     }
@@ -45,12 +75,12 @@ const OTPVerification: React.FC<OTPVerificationProps> = ({
 
   const handleResendCode = () => {
     // TODO: Implement resend code logic
-    console.log('Resending code to:', email);
+    console.log("Resending code to:", email);
   };
 
   const handleLearnMore = () => {
     // TODO: Implement learn more logic
-    console.log('Learn more clicked');
+    console.log("Learn more clicked");
   };
 
   const isButtonDisabled = otpCode.length !== otpLength || isVerifying;
@@ -59,21 +89,21 @@ const OTPVerification: React.FC<OTPVerificationProps> = ({
     <div className="flex flex-col items-center justify-center">
       {/* Title */}
       <h2 className="text-lg font-bold text-black mb-4 text-center">
-        {t('title')}
+        {t("title")}
       </h2>
 
       {/* Description */}
-      <p className="text-sm text-gray-600 text-center mb-2">
-        {t('description')}
+      <p className="text-sm text-gray-600 text-center mb-1">
+        {t("description")}
       </p>
-      <p className="text-sm font-semibold text-black text-center mb-2">
+      <p className="text-sm font-semibold text-black text-center mb-1">
         {email}
       </p>
       <p className="text-sm text-gray-600 text-center mb-6">
-        {t('instruction')}
+        {t("instruction")}
       </p>
 
-      {/* OTP Input */}
+      {/* OTP Input - No border, large font like reference */}
       <div className="w-full mb-4">
         <input
           type="text"
@@ -81,18 +111,25 @@ const OTPVerification: React.FC<OTPVerificationProps> = ({
           pattern="[0-9]*"
           value={formatOTPDisplay(otpCode)}
           onChange={(e) => {
-            const value = e.target.value.replace(/\D/g, '').replace(/\s/g, '');
+            const value = e.target.value.replace(/\D/g, "").replace(/\s/g, "");
             if (value.length <= otpLength) {
               setOtpCode(value);
-              setError(''); // Clear error on input change
+              setError(""); // Clear error on input change
             }
           }}
           placeholder="000 000"
-          className={`ze-form-input w-full text-center text-lg font-bold tracking-widest placeholder:text-[#E1E1E1] ${error ? 'border-red-500' : ''}`}
+          className="w-full text-center font-bold bg-transparent outline-none"
+          style={{
+            fontSize: "32px",
+            letterSpacing: "0.3em",
+            color: otpCode ? "#171717" : "#D1D5DB",
+            border: "none",
+            padding: "16px 0",
+          }}
           disabled={isVerifying}
           maxLength={otpLength + 1}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' && !isButtonDisabled) {
+            if (e.key === "Enter" && !isButtonDisabled) {
               handleSubmit();
             }
           }}
@@ -109,15 +146,15 @@ const OTPVerification: React.FC<OTPVerificationProps> = ({
           onClick={handleLearnMore}
           type="button"
         >
-          {t('knowMore')}
+          {t("knowMore")}
         </button>
-        <span className="text-gray-400">{tCommon('or')}</span>
+        <span className="text-gray-400">{tCommon("or")}</span>
         <button
           className="font-bold underline text-[#171717] hover:opacity-80 transition-opacity"
           onClick={handleResendCode}
           type="button"
         >
-          {t('resendCode')}
+          {t("resendCode")}
         </button>
       </div>
 
@@ -128,7 +165,7 @@ const OTPVerification: React.FC<OTPVerificationProps> = ({
           disabled={isButtonDisabled}
           className="ze-transfer-button disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isVerifying ? t('verifying') : t('checkAndSend')}
+          {isVerifying ? t("verifying") : t("checkAndSend")}
         </button>
 
         <button
@@ -145,23 +182,23 @@ const OTPVerification: React.FC<OTPVerificationProps> = ({
       {/* Terms & Privacy Agreement */}
       <div className="w-full mt-3 text-xs text-center text-gray-600">
         <p>
-          {t('termsAgreement')}{' '}
+          {t("termsAgreement")}{" "}
           <a
             href="/terms-of-service"
             target="_blank"
             rel="noopener noreferrer"
             className="text-[#171717] font-medium underline hover:opacity-80 transition-opacity"
           >
-            {t('termsOfService')}
-          </a>{' '}
-          {t('and')}{' '}
+            {t("termsOfService")}
+          </a>{" "}
+          {t("and")}{" "}
           <a
             href="/privacy-policy"
             target="_blank"
             rel="noopener noreferrer"
             className="text-[#171717] font-medium underline hover:opacity-80 transition-opacity"
           >
-            {t('privacyPolicy')}
+            {t("privacyPolicy")}
           </a>
           .
         </p>

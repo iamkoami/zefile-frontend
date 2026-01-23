@@ -1,8 +1,11 @@
+// Polyfill localStorage for SSR (must be first import)
+import "@/lib/localStorage-polyfill";
+
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import localFont from "next/font/local";
-import { NextIntlClientProvider } from 'next-intl';
-import { getLocale, getMessages } from 'next-intl/server';
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages } from "next-intl/server";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -70,14 +73,14 @@ const metropolis = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "ZeFile - Partage de fichiers sécurisé",
+  title: "ZeFile - Partage de fichiers sécurisés",
   description: "Partagez vos fichiers en toute sécurité avec ZeFile",
   icons: {
     icon: [
-      { url: '/favicon.png', type: 'image/png' },
-      { url: '/favicon.ico', sizes: 'any' }
+      { url: "/favicon.png", type: "image/png" },
+      { url: "/favicon.ico", sizes: "any" },
     ],
-    apple: '/favicon.png',
+    apple: "/favicon.png",
   },
 };
 

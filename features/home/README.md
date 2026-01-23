@@ -4,8 +4,9 @@ This feature implements the ZeFile home page based on the Figma wireframe design
 
 ## Components
 
-### Header
-- **Location**: `features/home/components/Header.tsx`
+### Header (Shared Component)
+- **Location**: `components/shared/Header.tsx`
+- **Import**: `import { Header } from '@/components/shared';`
 - **Features**:
   - Logo (Ze File)
   - Main navigation menu: Centre d'aide, Comment ça marche, Annonceurs, À propos
@@ -13,6 +14,10 @@ This feature implements the ZeFile home page based on the Figma wireframe design
   - Hover state: neutral 200 grey background (#E5E5E5), 8px border radius
   - Simple vertical line separator between main menu and connection menu
   - Primary button (S'inscrire): green background (#22C55E), 4px border radius
+  - Authenticated user menu with dropdown
+  - Language switcher
+  - Auth state change handling
+- **Note**: This component has been moved to shared components for use across all pages.
 
 ### UploadPanel
 - **Location**: `features/home/components/UploadPanel.tsx`

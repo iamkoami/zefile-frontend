@@ -12,9 +12,11 @@ import UploadProgressPanel from "./UploadProgressPanel";
 import CancelConfirmationPanel from "./CancelConfirmationPanel";
 import TransferCompletePanel from "./TransferCompletePanel";
 import MultiEmailInput from "./MultiEmailInput";
-import { transferApi } from "@/services/transfer-api";
+import { transferApi, TransferDto } from "@/services/transfer-api";
 import { authApi } from "@/services/auth-api";
 import { platformApi } from "@/services/platform-api";
+import { multipartUploadService } from "@/services/multipart-upload.service";
+import { useUploadStore } from "@/stores/upload-store";
 
 interface UploadPanelProps {
   selectedFiles: File[];
@@ -22,9 +24,10 @@ interface UploadPanelProps {
   onShowOptions: () => void;
   maxUploadSize: number;
   selectedFilesSize: number;
+  onPanelStateChange?: (state: PanelState) => void;
 }
 
-type PanelState =
+export type PanelState =
   | "initial"
   | "form"
   | "otp"
@@ -38,9 +41,20 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
   onShowOptions,
   maxUploadSize,
   selectedFilesSize,
+  onPanelStateChange,
 }) => {
   const t = useTranslations("upload");
   const tCurrency = useTranslations("currency");
+
+  // Global upload state for protection across the app
+  const {
+    setUploading: setGlobalUploading,
+    setPaused: setGlobalPaused,
+    setProgress: setGlobalProgress,
+    setComplete: setGlobalComplete,
+    reset: resetGlobalUpload,
+  } = useUploadStore();
+
   const [isDragging, setIsDragging] = useState(false);
   const [recipientEmails, setRecipientEmails] = useState<string[]>([]); // Changed from sendTo
   const [email, setEmail] = useState("");
@@ -65,11 +79,13 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
   const [transferResult, setTransferResult] = useState<{
     transferLink: string;
     shortLink: string;
+    transfer: TransferDto;
   } | null>(null);
 
   // Upload control
   const uploadStartTimeRef = useRef<number>(0);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const currentUploadsRef = useRef<Array<{ uploadId: string; objectKey: string; transferId: string }>>([]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -85,14 +101,49 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
   }, []);
 
   // Auto-transition to form when files are added (e.g., via global drag & drop)
-  // Also transition back to initial when all files are removed
+  // Also transition back to initial when all files are removed (unless recipients are pre-filled)
   useEffect(() => {
     if (selectedFiles.length > 0 && panelState === "initial") {
       setPanelState("form");
-    } else if (selectedFiles.length === 0 && panelState === "form") {
+    } else if (selectedFiles.length === 0 && panelState === "form" && recipientEmails.length === 0) {
+      // Only revert to initial if no pre-filled recipients
       setPanelState("initial");
     }
-  }, [selectedFiles.length, panelState]);
+  }, [selectedFiles.length, panelState, recipientEmails.length]);
+
+  // Listen for add-recipient-to-transfer event from ContactsPanel
+  // Pre-fills the recipient email and shows the form
+  useEffect(() => {
+    const handleAddRecipient = (event: CustomEvent<{ email: string }>) => {
+      const { email: recipientEmail } = event.detail;
+      if (recipientEmail && !recipientEmails.includes(recipientEmail)) {
+        setRecipientEmails((prev) => [...prev, recipientEmail]);
+      }
+      // Show the form when adding a recipient
+      if (panelState === "initial" || panelState === "complete") {
+        setPanelState("form");
+      }
+    };
+
+    window.addEventListener(
+      "add-recipient-to-transfer",
+      handleAddRecipient as EventListener
+    );
+
+    return () => {
+      window.removeEventListener(
+        "add-recipient-to-transfer",
+        handleAddRecipient as EventListener
+      );
+    };
+  }, [recipientEmails, panelState]);
+
+  // Notify parent component when panel state changes
+  useEffect(() => {
+    if (onPanelStateChange) {
+      onPanelStateChange(panelState);
+    }
+  }, [panelState, onPanelStateChange]);
 
   // Helper function to get currency symbol
   const getCurrencySymbol = (currencyCode: string): string => {
@@ -264,7 +315,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
     }
 
     try {
-      // Calculate charge info before sending OTP
+      // Calculate charge info before processing
       const chargeCalc = await platformApi.getPublicConfig();
       if (chargeCalc.data) {
         const priceNum = parsePriceToNumber(price);
@@ -274,7 +325,18 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
         setReceivedAmount(receivedAmt);
       }
 
-      // Request OTP to authenticate user
+      // Check if user is already logged in
+      const isLoggedIn = authApi.isAuthenticated();
+      const storedUser = authApi.getStoredUser();
+
+      if (isLoggedIn && storedUser) {
+        // User is logged in, skip OTP and proceed directly to upload
+        console.log("User is already logged in, skipping OTP:", storedUser);
+        await startFileUpload(storedUser.id);
+        return;
+      }
+
+      // User not logged in, request OTP to authenticate
       const response = await authApi.requestOTP({ email });
 
       if (response.error) {
@@ -289,21 +351,6 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
       console.error("Failed to send OTP:", error);
       setFormErrors({ email: "Failed to send OTP. Please try again." });
     }
-  };
-
-  const calculateTimeRemaining = (
-    progress: number,
-    startTime: number,
-    totalBytes: number
-  ): number => {
-    if (progress === 0) return 0;
-
-    const elapsed = (Date.now() - startTime) / 1000; // seconds
-    const uploadedBytes = (progress / 100) * totalBytes;
-    const bytesPerSecond = uploadedBytes / elapsed;
-    const remainingBytes = totalBytes - uploadedBytes;
-
-    return remainingBytes / bytesPerSecond;
   };
 
   const handleOTPVerify = async (code: string) => {
@@ -333,13 +380,24 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
   };
 
   const startFileUpload = async (userId: string) => {
+    // Calculate total size first
+    const total = selectedFiles.reduce((sum, file) => sum + file.size, 0);
+
+    console.log('[Multipart Upload] Starting upload', {
+      totalSize: total,
+      fileCount: selectedFiles.length,
+      timestamp: new Date().toISOString()
+    });
+
     setPanelState("uploading");
     setUploadProgress(0);
+    setUploadedSize(0);
+    setTotalSize(total);
+    setEstimatedTimeRemaining(0);
     uploadStartTimeRef.current = Date.now();
 
-    // Calculate total size
-    const total = selectedFiles.reduce((sum, file) => sum + file.size, 0);
-    setTotalSize(total);
+    // Update global upload state for protection
+    setGlobalUploading(selectedFiles.length, total);
 
     // Create abort controller for cancellation
     abortControllerRef.current = new AbortController();
@@ -349,77 +407,192 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
       title.trim() || selectedFiles[0]?.name || "Untitled Transfer";
 
     try {
-      const response = await transferApi.createTransferWithFiles(
-        {
-          senderId: userId,
-          recipientEmails: recipientEmails,
-          title: transferTitle,
-          price: parsePriceToNumber(price),
-          currency: currency,
-          message: message || undefined,
-          files: selectedFiles,
-        },
-        (progress) => {
-          setUploadProgress(progress);
-          const uploaded = (progress / 100) * total;
-          setUploadedSize(uploaded);
+      // Step 1: Create transfer metadata (without files)
+      console.log('[Multipart Upload] Creating transfer metadata');
+      const transferResponse = await transferApi.createTransfer({
+        senderId: userId,
+        recipientEmails: recipientEmails,
+        title: transferTitle,
+        price: parsePriceToNumber(price),
+        currency: currency,
+        message: message || undefined,
+      });
 
-          // Calculate estimated time remaining
-          const timeRemaining = calculateTimeRemaining(
-            progress,
-            uploadStartTimeRef.current,
-            total
-          );
-          setEstimatedTimeRemaining(timeRemaining);
-        }
-      );
-
-      if (response.error) {
-        console.error("Upload failed:", response.error.message);
-        // Handle error - could show error panel or go back to form
+      if (transferResponse.error) {
+        console.error("[Multipart Upload] Failed to create transfer:", transferResponse.error.message);
+        resetGlobalUpload();
         setPanelState("form");
-        setFormErrors({ email: response.error.message });
+        setFormErrors({ email: transferResponse.error.message });
         return;
       }
 
-      console.log("Transfer created successfully:", response.data);
+      const transfer = transferResponse.data!;
+      console.log('[Multipart Upload] Transfer created:', transfer.id, transfer.shortCode);
+
+      // Step 2: Upload each file using multipart upload (directly to Wasabi)
+      let totalBytesUploaded = 0;
+
+      for (let i = 0; i < selectedFiles.length; i++) {
+        const file = selectedFiles[i];
+        const fileStartBytes = totalBytesUploaded;
+
+        console.log(`[Multipart Upload] Uploading file ${i + 1}/${selectedFiles.length}: ${file.name}`);
+
+        try {
+          await multipartUploadService.uploadFile(
+            file,
+            transfer.shortCode,
+            userId,
+            transfer.id,
+            (fileProgress) => {
+              // Calculate overall progress across all files
+              const currentFileBytes = fileProgress.bytesUploaded;
+              const overallBytesUploaded = fileStartBytes + currentFileBytes;
+              const overallProgress = (overallBytesUploaded / total) * 100;
+
+              console.log('[Multipart Upload] Progress:', {
+                file: file.name,
+                fileProgress: fileProgress.progress.toFixed(2) + '%',
+                overallProgress: overallProgress.toFixed(2) + '%',
+                bytesUploaded: overallBytesUploaded,
+                totalBytes: total,
+                uploadSpeed: fileProgress.uploadSpeed.toFixed(0) + ' bytes/s',
+                timeRemaining: fileProgress.estimatedTimeRemaining.toFixed(1) + 's'
+              });
+
+              // Update UI with REAL progress data (SINGLE SOURCE OF TRUTH)
+              setUploadProgress(overallProgress);
+              setUploadedSize(overallBytesUploaded);
+              setEstimatedTimeRemaining(fileProgress.estimatedTimeRemaining);
+
+              // Sync global state for upload protection
+              setGlobalProgress(overallProgress, overallBytesUploaded);
+            },
+            (uploadId, objectKey) => {
+              // Track upload for cancellation
+              currentUploadsRef.current.push({
+                uploadId,
+                objectKey,
+                transferId: transfer.id,
+              });
+              console.log('[Upload Tracking] Upload started:', { uploadId, objectKey });
+            }
+          );
+
+          // Update total bytes uploaded after file completes
+          totalBytesUploaded += file.size;
+          console.log(`[Multipart Upload] File ${i + 1} completed`);
+
+        } catch (fileError: any) {
+          console.error(`[Multipart Upload] Failed to upload file ${file.name}:`, fileError);
+          resetGlobalUpload();
+          setPanelState("form");
+          setFormErrors({ email: `Failed to upload ${file.name}: ${fileError.message}` });
+          return;
+        }
+      }
+
+      console.log("[Multipart Upload] All files uploaded successfully");
+
+      // Clear tracked uploads (all completed successfully)
+      currentUploadsRef.current = [];
+
+      // Step 3: Finalize transfer - this sends email notifications
+      console.log('[Multipart Upload] Finalizing transfer and sending notifications');
+      try {
+        const finalizeResponse = await transferApi.finalizeTransfer(transfer.id);
+        if (finalizeResponse.error) {
+          console.warn('[Multipart Upload] Failed to finalize transfer:', finalizeResponse.error.message);
+          // Don't fail the upload, just log the warning
+        } else {
+          console.log('[Multipart Upload] Transfer finalized:', finalizeResponse.data?.message);
+        }
+      } catch (finalizeError) {
+        console.warn('[Multipart Upload] Error finalizing transfer:', finalizeError);
+        // Don't fail the upload, notifications can be retried
+      }
+
+      // Step 4: Upload complete - show 100%
+      setUploadProgress(100);
+      setUploadedSize(total);
+      setEstimatedTimeRemaining(0);
 
       // Build transfer links
       const shortLinkDomain =
         process.env.NEXT_PUBLIC_SHORT_LINK_DOMAIN || "localhost:3000";
-      const transferLink = `${process.env.NEXT_PUBLIC_APP_URL}/transfer/${
-        response.data!.id
-      }`;
-      const shortLink = `${shortLinkDomain}/${response.data!.shortCode}`;
+      const shortCodePrefix = process.env.NEXT_PUBLIC_SHORT_CODE_PREFIX || "z-";
+      const protocol = shortLinkDomain.includes('localhost') ? 'http://' : 'https://';
+      const transferLink = `${process.env.NEXT_PUBLIC_APP_URL}/transfer/${transfer.id}`;
+      const shortLink = `${protocol}${shortLinkDomain}/${shortCodePrefix}${transfer.shortCode}`;
 
       setTransferResult({
         transferLink,
         shortLink,
+        transfer,
       });
+
+      // Update global state - upload complete
+      setGlobalComplete();
 
       setPanelState("complete");
     } catch (error) {
-      console.error("Upload error:", error);
+      console.error("[Upload] Unexpected error:", error);
+      resetGlobalUpload();
       setPanelState("form");
       setFormErrors({ email: "Upload failed. Please try again." });
     }
   };
 
   const handleCancelClick = () => {
+    // Pause uploads while showing cancel confirmation
+    multipartUploadService.pause();
+    setGlobalPaused();
     setPanelState("cancel-confirm");
   };
 
-  const handleConfirmCancel = () => {
-    // Abort the upload if in progress
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
+  const handleConfirmCancel = async () => {
+    // Resume first to unblock any waiting chunks before aborting
+    multipartUploadService.resume();
+
+    try {
+      // Abort all ongoing multipart uploads
+      if (currentUploadsRef.current.length > 0) {
+        console.log('[Upload Cancel] Aborting uploads:', currentUploadsRef.current);
+
+        await Promise.allSettled(
+          currentUploadsRef.current.map(upload =>
+            multipartUploadService.abortUpload(
+              upload.uploadId,
+              upload.objectKey,
+              upload.transferId
+            )
+          )
+        );
+
+        console.log('[Upload Cancel] All uploads aborted');
+        currentUploadsRef.current = [];
+      }
+
+      // Also abort XHR if in progress
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    } catch (error) {
+      console.error('[Upload Cancel] Error aborting uploads:', error);
     }
+
+    // Reset global upload state
+    resetGlobalUpload();
 
     // Reset to form state
     resetForm();
   };
 
   const handleContinueUpload = () => {
+    // Resume paused uploads
+    multipartUploadService.resume();
+    // Re-set to uploading state in global store
+    setGlobalUploading(selectedFiles.length, totalSize);
     setPanelState("uploading");
   };
 
@@ -437,6 +610,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
     setEmail("");
     setTitle("");
     setPrice("");
+    setCurrency("XOF"); // Reset currency to default
     setMessage("");
     setFormErrors({});
     setUploadProgress(0);
@@ -444,6 +618,8 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
     setTotalSize(0);
     setEstimatedTimeRemaining(0);
     setTransferResult(null);
+    setReceivedAmount(0); // Reset received amount
+    resetGlobalUpload(); // Reset global upload protection state
     onFilesChange([]);
   };
 
@@ -466,6 +642,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
             uploadedSize={uploadedSize}
             totalSize={totalSize}
             estimatedTimeRemaining={estimatedTimeRemaining}
+            fileCount={selectedFiles.length}
             onCancel={handleCancelClick}
           />
         );
@@ -484,6 +661,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
           <TransferCompletePanel
             transferLink={transferResult.transferLink}
             shortLink={transferResult.shortLink}
+            transfer={transferResult.transfer}
             onSendAnother={handleSendAnother}
           />
         ) : null;
@@ -641,40 +819,45 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
               </div>
 
               {/* Currency & Price */}
-              <div className="grid grid-cols-[110px_1fr] gap-3">
-                {/* Currency Selector */}
-                <div>
-                  <select
-                    value={currency}
-                    onChange={(e) => setCurrency(e.target.value)}
-                    className="ze-form-select h-full"
-                  >
-                    <option value="XOF">XOF</option>
-                    <option value="NGN">NGN</option>
-                    <option value="GHS">GHS</option>
-                    <option value="ZAR">ZAR</option>
-                    <option value="KES">KES</option>
-                  </select>
-                </div>
+              <div>
+                <div className="grid grid-cols-[110px_1fr] gap-3">
+                  {/* Currency Selector */}
+                  <div>
+                    <select
+                      value={currency}
+                      onChange={(e) => setCurrency(e.target.value)}
+                      className={`ze-form-select h-full ${
+                        formErrors.price ? "border-red-500" : ""
+                      }`}
+                    >
+                      <option value="XOF">XOF</option>
+                      <option value="NGN">NGN</option>
+                      <option value="GHS">GHS</option>
+                      <option value="ZAR">ZAR</option>
+                      <option value="KES">KES</option>
+                    </select>
+                  </div>
 
-                {/* Price Input */}
-                <div>
-                  <input
-                    type="text"
-                    value={price}
-                    onChange={handlePriceChange}
-                    placeholder={t("setPrice")}
-                    className={`ze-form-input ${
-                      formErrors.price ? "border-red-500" : ""
-                    }`}
-                    inputMode="numeric"
-                  />
-                  {formErrors.price && (
-                    <p className="text-sm text-red-600 mt-1">
-                      {formErrors.price}
-                    </p>
-                  )}
+                  {/* Price Input */}
+                  <div>
+                    <input
+                      type="text"
+                      value={price}
+                      onChange={handlePriceChange}
+                      placeholder={t("setPrice")}
+                      className={`ze-form-input ${
+                        formErrors.price ? "border-red-500" : ""
+                      }`}
+                      inputMode="numeric"
+                    />
+                  </div>
                 </div>
+                {/* Error message under both fields */}
+                {formErrors.price && (
+                  <p className="text-sm text-red-600 mt-1">
+                    {formErrors.price}
+                  </p>
+                )}
               </div>
 
               {/* Info Text */}

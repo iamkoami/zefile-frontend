@@ -1,6 +1,25 @@
 import axios from 'axios';
+import { apiClient, ApiResponse } from './api-client';
+import { TransferDto } from './transfer-api';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+// Transaction types
+export interface Transaction {
+  id: string;
+  user: {
+    id: string;
+    email: string;
+  };
+  transferId: TransferDto | null;
+  amountPaid: number;
+  currency: string;
+  paymentMethod: string;
+  transactionStatus: 'CREATED' | 'PENDING' | 'SUCCESS' | 'FAILED' | 'REFUNDED';
+  paymentReference?: string;
+  transactionDate: string;
+  updatedAt?: string;
+}
 
 export interface InitializePaymentRequest {
   transferId: string;
@@ -92,5 +111,22 @@ export const paymentApi = {
   async getPublicKey(): Promise<PublicKeyResponse> {
     const response = await axios.get(`${API_URL}/payments/public-key`);
     return response.data;
+  },
+
+  /**
+   * Get all transactions for a user
+   */
+  async getTransactionsByUserId(userId: string): Promise<ApiResponse<Transaction[]>> {
+    return apiClient.get<Transaction[]>(`/transactions/user/${userId}`);
+  },
+
+  /**
+   * Get transactions by user ID and status (e.g., SUCCESS for paid transfers)
+   */
+  async getTransactionsByUserIdAndStatus(
+    userId: string,
+    status: string
+  ): Promise<ApiResponse<Transaction[]>> {
+    return apiClient.get<Transaction[]>(`/transactions/user/${userId}/status/${status}`);
   },
 };

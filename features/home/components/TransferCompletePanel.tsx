@@ -1,45 +1,40 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { useTranslations } from 'next-intl';
-import { Copy } from 'iconoir-react';
+import React, { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
+import { Link as LinkIcon } from "iconoir-react";
+import { TransferDto } from "@/services/transfer-api";
+import { useDrawerStore } from "@/stores/drawer-store";
 
 interface TransferCompletePanelProps {
   transferLink: string;
   shortLink: string;
+  transfer: TransferDto;
   onSendAnother: () => void;
 }
 
 const TransferCompletePanel: React.FC<TransferCompletePanelProps> = ({
   transferLink,
   shortLink,
-  onSendAnother
+  transfer,
+  onSendAnother,
 }) => {
-  const t = useTranslations('upload');
-  const [animationProgress, setAnimationProgress] = useState(0);
+  const t = useTranslations("upload");
+  const { openDrawerToView } = useDrawerStore();
   const [showSuccess, setShowSuccess] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
-  // Animate progress from current to 100%
+  // Handle preview transfer - opens drawer directly to TransferPreviewPanel
+  // Uses openDrawerToView so close button is shown (no back navigation needed)
+  const handlePreviewTransfer = () => {
+    openDrawerToView("transfers", "transfer-preview", transfer, "sender");
+  };
+
+  // Show success animation on mount
   useEffect(() => {
-    const duration = 1000; // 1 second animation
-    const startTime = Date.now();
-
-    const animate = () => {
-      const elapsed = Date.now() - startTime;
-      const progress = Math.min((elapsed / duration) * 100, 100);
-
-      setAnimationProgress(progress);
-
-      if (progress < 100) {
-        requestAnimationFrame(animate);
-      } else {
-        // Show success checkmark after progress completes
-        setTimeout(() => setShowSuccess(true), 200);
-      }
-    };
-
-    animate();
+    const timer = setTimeout(() => setShowSuccess(true), 100);
+    return () => clearTimeout(timer);
   }, []);
 
   const handleCopyLink = async () => {
@@ -48,93 +43,83 @@ const TransferCompletePanel: React.FC<TransferCompletePanelProps> = ({
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error('Failed to copy link:', err);
+      console.error("Failed to copy link:", err);
     }
   };
 
-  return (
-    <div className="flex flex-col items-center justify-center">
-      {/* Success Circle Animation */}
-      <div className="relative mb-6">
-        {!showSuccess ? (
-          // Progress circle animating to 100%
-          <svg className="w-32 h-32 transform -rotate-90">
-            {/* Background circle */}
-            <circle
-              cx="64"
-              cy="64"
-              r="56"
-              fill="none"
-              stroke="#E5E7EB"
-              strokeWidth="8"
-            />
-            {/* Progress circle */}
-            <circle
-              cx="64"
-              cy="64"
-              r="56"
-              fill="none"
-              stroke="#87E64B"
-              strokeWidth="8"
-              strokeDasharray={`${2 * Math.PI * 56}`}
-              strokeDashoffset={`${2 * Math.PI * 56 * (1 - animationProgress / 100)}`}
-              strokeLinecap="round"
-              style={{ transition: 'stroke-dashoffset 0.3s ease' }}
-            />
-          </svg>
-        ) : (
-          // Success checkmark with fade-in animation
-          <div
-            className="w-32 h-32 rounded-full flex items-center justify-center transition-all duration-500"
-            style={{
-              backgroundColor: '#87E64B',
-              opacity: showSuccess ? 1 : 0,
-              transform: showSuccess ? 'scale(1)' : 'scale(0.8)'
-            }}
-          >
-            <svg
-              width="64"
-              height="64"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="white"
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
-          </div>
-        )}
+  const handleSendAnother = () => {
+    setIsTransitioning(true);
+    // Small delay for animation
+    setTimeout(() => {
+      onSendAnother();
+    }, 300);
+  };
 
-        {/* Percentage text (only during animation) */}
-        {!showSuccess && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-4xl font-bold text-[#87E64B]">
-              {Math.round(animationProgress)}%
-            </span>
-          </div>
-        )}
+  return (
+    <div
+      className={`flex flex-col items-center justify-center pt-[40px] transition-all duration-300 ${
+        isTransitioning ? "opacity-0 transform translate-y-4" : "opacity-100"
+      }`}
+    >
+      {/* Success Circle with Gradient Background and Checkmark - Like reference */}
+      <div className="relative mb-8">
+        <div
+          className="rounded-full flex items-center justify-center transition-all duration-500"
+          style={{
+            width: '176px',
+            height: '176px',
+            background:
+              "linear-gradient(180deg, rgba(135, 230, 75, 0.4) 0%, #87E64B 100%)",
+            opacity: showSuccess ? 1 : 0,
+            transform: showSuccess ? "scale(1)" : "scale(0.8)",
+          }}
+        >
+          <svg
+            width="60"
+            height="60"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="white"
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={`transition-all duration-300 ${
+              showSuccess ? "opacity-100" : "opacity-0"
+            }`}
+          >
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </div>
       </div>
 
       {/* Transfer Sent Message */}
-      <h2 className="text-lg font-bold text-black mb-2 text-center">
-        {t('transferSent')}
+      <h2 className="text-xl font-bold text-black mb-2 text-center">
+        {t("transferSent")}
       </h2>
 
       {/* Description */}
-      <p className="text-sm text-gray-600 text-center mb-6">
-        {t('copyLinkOrShareTransfer')}
+      <p className="text-sm text-gray-600 text-center mb-1">
+        {t("copyLinkOrShareTransfer")}
       </p>
+      <button
+        onClick={handlePreviewTransfer}
+        className="text-sm font-bold text-black underline cursor-pointer mb-6"
+      >
+        {t("previewTransfer")}
+      </button>
 
       {/* Link Display with Copy Button */}
       <div className="w-full mb-4">
-        <div className="flex items-center gap-2 p-3 bg-white border-2 border-[#171717] rounded-lg">
+        <div
+          className="flex items-center gap-2 bg-white border border-[#171717] rounded"
+          style={{ paddingTop: '10px', paddingBottom: '10px', paddingLeft: '12px', paddingRight: '8px' }}
+        >
           <input
             type="text"
             value={shortLink}
             readOnly
-            className="flex-1 text-sm font-medium text-[#171717] bg-transparent outline-none"
+            className="flex-1 text-sm font-medium text-[#4F46E5] bg-transparent outline-none cursor-pointer truncate"
+            onClick={handleCopyLink}
           />
           <button
             onClick={handleCopyLink}
@@ -155,7 +140,12 @@ const TransferCompletePanel: React.FC<TransferCompletePanelProps> = ({
                 <polyline points="20 6 9 17 4 12" />
               </svg>
             ) : (
-              <Copy width={20} height={20} strokeWidth={2} color="#171717" />
+              <LinkIcon
+                width={20}
+                height={20}
+                strokeWidth={2}
+                color="#4F46E5"
+              />
             )}
           </button>
         </div>
@@ -163,11 +153,12 @@ const TransferCompletePanel: React.FC<TransferCompletePanelProps> = ({
 
       {/* Send Another Button */}
       <button
-        onClick={onSendAnother}
-        className="w-full py-3 px-4 rounded-lg font-semibold text-[#171717] hover:opacity-90 transition-opacity"
-        style={{ backgroundColor: '#87E64B' }}
+        onClick={handleSendAnother}
+        disabled={isTransitioning}
+        className="w-full py-4 px-4 rounded font-semibold text-[#171717] hover:opacity-90 transition-opacity disabled:opacity-50"
+        style={{ backgroundColor: "#87E64B" }}
       >
-        {t('sendAnother')}
+        {t("sendAnother")}
       </button>
     </div>
   );

@@ -189,11 +189,32 @@ export class StorageApi {
 
   /**
    * Generate short link URL
+   * Backend stores shortCode WITHOUT prefix, this adds it
    */
   getShortLinkUrl(shortCode: string): string {
     const domain = process.env.NEXT_PUBLIC_SHORT_LINK_DOMAIN || 'localhost:3001';
+    const prefix = process.env.NEXT_PUBLIC_SHORT_CODE_PREFIX || 'z-';
     const protocol = domain.includes('localhost') ? 'http' : 'https';
-    return `${protocol}://${domain}/t/${shortCode}`;
+    return `${protocol}://${domain}/t/${prefix}${shortCode}`;
+  }
+
+  /**
+   * Get download URL for entire transfer (ZIP of all files)
+   * Wrapper around getZipDownloadUrl for convenience
+   */
+  async getTransferDownloadUrl(shortCode: string, password?: string): Promise<ApiResponse<{ url: string }>> {
+    const response = await this.getZipDownloadUrl({ shortCode, password });
+    if (response.data?.zipUrl) {
+      return { ...response, data: { url: response.data.zipUrl } };
+    }
+    return { ...response, data: undefined } as ApiResponse<{ url: string }>;
+  }
+
+  /**
+   * Get download URL for a single file by ID
+   */
+  async getFileDownloadUrl(fileId: string, password?: string): Promise<ApiResponse<{ url: string }>> {
+    return apiClient.post<{ url: string }>(`/storage/file/${fileId}/download`, { password });
   }
 }
 

@@ -22,7 +22,7 @@ export class ApiClient {
 
   constructor() {
     this.baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-    this.timeout = parseInt(process.env.NEXT_PUBLIC_API_TIMEOUT || '30000');
+    this.timeout = parseInt(process.env.NEXT_PUBLIC_API_TIMEOUT || '600000'); // 10 minutes default for file uploads
   }
 
   /**
@@ -112,16 +112,23 @@ export class ApiClient {
       if (error.name === 'AbortError') {
         return {
           error: {
-            message: 'Request timeout',
+            message: 'Request timeout. Please try again.',
             statusCode: 408,
           },
           status: 408,
         };
       }
 
+      // Network error - likely backend is down or unreachable
+      const isConnectionError = error.message?.includes('fetch') ||
+                               error.message?.includes('Failed to fetch') ||
+                               !error.message;
+
       return {
         error: {
-          message: error.message || 'Network error',
+          message: isConnectionError
+            ? 'Unable to connect to the server. Please check your connection and try again.'
+            : error.message || 'Network error',
           statusCode: 0,
         },
         status: 0,
@@ -172,22 +179,39 @@ export class ApiClient {
         xhr.upload.addEventListener('progress', (e) => {
           if (e.lengthComputable) {
             const progress = (e.loaded / e.total) * 100;
+            console.log('[XHR Progress Event]', {
+              loaded: e.loaded,
+              total: e.total,
+              progress: progress.toFixed(2) + '%',
+              timestamp: new Date().toISOString()
+            });
             onProgress(progress);
+          } else {
+            console.warn('[XHR Progress Event] Not lengthComputable', e);
           }
         });
       }
 
       // Handle completion
       xhr.addEventListener('load', () => {
+        console.log('[XHR Load Event]', {
+          status: xhr.status,
+          statusText: xhr.statusText,
+          responseLength: xhr.responseText?.length,
+          timestamp: new Date().toISOString()
+        });
+
         try {
           const responseData = JSON.parse(xhr.responseText);
 
           if (xhr.status >= 200 && xhr.status < 300) {
+            console.log('[XHR Success]', { status: xhr.status, data: responseData });
             resolve({
               data: responseData,
               status: xhr.status,
             });
           } else {
+            console.error('[XHR Error Response]', { status: xhr.status, error: responseData });
             resolve({
               error: {
                 message: responseData?.message || 'Upload failed',
@@ -198,6 +222,7 @@ export class ApiClient {
             });
           }
         } catch (error) {
+          console.error('[XHR Parse Error]', error);
           resolve({
             error: {
               message: 'Failed to parse response',
@@ -210,9 +235,14 @@ export class ApiClient {
 
       // Handle errors
       xhr.addEventListener('error', () => {
+        console.error('[XHR Error Event]', {
+          status: xhr.status,
+          readyState: xhr.readyState,
+          timestamp: new Date().toISOString()
+        });
         resolve({
           error: {
-            message: 'Network error',
+            message: 'Unable to connect to the server. Please check your connection and try again.',
             statusCode: 0,
           },
           status: 0,
@@ -221,6 +251,10 @@ export class ApiClient {
 
       // Handle timeout
       xhr.addEventListener('timeout', () => {
+        console.error('[XHR Timeout Event]', {
+          timeout: xhr.timeout,
+          timestamp: new Date().toISOString()
+        });
         resolve({
           error: {
             message: 'Request timeout',
@@ -231,11 +265,22 @@ export class ApiClient {
       });
 
       xhr.open('POST', url);
-      xhr.timeout = this.timeout;
+      // For file uploads, use a very long timeout (60 minutes) to account for:
+      // 1. Upload to backend
+      // 2. Backend processing and upload to S3
+      // 3. Large files or slow connections
+      xhr.timeout = 3600000; // 60 minutes
 
       if (token) {
         xhr.setRequestHeader('Authorization', `Bearer ${token}`);
       }
+
+      console.log('[XHR Send]', {
+        url,
+        timeout: xhr.timeout,
+        hasToken: !!token,
+        timestamp: new Date().toISOString()
+      });
 
       xhr.send(formData);
     });
