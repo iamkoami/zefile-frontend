@@ -1,78 +1,161 @@
 'use client';
 
-
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import Link from 'next/link';
+import Header from '@/components/shared/Header';
+import { PaymentFailureCard, PaymentErrorCode } from '@/features/payment/components/PaymentFailureCard';
+import { paymentApi, PaymentStatusV2Response } from '@/services/payment-api';
 
 export default function PaymentFailedPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const t = useTranslations('payment');
   const [reference, setReference] = useState<string>('');
+  const [paymentInfo, setPaymentInfo] = useState<PaymentStatusV2Response | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [shortCode, setShortCode] = useState<string>('');
 
   useEffect(() => {
-    const ref = searchParams.get('reference');
-    if (ref) {
-      setReference(ref);
-    }
+    const loadPaymentDetails = async () => {
+      const ref = searchParams.get('reference');
+      const code = searchParams.get('shortCode');
+      const errorCode = searchParams.get('error');
+
+      if (ref) {
+        setReference(ref);
+
+        try {
+          const response = await paymentApi.getPaymentStatusV2(ref);
+          if (response.data) {
+            setPaymentInfo(response.data);
+          }
+        } catch {
+          // If we can't get payment details, use URL params
+          if (errorCode) {
+            setPaymentInfo({
+              status: 'FAILED',
+              failureReason: errorCode,
+              reference: ref,
+            } as PaymentStatusV2Response);
+          }
+        }
+      }
+
+      if (code) {
+        setShortCode(code);
+      }
+
+      setIsLoading(false);
+    };
+
+    loadPaymentDetails();
   }, [searchParams]);
 
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-white px-4">
-      <div className="max-w-md w-full text-center">
-        {/* Error Icon */}
-        <div className="mb-6">
-          <div className="w-20 h-20 mx-auto rounded-full bg-red-500 flex items-center justify-center">
-            <svg
-              className="w-10 h-10 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </div>
+  /**
+   * Map Paystack failure reason to our error codes
+   */
+  const getErrorCode = (): PaymentErrorCode => {
+    const reason = paymentInfo?.failureReason?.toLowerCase() || '';
+    const errorParam = searchParams.get('error')?.toLowerCase() || '';
+    const combined = `${reason} ${errorParam}`;
+
+    if (combined.includes('insufficient') || combined.includes('balance')) {
+      return 'insufficient_funds';
+    }
+    if (combined.includes('declined') || combined.includes('reject')) {
+      return 'card_declined';
+    }
+    if (combined.includes('expired')) {
+      return 'expired_card';
+    }
+    if (combined.includes('invalid') || combined.includes('incorrect')) {
+      return 'invalid_card';
+    }
+    if (combined.includes('timeout') || combined.includes('time')) {
+      return 'timeout';
+    }
+    if (combined.includes('cancel')) {
+      return 'cancelled';
+    }
+    if (combined.includes('abandon')) {
+      return 'abandoned';
+    }
+    if (combined.includes('bank')) {
+      return 'bank_error';
+    }
+    if (combined.includes('network') || combined.includes('connection')) {
+      return 'network_error';
+    }
+
+    return 'default';
+  };
+
+  const handleRetry = () => {
+    // Go back to the transfer page to retry payment
+    if (shortCode) {
+      router.push(`/t/${shortCode}`);
+    } else {
+      router.back();
+    }
+  };
+
+  const handleChangeMethod = () => {
+    // Go back to transfer page to select different payment method
+    if (shortCode) {
+      router.push(`/t/${shortCode}?changeMethod=true`);
+    } else {
+      router.back();
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-white">
+        <Header />
+        <div className="flex items-center justify-center py-24">
+          <div className="w-8 h-8 border-4 border-red-400 border-t-transparent rounded-full animate-spin" />
         </div>
+      </div>
+    );
+  }
 
-        {/* Error Message */}
-        <h1 className="text-3xl font-bold text-[#171717] mb-4">
-          {t('paymentFailed')}
-        </h1>
-        <p className="text-[#666666] text-base leading-relaxed mb-8">
-          {t('paymentFailedMessage')}
-        </p>
+  return (
+    <div className="min-h-screen bg-white">
+      <Header />
+      <div className="max-w-lg mx-auto px-4 py-12">
+        <PaymentFailureCard
+          errorCode={getErrorCode()}
+          amount={paymentInfo?.pricingAmountMinorUnits || 0}
+          currency={paymentInfo?.pricingCurrency || 'XOF'}
+          currencySymbol={getCurrencySymbol(paymentInfo?.pricingCurrency)}
+          onRetry={handleRetry}
+          onChangeMethod={handleChangeMethod}
+        />
 
-        {/* Reference */}
+        {/* Reference (small text) */}
         {reference && (
-          <div className="mb-8 p-4 bg-gray-50 rounded-lg">
-            <p className="text-sm text-gray-500 mb-1">{t('transactionReference')}</p>
-            <p className="text-sm font-mono text-gray-700">{reference}</p>
+          <div className="mt-8 text-center">
+            <p className="text-sm text-gray-400">
+              {t('transactionReference')}: <span className="font-mono">{reference}</span>
+            </p>
           </div>
         )}
-
-        {/* Actions */}
-        <div className="space-y-3">
-          <button
-            onClick={() => router.back()}
-            className="block w-full py-3 px-6 bg-[#87E64B] text-white font-semibold rounded-lg hover:bg-[#75D43A] transition-colors"
-          >
-            {t('tryAgain')}
-          </button>
-          <Link
-            href="/"
-            className="block w-full py-3 px-6 border-2 border-gray-300 text-[#171717] font-semibold rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            {t('backToHome')}
-          </Link>
-        </div>
       </div>
     </div>
   );
+}
+
+function getCurrencySymbol(currency?: string): string {
+  const symbols: Record<string, string> = {
+    XOF: 'Fr CFA',
+    NGN: '₦',
+    GHS: '₵',
+    KES: 'KSh',
+    ZAR: 'R',
+    USD: '$',
+    EUR: '€',
+    GBP: '£',
+  };
+  return symbols[currency || 'XOF'] || currency || '';
 }

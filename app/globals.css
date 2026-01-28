@@ -425,3 +425,9 @@
   .mb-19 { margin-bottom: 4.75rem; }   /* 76px */
   .mb-20 { margin-bottom: 5rem; }      /* 80px */
 }
+
+/* OTP Input Styles */
+.ze-otp-input::placeholder {
+  color: rgba(0, 0, 0, 0.15);
+  opacity: 1;
+}

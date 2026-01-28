@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { ChevronDown } from "lucide-react";
+import { NavArrowDown, Sparks } from "iconoir-react";
 import LanguageSwitcher from "./LanguageSwitcher";
 import AuthPanel from "@/features/auth/components/AuthPanel";
 import { authApi } from "@/services/auth-api";
@@ -13,27 +13,44 @@ import { useDrawerStore } from "@/stores/drawer-store";
 import { useUploadStore } from "@/stores/upload-store";
 import { useTranslations as useUploadTranslations } from "next-intl";
 import ConfirmationModal from "@/components/shared/ConfirmationModal";
+import { subscriptionApi, SubscriptionTier } from "@/services/subscription-api";
+import { toast } from "@/components/shared/Toast";
 
 const Header = () => {
   const t = useTranslations("header");
   const tCommon = useTranslations("common");
   const tUpload = useUploadTranslations("uploadProtection");
-  const openDrawer = useDrawerStore((state) => state.openDrawer);
+  const { openDrawer, openAccountView } = useDrawerStore();
   const { canInterrupt, reset: resetUpload } = useUploadStore();
-  const [activeMenu, setActiveMenu] = useState<string>("");
-  const [hoverMenu, setHoverMenu] = useState<string>("");
   const [showAuthPanel, setShowAuthPanel] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'signup'>('signup');
   const [showResourcesDropdown, setShowResourcesDropdown] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [showLogoutConfirmation, setShowLogoutConfirmation] = useState(false);
+  const [subscriptionTier, setSubscriptionTier] =
+    useState<SubscriptionTier>("free");
   const resourcesTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
   const userTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
   // Track auth transition for smooth animation
   const [isAuthTransitioning, setIsAuthTransitioning] = useState(false);
+
+  // Fetch subscription tier
+  const fetchSubscription = async () => {
+    try {
+      const response = await subscriptionApi.getCurrentSubscription();
+      if (response.data) {
+        setSubscriptionTier(response.data.tier);
+      } else {
+        setSubscriptionTier("free");
+      }
+    } catch {
+      setSubscriptionTier("free");
+    }
+  };
 
   useEffect(() => {
     const checkAuth = () => {
@@ -41,17 +58,36 @@ const Header = () => {
       const userData = authApi.getStoredUser();
       setIsAuthenticated(authenticated);
       setUser(userData);
+
+      // Fetch subscription when authenticated
+      if (authenticated) {
+        fetchSubscription();
+      } else {
+        setSubscriptionTier("free");
+      }
     };
 
     // Handle custom auth state change event (e.g., from OTP verification during upload)
     const handleAuthStateChange = (
-      event: CustomEvent<{ isAuthenticated: boolean; user: any }>
+      event: CustomEvent<{ isAuthenticated: boolean; user?: any; reason?: string }>,
     ) => {
       setIsAuthTransitioning(true);
+
+      // Handle session expiration - show toast notification
+      if (!event.detail.isAuthenticated && event.detail.reason === 'session_expired') {
+        toast.error(t('sessionExpired'));
+      }
+
       // Short delay to allow fade-out before updating state
       setTimeout(() => {
         setIsAuthenticated(event.detail.isAuthenticated);
-        setUser(event.detail.user);
+        setUser(event.detail.user || null);
+        // Fetch subscription after auth state change
+        if (event.detail.isAuthenticated) {
+          fetchSubscription();
+        } else {
+          setSubscriptionTier("free");
+        }
         // Allow fade-in animation
         setTimeout(() => {
           setIsAuthTransitioning(false);
@@ -59,17 +95,34 @@ const Header = () => {
       }, 150);
     };
 
+    // Handle open-auth-panel event (from SubscriptionPanel)
+    const handleOpenAuthPanel = () => {
+      setShowAuthPanel(true);
+    };
+
+    // Handle subscription change event (from subscription panel)
+    const handleSubscriptionChange = () => {
+      fetchSubscription();
+    };
+
     checkAuth();
     window.addEventListener("storage", checkAuth);
     window.addEventListener(
       "auth-state-change",
-      handleAuthStateChange as EventListener
+      handleAuthStateChange as EventListener,
     );
+    window.addEventListener("open-auth-panel", handleOpenAuthPanel);
+    window.addEventListener("subscription-changed", handleSubscriptionChange);
     return () => {
       window.removeEventListener("storage", checkAuth);
       window.removeEventListener(
         "auth-state-change",
-        handleAuthStateChange as EventListener
+        handleAuthStateChange as EventListener,
+      );
+      window.removeEventListener("open-auth-panel", handleOpenAuthPanel);
+      window.removeEventListener(
+        "subscription-changed",
+        handleSubscriptionChange,
       );
       if (resourcesTimeoutRef.current)
         clearTimeout(resourcesTimeoutRef.current);
@@ -80,14 +133,17 @@ const Header = () => {
   const mainMenuItems = [
     { label: t("helpCenter"), href: "/help" },
     { label: t("howItWorks"), href: "/how-it-works" },
+    { label: t("pricing"), action: () => openDrawer("subscriptions") },
     { label: t("advertisers"), href: "/advertisers" },
     { label: t("about"), href: "/about" },
   ];
 
   const loggedInMenuItems = [
     { label: t("transfers"), action: () => openDrawer("transfers") },
-    { label: t("accountSettings"), href: "/account-settings" },
+    { label: t("analytics"), action: () => openDrawer("analytics") },
+    { label: t("accountSettings"), action: () => openAccountView("settings") },
     { label: t("contacts"), action: () => openDrawer("contacts") },
+    { label: t("subscription"), action: () => openDrawer("subscriptions") },
   ];
 
   const resourcesMenuItems = [
@@ -96,16 +152,6 @@ const Header = () => {
     { label: t("advertisers"), href: "/advertisers" },
     { label: t("about"), href: "/about" },
   ];
-
-  const getMenuItemStyle = (itemLabel: string) => ({
-    backgroundColor:
-      hoverMenu === itemLabel || activeMenu === itemLabel
-        ? "#E5E5E5"
-        : "transparent",
-    color: "#171717",
-    borderRadius: "8px",
-    transition: "background-color 0.2s ease",
-  });
 
   const handleResourcesMouseEnter = () => {
     if (resourcesTimeoutRef.current) {
@@ -196,44 +242,38 @@ const Header = () => {
               }`}
             >
               {!isAuthenticated &&
-                mainMenuItems.map((item) => (
-                  <Link
-                    key={item.label}
-                    href={item.href}
-                    className="ze-menu-item"
-                    onMouseEnter={() => setHoverMenu(item.label)}
-                    onMouseLeave={() => setHoverMenu("")}
-                  >
-                    {item.label}
-                  </Link>
-                ))}
+                mainMenuItems.map((item) =>
+                  item.action ? (
+                    <button
+                      key={item.label}
+                      onClick={item.action}
+                      className="ze-menu-item"
+                    >
+                      {item.label}
+                    </button>
+                  ) : (
+                    <Link
+                      key={item.label}
+                      href={item.href!}
+                      className="ze-menu-item"
+                    >
+                      {item.label}
+                    </Link>
+                  ),
+                )}
 
               {/* Logged in menu items */}
               {isAuthenticated && (
                 <div className="flex items-center space-x-1">
-                  {loggedInMenuItems.map((item) =>
-                    item.action ? (
-                      <button
-                        key={item.label}
-                        onClick={item.action}
-                        className="ze-menu-item"
-                        onMouseEnter={() => setHoverMenu(item.label)}
-                        onMouseLeave={() => setHoverMenu("")}
-                      >
-                        {item.label}
-                      </button>
-                    ) : (
-                      <Link
-                        key={item.label}
-                        href={item.href!}
-                        className="ze-menu-item"
-                        onMouseEnter={() => setHoverMenu(item.label)}
-                        onMouseLeave={() => setHoverMenu("")}
-                      >
-                        {item.label}
-                      </Link>
-                    )
-                  )}
+                  {loggedInMenuItems.map((item) => (
+                    <button
+                      key={item.label}
+                      onClick={item.action}
+                      className="ze-menu-item"
+                    >
+                      {item.label}
+                    </button>
+                  ))}
 
                   {/* Resources Dropdown (logged in only) */}
                   <div
@@ -241,13 +281,9 @@ const Header = () => {
                     onMouseEnter={handleResourcesMouseEnter}
                     onMouseLeave={handleResourcesMouseLeave}
                   >
-                    <button
-                      className="ze-menu-item flex items-center gap-1"
-                      onMouseEnter={() => setHoverMenu("Resources")}
-                      onMouseLeave={() => setHoverMenu("")}
-                    >
+                    <button className="ze-menu-item flex items-center gap-1">
                       {t("resources")}
-                      <ChevronDown className="w-4 h-4" />
+                      <NavArrowDown className="w-4 h-4" />
                     </button>
 
                     {showResourcesDropdown && (
@@ -293,15 +329,19 @@ const Header = () => {
                 }`}
               >
                 <button
-                  onClick={() => setShowAuthPanel(true)}
+                  onClick={() => {
+                    setAuthMode('login');
+                    setShowAuthPanel(true);
+                  }}
                   className="ze-menu-item"
-                  onMouseEnter={() => setHoverMenu("login")}
-                  onMouseLeave={() => setHoverMenu("")}
                 >
                   {t("login")}
                 </button>
                 <button
-                  onClick={() => setShowAuthPanel(true)}
+                  onClick={() => {
+                    setAuthMode('signup');
+                    setShowAuthPanel(true);
+                  }}
                   className="ze-button-primary"
                 >
                   <span className="font-bold">{t("signupBold")}&nbsp;</span>{" "}
@@ -313,82 +353,108 @@ const Header = () => {
             {/* User Menu - Show when authenticated */}
             {isAuthenticated && user && (
               <div
-                className={`ze-user-dropdown relative transition-opacity duration-300 ease-in-out ${
+                className={`flex items-center gap-3 transition-opacity duration-300 ease-in-out ${
                   isAuthTransitioning ? "opacity-0" : "opacity-100"
                 }`}
-                onMouseEnter={handleUserMouseEnter}
-                onMouseLeave={handleUserMouseLeave}
               >
-                <button className="ze-user-button flex items-center space-x-3 hover:opacity-80 transition-opacity">
-                  <span className="text-sm font-bold text-gray-900">
-                    {user.email}
-                  </span>
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-purple-400 flex items-center justify-center">
-                    <span className="text-white font-bold text-sm">
-                      {user.email?.[0]?.toUpperCase() || "U"}
-                    </span>
-                  </div>
-                </button>
-
-                {/* User Dropdown Menu */}
-                {showUserDropdown && (
-                  <div
-                    className="ze-user-dropdown-menu absolute top-full right-0 mt-2 w-72 bg-white rounded-xl shadow-lg border border-gray-200 py-3 z-50"
-                    onMouseEnter={handleUserMouseEnter}
-                    onMouseLeave={handleUserMouseLeave}
+                {/* Upgrade button - Show only for free tier */}
+                {subscriptionTier === "free" && (
+                  <button
+                    onClick={() => openDrawer("subscriptions")}
+                    className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold text-[#5E53E0] hover:text-[#4a42b8] transition-colors"
                   >
-                    {/* User Info Header */}
-                    <div className="px-4 py-3 border-b border-gray-100">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-400 to-pink-400 flex items-center justify-center">
-                          <span className="text-white font-bold">
-                            {user.email?.[0]?.toUpperCase() || "U"}
-                          </span>
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm font-bold text-gray-900">
-                            {user.email}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {t("freePlan")}
-                          </p>
+                    <Sparks className="w-4 h-4" />
+                    {t("upgrade")}
+                  </button>
+                )}
+
+                {/* Separator */}
+                <div
+                  id="ze-menu-separator"
+                  className="ze-menu-separator h-6 mx-3 w-px bg-gray-300"
+                />
+
+                {/* User dropdown */}
+                <div
+                  className="ze-user-dropdown relative"
+                  onMouseEnter={handleUserMouseEnter}
+                  onMouseLeave={handleUserMouseLeave}
+                >
+                  <button className="ze-user-button flex items-center space-x-3 hover:opacity-80 transition-opacity">
+                    <span className="text-sm font-bold text-gray-900">
+                      {user.email}
+                    </span>
+                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-400 to-pink-400 flex items-center justify-center">
+                      <span className="text-white font-bold text-sm">
+                        {user.email?.[0]?.toUpperCase() || "U"}
+                      </span>
+                    </div>
+                  </button>
+
+                  {/* User Dropdown Menu */}
+                  {showUserDropdown && (
+                    <div
+                      className="ze-user-dropdown-menu absolute top-full right-0 mt-2 w-72 bg-white rounded-xl shadow-lg border border-gray-200 py-3 z-50"
+                      onMouseEnter={handleUserMouseEnter}
+                      onMouseLeave={handleUserMouseLeave}
+                    >
+                      {/* User Info Header */}
+                      <div className="px-4 py-3 border-b border-gray-100">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-orange-400 to-pink-400 flex items-center justify-center">
+                            <span className="text-white font-bold">
+                              {user.email?.[0]?.toUpperCase() || "U"}
+                            </span>
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-sm font-bold text-gray-900">
+                              {user.email}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {subscriptionTier === "free"
+                                ? t("freePlan")
+                                : subscriptionTier === "starter"
+                                  ? t("starterPlan")
+                                  : t("proPlan")}
+                            </p>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Menu Items */}
-                    <div className="py-2">
-                      <button
-                        onClick={() => {
-                          setShowUserDropdown(false);
-                          // TODO: Navigate to account settings
-                        }}
-                        className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                      >
-                        {t("accountSettings")}
-                      </button>
-                      <button
-                        onClick={() => {
-                          setShowUserDropdown(false);
-                          // TODO: Navigate to help
-                        }}
-                        className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                      >
-                        {t("help")}
-                      </button>
-                    </div>
+                      {/* Menu Items */}
+                      <div className="py-2">
+                        <button
+                          onClick={() => {
+                            setShowUserDropdown(false);
+                            openAccountView("settings");
+                          }}
+                          className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                        >
+                          {t("accountSettings")}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setShowUserDropdown(false);
+                            openAccountView("help");
+                          }}
+                          className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                        >
+                          {t("help")}
+                        </button>
+                      </div>
 
-                    {/* Logout */}
-                    <div className="border-t border-gray-100 pt-2">
-                      <button
-                        onClick={handleLogoutClick}
-                        className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors font-medium"
-                      >
-                        {t("logout")}
-                      </button>
+                      {/* Logout */}
+                      <div className="border-t border-gray-100 pt-2">
+                        <button
+                          onClick={handleLogoutClick}
+                          className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors font-medium"
+                        >
+                          {t("logout")}
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -398,6 +464,7 @@ const Header = () => {
       <AuthPanel
         isOpen={showAuthPanel}
         onClose={() => setShowAuthPanel(false)}
+        mode={authMode}
       />
 
       {/* Logout confirmation modal when upload is in progress */}

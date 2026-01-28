@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { AlertTriangle, Trash2, Loader2 } from 'lucide-react';
+import { WarningTriangle, Trash } from 'iconoir-react';
 import { useTranslations } from 'next-intl';
 
 export type ConfirmationModalType = 'warning' | 'delete';
@@ -123,11 +123,11 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
           <div className="flex justify-center mb-6">
             {type === 'warning' ? (
               <div className="w-20 h-20 flex items-center justify-center">
-                <AlertTriangle className="w-16 h-16 text-red-500" strokeWidth={1.5} />
+                <WarningTriangle className="w-16 h-16 text-red-500" strokeWidth={1.5} />
               </div>
             ) : (
               <div className="w-20 h-20 flex items-center justify-center">
-                <Trash2 className="w-16 h-16 text-red-500" strokeWidth={1.5} />
+                <Trash className="w-16 h-16 text-red-500" strokeWidth={1.5} />
               </div>
             )}
           </div>
@@ -165,7 +165,6 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
               disabled={isLoading}
               className="flex-1 max-w-[140px] px-6 py-3 text-base font-medium text-[#171717] bg-[#87E64B] rounded-lg hover:bg-[#7ad43f] transition-colors focus:outline-none focus:ring-2 focus:ring-[#87E64B]/50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
               {confirm}
             </button>
           </div>

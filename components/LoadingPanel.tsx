@@ -7,9 +7,11 @@ import zefileLogoAnimation from '@/public/lotties/zefile_logo.json';
 interface LoadingPanelProps {
   message?: string;
   className?: string;
+  /** When true, fills available vertical space for proper centering in containers like drawers */
+  fullHeight?: boolean;
 }
 
-const LoadingPanel: React.FC<LoadingPanelProps> = ({ message, className = '' }) => {
+const LoadingPanel: React.FC<LoadingPanelProps> = ({ message, className = '', fullHeight = false }) => {
   const lottieRef = React.useRef<LottieRefCurrentProps>(null);
 
   React.useEffect(() => {
@@ -18,8 +20,10 @@ const LoadingPanel: React.FC<LoadingPanelProps> = ({ message, className = '' }) 
     }
   }, []);
 
+  const heightClass = fullHeight ? 'h-full min-h-[60vh]' : 'py-8';
+
   return (
-    <div className={`flex flex-col items-center justify-center py-8 ${className}`}>
+    <div className={`flex flex-col items-center justify-center ${heightClass} ${className}`}>
       <Lottie
         lottieRef={lottieRef}
         animationData={zefileLogoAnimation}
@@ -27,9 +31,6 @@ const LoadingPanel: React.FC<LoadingPanelProps> = ({ message, className = '' }) 
         autoplay={true}
         style={{ width: 102, height: 102 }}
       />
-      {message && (
-        <p className="mt-4 px-4 text-sm text-center text-gray-600 max-w-md">{message}</p>
-      )}
     </div>
   );
 };

@@ -5,6 +5,9 @@ import { useTranslations } from 'next-intl';
 import { Xmark, NavArrowLeft, NavArrowRight } from 'iconoir-react';
 import Image from 'next/image';
 
+// API URL for thumbnail proxy
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
 interface FilePreview {
   id: string;
   filename: string;
@@ -33,7 +36,14 @@ const TransferPreviewModal: React.FC<TransferPreviewModalProps> = ({
   if (!isOpen || files.length === 0) return null;
 
   const currentFile = files[currentIndex];
-  const previewUrl = isPaid ? currentFile.fileUrl : currentFile.thumbnailUrl;
+  // Use proxy endpoint for thumbnails (thumbnailUrl is now an S3 key, not a direct URL)
+  const getThumbnailProxyUrl = (file: FilePreview) => {
+    if (file.thumbnailUrl) {
+      return `${API_URL}/storage/thumbnail/${file.id}?type=thumbnail`;
+    }
+    return null;
+  };
+  const previewUrl = isPaid ? currentFile.fileUrl : getThumbnailProxyUrl(currentFile);
 
   const handlePrevious = () => {
     setCurrentIndex((prev) => (prev === 0 ? files.length - 1 : prev - 1));

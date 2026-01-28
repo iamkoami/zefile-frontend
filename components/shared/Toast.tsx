@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { create } from 'zustand';
-import { Check, X, AlertCircle, Info } from 'lucide-react';
+import { Check, Xmark, WarningCircle, InfoCircle } from 'iconoir-react';
 
 // Toast types
 export type ToastType = 'success' | 'error' | 'info' | 'warning';
@@ -75,12 +75,12 @@ const ToastItem: React.FC<{ toast: Toast; onRemove: (id: string) => void }> = ({
       case 'success':
         return <Check className="w-5 h-5 text-[#171717]" />;
       case 'error':
-        return <X className="w-5 h-5 text-[#171717]" />;
+        return <Xmark className="w-5 h-5 text-[#171717]" />;
       case 'warning':
-        return <AlertCircle className="w-5 h-5 text-[#171717]" />;
+        return <WarningCircle className="w-5 h-5 text-[#171717]" />;
       case 'info':
       default:
-        return <Info className="w-5 h-5 text-[#171717]" />;
+        return <InfoCircle className="w-5 h-5 text-[#171717]" />;
     }
   };
 
@@ -113,7 +113,7 @@ const ToastItem: React.FC<{ toast: Toast; onRemove: (id: string) => void }> = ({
         className="flex-shrink-0 p-1 rounded hover:bg-white transition-colors"
         aria-label="Dismiss"
       >
-        <X className="w-4 h-4 text-[#171717]" />
+        <Xmark className="w-4 h-4 text-[#171717]" />
       </button>
     </div>
   );

@@ -2,10 +2,12 @@
 import "@/lib/localStorage-polyfill";
 
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import localFont from "next/font/local";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
+import PostHogProvider from "@/components/providers/PostHogProvider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -100,7 +102,11 @@ export default async function RootLayout({
         suppressHydrationWarning
       >
         <NextIntlClientProvider messages={messages} locale={locale}>
-          {children}
+          <Suspense fallback={null}>
+            <PostHogProvider>
+              {children}
+            </PostHogProvider>
+          </Suspense>
         </NextIntlClientProvider>
       </body>
     </html>

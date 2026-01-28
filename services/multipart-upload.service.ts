@@ -45,6 +45,7 @@ export interface UploadState {
   totalParts: number;
   completedParts: CompletedPart[];
   startTime: number;
+  versionId?: string; // For version uploads
 }
 
 class MultipartUploadService {
@@ -57,7 +58,6 @@ class MultipartUploadService {
    * Uploads will pause before starting the next chunk
    */
   public pause(): void {
-    console.log('[Multipart Upload] Pausing uploads');
     this.isPaused = true;
   }
 
@@ -65,7 +65,6 @@ class MultipartUploadService {
    * Resume paused uploads
    */
   public resume(): void {
-    console.log('[Multipart Upload] Resuming uploads');
     this.isPaused = false;
     // Resolve all waiting promises to continue uploads
     this.pauseResolvers.forEach(resolve => resolve());
@@ -85,7 +84,6 @@ class MultipartUploadService {
   private async waitIfPaused(): Promise<void> {
     if (!this.isPaused) return;
 
-    console.log('[Multipart Upload] Upload paused, waiting for resume...');
     return new Promise<void>((resolve) => {
       this.pauseResolvers.push(resolve);
     });
@@ -119,9 +117,8 @@ class MultipartUploadService {
     try {
       const key = `${this.STORAGE_KEY_PREFIX}${state.uploadId}`;
       localStorage.setItem(key, JSON.stringify(state));
-      console.log('[Upload State] Saved state for upload:', state.uploadId);
     } catch (error) {
-      console.error('[Upload State] Failed to save state:', error);
+      // Silently fail - state save is best-effort for resume capability
     }
   }
 
@@ -136,11 +133,10 @@ class MultipartUploadService {
       const stored = localStorage.getItem(key);
       if (stored) {
         const state = JSON.parse(stored) as UploadState;
-        console.log('[Upload State] Loaded state for upload:', uploadId, `(${state.completedParts.length}/${state.totalParts} parts completed)`);
         return state;
       }
     } catch (error) {
-      console.error('[Upload State] Failed to load state:', error);
+      // Silently fail - corrupted state can be ignored
     }
     return null;
   }
@@ -154,9 +150,8 @@ class MultipartUploadService {
     try {
       const key = `${this.STORAGE_KEY_PREFIX}${uploadId}`;
       localStorage.removeItem(key);
-      console.log('[Upload State] Cleared state for upload:', uploadId);
     } catch (error) {
-      console.error('[Upload State] Failed to clear state:', error);
+      // Silently fail - state clear is best-effort
     }
   }
 
@@ -179,7 +174,7 @@ class MultipartUploadService {
         }
       }
     } catch (error) {
-      console.error('[Upload State] Failed to get incomplete uploads:', error);
+      // Silently fail - return empty array
     }
     return incompleteUploads;
   }
@@ -187,6 +182,7 @@ class MultipartUploadService {
   /**
    * Initialize multipart upload
    * Creates upload session on Wasabi and returns configuration
+   * @param versionId Optional version ID when uploading new version files
    */
   async initiateUpload(
     fileName: string,
@@ -194,7 +190,8 @@ class MultipartUploadService {
     mimeType: string,
     transferShortCode: string,
     uploadedBy: string,
-    transferId: string
+    transferId: string,
+    versionId?: string
   ): Promise<MultipartUploadConfig> {
     const response = await apiClient.post('/storage/multipart/initiate', {
       fileName,
@@ -203,9 +200,21 @@ class MultipartUploadService {
       transferShortCode,
       uploadedBy,
       transferId,
+      versionId,
     });
 
     if (response.error) {
+      // Check for storage limit exceeded error
+      const errorData = response.error as any;
+      if (errorData.code === 'STORAGE_LIMIT_EXCEEDED') {
+        const error = new Error(errorData.message || 'Storage limit exceeded');
+        (error as any).code = 'STORAGE_LIMIT_EXCEEDED';
+        (error as any).tier = errorData.tier;
+        (error as any).currentUsageBytes = errorData.currentUsageBytes;
+        (error as any).limitBytes = errorData.limitBytes;
+        (error as any).remainingBytes = errorData.remainingBytes;
+        throw error;
+      }
       throw new Error(response.error.message || 'Failed to initiate upload');
     }
 
@@ -262,7 +271,6 @@ class MultipartUploadService {
           // Get ETag from response header (required for S3 multipart completion)
           const etag = xhr.getResponseHeader('ETag');
           if (!etag) {
-            console.error('[Chunk Upload] No ETag in response headers');
             reject(new Error('No ETag returned from S3 - chunk may not have been saved'));
             return;
           }
@@ -285,18 +293,15 @@ class MultipartUploadService {
           } catch (e) {
             // Ignore parse errors
           }
-          console.error('[Chunk Upload] Failed:', errorMessage);
           reject(new Error(errorMessage));
         }
       });
 
       xhr.addEventListener('error', () => {
-        console.error('[Chunk Upload] Network error - connection failed');
         reject(new Error('Network error: Unable to connect to storage server'));
       });
 
       xhr.addEventListener('timeout', () => {
-        console.error('[Chunk Upload] Timeout after 5 minutes');
         reject(new Error('Upload timeout: Connection too slow or server not responding'));
       });
 
@@ -323,18 +328,10 @@ class MultipartUploadService {
 
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
-        console.log(`[Chunk Upload] Part ${partNumber} - Attempt ${attempt + 1}/${maxRetries + 1}`);
-
         const etag = await this.uploadChunk(presignedUrl, chunk, onProgress);
-
-        if (attempt > 0) {
-          console.log(`[Chunk Upload] Part ${partNumber} succeeded after ${attempt} retries`);
-        }
-
         return etag;
       } catch (error) {
         lastError = error as Error;
-        console.error(`[Chunk Upload] Part ${partNumber} failed (attempt ${attempt + 1}):`, error);
 
         // If this was the last attempt, throw the error
         if (attempt === maxRetries) {
@@ -345,7 +342,6 @@ class MultipartUploadService {
 
         // Calculate exponential backoff delay: 2^attempt seconds
         const delayMs = Math.pow(2, attempt + 1) * 1000;
-        console.log(`[Chunk Upload] Retrying part ${partNumber} in ${delayMs / 1000}s...`);
 
         // Wait before retrying
         await new Promise(resolve => setTimeout(resolve, delayMs));
@@ -359,6 +355,7 @@ class MultipartUploadService {
   /**
    * Complete multipart upload
    * Finalizes upload on Wasabi and confirms success
+   * @param versionId Optional version ID when uploading new version files
    */
   async completeUpload(
     uploadId: string,
@@ -369,7 +366,8 @@ class MultipartUploadService {
     mimeType: string,
     transferShortCode: string,
     uploadedBy: string,
-    transferId: string
+    transferId: string,
+    versionId?: string
   ): Promise<any> {
     const response = await apiClient.post('/storage/multipart/complete', {
       uploadId,
@@ -381,6 +379,7 @@ class MultipartUploadService {
       transferShortCode,
       uploadedBy,
       transferId,
+      versionId,
     });
 
     if (response.error) {
@@ -411,8 +410,6 @@ class MultipartUploadService {
 
     // Clear upload state after abort
     this.clearUploadState(uploadId);
-
-    console.log('[Multipart Upload] Upload aborted successfully:', uploadId);
   }
 
   /**
@@ -422,6 +419,8 @@ class MultipartUploadService {
    *
    * Supports resume: If an upload was interrupted, pass the same file and it will
    * attempt to resume from the last completed chunk.
+   *
+   * @param versionId Optional version ID when uploading new version files
    */
   async uploadFile(
     file: File,
@@ -430,10 +429,9 @@ class MultipartUploadService {
     transferId: string,
     onProgress: (progress: UploadProgress) => void,
     onUploadStarted?: (uploadId: string, objectKey: string) => void,
-    resumeUploadId?: string
+    resumeUploadId?: string,
+    versionId?: string
   ): Promise<any> {
-    console.log('[Multipart Upload] Starting upload for:', file.name, file.size, 'bytes');
-
     let uploadId: string;
     let objectKey: string;
     let chunkSize: number;
@@ -446,8 +444,6 @@ class MultipartUploadService {
 
     if (existingState && existingState.fileName === file.name && existingState.fileSize === file.size) {
       // Resume existing upload
-      console.log('[Multipart Upload] Resuming upload:', existingState.uploadId, `(${existingState.completedParts.length}/${existingState.totalParts} parts completed)`);
-
       uploadId = existingState.uploadId;
       objectKey = existingState.objectKey;
       chunkSize = existingState.chunkSize;
@@ -467,10 +463,9 @@ class MultipartUploadService {
         file.type,
         transferShortCode,
         uploadedBy,
-        transferId
+        transferId,
+        versionId
       );
-
-      console.log('[Multipart Upload] Initialized:', config);
 
       uploadId = config.uploadId;
       objectKey = config.objectKey;
@@ -498,6 +493,7 @@ class MultipartUploadService {
         totalParts,
         completedParts: [],
         startTime,
+        versionId,
       });
     }
     const CONCURRENT_UPLOADS = 4;
@@ -548,12 +544,6 @@ class MultipartUploadService {
       const end = Math.min(start + chunkSize, file.size);
       const chunk = file.slice(start, end);
 
-      console.log(`[Multipart Upload] Uploading part ${partNumber}/${totalParts}`, {
-        start,
-        end,
-        size: chunk.size
-      });
-
       // Get presigned URL for this part
       const presignedUrl = await this.getPresignedUrl(uploadId, objectKey, partNumber);
 
@@ -568,8 +558,6 @@ class MultipartUploadService {
       chunkProgress.set(partNumber, chunk.size);
       calculateTotalProgress();
 
-      console.log(`[Multipart Upload] Part ${partNumber} completed, ETag: ${etag}`);
-
       return {
         partNumber,
         etag,
@@ -577,8 +565,6 @@ class MultipartUploadService {
     };
 
     // Upload all chunks with concurrency control
-    console.log(`[Multipart Upload] Starting parallel upload with ${CONCURRENT_UPLOADS} concurrent chunks`);
-
     for (let i = 0; i < totalParts; i += CONCURRENT_UPLOADS) {
       // Check if paused before starting new batch
       await this.waitIfPaused();
@@ -616,11 +602,8 @@ class MultipartUploadService {
           totalParts,
           completedParts: [...completedParts],
           startTime,
+          versionId,
         });
-
-        console.log(`[Multipart Upload] Batch completed: ${completedParts.length}/${totalParts} parts uploaded`);
-      } else {
-        console.log(`[Multipart Upload] Skipping batch (all parts already completed)`);
       }
     }
 
@@ -629,8 +612,6 @@ class MultipartUploadService {
 
     // Step 3: Complete upload on backend
     // IMPORTANT: Do NOT report 100% until backend confirms CompleteMultipartUpload succeeded
-    console.log('[Multipart Upload] All chunks uploaded, finalizing with backend...', completedParts.length, 'parts');
-
     // Report 99% while waiting for backend confirmation
     onProgress({
       bytesUploaded: file.size,
@@ -651,23 +632,21 @@ class MultipartUploadService {
         file.type,
         transferShortCode,
         uploadedBy,
-        transferId
+        transferId,
+        versionId
       );
 
       // Validate backend response
       if (!result || !result.success) {
         throw new Error(result?.message || 'Backend did not confirm upload completion');
       }
-
-      console.log('[Multipart Upload] Upload confirmed by backend:', result);
     } catch (completeError: any) {
-      console.error('[Multipart Upload] Backend completion failed:', completeError);
 
       // Try to abort the upload to clean up S3
       try {
         await this.abortUpload(uploadId, objectKey, transferId);
       } catch (abortError) {
-        console.error('[Multipart Upload] Failed to abort after completion error:', abortError);
+        // Silently fail - abort is best-effort cleanup
       }
 
       // Re-throw with clear message

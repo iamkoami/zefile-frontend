@@ -40,6 +40,7 @@ export interface PresignedUrlRequestDto {
   fileIds?: string[];
   password?: string;
   expiresIn?: number;
+  versionId?: string;
 }
 
 export interface PresignedUrlResponseDto {
@@ -56,9 +57,28 @@ export interface PresignedUrlResponseDto {
 export interface ZipDownloadRequestDto {
   shortCode: string;
   password?: string;
-  expiresIn?: number;
+  versionId?: string;
 }
 
+// Response from requesting async ZIP creation
+export interface ZipJobResponseDto {
+  jobId: string;
+  status: 'waiting' | 'active' | 'completed' | 'failed';
+  message: string;
+}
+
+// Response from checking ZIP job status
+export interface ZipJobStatusDto {
+  jobId: string;
+  status: 'waiting' | 'active' | 'completed' | 'failed';
+  progress?: number;
+  zipUrl?: string;
+  totalFiles?: number;
+  estimatedSize?: number;
+  error?: string;
+}
+
+// Legacy response type (kept for compatibility)
 export interface ZipDownloadResponseDto {
   zipUrl: string;
   expiresAt: string;
@@ -124,10 +144,97 @@ export class StorageApi {
   }
 
   /**
-   * Generate ZIP download URL for all transfer files
+   * Request async ZIP creation for all transfer files
+   * Returns a job ID that can be polled for completion
    */
-  async getZipDownloadUrl(data: ZipDownloadRequestDto): Promise<ApiResponse<ZipDownloadResponseDto>> {
-    return apiClient.post<ZipDownloadResponseDto>('/storage/download/zip', data);
+  async requestZipDownload(data: ZipDownloadRequestDto): Promise<ApiResponse<ZipJobResponseDto>> {
+    return apiClient.post<ZipJobResponseDto>('/storage/download/zip', data);
+  }
+
+  /**
+   * Check ZIP creation job status
+   */
+  async getZipJobStatus(jobId: string): Promise<ApiResponse<ZipJobStatusDto>> {
+    return apiClient.get<ZipJobStatusDto>(`/storage/download/zip/status/${jobId}`);
+  }
+
+  /**
+   * Request ZIP download and poll until complete
+   * Convenience method that handles the full async flow
+   */
+  async getZipDownloadUrl(
+    data: ZipDownloadRequestDto,
+    onProgress?: (progress: number) => void
+  ): Promise<ApiResponse<ZipDownloadResponseDto>> {
+    // 1. Request ZIP creation
+    const jobResponse = await this.requestZipDownload(data);
+
+    if (jobResponse.error || !jobResponse.data) {
+      return { ...jobResponse, data: undefined } as ApiResponse<ZipDownloadResponseDto>;
+    }
+
+    const { jobId } = jobResponse.data;
+
+    // 2. Poll for completion
+    return new Promise((resolve) => {
+      const pollInterval = setInterval(async () => {
+        try {
+          const statusResponse = await this.getZipJobStatus(jobId);
+
+          if (statusResponse.error || !statusResponse.data) {
+            clearInterval(pollInterval);
+            resolve({ ...statusResponse, data: undefined } as ApiResponse<ZipDownloadResponseDto>);
+            return;
+          }
+
+          const { status, progress, zipUrl, totalFiles, estimatedSize, error } = statusResponse.data;
+
+          // Report progress
+          if (onProgress && typeof progress === 'number') {
+            onProgress(progress);
+          }
+
+          if (status === 'completed' && zipUrl) {
+            clearInterval(pollInterval);
+            resolve({
+              data: {
+                zipUrl,
+                expiresAt: new Date(Date.now() + 86400000).toISOString(), // 24h from now
+                totalFiles: totalFiles || 0,
+                estimatedSize: estimatedSize || 0,
+              },
+              error: undefined,
+              status: 200,
+            });
+          } else if (status === 'failed') {
+            clearInterval(pollInterval);
+            resolve({
+              data: undefined,
+              error: { message: error || 'ZIP creation failed', statusCode: 500 },
+              status: 500,
+            });
+          }
+          // Continue polling for 'waiting' and 'active' states
+        } catch (pollError) {
+          clearInterval(pollInterval);
+          resolve({
+            data: undefined,
+            error: { message: 'Failed to check ZIP status', statusCode: 500 },
+            status: 500,
+          });
+        }
+      }, 2000); // Poll every 2 seconds
+
+      // Timeout after 10 minutes
+      setTimeout(() => {
+        clearInterval(pollInterval);
+        resolve({
+          data: undefined,
+          error: { message: 'ZIP creation timed out', statusCode: 408 },
+          status: 408,
+        });
+      }, 600000);
+    });
   }
 
   /**
@@ -199,8 +306,50 @@ export class StorageApi {
   }
 
   /**
+   * Stream ZIP download with secure two-step flow
+   * Step 1: POST to validate password and get signed download URL
+   * Step 2: Redirect to signed URL for instant download
+   *
+   * SECURITY:
+   * - Password is sent via POST (not in URL)
+   * - Download URL uses time-limited HMAC signature
+   * - Token expires in 5 minutes
+   *
+   * @param shortCode - Transfer short code
+   * @param password - Optional password for protected transfers
+   * @param versionId - Optional version ID to download specific version (default: current version)
+   */
+  async streamZipDownload(shortCode: string, password?: string, versionId?: string): Promise<ApiResponse<void>> {
+    // Step 1: Get signed download URL
+    const response = await apiClient.post<{ downloadUrl: string; expiresIn: number }>(
+      '/storage/download/zip/token',
+      { shortCode, password, versionId }
+    );
+
+    if (response.error) {
+      return {
+        error: response.error,
+        status: response.status,
+      };
+    }
+
+    if (!response.data?.downloadUrl) {
+      return {
+        error: { message: 'Failed to generate download URL', statusCode: 500 },
+        status: 500,
+      };
+    }
+
+    // Step 2: Redirect to signed download URL (instant download)
+    window.location.href = response.data.downloadUrl;
+
+    return { status: 200 };
+  }
+
+  /**
    * Get download URL for entire transfer (ZIP of all files)
    * Wrapper around getZipDownloadUrl for convenience
+   * @deprecated Use streamZipDownload for instant downloads
    */
   async getTransferDownloadUrl(shortCode: string, password?: string): Promise<ApiResponse<{ url: string }>> {
     const response = await this.getZipDownloadUrl({ shortCode, password });
@@ -215,6 +364,61 @@ export class StorageApi {
    */
   async getFileDownloadUrl(fileId: string, password?: string): Promise<ApiResponse<{ url: string }>> {
     return apiClient.post<{ url: string }>(`/storage/file/${fileId}/download`, { password });
+  }
+
+  /**
+   * Get presigned URL for file preview
+   * Used for in-app file preview without downloading
+   * Returns watermarked preview if available (thumbnail for images, preview clip for video/audio)
+   * Falls back to original file URL for PDFs or files without previews
+   */
+  async getFilePreviewUrl(
+    shortCode: string,
+    fileId: string,
+    password?: string
+  ): Promise<ApiResponse<{
+    url: string;
+    filename: string;
+    mimeType: string;
+    size: number;
+    expiresAt: string;
+    isWatermarked?: boolean;
+    previewType?: 'thumbnail' | 'previewClip' | 'waveform' | 'original';
+  }>> {
+    return apiClient.post<{
+      url: string;
+      filename: string;
+      mimeType: string;
+      size: number;
+      expiresAt: string;
+      isWatermarked?: boolean;
+      previewType?: 'thumbnail' | 'previewClip' | 'waveform' | 'original';
+    }>(
+      '/storage/preview/url',
+      { shortCode, fileId, password }
+    );
+  }
+
+  /**
+   * Regenerate preview for a file (Starter/Pro tier only)
+   * Manually triggers preview regeneration for a specific file
+   * Requires authentication - userId is extracted from JWT token
+   */
+  async regeneratePreview(
+    fileId: string
+  ): Promise<ApiResponse<{
+    success: boolean;
+    message: string;
+    fileId: string;
+  }>> {
+    return apiClient.post<{
+      success: boolean;
+      message: string;
+      fileId: string;
+    }>(
+      `/storage/preview/regenerate/${fileId}`,
+      {}
+    );
   }
 }
 

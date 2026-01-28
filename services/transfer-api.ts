@@ -24,7 +24,7 @@ export interface CreateTransferWithFilesDto extends CreateTransferDto {
 export interface TransferDto {
   id: string;
   shortCode: string;
-  senderId: string | { id: string; email: string };
+  senderId: string | { id: string; email: string; kycStatus?: 'none' | 'pending' | 'under_review' | 'verified' | 'rejected' };
   recipientEmails: string[]; // Changed to array
   title?: string;
   price?: number;
@@ -55,7 +55,17 @@ export interface TransferDto {
     mimeType?: string;
     fileType?: string; // Backend uses fileType
     thumbnailUrl?: string;
+    previewClipUrl?: string; // Video preview clip
+    waveformUrl?: string; // Audio waveform
+    // Version info for filtering by default version
+    version?: {
+      id: string;
+      versionNumber: number;
+      isDefault: boolean;
+    };
   }>;
+  // Versioning
+  versionCount?: number;
 }
 
 export interface UpdateTransferDto {
@@ -106,6 +116,50 @@ export interface ReuseTransferResponse {
   success: boolean;
   message: string;
   transfer?: TransferDto;
+}
+
+export interface CreateVersionDto {
+  senderId: string;
+  changelog?: string;
+  versionLabel?: string;
+  notifyRecipients?: boolean;
+}
+
+export interface CreateVersionResponse {
+  versionId: string;
+  versionNumber: number;
+  versionLabel: string;
+  transferId: string;
+}
+
+export interface TransferVersionDto {
+  id: string;
+  versionNumber: number;
+  versionLabel: string;
+  isDefault: boolean;
+  changelog?: string;
+  createdAt: string;
+  fileCount: number;
+  downloadCount: number;
+}
+
+export interface SetDefaultVersionDto {
+  senderId: string;
+}
+
+export interface VersionLimitDto {
+  currentVersionCount: number;
+  maxVersions: number;
+  remainingVersions: number;
+  tier: string;
+  canCreateNewVersion: boolean;
+}
+
+export interface DeleteVersionResponse {
+  success: boolean;
+  message: string;
+  deletedFiles: number;
+  freedBytes: number;
 }
 
 export interface RequestTransferOtpDto {
@@ -268,9 +322,10 @@ export class TransferApi {
   /**
    * Finalize transfer and send notification emails
    * Call this after all files have been uploaded
+   * Returns isFirstTransfer flag for celebration modal
    */
-  async finalizeTransfer(transferId: string): Promise<ApiResponse<{ success: boolean; message: string }>> {
-    return apiClient.post<{ success: boolean; message: string }>(`/transfers/${transferId}/finalize`, {});
+  async finalizeTransfer(transferId: string): Promise<ApiResponse<{ success: boolean; message: string; isFirstTransfer?: boolean }>> {
+    return apiClient.post<{ success: boolean; message: string; isFirstTransfer?: boolean }>(`/transfers/${transferId}/finalize`, {});
   }
 
   /**
@@ -319,6 +374,76 @@ export class TransferApi {
    */
   async reuseTransfer(sourceTransferId: string, data: ReuseTransferDto): Promise<ApiResponse<ReuseTransferResponse>> {
     return apiClient.post<ReuseTransferResponse>(`/transfers/${sourceTransferId}/reuse`, data);
+  }
+
+  /**
+   * Create a new version for a transfer
+   * Used for uploading updated files without breaking existing links
+   * @param transferId The transfer ID
+   * @param data Version creation data with senderId for ownership validation
+   */
+  async createVersion(transferId: string, data: CreateVersionDto): Promise<ApiResponse<CreateVersionResponse>> {
+    return apiClient.post<CreateVersionResponse>(`/transfers/${transferId}/versions`, data);
+  }
+
+  /**
+   * Get version history for a transfer
+   * Returns all versions ordered by version number descending
+   * @param transferId The transfer ID
+   */
+  async getVersionHistory(transferId: string): Promise<ApiResponse<TransferVersionDto[]>> {
+    return apiClient.get<TransferVersionDto[]>(`/transfers/${transferId}/versions`);
+  }
+
+  /**
+   * Set a version as the default for a transfer
+   * @param transferId The transfer ID
+   * @param versionId The version ID to set as default
+   * @param data Data with senderId for ownership validation
+   */
+  async setDefaultVersion(
+    transferId: string,
+    versionId: string,
+    data: SetDefaultVersionDto
+  ): Promise<ApiResponse<{ success: boolean; message: string }>> {
+    return apiClient.put<{ success: boolean; message: string }>(
+      `/transfers/${transferId}/versions/${versionId}/default`,
+      data
+    );
+  }
+
+  /**
+   * Get version limit information for a transfer
+   * Returns current version count, max allowed, and tier info
+   * @param transferId The transfer ID
+   * @param senderId The sender/owner user ID
+   */
+  async getVersionLimits(
+    transferId: string,
+    senderId: string
+  ): Promise<ApiResponse<VersionLimitDto>> {
+    return apiClient.get<VersionLimitDto>(
+      `/transfers/${transferId}/version-limits?senderId=${senderId}`
+    );
+  }
+
+  /**
+   * Delete a version and its files
+   * Cannot delete the only version
+   * Uses POST to allow body data for ownership validation
+   * @param transferId The transfer ID
+   * @param versionId The version ID to delete
+   * @param data Data with senderId for ownership validation
+   */
+  async deleteVersion(
+    transferId: string,
+    versionId: string,
+    data: { senderId: string }
+  ): Promise<ApiResponse<DeleteVersionResponse>> {
+    return apiClient.post<DeleteVersionResponse>(
+      `/transfers/${transferId}/versions/${versionId}/delete`,
+      data
+    );
   }
 }
 

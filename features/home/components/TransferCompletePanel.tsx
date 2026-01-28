@@ -5,12 +5,14 @@ import { useTranslations } from "next-intl";
 import { Link as LinkIcon } from "iconoir-react";
 import { TransferDto } from "@/services/transfer-api";
 import { useDrawerStore } from "@/stores/drawer-store";
+import CelebrationModal from "./CelebrationModal";
 
 interface TransferCompletePanelProps {
   transferLink: string;
   shortLink: string;
   transfer: TransferDto;
   onSendAnother: () => void;
+  isFirstTransfer?: boolean;
 }
 
 const TransferCompletePanel: React.FC<TransferCompletePanelProps> = ({
@@ -18,12 +20,14 @@ const TransferCompletePanel: React.FC<TransferCompletePanelProps> = ({
   shortLink,
   transfer,
   onSendAnother,
+  isFirstTransfer = false,
 }) => {
   const t = useTranslations("upload");
   const { openDrawerToView } = useDrawerStore();
   const [showSuccess, setShowSuccess] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(isFirstTransfer);
 
   // Handle preview transfer - opens drawer directly to TransferPreviewPanel
   // Uses openDrawerToView so close button is shown (no back navigation needed)
@@ -55,13 +59,29 @@ const TransferCompletePanel: React.FC<TransferCompletePanelProps> = ({
     }, 300);
   };
 
+  // Handle share from celebration modal
+  const handleShareFromCelebration = () => {
+    handleCopyLink();
+  };
+
   return (
-    <div
-      className={`flex flex-col items-center justify-center pt-[40px] transition-all duration-300 ${
-        isTransitioning ? "opacity-0 transform translate-y-4" : "opacity-100"
-      }`}
-    >
-      {/* Success Circle with Gradient Background and Checkmark - Like reference */}
+    <>
+      {/* First Transfer Celebration Modal */}
+      {showCelebration && (
+        <CelebrationModal
+          transferTitle={transfer.title || ""}
+          shortLink={shortLink}
+          onDismiss={() => setShowCelebration(false)}
+          onShare={handleShareFromCelebration}
+        />
+      )}
+
+      <div
+        className={`flex flex-col items-center justify-center pt-[40px] transition-all duration-300 ${
+          isTransitioning ? "opacity-0 transform translate-y-4" : "opacity-100"
+        }`}
+      >
+        {/* Success Circle with Gradient Background and Checkmark - Like reference */}
       <div className="relative mb-8">
         <div
           className="rounded-full flex items-center justify-center transition-all duration-500"
@@ -151,16 +171,17 @@ const TransferCompletePanel: React.FC<TransferCompletePanelProps> = ({
         </div>
       </div>
 
-      {/* Send Another Button */}
-      <button
-        onClick={handleSendAnother}
-        disabled={isTransitioning}
-        className="w-full py-4 px-4 rounded font-semibold text-[#171717] hover:opacity-90 transition-opacity disabled:opacity-50"
-        style={{ backgroundColor: "#87E64B" }}
-      >
-        {t("sendAnother")}
-      </button>
-    </div>
+        {/* Send Another Button */}
+        <button
+          onClick={handleSendAnother}
+          disabled={isTransitioning}
+          className="w-full py-4 px-4 rounded font-semibold text-[#171717] hover:opacity-90 transition-opacity disabled:opacity-50"
+          style={{ backgroundColor: "#87E64B" }}
+        >
+          {t("sendAnother")}
+        </button>
+      </div>
+    </>
   );
 };
 

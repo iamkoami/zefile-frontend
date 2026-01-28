@@ -18,6 +18,22 @@ import { platformApi } from "@/services/platform-api";
 import { multipartUploadService } from "@/services/multipart-upload.service";
 import { useUploadStore } from "@/stores/upload-store";
 
+// Interface for files from an existing transfer (reuse flow)
+export interface ReuseFile {
+  id: string;
+  filename?: string;
+  fileName?: string;
+  size?: number | string;
+  fileSize?: number | string;
+  mimeType?: string;
+}
+
+export interface ReuseTransferData {
+  transferId: string;
+  files: ReuseFile[];
+  title?: string;
+}
+
 interface UploadPanelProps {
   selectedFiles: File[];
   onFilesChange: (files: File[]) => void;
@@ -25,6 +41,8 @@ interface UploadPanelProps {
   maxUploadSize: number;
   selectedFilesSize: number;
   onPanelStateChange?: (state: PanelState) => void;
+  reuseTransferData?: ReuseTransferData | null;
+  onClearReuseData?: () => void;
 }
 
 export type PanelState =
@@ -42,6 +60,8 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
   maxUploadSize,
   selectedFilesSize,
   onPanelStateChange,
+  reuseTransferData,
+  onClearReuseData,
 }) => {
   const t = useTranslations("upload");
   const tCurrency = useTranslations("currency");
@@ -80,6 +100,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
     transferLink: string;
     shortLink: string;
     transfer: TransferDto;
+    isFirstTransfer?: boolean;
   } | null>(null);
 
   // Upload control
@@ -101,15 +122,20 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
   }, []);
 
   // Auto-transition to form when files are added (e.g., via global drag & drop)
-  // Also transition back to initial when all files are removed (unless recipients are pre-filled)
+  // Also transition back to initial when all files are removed (unless recipients or reuse files are pre-filled)
   useEffect(() => {
     if (selectedFiles.length > 0 && panelState === "initial") {
       setPanelState("form");
-    } else if (selectedFiles.length === 0 && panelState === "form" && recipientEmails.length === 0) {
-      // Only revert to initial if no pre-filled recipients
+    } else if (
+      selectedFiles.length === 0 &&
+      panelState === "form" &&
+      recipientEmails.length === 0 &&
+      !reuseTransferData
+    ) {
+      // Only revert to initial if no pre-filled recipients and no reuse files
       setPanelState("initial");
     }
-  }, [selectedFiles.length, panelState, recipientEmails.length]);
+  }, [selectedFiles.length, panelState, recipientEmails.length, reuseTransferData]);
 
   // Listen for add-recipient-to-transfer event from ContactsPanel
   // Pre-fills the recipient email and shows the form
@@ -137,6 +163,18 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
       );
     };
   }, [recipientEmails, panelState]);
+
+  // Transition to form when reuseTransferData is set from parent
+  useEffect(() => {
+    if (reuseTransferData && reuseTransferData.files.length > 0) {
+      if (reuseTransferData.title) {
+        setTitle(reuseTransferData.title);
+      }
+      if (panelState === "initial" || panelState === "complete") {
+        setPanelState("form");
+      }
+    }
+  }, [reuseTransferData, panelState]);
 
   // Notify parent component when panel state changes
   useEffect(() => {
@@ -309,6 +347,52 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
     return Object.keys(errors).length === 0;
   };
 
+  // Handle reuse transfer - create new transfer using files from existing transfer
+  const handleReuseTransfer = async (userId: string) => {
+    if (!reuseTransferData) return;
+
+    try {
+      const transferTitle =
+        title.trim() || reuseTransferData.title || "Untitled Transfer";
+
+      const response = await transferApi.reuseTransfer(reuseTransferData.transferId, {
+        senderId: userId,
+        recipientEmails: recipientEmails,
+        title: transferTitle,
+        message: message || undefined,
+      });
+
+      if (response.error) {
+        setFormErrors({ email: response.error.message });
+        return;
+      }
+
+      if (response.data?.success && response.data.transfer) {
+        const transfer = response.data.transfer;
+
+        // Build transfer links
+        const shortLinkDomain =
+          process.env.NEXT_PUBLIC_SHORT_LINK_DOMAIN || "localhost:3000";
+        const shortCodePrefix = process.env.NEXT_PUBLIC_SHORT_CODE_PREFIX || "z-";
+        const protocol = shortLinkDomain.includes("localhost") ? "http://" : "https://";
+        const transferLink = `${process.env.NEXT_PUBLIC_APP_URL}/transfer/${transfer.id}`;
+        const shortLink = `${protocol}${shortLinkDomain}/${shortCodePrefix}${transfer.shortCode}`;
+
+        setTransferResult({
+          transferLink,
+          shortLink,
+          transfer,
+        });
+
+        setPanelState("complete");
+      } else {
+        setFormErrors({ email: response.data?.message || "Failed to create transfer" });
+      }
+    } catch (error) {
+      setFormErrors({ email: "Failed to create transfer. Please try again." });
+    }
+  };
+
   const handleTransfer = async () => {
     if (!validateForm()) {
       return;
@@ -330,9 +414,13 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
       const storedUser = authApi.getStoredUser();
 
       if (isLoggedIn && storedUser) {
-        // User is logged in, skip OTP and proceed directly to upload
-        console.log("User is already logged in, skipping OTP:", storedUser);
-        await startFileUpload(storedUser.id);
+        // User is logged in, skip OTP and proceed directly
+        // If reusing files from existing transfer, use reuse API
+        if (reuseTransferData) {
+          await handleReuseTransfer(storedUser.id);
+        } else {
+          await startFileUpload(storedUser.id);
+        }
         return;
       }
 
@@ -344,11 +432,8 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
         return;
       }
 
-      console.log("OTP sent successfully:", response.data);
-
       setPanelState("otp");
     } catch (error) {
-      console.error("Failed to send OTP:", error);
       setFormErrors({ email: "Failed to send OTP. Please try again." });
     }
   };
@@ -362,19 +447,16 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
       });
 
       if (authResponse.error) {
-        console.error("OTP verification failed:", authResponse.error.message);
         throw new Error(authResponse.error.message);
       }
 
-      console.log(
-        "OTP verified successfully, user authenticated:",
-        authResponse.data
-      );
-
-      // Now proceed with file upload
-      await startFileUpload(authResponse.data!.user.id);
+      // Now proceed with file upload or reuse transfer
+      if (reuseTransferData) {
+        await handleReuseTransfer(authResponse.data!.user.id);
+      } else {
+        await startFileUpload(authResponse.data!.user.id);
+      }
     } catch (error: any) {
-      console.error("Failed to verify OTP:", error);
       throw error; // Let OTPVerification component handle the error
     }
   };
@@ -382,12 +464,6 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
   const startFileUpload = async (userId: string) => {
     // Calculate total size first
     const total = selectedFiles.reduce((sum, file) => sum + file.size, 0);
-
-    console.log('[Multipart Upload] Starting upload', {
-      totalSize: total,
-      fileCount: selectedFiles.length,
-      timestamp: new Date().toISOString()
-    });
 
     setPanelState("uploading");
     setUploadProgress(0);
@@ -408,7 +484,6 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
 
     try {
       // Step 1: Create transfer metadata (without files)
-      console.log('[Multipart Upload] Creating transfer metadata');
       const transferResponse = await transferApi.createTransfer({
         senderId: userId,
         recipientEmails: recipientEmails,
@@ -419,7 +494,6 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
       });
 
       if (transferResponse.error) {
-        console.error("[Multipart Upload] Failed to create transfer:", transferResponse.error.message);
         resetGlobalUpload();
         setPanelState("form");
         setFormErrors({ email: transferResponse.error.message });
@@ -427,7 +501,6 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
       }
 
       const transfer = transferResponse.data!;
-      console.log('[Multipart Upload] Transfer created:', transfer.id, transfer.shortCode);
 
       // Step 2: Upload each file using multipart upload (directly to Wasabi)
       let totalBytesUploaded = 0;
@@ -435,8 +508,6 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
       for (let i = 0; i < selectedFiles.length; i++) {
         const file = selectedFiles[i];
         const fileStartBytes = totalBytesUploaded;
-
-        console.log(`[Multipart Upload] Uploading file ${i + 1}/${selectedFiles.length}: ${file.name}`);
 
         try {
           await multipartUploadService.uploadFile(
@@ -449,16 +520,6 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
               const currentFileBytes = fileProgress.bytesUploaded;
               const overallBytesUploaded = fileStartBytes + currentFileBytes;
               const overallProgress = (overallBytesUploaded / total) * 100;
-
-              console.log('[Multipart Upload] Progress:', {
-                file: file.name,
-                fileProgress: fileProgress.progress.toFixed(2) + '%',
-                overallProgress: overallProgress.toFixed(2) + '%',
-                bytesUploaded: overallBytesUploaded,
-                totalBytes: total,
-                uploadSpeed: fileProgress.uploadSpeed.toFixed(0) + ' bytes/s',
-                timeRemaining: fileProgress.estimatedTimeRemaining.toFixed(1) + 's'
-              });
 
               // Update UI with REAL progress data (SINGLE SOURCE OF TRUTH)
               setUploadProgress(overallProgress);
@@ -475,40 +536,56 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                 objectKey,
                 transferId: transfer.id,
               });
-              console.log('[Upload Tracking] Upload started:', { uploadId, objectKey });
             }
           );
 
           // Update total bytes uploaded after file completes
           totalBytesUploaded += file.size;
-          console.log(`[Multipart Upload] File ${i + 1} completed`);
 
         } catch (fileError: any) {
-          console.error(`[Multipart Upload] Failed to upload file ${file.name}:`, fileError);
           resetGlobalUpload();
           setPanelState("form");
-          setFormErrors({ email: `Failed to upload ${file.name}: ${fileError.message}` });
+
+          // Handle storage limit exceeded error with upgrade prompt
+          if (fileError.code === 'STORAGE_LIMIT_EXCEEDED') {
+            const formatBytes = (bytes: number) => {
+              if (bytes === 0) return '0 B';
+              const k = 1024;
+              const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+              const i = Math.floor(Math.log(bytes) / Math.log(k));
+              return `${Math.round((bytes / Math.pow(k, i)) * 100) / 100} ${sizes[i]}`;
+            };
+
+            const tierName = fileError.tier?.toUpperCase() || 'FREE';
+            const limitFormatted = formatBytes(fileError.limitBytes || 0);
+            const fileSizeFormatted = formatBytes(file.size);
+
+            setFormErrors({
+              email: t('storageLimitExceeded', {
+                fileSize: fileSizeFormatted,
+                tier: tierName,
+                limit: limitFormatted
+              })
+            });
+          } else {
+            setFormErrors({ email: `Failed to upload ${file.name}: ${fileError.message}` });
+          }
           return;
         }
       }
-
-      console.log("[Multipart Upload] All files uploaded successfully");
 
       // Clear tracked uploads (all completed successfully)
       currentUploadsRef.current = [];
 
       // Step 3: Finalize transfer - this sends email notifications
-      console.log('[Multipart Upload] Finalizing transfer and sending notifications');
+      // Also captures if this is the user's first transfer for celebration
+      let isFirstTransfer = false;
       try {
         const finalizeResponse = await transferApi.finalizeTransfer(transfer.id);
-        if (finalizeResponse.error) {
-          console.warn('[Multipart Upload] Failed to finalize transfer:', finalizeResponse.error.message);
-          // Don't fail the upload, just log the warning
-        } else {
-          console.log('[Multipart Upload] Transfer finalized:', finalizeResponse.data?.message);
+        if (finalizeResponse.data?.isFirstTransfer) {
+          isFirstTransfer = true;
         }
       } catch (finalizeError) {
-        console.warn('[Multipart Upload] Error finalizing transfer:', finalizeError);
         // Don't fail the upload, notifications can be retried
       }
 
@@ -516,6 +593,21 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
       setUploadProgress(100);
       setUploadedSize(total);
       setEstimatedTimeRemaining(0);
+
+      // Step 5: Fetch updated transfer with file data (thumbnails, previews generated async)
+      // Give backend a moment to process previews (they're generated asynchronously)
+      let updatedTransfer = transfer;
+      try {
+        // Small delay to allow preview generation to start
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        const updatedResponse = await transferApi.getTransferById(transfer.id);
+        if (updatedResponse.data) {
+          updatedTransfer = updatedResponse.data;
+        }
+      } catch (fetchError) {
+        // Use original transfer if fetch fails
+        console.warn('Could not fetch updated transfer:', fetchError);
+      }
 
       // Build transfer links
       const shortLinkDomain =
@@ -528,7 +620,8 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
       setTransferResult({
         transferLink,
         shortLink,
-        transfer,
+        transfer: updatedTransfer,
+        isFirstTransfer,
       });
 
       // Update global state - upload complete
@@ -536,7 +629,6 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
 
       setPanelState("complete");
     } catch (error) {
-      console.error("[Upload] Unexpected error:", error);
       resetGlobalUpload();
       setPanelState("form");
       setFormErrors({ email: "Upload failed. Please try again." });
@@ -557,8 +649,6 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
     try {
       // Abort all ongoing multipart uploads
       if (currentUploadsRef.current.length > 0) {
-        console.log('[Upload Cancel] Aborting uploads:', currentUploadsRef.current);
-
         await Promise.allSettled(
           currentUploadsRef.current.map(upload =>
             multipartUploadService.abortUpload(
@@ -569,7 +659,6 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
           )
         );
 
-        console.log('[Upload Cancel] All uploads aborted');
         currentUploadsRef.current = [];
       }
 
@@ -578,7 +667,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
         abortControllerRef.current.abort();
       }
     } catch (error) {
-      console.error('[Upload Cancel] Error aborting uploads:', error);
+      // Silently fail - abort is best-effort cleanup
     }
 
     // Reset global upload state
@@ -619,6 +708,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
     setEstimatedTimeRemaining(0);
     setTransferResult(null);
     setReceivedAmount(0); // Reset received amount
+    onClearReuseData?.(); // Reset reuse transfer data
     resetGlobalUpload(); // Reset global upload protection state
     onFilesChange([]);
   };
@@ -663,6 +753,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
             shortLink={transferResult.shortLink}
             transfer={transferResult.transfer}
             onSendAnother={handleSendAnother}
+            isFirstTransfer={transferResult.isFirstTransfer}
           />
         ) : null;
 
@@ -953,7 +1044,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                 id="ze-transfer-button"
                 className="ze-transfer-button"
                 disabled={
-                  selectedFiles.length === 0 ||
+                  (selectedFiles.length === 0 && !reuseTransferData) ||
                   selectedFilesSize > maxUploadSize
                 }
                 onClick={handleTransfer}

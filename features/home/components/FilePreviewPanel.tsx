@@ -4,6 +4,7 @@ import React, { useRef, useState } from 'react';
 import { Plus, Xmark } from 'iconoir-react';
 import { useTranslations } from 'next-intl';
 import { getFileInputAccept, validateFiles } from '@/lib/constants/supported-file-types';
+import { ReuseTransferData } from './UploadPanel';
 
 interface FilePreviewPanelProps {
   files: File[];
@@ -12,6 +13,8 @@ interface FilePreviewPanelProps {
   isVisible: boolean;
   maxUploadSize: number;
   selectedFilesSize: number;
+  reuseTransferData?: ReuseTransferData | null;
+  onClearReuseData?: () => void;
 }
 
 const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({
@@ -21,6 +24,8 @@ const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({
   isVisible,
   maxUploadSize,
   selectedFilesSize,
+  reuseTransferData,
+  onClearReuseData,
 }) => {
   const t = useTranslations('filePreview');
   const tUpload = useTranslations('upload');
@@ -43,9 +48,27 @@ const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({
     return `${Math.round((bytes / Math.pow(k, i)) * 100) / 100} ${sizes[i]}`;
   };
 
+  // Calculate reuse files size
+  const getReuseFilesSize = (): number => {
+    if (!reuseTransferData?.files) return 0;
+    return reuseTransferData.files.reduce((sum, file) => {
+      const size = typeof file.size === 'string' ? parseInt(file.size, 10) : (file.size || file.fileSize || 0);
+      const sizeNum = typeof size === 'string' ? parseInt(size, 10) : size;
+      return sum + (sizeNum as number);
+    }, 0);
+  };
+
   const getTotalSize = (): string => {
-    const total = files.reduce((sum, file) => sum + file.size, 0);
-    return formatFileSize(total);
+    const localFilesTotal = files.reduce((sum, file) => sum + file.size, 0);
+    const reuseFilesTotal = getReuseFilesSize();
+    return formatFileSize(localFilesTotal + reuseFilesTotal);
+  };
+
+  // Get total file count (local + reuse)
+  const getTotalFileCount = (): number => {
+    const localCount = files.length;
+    const reuseCount = reuseTransferData?.files?.length || 0;
+    return localCount + reuseCount;
   };
 
   const getFileExtension = (filename: string): string => {
@@ -107,16 +130,46 @@ const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({
       <div id="ze-file-preview-content" className="ze-file-preview-content">
         {/* Header */}
         <h2 className="text-lg font-bold mb-6 text-black">
-          {files.length} {files.length > 1 ? t('elements') : t('element')}{' '}
+          {getTotalFileCount()} {getTotalFileCount() > 1 ? t('elements') : t('element')}{' '}
           <span className="font-normal text-gray-500">({getTotalSize()})</span>
         </h2>
 
         {/* File List */}
         <div className="space-y-3 mb-6 max-h-[280px] overflow-y-auto">
+          {/* Reuse files from existing transfer */}
+          {reuseTransferData?.files?.map((file, index) => {
+            const fileName = file.filename || file.fileName || `File ${index + 1}`;
+            const fileSize = typeof file.size === 'string' ? parseInt(file.size, 10) : (file.size || file.fileSize || 0);
+            const fileSizeNum = typeof fileSize === 'string' ? parseInt(fileSize as string, 10) : fileSize;
+            return (
+              <div
+                key={`reuse-${file.id || index}`}
+                className="ze-file-item flex items-center justify-between bg-[#87E64B]/10 border border-[#87E64B]/30 rounded-lg"
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-black truncate">
+                    {fileName}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {formatFileSize(fileSizeNum as number)} - {getFileExtension(fileName)}
+                  </p>
+                </div>
+                <button
+                  onClick={() => onClearReuseData?.()}
+                  className="ml-3 flex-shrink-0 p-1 hover:bg-gray-200 rounded transition-colors"
+                  aria-label={t('removeFile')}
+                >
+                  <Xmark width={20} height={20} color="#171717" strokeWidth={2} />
+                </button>
+              </div>
+            );
+          })}
+
+          {/* Local files */}
           {files.map((file, index) => (
             <div
               key={index}
-              className="ze-file-item flex items-center justify-between bg-gray-100 rounded-lg"
+              className="ze-file-item flex items-center justify-between bg-[#87E64B]/10 border border-[#87E64B]/30 rounded-lg"
             >
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-black truncate">
@@ -129,7 +182,7 @@ const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({
               <button
                 onClick={() => onRemoveFile(index)}
                 className="ml-3 flex-shrink-0 p-1 hover:bg-gray-200 rounded transition-colors"
-                aria-label="Supprimer le fichier"
+                aria-label={t('removeFile')}
               >
                 <Xmark width={20} height={20} color="#171717" strokeWidth={2} />
               </button>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUploadStore } from '@/stores/upload-store';
 
@@ -33,25 +33,53 @@ export function useUploadProtection(): UseUploadProtectionReturn {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [interruptionContext, setInterruptionContext] = useState<InterruptionContext>(null);
   const [pendingPath, setPendingPath] = useState<string | null>(null);
-  const [pendingLogoutCallback, setPendingLogoutCallback] = useState<(() => void) | null>(null);
+
+  // Track upload state in a ref to avoid stale closure in beforeunload
+  const isUploadActiveRef = useRef(false);
+
+  // Keep ref in sync with store state via subscription
+  useEffect(() => {
+    // Subscribe to store changes
+    const unsubscribe = useUploadStore.subscribe((state) => {
+      isUploadActiveRef.current = state.status === 'uploading' || state.status === 'paused';
+    });
+
+    // Set initial value
+    isUploadActiveRef.current = canInterrupt();
+
+    return unsubscribe;
+  }, [canInterrupt]);
 
   // Handle beforeunload (browser close/reload)
+  // Cross-browser compatibility:
+  // - Chrome/Edge: requires returnValue to be set
+  // - Firefox: requires preventDefault()
+  // - Safari: very restrictive, may not show dialog in all cases
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (canInterrupt()) {
-        // Standard way to show browser confirmation dialog
-        e.preventDefault();
-        // Chrome requires returnValue to be set
-        e.returnValue = '';
-        return '';
+      // Use ref to get current upload state (avoids stale closure)
+      if (!isUploadActiveRef.current) {
+        return;
       }
+
+      // Firefox requires preventDefault() to be called first
+      e.preventDefault();
+
+      // Chrome/Edge requires returnValue to be set (legacy but still needed)
+      // Must be a non-empty string for some browsers
+      const message = 'You have an upload in progress. Are you sure you want to leave?';
+      e.returnValue = message;
+
+      // Return value for older browsers
+      return message;
     };
 
-    window.addEventListener('beforeunload', handleBeforeUnload);
+    // Use capture phase to ensure we catch the event before other handlers
+    window.addEventListener('beforeunload', handleBeforeUnload, { capture: true });
     return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('beforeunload', handleBeforeUnload, { capture: true });
     };
-  }, [canInterrupt]);
+  }, []);
 
   // Request navigation interruption - returns true if confirmation is needed
   const requestNavigationInterruption = useCallback(
@@ -94,7 +122,6 @@ export function useUploadProtection(): UseUploadProtectionReturn {
     setShowConfirmation(false);
     setInterruptionContext(null);
     setPendingPath(null);
-    setPendingLogoutCallback(null);
   }, [interruptionContext, pendingPath, router, resetUpload]);
 
   // Cancel the interruption - keep uploading
@@ -102,7 +129,6 @@ export function useUploadProtection(): UseUploadProtectionReturn {
     setShowConfirmation(false);
     setInterruptionContext(null);
     setPendingPath(null);
-    setPendingLogoutCallback(null);
   }, []);
 
   return {

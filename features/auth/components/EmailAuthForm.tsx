@@ -85,8 +85,17 @@ const EmailAuthForm: React.FC<EmailAuthFormProps> = ({ onSuccess }) => {
     }
   };
 
-  const handleOtpSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Auto-submit when all 6 digits are entered
+  useEffect(() => {
+    const otpCode = otp.join('');
+    if (otpCode.length === 6 && step === 'otp' && !loading) {
+      handleOtpSubmit();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [otp]);
+
+  const handleOtpSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     const otpCode = otp.join('');
 
     if (otpCode.length !== 6) {
@@ -152,12 +161,12 @@ const EmailAuthForm: React.FC<EmailAuthFormProps> = ({ onSuccess }) => {
 
   if (step === 'email') {
     return (
-      <div className="ze-email-form">
-        <h2 className="ze-form-title text-2xl font-bold text-gray-900 mb-8">
+      <div className="ze-email-form w-full">
+        <h2 className="ze-form-title text-lg font-semibold text-gray-900 mb-6">
           {t('enterEmailTitle')}
         </h2>
 
-        <form onSubmit={handleEmailSubmit} className="mt-8">
+        <form onSubmit={handleEmailSubmit}>
           <div className="ze-email-input-wrapper relative mb-12">
             <input
               type="email"
@@ -168,11 +177,13 @@ const EmailAuthForm: React.FC<EmailAuthFormProps> = ({ onSuccess }) => {
                 setIsValidEmail(validateEmail(newEmail));
                 setError('');
               }}
-              className="ze-email-input w-full text-7xl font-bold border-none outline-none focus:outline-none bg-transparent text-gray-900 pb-4"
+              className="ze-email-input w-full font-bold border-none outline-none focus:outline-none bg-transparent text-gray-900 pb-4"
               placeholder="cemail@gmail.com"
               style={{
                 caretColor: '#000',
                 fontFamily: 'inherit',
+                fontSize: 'clamp(2.5rem, 6vw, 5rem)',
+                lineHeight: '1.1',
               }}
               autoFocus
             />
@@ -180,13 +191,13 @@ const EmailAuthForm: React.FC<EmailAuthFormProps> = ({ onSuccess }) => {
           </div>
 
           {error && (
-            <p className="text-red-500 text-sm mt-4">{error}</p>
+            <p className="text-red-500 text-sm mb-4">{error}</p>
           )}
 
           <button
             type="submit"
             disabled={loading || !isValidEmail}
-            className="ze-submit-button mt-8 bg-black text-white font-medium py-3 px-8 rounded hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="ze-submit-button bg-black text-white font-medium py-4 px-16 rounded hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ borderRadius: '4px' }}
           >
             {loading ? t('loading') : t('continue')}
@@ -197,63 +208,61 @@ const EmailAuthForm: React.FC<EmailAuthFormProps> = ({ onSuccess }) => {
   }
 
   return (
-    <div className="ze-otp-form flex flex-col">
-      <div className="mb-12">
-        <h2 className="ze-form-title text-3xl font-bold text-gray-900 mb-4">
-          {t('enterOtpTitle')}
-        </h2>
-        <p className="text-gray-500 text-base mb-2">
-          {t('otpSentTo')} <span className="font-medium">{sentTo}</span>.
-        </p>
-        <p className="text-gray-400 text-sm">
-          {t('resendIn')} {resendCountdown > 0 ? `00:${String(resendCountdown).padStart(2, '0')}` : ''}
-        </p>
-      </div>
-
-      <form onSubmit={handleOtpSubmit} className="flex flex-col">
-        <div className="ze-otp-inputs flex gap-4 mb-12">
-          {otp.map((digit, index) => (
-            <input
-              key={index}
-              ref={(el) => {
-                inputRefs.current[index] = el;
-              }}
-              type="text"
-              inputMode="numeric"
-              maxLength={1}
-              value={digit}
-              onChange={(e) => handleOtpChange(index, e.target.value)}
-              onKeyDown={(e) => handleKeyDown(index, e)}
-              className="ze-otp-input w-20 h-24 text-5xl font-bold text-center border-b-2 border-gray-300 focus:border-black outline-none transition-colors bg-transparent"
-              style={{
-                caretColor: '#000',
-              }}
-            />
-          ))}
+    <div className="ze-otp-form w-full">
+      <form onSubmit={handleOtpSubmit} className="flex flex-col md:flex-row md:items-start md:gap-16 lg:gap-24">
+        {/* Left side - Title and info */}
+        <div className="mb-8 md:mb-0 md:flex-shrink-0 md:w-auto">
+          <h2 className="ze-form-title text-2xl md:text-3xl font-bold text-gray-900 mb-4">
+            {t('enterOtpTitle')}
+          </h2>
+          <p className="text-gray-400 text-base mb-1">
+            {t('otpSentTo')} {sentTo}.
+          </p>
+          <p className="text-gray-400 text-base">
+            {resendCountdown > 0 ? (
+              <>{t('resendIn')} 00:{String(resendCountdown).padStart(2, '0')}</>
+            ) : (
+              <button
+                type="button"
+                onClick={handleResendOtp}
+                disabled={loading}
+                className="text-[#171717] hover:text-black font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {t('resendCode')}
+              </button>
+            )}
+          </p>
+          {error && (
+            <p className="text-red-500 text-sm mt-4">{error}</p>
+          )}
         </div>
 
-        {error && (
-          <p className="text-red-500 text-sm mb-4">{error}</p>
-        )}
-
-        <div className="flex flex-col gap-4">
-          <button
-            type="submit"
-            disabled={loading || otp.join('').length !== 6}
-            className="ze-submit-button bg-black text-white font-medium py-3 px-8 rounded hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed self-start"
-            style={{ borderRadius: '4px' }}
-          >
-            {loading ? t('verifying') : t('verify')}
-          </button>
-
-          <button
-            type="button"
-            onClick={handleResendOtp}
-            disabled={resendCountdown > 0 || loading}
-            className="text-gray-600 hover:text-gray-900 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {t('resendCode')}
-          </button>
+        {/* Right side - OTP inputs */}
+        <div className="flex-1">
+          <div className="ze-otp-inputs flex gap-2 md:gap-4">
+            {otp.map((digit, index) => (
+              <div key={index} className="relative flex-1 max-w-[80px] md:max-w-[100px]">
+                <input
+                  ref={(el) => {
+                    inputRefs.current[index] = el;
+                  }}
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={1}
+                  value={digit}
+                  onChange={(e) => handleOtpChange(index, e.target.value)}
+                  onKeyDown={(e) => handleKeyDown(index, e)}
+                  className="ze-otp-input w-full aspect-square font-bold text-center border-b-2 border-gray-200 focus:border-[#171717] outline-none transition-colors bg-transparent text-[#171717]"
+                  style={{
+                    fontSize: 'clamp(3rem, 8vw, 6rem)',
+                    lineHeight: '1',
+                    caretColor: 'transparent',
+                  }}
+                  placeholder="0"
+                />
+              </div>
+            ))}
+          </div>
         </div>
       </form>
     </div>

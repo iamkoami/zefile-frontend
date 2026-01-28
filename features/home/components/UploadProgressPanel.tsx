@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
+import { WarningTriangle } from "iconoir-react";
 
 interface UploadProgressPanelProps {
   progress: number; // 0-100
@@ -26,26 +27,6 @@ const UploadProgressPanel: React.FC<UploadProgressPanelProps> = ({
   // Initialize displayProgress to actual progress to prevent reset when returning from cancel
   const [displayProgress, setDisplayProgress] = useState(Math.round(progress));
   const [showCheck, setShowCheck] = useState(false);
-
-  // Debug: Log all props received
-  useEffect(() => {
-    console.log("[UploadProgressPanel Props]", {
-      progress: progress.toFixed(2) + "%",
-      uploadedSize,
-      totalSize,
-      estimatedTimeRemaining: estimatedTimeRemaining.toFixed(1) + "s",
-      fileCount,
-      isComplete,
-      timestamp: new Date().toISOString(),
-    });
-  }, [
-    progress,
-    uploadedSize,
-    totalSize,
-    estimatedTimeRemaining,
-    fileCount,
-    isComplete,
-  ]);
 
   // Animated counter effect
   useEffect(() => {
@@ -191,10 +172,18 @@ const UploadProgressPanel: React.FC<UploadProgressPanelProps> = ({
         {t("cancel")}
       </button>
 
-      {/* Terms & Privacy Agreement */}
+      {/* Security Note */}
       <div className="w-full mb-3 mt-6 text-xs text-center text-gray-600">
-        <p>{t("securityNote")} </p>
+        <p>{t("securityNote")}</p>
       </div>
+
+      {/* Warning Banner - Don't close page */}
+      {!isComplete && (
+        <div className="w-full mt-4 px-4 py-3 bg-amber-50 border border-amber-200 rounded-lg flex items-center gap-3">
+          <WarningTriangle className="w-5 h-5 text-amber-600 flex-shrink-0" />
+          <p className="text-xs text-amber-800">{t("doNotClosePage")}</p>
+        </div>
+      )}
     </div>
   );
 };

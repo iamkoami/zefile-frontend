@@ -2,12 +2,15 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Header } from '@/components/shared';
-import UploadPanel, { PanelState } from '@/features/home/components/UploadPanel';
+import UploadPanel, { PanelState, ReuseTransferData } from '@/features/home/components/UploadPanel';
 import FilePreviewPanel from '@/features/home/components/FilePreviewPanel';
 import TransferOptionsPanel from '@/features/home/components/TransferOptionsPanel';
 import GlobalDragDropOverlay from '@/features/home/components/GlobalDragDropOverlay';
 import LoadingFullscreen from '@/components/LoadingFullscreen';
+import NPSSurveyModal from '@/components/shared/NPSSurveyModal';
 import { platformApi } from '@/services/platform-api';
+import surveysApi from '@/services/surveys-api';
+import { authApi } from '@/services/auth-api';
 import { SideDrawer } from '@/features/drawer';
 import ToastContainer from '@/components/shared/Toast';
 import { UploadProtectionProvider } from '@/components/providers/UploadProtectionProvider';
@@ -18,6 +21,8 @@ export default function Home() {
   const [maxUploadSize, setMaxUploadSize] = useState<number>(2147483648); // Default 2GB
   const [isLoading, setIsLoading] = useState(true);
   const [uploadPanelState, setUploadPanelState] = useState<PanelState>('initial');
+  const [reuseTransferData, setReuseTransferData] = useState<ReuseTransferData | null>(null);
+  const [showNpsSurvey, setShowNpsSurvey] = useState(false);
 
   // Calculate total size of selected files using useMemo
   const selectedFilesSize = useMemo(() => {
@@ -41,6 +46,27 @@ export default function Home() {
     setIsLoading(false);
   }, []);
 
+  // Check NPS survey status on mount (only for authenticated users)
+  useEffect(() => {
+    const checkNpsSurvey = async () => {
+      // Only check if user is authenticated
+      const user = authApi.getStoredUser();
+      if (!user) return;
+
+      try {
+        const response = await surveysApi.getNpsSurveyStatus();
+        if (response.data?.shouldShow) {
+          // Small delay to let page render first
+          setTimeout(() => setShowNpsSurvey(true), 1500);
+        }
+      } catch (error) {
+        // Silently fail - NPS survey is not critical
+        console.error('Failed to check NPS survey status:', error);
+      }
+    };
+    checkNpsSurvey();
+  }, []);
+
   const handleFilesChange = useCallback((files: File[]) => {
     setSelectedFiles(files);
   }, []);
@@ -57,6 +83,34 @@ export default function Home() {
     setShowOptions(prev => !prev);
   }, []);
 
+  const handleClearReuseData = useCallback(() => {
+    setReuseTransferData(null);
+  }, []);
+
+  // Listen for add-transfer-files-to-upload event from TransferDetailsPanel
+  useEffect(() => {
+    const handleAddTransferFiles = (
+      event: CustomEvent<ReuseTransferData>
+    ) => {
+      const { transferId, files, title } = event.detail;
+      if (transferId && files && files.length > 0) {
+        setReuseTransferData({ transferId, files, title });
+      }
+    };
+
+    window.addEventListener(
+      'add-transfer-files-to-upload',
+      handleAddTransferFiles as EventListener
+    );
+
+    return () => {
+      window.removeEventListener(
+        'add-transfer-files-to-upload',
+        handleAddTransferFiles as EventListener
+      );
+    };
+  }, []);
+
   // Show loading screen while fetching configuration
   if (isLoading) {
     return <LoadingFullscreen />;
@@ -67,6 +121,14 @@ export default function Home() {
       <div id="ze-home-page" className="min-h-screen bg-white">
         {/* Toast notifications */}
         <ToastContainer />
+
+        {/* NPS Survey Modal */}
+        {showNpsSurvey && (
+          <NPSSurveyModal
+            onClose={() => setShowNpsSurvey(false)}
+            onSubmitted={() => setShowNpsSurvey(false)}
+          />
+        )}
 
         {/* Global Drag and Drop Overlay */}
         <GlobalDragDropOverlay onFilesDropped={handleAddMoreFiles} />
@@ -96,17 +158,21 @@ export default function Home() {
                 maxUploadSize={maxUploadSize}
                 selectedFilesSize={selectedFilesSize}
                 onPanelStateChange={setUploadPanelState}
+                reuseTransferData={reuseTransferData}
+                onClearReuseData={handleClearReuseData}
               />
 
-              {/* File Preview Panel - Visible when files selected OR form is showing (for add-to-transfer case) */}
+              {/* File Preview Panel - Visible when files selected OR reuse files OR form is showing */}
               {/* Hidden during OTP, uploading, cancel-confirm, and complete states */}
               <FilePreviewPanel
                 files={selectedFiles}
                 onRemoveFile={handleRemoveFile}
                 onAddMoreFiles={handleAddMoreFiles}
-                isVisible={(selectedFiles.length > 0 || uploadPanelState === 'form') && uploadPanelState !== 'otp' && uploadPanelState !== 'uploading' && uploadPanelState !== 'cancel-confirm' && uploadPanelState !== 'complete'}
+                isVisible={(selectedFiles.length > 0 || reuseTransferData !== null || uploadPanelState === 'form') && uploadPanelState !== 'otp' && uploadPanelState !== 'uploading' && uploadPanelState !== 'cancel-confirm' && uploadPanelState !== 'complete'}
                 maxUploadSize={maxUploadSize}
                 selectedFilesSize={selectedFilesSize}
+                reuseTransferData={reuseTransferData}
+                onClearReuseData={handleClearReuseData}
               />
 
               {/* Transfer Options Panel */}

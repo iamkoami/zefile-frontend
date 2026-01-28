@@ -75,12 +75,10 @@ const OTPVerification: React.FC<OTPVerificationProps> = ({
 
   const handleResendCode = () => {
     // TODO: Implement resend code logic
-    console.log("Resending code to:", email);
   };
 
   const handleLearnMore = () => {
     // TODO: Implement learn more logic
-    console.log("Learn more clicked");
   };
 
   const isButtonDisabled = otpCode.length !== otpLength || isVerifying;
