@@ -1,8 +1,10 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslations } from 'next-intl';
-import { Share, Xmark } from 'iconoir-react';
+import { ShareIos, Xmark } from 'iconoir-react';
+import Lottie, { LottieRefCurrentProps } from 'lottie-react';
+import confettiAnimation from '@/public/lotties/confetti_success.json';
 
 interface CelebrationModalProps {
   transferTitle: string;
@@ -11,18 +13,10 @@ interface CelebrationModalProps {
   onShare: () => void;
 }
 
-interface ConfettiPiece {
-  id: number;
-  left: number;
-  color: string;
-  delay: number;
-  duration: number;
-  rotation: number;
-}
-
 /**
  * CelebrationModal - Shows a confetti celebration for first transfer completion
- * Includes animated confetti, celebration message, and share CTA
+ * Uses Lottie animation for smooth confetti effect
+ * @see Story 7-3: First Transfer Celebration
  */
 const CelebrationModal: React.FC<CelebrationModalProps> = ({
   transferTitle,
@@ -32,32 +26,15 @@ const CelebrationModal: React.FC<CelebrationModalProps> = ({
 }) => {
   const t = useTranslations('celebration');
   const [isVisible, setIsVisible] = useState(false);
-  const [confetti, setConfetti] = useState<ConfettiPiece[]>([]);
+  const lottieRef = useRef<LottieRefCurrentProps>(null);
 
-  // Generate confetti pieces on mount
+  // Fade in modal on mount
   useEffect(() => {
-    const colors = ['#87E64B', '#5E53E0', '#FFD93D', '#FF6B6B', '#4ECDC4', '#FF9F43'];
-    const pieces: ConfettiPiece[] = [];
-
-    for (let i = 0; i < 50; i++) {
-      pieces.push({
-        id: i,
-        left: Math.random() * 100,
-        color: colors[Math.floor(Math.random() * colors.length)],
-        delay: Math.random() * 2,
-        duration: 3 + Math.random() * 2,
-        rotation: Math.random() * 360,
-      });
-    }
-
-    setConfetti(pieces);
-
-    // Fade in modal
     const timer = setTimeout(() => setIsVisible(true), 50);
     return () => clearTimeout(timer);
   }, []);
 
-  // Auto-dismiss after 5 seconds
+  // Auto-dismiss after 8 seconds
   useEffect(() => {
     const timer = setTimeout(() => {
       handleDismiss();
@@ -87,21 +64,21 @@ const CelebrationModal: React.FC<CelebrationModalProps> = ({
         onClick={handleDismiss}
       />
 
-      {/* Confetti container */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {confetti.map((piece) => (
-          <div
-            key={piece.id}
-            className="absolute w-3 h-3 rounded-sm animate-confetti"
-            style={{
-              left: `${piece.left}%`,
-              backgroundColor: piece.color,
-              animationDelay: `${piece.delay}s`,
-              animationDuration: `${piece.duration}s`,
-              transform: `rotate(${piece.rotation}deg)`,
-            }}
-          />
-        ))}
+      {/* Confetti Lottie animation - covers entire viewport */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <Lottie
+          lottieRef={lottieRef}
+          animationData={confettiAnimation}
+          loop={false}
+          autoplay={true}
+          style={{
+            width: '100%',
+            height: '100%',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+          }}
+        />
       </div>
 
       {/* Modal content */}
@@ -146,7 +123,7 @@ const CelebrationModal: React.FC<CelebrationModalProps> = ({
             onClick={handleShare}
             className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-[#87E64B] text-[#171717] font-semibold rounded transition-colors hover:bg-[#78d43f]"
           >
-            <Share className="w-5 h-5" />
+            <ShareIos className="w-5 h-5" />
             {t('shareNow')}
           </button>
           <button
@@ -157,24 +134,6 @@ const CelebrationModal: React.FC<CelebrationModalProps> = ({
           </button>
         </div>
       </div>
-
-      {/* CSS for confetti animation */}
-      <style jsx>{`
-        @keyframes confetti-fall {
-          0% {
-            transform: translateY(-10vh) rotate(0deg);
-            opacity: 1;
-          }
-          100% {
-            transform: translateY(110vh) rotate(720deg);
-            opacity: 0;
-          }
-        }
-        .animate-confetti {
-          animation: confetti-fall linear forwards;
-          top: -20px;
-        }
-      `}</style>
     </div>
   );
 };

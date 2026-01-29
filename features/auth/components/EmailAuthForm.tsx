@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { authApi } from '@/services/auth-api';
+import { useCaptcha, CAPTCHA_ACTIONS } from '@/hooks/useCaptcha';
 import LoadingFullscreen from '@/components/LoadingFullscreen';
 
 interface EmailAuthFormProps {
@@ -11,6 +12,7 @@ interface EmailAuthFormProps {
 
 const EmailAuthForm: React.FC<EmailAuthFormProps> = ({ onSuccess }) => {
   const t = useTranslations('auth');
+  const { executeAsync: executeCaptcha, isEnabled: captchaEnabled } = useCaptcha();
   const [step, setStep] = useState<'email' | 'otp'>('email');
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
@@ -48,10 +50,20 @@ const EmailAuthForm: React.FC<EmailAuthFormProps> = ({ onSuccess }) => {
     setLoading(true);
 
     try {
-      const response = await authApi.requestOTP({ email });
+      // Get CAPTCHA token if enabled (invisible to user)
+      const captchaToken = captchaEnabled
+        ? await executeCaptcha(CAPTCHA_ACTIONS.REQUEST_OTP)
+        : null;
+
+      const response = await authApi.requestOTP({ email, captchaToken });
 
       if (response.error) {
-        setError(response.error.message);
+        // Handle CAPTCHA-specific errors
+        if (response.error.code === 'CAPTCHA_FAILED') {
+          setError(t('captchaFailed'));
+        } else {
+          setError(response.error.message);
+        }
       } else {
         setSentTo(email);
         setStep('otp');
@@ -138,10 +150,19 @@ const EmailAuthForm: React.FC<EmailAuthFormProps> = ({ onSuccess }) => {
     setError('');
 
     try {
-      const response = await authApi.requestOTP({ email });
+      // Get CAPTCHA token if enabled (invisible to user)
+      const captchaToken = captchaEnabled
+        ? await executeCaptcha(CAPTCHA_ACTIONS.REQUEST_OTP)
+        : null;
+
+      const response = await authApi.requestOTP({ email, captchaToken });
 
       if (response.error) {
-        setError(response.error.message);
+        if (response.error.code === 'CAPTCHA_FAILED') {
+          setError(t('captchaFailed'));
+        } else {
+          setError(response.error.message);
+        }
       } else {
         setResendCountdown(30);
         setOtp(['', '', '', '', '', '']);

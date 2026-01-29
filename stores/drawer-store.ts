@@ -13,7 +13,7 @@ import type { SubscriptionTier, BillingPeriod } from '@/services/subscription-ap
 export type { SubscriptionTier, BillingPeriod };
 
 // Base drawer views
-export type DrawerView = 'transfers' | 'contacts' | 'subscriptions' | 'payment' | 'account' | 'analytics';
+export type DrawerView = 'transfers' | 'contacts' | 'subscriptions' | 'payment' | 'account' | 'analytics' | 'poll';
 
 // Account sidebar menu items (sidebar navigation, not stack-based)
 export type AccountMenuItem =
@@ -71,6 +71,8 @@ export interface DrawerPayload {
   paymentFlowData?: PaymentFlowData;
   // Subscription checkout data
   subscriptionCheckout?: SubscriptionCheckoutData;
+  // Poll data
+  pollId?: string;
 }
 
 // Navigation stack entry for back button functionality
@@ -133,6 +135,9 @@ interface DrawerState {
   // Account view actions
   setActiveAccountMenu: (menu: AccountMenuItem) => void;
   openAccountView: (menu?: AccountMenuItem) => void;
+
+  // Poll view actions
+  openPollView: (pollId: string) => void;
 }
 
 export const useDrawerStore = create<DrawerState>((set, get) => ({
@@ -350,6 +355,19 @@ export const useDrawerStore = create<DrawerState>((set, get) => ({
       selectedTransfer: null,
       transferRole: null,
       activeAccountMenu: menu ?? 'settings',
+      onBeforeBack: null,
+    }),
+
+  // Open poll view with specific poll
+  openPollView: (pollId) =>
+    set({
+      isOpen: true,
+      view: 'poll',
+      payload: { pollId },
+      navigationStack: [],
+      currentContentView: 'list',
+      selectedTransfer: null,
+      transferRole: null,
       onBeforeBack: null,
     }),
 }));

@@ -133,14 +133,22 @@ export const defaultIconProps = {
 } as const;
 
 // Helper to get file type icon component
-export const getFileTypeIcon = (fileType: string) => {
-  const iconMap: Record<string, string> = {
-    image: 'MediaImage',
-    video: 'VideoCamera',
-    audio: 'MusicDoubleNote',
-    archive: 'Archive',
-    document: 'PageEdit',
-    default: 'Page',
-  };
-  return iconMap[fileType] || iconMap.default;
+// Returns the icon component for rendering
+import { MediaImage, VideoCamera, MusicDoubleNote, Archive, PageEdit, Page } from 'iconoir-react';
+import type { ComponentType, SVGProps } from 'react';
+
+type IconComponent = ComponentType<SVGProps<SVGSVGElement>>;
+
+const fileTypeIconMap: Record<string, IconComponent> = {
+  image: MediaImage,
+  video: VideoCamera,
+  audio: MusicDoubleNote,
+  archive: Archive,
+  document: PageEdit,
+  pdf: PageEdit,
+  default: Page,
+};
+
+export const getFileTypeIcon = (fileType: string): IconComponent => {
+  return fileTypeIconMap[fileType] || fileTypeIconMap.default;
 };

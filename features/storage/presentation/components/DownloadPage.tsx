@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { TransferEntity, TrackingParams } from '../../domain/entities/transfer.entity';
 import { storageApi } from '@/services/storage-api';
+import ReportIssueButton from '@/components/shared/ReportIssueButton';
 
 interface DownloadPageProps {
   transfer: TransferEntity | null;
@@ -301,6 +302,16 @@ export function DownloadPage({
           {trackingParams.z_sid && (
             <p className="mt-1 text-xs">Session ID: {trackingParams.z_sid}</p>
           )}
+
+          {/* Report Issue Button */}
+          <div className="mt-6 pt-4 border-t border-gray-200">
+            <ReportIssueButton
+              transferId={transfer.id}
+              shortCode={transfer.shortCode}
+              role="recipient"
+              variant="link"
+            />
+          </div>
         </div>
       </div>
     </div>

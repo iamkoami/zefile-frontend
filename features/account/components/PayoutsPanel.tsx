@@ -2,13 +2,9 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
-import { Wallet, Calendar, NavArrowDown, InfoCircle } from 'iconoir-react';
-import { transactionsApi, TransactionDto, TransactionStatus } from '@/services/transactions-api';
-import { getCurrentUserId } from '@/utils/auth';
+import { Wallet, Calendar, NavArrowDown, InfoCircle, Refresh, WarningCircle, Check, Clock, Send } from 'iconoir-react';
+import { payoutsApi, PayoutStatus, PayoutMethod, SenderPayoutsResponse } from '@/services/payouts-api';
 import LoadingPanel from '@/components/LoadingPanel';
-
-// Payout status type (for future implementation)
-export type PayoutStatus = 'pending' | 'processing' | 'completed' | 'failed';
 
 // Period filter options
 type PeriodFilter = 'all' | '7days' | '30days' | '90days' | 'year';
@@ -22,31 +18,36 @@ const PayoutsPanel: React.FC = () => {
   const locale = useLocale();
 
   // State
-  const [transactions, setTransactions] = useState<TransactionDto[]>([]);
+  const [payoutsData, setPayoutsData] = useState<SenderPayoutsResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isRetrying, setIsRetrying] = useState<string | null>(null);
 
   // Filter
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('all');
+  const [statusFilter, setStatusFilter] = useState<PayoutStatus | 'all'>('all');
   const [isPeriodOpen, setIsPeriodOpen] = useState(false);
+  const [isStatusOpen, setIsStatusOpen] = useState(false);
 
-  // Load transactions to calculate available balance
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+
+  // Load payouts
   useEffect(() => {
-    const fetchTransactions = async () => {
-      const userId = getCurrentUserId();
-      if (!userId) {
-        setError(t('authRequired'));
-        setIsLoading(false);
-        return;
-      }
-
+    const fetchPayouts = async () => {
       setIsLoading(true);
       setError(null);
 
       try {
-        const response = await transactionsApi.getPaymentHistory(userId);
+        const response = await payoutsApi.getSenderPayouts({
+          status: statusFilter !== 'all' ? statusFilter : undefined,
+          page: currentPage,
+          limit: pageSize,
+        });
+
         if (response.data) {
-          setTransactions(response.data);
+          setPayoutsData(response.data);
         } else if (response.error) {
           setError(response.error.message);
         }
@@ -57,27 +58,87 @@ const PayoutsPanel: React.FC = () => {
       }
     };
 
-    fetchTransactions();
-  }, [t]);
+    fetchPayouts();
+  }, [t, statusFilter, currentPage]);
 
-  // Calculate available balance (total received - already withdrawn)
-  // For now, this is a simplified calculation based on successful transactions
+  // Filter by period (client-side for now)
+  const filteredPayouts = useMemo(() => {
+    if (!payoutsData?.payouts) return [];
+
+    return payoutsData.payouts.filter((payout) => {
+      if (periodFilter === 'all') return true;
+
+      const payoutDate = new Date(payout.createdAt);
+      const now = new Date();
+      const diffDays = Math.floor((now.getTime() - payoutDate.getTime()) / (1000 * 60 * 60 * 24));
+
+      switch (periodFilter) {
+        case '7days':
+          return diffDays <= 7;
+        case '30days':
+          return diffDays <= 30;
+        case '90days':
+          return diffDays <= 90;
+        case 'year':
+          return diffDays <= 365;
+        default:
+          return true;
+      }
+    });
+  }, [payoutsData, periodFilter]);
+
+  // Calculate summary from payouts
   const { availableBalance, pendingBalance, totalEarned } = useMemo(() => {
-    let total = 0;
-    transactions.forEach((tx) => {
-      if (tx.transactionStatus === TransactionStatus.SUCCESS) {
-        total += tx.amountPaid;
+    if (!payoutsData?.payouts) {
+      return { availableBalance: 0, pendingBalance: 0, totalEarned: 0 };
+    }
+
+    let completed = 0;
+    let pending = 0;
+
+    payoutsData.payouts.forEach((payout) => {
+      if (payout.status === PayoutStatus.COMPLETED) {
+        completed += payout.amountMinorUnits;
+      } else if (
+        payout.status === PayoutStatus.PENDING ||
+        payout.status === PayoutStatus.PROCESSING ||
+        payout.status === PayoutStatus.SENT
+      ) {
+        pending += payout.amountMinorUnits;
       }
     });
 
-    // In a real implementation, we would subtract already withdrawn amounts
-    // For now, showing total as available
     return {
-      totalEarned: total,
-      availableBalance: total, // Would be: total - withdrawn
-      pendingBalance: 0, // Payouts in processing
+      totalEarned: completed + pending,
+      availableBalance: completed,
+      pendingBalance: pending,
     };
-  }, [transactions]);
+  }, [payoutsData]);
+
+  // Handle retry payout
+  const handleRetryPayout = async (payoutId: string) => {
+    setIsRetrying(payoutId);
+    try {
+      const response = await payoutsApi.retryPayout(payoutId);
+      if (response.data) {
+        // Refresh the list
+        const refreshResponse = await payoutsApi.getSenderPayouts({
+          status: statusFilter !== 'all' ? statusFilter : undefined,
+          page: currentPage,
+          limit: pageSize,
+        });
+        if (refreshResponse.data) {
+          setPayoutsData(refreshResponse.data);
+        }
+      } else if (response.error) {
+        setError(response.error.message);
+      }
+    } catch (err) {
+      setError(t('retryError'));
+    } finally {
+      setIsRetrying(null);
+    }
+  };
 
   // Format currency
   const formatAmount = (amount: number, currency: string = 'XOF'): string => {
@@ -96,6 +157,70 @@ const PayoutsPanel: React.FC = () => {
     return currency === 'XOF' ? `${formatted} ${symbol}` : `${symbol}${formatted}`;
   };
 
+  // Format date
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
+  };
+
+  // Get status badge
+  const getStatusBadge = (status: PayoutStatus): { label: string; className: string; icon: React.ReactNode } => {
+    switch (status) {
+      case PayoutStatus.COMPLETED:
+        return {
+          label: t('statusCompleted'),
+          className: 'bg-green-100 text-green-700',
+          icon: <Check className="w-3 h-3" />,
+        };
+      case PayoutStatus.PENDING:
+        return {
+          label: t('statusPending'),
+          className: 'bg-yellow-100 text-yellow-700',
+          icon: <Clock className="w-3 h-3" />,
+        };
+      case PayoutStatus.PROCESSING:
+        return {
+          label: t('statusProcessing'),
+          className: 'bg-blue-100 text-blue-700',
+          icon: <Clock className="w-3 h-3 animate-pulse" />,
+        };
+      case PayoutStatus.SENT:
+        return {
+          label: t('statusSent'),
+          className: 'bg-purple-100 text-purple-700',
+          icon: <Send className="w-3 h-3" />,
+        };
+      case PayoutStatus.FAILED:
+        return {
+          label: t('statusFailed'),
+          className: 'bg-red-100 text-red-700',
+          icon: <WarningCircle className="w-3 h-3" />,
+        };
+      default:
+        return {
+          label: status,
+          className: 'bg-gray-100 text-gray-700',
+          icon: null,
+        };
+    }
+  };
+
+  // Get payout method label
+  const getMethodLabel = (method: PayoutMethod): string => {
+    switch (method) {
+      case PayoutMethod.MOBILE_MONEY:
+        return t('methodMobileMoney');
+      case PayoutMethod.BANK_TRANSFER:
+        return t('methodBankTransfer');
+      default:
+        return method;
+    }
+  };
+
   // Period options
   const periodOptions: { value: PeriodFilter; label: string }[] = [
     { value: 'all', label: t('periodAll') },
@@ -103,6 +228,16 @@ const PayoutsPanel: React.FC = () => {
     { value: '30days', label: t('period30days') },
     { value: '90days', label: t('period90days') },
     { value: 'year', label: t('periodYear') },
+  ];
+
+  // Status options
+  const statusOptions: { value: PayoutStatus | 'all'; label: string }[] = [
+    { value: 'all', label: t('statusAll') },
+    { value: PayoutStatus.PENDING, label: t('statusPending') },
+    { value: PayoutStatus.PROCESSING, label: t('statusProcessing') },
+    { value: PayoutStatus.SENT, label: t('statusSent') },
+    { value: PayoutStatus.COMPLETED, label: t('statusCompleted') },
+    { value: PayoutStatus.FAILED, label: t('statusFailed') },
   ];
 
   if (isLoading) {
@@ -121,9 +256,7 @@ const PayoutsPanel: React.FC = () => {
     <div>
       {/* Header */}
       <div className="mb-8">
-        <h3 className="text-xl font-semibold text-[#171717] mb-2">
-          {t('title')}
-        </h3>
+        <h3 className="text-xl font-semibold text-[#171717] mb-2">{t('title')}</h3>
         <p className="text-gray-500 text-sm">{t('subtitle')}</p>
       </div>
 
@@ -135,20 +268,16 @@ const PayoutsPanel: React.FC = () => {
             <Wallet className="w-5 h-5 text-[#87E64B]" />
             <span className="text-sm text-gray-600">{t('availableBalance')}</span>
           </div>
-          <p className="text-2xl font-bold text-[#171717]">
-            {formatAmount(availableBalance)}
-          </p>
+          <p className="text-2xl font-bold text-[#171717]">{formatAmount(availableBalance)}</p>
         </div>
 
         {/* Pending Payouts */}
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
           <div className="flex items-center gap-2 mb-2">
-            <Calendar className="w-5 h-5 text-gray-400" />
+            <Clock className="w-5 h-5 text-gray-400" />
             <span className="text-sm text-gray-600">{t('pendingPayouts')}</span>
           </div>
-          <p className="text-2xl font-bold text-[#171717]">
-            {formatAmount(pendingBalance)}
-          </p>
+          <p className="text-2xl font-bold text-[#171717]">{formatAmount(pendingBalance)}</p>
         </div>
 
         {/* Total Earned */}
@@ -157,9 +286,7 @@ const PayoutsPanel: React.FC = () => {
             <Wallet className="w-5 h-5 text-gray-400" />
             <span className="text-sm text-gray-600">{t('totalEarned')}</span>
           </div>
-          <p className="text-2xl font-bold text-[#171717]">
-            {formatAmount(totalEarned)}
-          </p>
+          <p className="text-2xl font-bold text-[#171717]">{formatAmount(totalEarned)}</p>
         </div>
       </div>
 
@@ -170,14 +297,16 @@ const PayoutsPanel: React.FC = () => {
           <div>
             <h4 className="font-medium text-[#171717] mb-1">{t('withdrawalInfo')}</h4>
             <p className="text-sm text-gray-600">{t('withdrawalDescription')}</p>
-            <p className="text-sm text-gray-500 mt-2">{t('minimumWithdrawal')}: {formatAmount(100000)}</p>
+            <p className="text-sm text-gray-500 mt-2">
+              {t('minimumWithdrawal')}: {formatAmount(100000)}
+            </p>
           </div>
         </div>
       </div>
 
       {/* Request Withdrawal Button */}
       <button
-        disabled={availableBalance < 100000} // Minimum 1000 XOF
+        disabled={availableBalance < 100000}
         className="w-full md:w-auto px-6 py-3 bg-[#87E64B] text-[#171717] font-medium rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed mb-8"
       >
         {t('requestWithdrawal')}
@@ -188,45 +317,204 @@ const PayoutsPanel: React.FC = () => {
         <div className="flex items-center justify-between mb-4">
           <h4 className="font-semibold text-[#171717]">{t('payoutHistory')}</h4>
 
-          {/* Period Filter */}
-          <div className="relative">
-            <button
-              onClick={() => setIsPeriodOpen(!isPeriodOpen)}
-              className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded bg-white hover:border-gray-400 transition-colors min-w-[140px]"
-            >
-              <Calendar className="w-4 h-4 text-gray-500" />
-              <span className="flex-1 text-left text-sm">
-                {periodOptions.find((o) => o.value === periodFilter)?.label}
-              </span>
-              <NavArrowDown className={`w-4 h-4 text-gray-500 transition-transform ${isPeriodOpen ? 'rotate-180' : ''}`} />
-            </button>
-            {isPeriodOpen && (
-              <div className="absolute top-full right-0 mt-1 w-full bg-white border border-gray-200 rounded shadow-lg z-10">
-                {periodOptions.map((option) => (
-                  <button
-                    key={option.value}
-                    onClick={() => {
-                      setPeriodFilter(option.value);
-                      setIsPeriodOpen(false);
-                    }}
-                    className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 ${
-                      periodFilter === option.value ? 'bg-[#87E64B]/10 text-[#171717] font-medium' : 'text-gray-700'
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-            )}
+          <div className="flex items-center gap-3">
+            {/* Status Filter */}
+            <div className="relative">
+              <button
+                onClick={() => {
+                  setIsStatusOpen(!isStatusOpen);
+                  setIsPeriodOpen(false);
+                }}
+                className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded bg-white hover:border-gray-400 transition-colors min-w-[140px]"
+              >
+                <span className="flex-1 text-left text-sm">
+                  {statusOptions.find((o) => o.value === statusFilter)?.label}
+                </span>
+                <NavArrowDown
+                  className={`w-4 h-4 text-gray-500 transition-transform ${isStatusOpen ? 'rotate-180' : ''}`}
+                />
+              </button>
+              {isStatusOpen && (
+                <div className="absolute top-full right-0 mt-1 w-full bg-white border border-gray-200 rounded shadow-lg z-10">
+                  {statusOptions.map((option) => (
+                    <button
+                      key={option.value}
+                      onClick={() => {
+                        setStatusFilter(option.value);
+                        setIsStatusOpen(false);
+                        setCurrentPage(1);
+                      }}
+                      className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 ${
+                        statusFilter === option.value ? 'bg-[#87E64B]/10 text-[#171717] font-medium' : 'text-gray-700'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Period Filter */}
+            <div className="relative">
+              <button
+                onClick={() => {
+                  setIsPeriodOpen(!isPeriodOpen);
+                  setIsStatusOpen(false);
+                }}
+                className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded bg-white hover:border-gray-400 transition-colors min-w-[140px]"
+              >
+                <Calendar className="w-4 h-4 text-gray-500" />
+                <span className="flex-1 text-left text-sm">
+                  {periodOptions.find((o) => o.value === periodFilter)?.label}
+                </span>
+                <NavArrowDown
+                  className={`w-4 h-4 text-gray-500 transition-transform ${isPeriodOpen ? 'rotate-180' : ''}`}
+                />
+              </button>
+              {isPeriodOpen && (
+                <div className="absolute top-full right-0 mt-1 w-full bg-white border border-gray-200 rounded shadow-lg z-10">
+                  {periodOptions.map((option) => (
+                    <button
+                      key={option.value}
+                      onClick={() => {
+                        setPeriodFilter(option.value);
+                        setIsPeriodOpen(false);
+                      }}
+                      className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 ${
+                        periodFilter === option.value ? 'bg-[#87E64B]/10 text-[#171717] font-medium' : 'text-gray-700'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Empty State */}
-        <div className="text-center py-12 bg-gray-50 rounded-lg">
-          <Wallet className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-500">{t('noPayouts')}</p>
-          <p className="text-sm text-gray-400 mt-1">{t('noPayoutsHint')}</p>
-        </div>
+        {/* Payouts List */}
+        {filteredPayouts.length === 0 ? (
+          <div className="text-center py-12 bg-gray-50 rounded-lg">
+            <Wallet className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-500">{t('noPayouts')}</p>
+            <p className="text-sm text-gray-400 mt-1">{t('noPayoutsHint')}</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {filteredPayouts.map((payout) => {
+              const statusBadge = getStatusBadge(payout.status);
+              const canRetry = payout.status === PayoutStatus.FAILED && payout.retryCount < 3;
+
+              return (
+                <div
+                  key={payout.id}
+                  className="bg-white border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      {/* Transfer Title */}
+                      <p className="font-medium text-[#171717] mb-1">
+                        {payout.paymentId?.transferId?.title || t('untitledTransfer')}
+                      </p>
+
+                      {/* Details Row */}
+                      <div className="flex items-center gap-4 text-sm text-gray-500">
+                        <span>{formatDate(payout.createdAt)}</span>
+                        <span>•</span>
+                        <span>{getMethodLabel(payout.method)}</span>
+                        {payout.accountDetailsMasked && (
+                          <>
+                            <span>•</span>
+                            <span>{payout.accountDetailsMasked}</span>
+                          </>
+                        )}
+                      </div>
+
+                      {/* Failure Reason */}
+                      {payout.status === PayoutStatus.FAILED && payout.failureReason && (
+                        <p className="text-sm text-red-500 mt-2">{payout.failureReason}</p>
+                      )}
+
+                      {/* Estimated Arrival */}
+                      {(payout.status === PayoutStatus.PENDING ||
+                        payout.status === PayoutStatus.PROCESSING ||
+                        payout.status === PayoutStatus.SENT) &&
+                        payout.estimatedArrival && (
+                          <p className="text-sm text-gray-500 mt-2">
+                            {t('estimatedArrival')}: {formatDate(payout.estimatedArrival)}
+                          </p>
+                        )}
+                    </div>
+
+                    {/* Right Side: Amount + Status */}
+                    <div className="text-right ml-4">
+                      <p className="font-semibold text-[#171717] mb-2">
+                        {formatAmount(payout.amountMinorUnits, payout.currency)}
+                      </p>
+
+                      {/* Status Badge */}
+                      <span
+                        className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded ${statusBadge.className}`}
+                      >
+                        {statusBadge.icon}
+                        {statusBadge.label}
+                      </span>
+
+                      {/* Retry Button */}
+                      {canRetry && (
+                        <button
+                          onClick={() => handleRetryPayout(payout.id)}
+                          disabled={isRetrying === payout.id}
+                          className="mt-2 flex items-center gap-1 text-sm text-[#5E53E0] hover:underline disabled:opacity-50"
+                        >
+                          <Refresh className={`w-4 h-4 ${isRetrying === payout.id ? 'animate-spin' : ''}`} />
+                          {t('retryPayout')}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Reference */}
+                  <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-400">
+                    <span>
+                      {t('reference')}: {payout.reference}
+                    </span>
+                    {payout.retryCount > 0 && (
+                      <span>
+                        {t('retryCount')}: {payout.retryCount}/3
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {payoutsData && payoutsData.totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2 mt-6">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1 border border-gray-300 rounded text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {t('previous')}
+            </button>
+            <span className="text-sm text-gray-600">
+              {currentPage} / {payoutsData.totalPages}
+            </span>
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(payoutsData.totalPages, p + 1))}
+              disabled={currentPage === payoutsData.totalPages}
+              className="px-3 py-1 border border-gray-300 rounded text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {t('next')}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

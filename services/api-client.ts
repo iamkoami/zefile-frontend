@@ -13,6 +13,7 @@ export interface ApiError {
   message: string;
   statusCode: number;
   error?: string;
+  code?: string;
 }
 
 export class ApiClient {
@@ -188,6 +189,7 @@ export class ApiClient {
             message: responseData?.message || 'An error occurred',
             statusCode: response.status,
             error: responseData?.error,
+            code: responseData?.code,
           },
           status: response.status,
         };

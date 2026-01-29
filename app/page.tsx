@@ -8,6 +8,7 @@ import TransferOptionsPanel from '@/features/home/components/TransferOptionsPane
 import GlobalDragDropOverlay from '@/features/home/components/GlobalDragDropOverlay';
 import LoadingFullscreen from '@/components/LoadingFullscreen';
 import NPSSurveyModal from '@/components/shared/NPSSurveyModal';
+import FloatingPollWidget from '@/components/shared/FloatingPollWidget';
 import { platformApi } from '@/services/platform-api';
 import surveysApi from '@/services/surveys-api';
 import { authApi } from '@/services/auth-api';
@@ -129,6 +130,9 @@ export default function Home() {
             onSubmitted={() => setShowNpsSurvey(false)}
           />
         )}
+
+        {/* Floating Poll Widget - non-intrusive, bottom-right corner */}
+        <FloatingPollWidget trigger="manual" />
 
         {/* Global Drag and Drop Overlay */}
         <GlobalDragDropOverlay onFilesDropped={handleAddMoreFiles} />

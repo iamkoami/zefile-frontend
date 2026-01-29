@@ -10,10 +10,10 @@ import {
   EditPencil,
   Check,
   Xmark,
-  TriangleFlag,
   GitPullRequest,
   RefreshDouble,
 } from "iconoir-react";
+import ReportIssueButton from "@/components/shared/ReportIssueButton";
 import { useTranslations, useLocale } from "next-intl";
 import { TransferDto, transferApi } from "@/services/transfer-api";
 import { useDrawerStore, TransferRole } from "@/stores/drawer-store";
@@ -23,7 +23,7 @@ import ConfirmationModal from "@/components/shared/ConfirmationModal";
 import VersionUploadModal from "./VersionUploadModal";
 import VersionHistorySection from "./VersionHistorySection";
 import TransferInsightsSection from "./TransferInsightsSection";
-import { getCurrentUserId } from "@/utils/auth";
+import { getCurrentUserId, getCurrentUserEmail } from "@/utils/auth";
 import { storageApi } from "@/services/storage-api";
 import LoadingPanel from "@/components/LoadingPanel";
 import VerifiedBadge from "@/components/shared/VerifiedBadge";
@@ -352,12 +352,6 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
     );
   }, [currentTransfer, currentVersionFiles]);
 
-  // Handle report transfer
-  const handleReport = useCallback(() => {
-    if (!currentTransfer?.shortCode) return;
-    const reportUrl = `mailto:report@zefile.io?subject=Report Transfer: ${currentTransfer.shortCode}&body=I would like to report this transfer (${currentTransfer.shortCode}) for the following reason:`;
-    window.location.href = reportUrl;
-  }, [currentTransfer?.shortCode]);
 
   // ========== TITLE EDITING ==========
   const handleEditTitle = useCallback(() => {
@@ -711,15 +705,16 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
                   <span className="text-xs">{t("transfer")}</span>
                 </button>
 
-                {/* Report */}
-                <button
-                  onClick={handleReport}
-                  className="flex flex-col items-center gap-1 px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors"
-                  aria-label={t("report")}
-                >
-                  <TriangleFlag className="w-6 h-6" strokeWidth={1.5} />
-                  <span className="text-xs">{t("report")}</span>
-                </button>
+                {/* Report Issue */}
+                {currentTransfer?.id && currentTransfer?.shortCode && (
+                  <ReportIssueButton
+                    transferId={currentTransfer.id}
+                    shortCode={currentTransfer.shortCode}
+                    userEmail={getCurrentUserEmail() || undefined}
+                    role="sender"
+                    variant="icon"
+                  />
+                )}
 
                 {/* Delete */}
                 <button

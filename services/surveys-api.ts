@@ -1,4 +1,4 @@
-import apiClient, { ApiResponse } from "./api-client";
+import { apiClient, ApiResponse } from "./api-client";
 
 /**
  * NPS Survey Status Response

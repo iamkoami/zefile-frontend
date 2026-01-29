@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import { Eye, Download, Globe, Smartphone, Computer, Tablet, StatsReport } from 'iconoir-react';
+import { Eye, Download, Globe, SmartphoneDevice, Computer, Tv, StatsReport } from 'iconoir-react';
 import {
   analyticsApi,
   TransferInsights,
@@ -37,7 +37,7 @@ const TransferInsightsSection: React.FC<TransferInsightsSectionProps> = ({
         if (response.data) {
           setInsights(response.data);
         } else if (response.error) {
-          setError(response.error);
+          setError(response.error.message || t('loadError'));
         }
       } catch (err) {
         setError(t('loadError'));
@@ -79,11 +79,11 @@ const TransferInsightsSection: React.FC<TransferInsightsSectionProps> = ({
       case 'desktop':
         return <Computer className="w-4 h-4" />;
       case 'mobile':
-        return <Smartphone className="w-4 h-4" />;
+        return <SmartphoneDevice className="w-4 h-4" />;
       case 'tablet':
-        return <Tablet className="w-4 h-4" />;
+        return <Tv className="w-4 h-4" />;
       default:
-        return <Smartphone className="w-4 h-4" />;
+        return <SmartphoneDevice className="w-4 h-4" />;
     }
   };
 
@@ -199,7 +199,7 @@ const TransferInsightsSection: React.FC<TransferInsightsSectionProps> = ({
                 )}
                 {insights.devices.mobile > 0 && (
                   <div className="flex items-center gap-2">
-                    <Smartphone className="w-4 h-4 text-gray-500" />
+                    <SmartphoneDevice className="w-4 h-4 text-gray-500" />
                     <span className="text-sm text-gray-700 w-16">{t('mobile')}</span>
                     <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
                       <div
@@ -214,7 +214,7 @@ const TransferInsightsSection: React.FC<TransferInsightsSectionProps> = ({
                 )}
                 {insights.devices.tablet > 0 && (
                   <div className="flex items-center gap-2">
-                    <Tablet className="w-4 h-4 text-gray-500" />
+                    <Tv className="w-4 h-4 text-gray-500" />
                     <span className="text-sm text-gray-700 w-16">{t('tablet')}</span>
                     <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
                       <div

@@ -195,6 +195,69 @@ export interface PaymentMethodsResponse {
   };
 }
 
+// ============================================
+// Payment History Types (Story 1-7)
+// ============================================
+
+/**
+ * Payout status for payment history items
+ */
+export type PayoutStatusType = 'pending' | 'processing' | 'sent' | 'completed' | 'failed';
+
+/**
+ * Payment history item DTO
+ */
+export interface PaymentHistoryItemDto {
+  id: string;
+  transferId: string;
+  transferTitle: string;
+  recipientEmail: string;
+  grossAmountMinorUnits: number;
+  platformFeeMinorUnits: number;
+  netAmountMinorUnits: number;
+  currency: string;
+  paidAt: string;
+  payoutStatus: PayoutStatusType;
+  paymentReference: string;
+  paymentMethod: string;
+}
+
+/**
+ * Payment history summary DTO
+ */
+export interface PaymentHistorySummaryDto {
+  totalGrossMinorUnits: number;
+  totalFeesMinorUnits: number;
+  totalNetMinorUnits: number;
+  pendingPayoutsMinorUnits: number;
+  currency: string;
+}
+
+/**
+ * Payment history response DTO
+ */
+export interface PaymentHistoryResponseDto {
+  payments: PaymentHistoryItemDto[];
+  summary: PaymentHistorySummaryDto;
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+/**
+ * Payment history query params
+ */
+export interface PaymentHistoryQueryParams {
+  startDate?: string;
+  endDate?: string;
+  payoutStatus?: PayoutStatusType;
+  page?: number;
+  limit?: number;
+}
+
 export const paymentApi = {
   /**
    * Initialize a payment transaction
@@ -285,5 +348,29 @@ export const paymentApi = {
    */
   async verifyPaymentV2(reference: string): Promise<ApiResponse<PaymentStatusV2Response>> {
     return apiClient.post<PaymentStatusV2Response>('/v2/payments/verify', { reference });
+  },
+
+  // ============================================
+  // Payment History API (Story 1-7)
+  // ============================================
+
+  /**
+   * Get sender's payment history with filtering and pagination
+   * Returns payments with summary aggregation
+   */
+  async getPaymentHistory(
+    params?: PaymentHistoryQueryParams
+  ): Promise<ApiResponse<PaymentHistoryResponseDto>> {
+    const queryParams = new URLSearchParams();
+    if (params?.startDate) queryParams.append('startDate', params.startDate);
+    if (params?.endDate) queryParams.append('endDate', params.endDate);
+    if (params?.payoutStatus) queryParams.append('payoutStatus', params.payoutStatus);
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+
+    const queryString = queryParams.toString();
+    const url = `/v2/payments/history${queryString ? `?${queryString}` : ''}`;
+
+    return apiClient.get<PaymentHistoryResponseDto>(url);
   },
 };
