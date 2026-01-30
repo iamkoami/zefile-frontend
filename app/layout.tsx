@@ -8,6 +8,7 @@ import localFont from "next/font/local";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import PostHogProvider from "@/components/providers/PostHogProvider";
+import { OrganizationJsonLd, WebSiteJsonLd } from "@/components/seo/JsonLd";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -74,17 +75,97 @@ const metropolis = localFont({
   fallback: ["system-ui", "arial"],
 });
 
-export const metadata: Metadata = {
-  title: "ZeFile - Partage de fichiers sécurisés",
-  description: "Partagez vos fichiers en toute sécurité avec ZeFile",
-  icons: {
-    icon: [
-      { url: "/favicon.png", type: "image/png" },
-      { url: "/favicon.ico", sizes: "any" },
-    ],
-    apple: "/favicon.png",
+// Base URL for metadata
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://zefile.io';
+
+// SEO metadata by locale
+const seoContent = {
+  en: {
+    title: 'ZeFile - Secure File Transfer with Payment Protection',
+    description: 'Send large files securely with payment protection. ZeFile ensures your deliverables are paid for before download. Free up to 2GB. Start transferring now!',
+    keywords: 'secure file transfer, file sharing, payment protection, send large files, file delivery, WeTransfer alternative, secure file sharing platform',
+  },
+  fr: {
+    title: 'ZeFile - Transfert de fichiers sécurisé avec protection de paiement',
+    description: 'Envoyez de gros fichiers en toute sécurité avec protection du paiement. ZeFile garantit que vos livrables sont payés avant le téléchargement. Gratuit jusqu\'à 2 Go!',
+    keywords: 'transfert de fichiers sécurisé, partage de fichiers, protection de paiement, envoyer gros fichiers, livraison de fichiers, alternative WeTransfer',
   },
 };
+
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  const content = seoContent[locale as keyof typeof seoContent] || seoContent.en;
+
+  return {
+    metadataBase: new URL(SITE_URL),
+    title: {
+      default: content.title,
+      template: '%s | ZeFile',
+    },
+    description: content.description,
+    keywords: content.keywords,
+    authors: [{ name: 'ZeFile', url: SITE_URL }],
+    creator: 'ZeFile',
+    publisher: 'ZeFile',
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        'max-video-preview': -1,
+        'max-image-preview': 'large',
+        'max-snippet': -1,
+      },
+    },
+    openGraph: {
+      type: 'website',
+      locale: locale === 'fr' ? 'fr_FR' : 'en_US',
+      alternateLocale: locale === 'fr' ? 'en_US' : 'fr_FR',
+      url: SITE_URL,
+      siteName: 'ZeFile',
+      title: content.title,
+      description: content.description,
+      images: [
+        {
+          url: `${SITE_URL}/og-image.png`,
+          width: 1200,
+          height: 630,
+          alt: 'ZeFile - Secure File Transfer Platform',
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: content.title,
+      description: content.description,
+      images: [`${SITE_URL}/og-image.png`],
+      creator: '@zefile',
+      site: '@zefile',
+    },
+    alternates: {
+      canonical: SITE_URL,
+      languages: {
+        'en': `${SITE_URL}/en`,
+        'fr': `${SITE_URL}/fr`,
+      },
+    },
+    icons: {
+      icon: [
+        { url: '/favicon.png', type: 'image/png' },
+        { url: '/favicon.ico', sizes: 'any' },
+      ],
+      apple: '/favicon.png',
+    },
+    manifest: '/manifest.json',
+    verification: {
+      // Add your verification codes here when ready
+      // google: 'your-google-verification-code',
+      // yandex: 'your-yandex-verification-code',
+    },
+    category: 'technology',
+  };
+}
 
 export default async function RootLayout({
   children,
@@ -96,6 +177,10 @@ export default async function RootLayout({
 
   return (
     <html lang={locale}>
+      <head>
+        <OrganizationJsonLd />
+        <WebSiteJsonLd />
+      </head>
       <body
         className={`${metropolis.variable} ${geistSans.variable} ${geistMono.variable} antialiased font-sans`}
         style={{ fontFamily: "var(--font-metropolis), system-ui, arial" }}

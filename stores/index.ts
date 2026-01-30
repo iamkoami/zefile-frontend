@@ -5,3 +5,5 @@ export { useUploadStore } from './upload-store';
 export type { UploadStatus } from './upload-store';
 
 export { useTransferSelectionStore } from './transfer-selection-store';
+
+export { useCurrencyStore, useCurrentCurrency, COUNTRY_CONFIG, ALL_COUNTRY_CODES } from './currency-store';

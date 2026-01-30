@@ -48,6 +48,8 @@ interface PaymentMethodSelectorProps {
   onMethodSelect: (method: PaymentMethod) => void;
   onCancel: () => void;
   isLoading?: boolean;
+  /** When true, shows auto-renewal badges on payment methods (for subscription flows) */
+  showAutoRenewalInfo?: boolean;
 }
 
 /**
@@ -66,6 +68,7 @@ export function PaymentMethodSelector({
   onMethodSelect,
   onCancel,
   isLoading = false,
+  showAutoRenewalInfo = false,
 }: PaymentMethodSelectorProps) {
   const t = useTranslations('payment');
   const [mounted, setMounted] = useState(false);
@@ -363,9 +366,16 @@ export function PaymentMethodSelector({
                           />
                         )}
                       </div>
-                      <span className="flex-1 text-left font-medium text-[#171717]">
-                        {provider.name}
-                      </span>
+                      <div className="flex-1 text-left">
+                        <span className="font-medium text-[#171717]">
+                          {provider.name}
+                        </span>
+                        {showAutoRenewalInfo && (
+                          <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                            {t('manualRenewal')}
+                          </span>
+                        )}
+                      </div>
                       <div
                         className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
                           isSelected ? 'border-[#5E53E0]' : 'border-gray-300'
@@ -396,9 +406,16 @@ export function PaymentMethodSelector({
                   <div className="w-10 h-10 flex items-center justify-center bg-gray-100 rounded">
                     <CreditCard className="w-6 h-6 text-gray-500" />
                   </div>
-                  <span className="flex-1 text-left font-medium text-[#171717]">
-                    {t('payWithCard')}
-                  </span>
+                  <div className="flex-1 text-left">
+                    <span className="font-medium text-[#171717]">
+                      {t('payWithCard')}
+                    </span>
+                    {showAutoRenewalInfo && (
+                      <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                        {t('autoRenews')}
+                      </span>
+                    )}
+                  </div>
                   <div
                     className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
                       selectedMethod?.type === 'card' ? 'border-[#5E53E0]' : 'border-gray-300'
@@ -409,6 +426,25 @@ export function PaymentMethodSelector({
                     )}
                   </div>
                 </button>
+              </div>
+            )}
+
+            {/* Auto-Renewal Info Box (shown when subscription context) */}
+            {showAutoRenewalInfo && selectedMethod && (
+              <div className={`mt-4 p-4 rounded text-sm ${
+                selectedMethod.type === 'card'
+                  ? 'bg-green-50 border border-green-200'
+                  : 'bg-yellow-50 border border-yellow-200'
+              }`}>
+                {selectedMethod.type === 'card' ? (
+                  <p className="text-green-800">
+                    {t('autoRenewalCardInfo')}
+                  </p>
+                ) : (
+                  <p className="text-yellow-800">
+                    {t('manualRenewalMobileInfo')}
+                  </p>
+                )}
               </div>
             )}
           </div>

@@ -11,12 +11,83 @@ import { ApiResponse, apiClient } from './api-client';
 
 export type KycStatus = 'not_required' | 'required' | 'pending' | 'verified' | 'rejected';
 
+export type KycVerificationMethod = 'manual' | 'bvn' | 'nin' | 'pending';
+
+export type IdentityCountry = 'NG' | 'GH' | 'KE' | 'SN' | 'CI' | 'BJ' | 'TG' | 'OTHER';
+
 export interface KycStatusResponse {
   status: KycStatus;
   requiredAt?: string;
   gracePeriodEnds?: string;
   daysRemaining?: number;
   isGracePeriodExpired?: boolean;
+  identityCountry?: IdentityCountry;
+  verificationMethod?: KycVerificationMethod;
+  kycVerifiedAt?: string;
+  rejectionReason?: string;
+}
+
+// ============================================
+// BVN VERIFICATION TYPES
+// ============================================
+
+export interface KycRoutingResponse {
+  recommendedMethod: KycVerificationMethod;
+  availableMethods: KycVerificationMethod[];
+  identityCountry?: IdentityCountry;
+  bvnAvailable: boolean;
+  documentUploadAvailable: boolean;
+}
+
+export interface KycVerificationStatusResponse {
+  kycStatus: KycStatus;
+  verificationMethod: KycVerificationMethod;
+  identityCountry?: IdentityCountry;
+  maskedBvn?: string;
+  bvnVerifiedAt?: string;
+  verifiedFirstName?: string;
+  verifiedLastName?: string;
+  kycVerifiedAt?: string;
+  rejectionReason?: string;
+  gracePeriodEnds?: string;
+}
+
+export interface BvnInitiateResponse {
+  success: boolean;
+  message: string;
+  sessionId?: string;
+  phoneMasked?: string;
+  expiresIn?: number;
+  errorCode?: string;
+}
+
+export interface BvnVerificationResponse {
+  success: boolean;
+  message: string;
+  kycStatus?: KycStatus;
+  verifiedName?: string;
+  maskedBvn?: string;
+  requiresReview?: boolean;
+  matchScore?: number;
+  errorCode?: string;
+  remainingAttempts?: number;
+}
+
+export interface BvnSessionStatusResponse {
+  active: boolean;
+  sessionId?: string;
+  phoneMasked?: string;
+  expiresIn?: number;
+  remainingAttempts?: number;
+  remainingResends?: number;
+}
+
+export interface ResendOtpResponse {
+  success: boolean;
+  message: string;
+  remainingResends?: number;
+  expiresIn?: number;
+  errorCode?: string;
 }
 
 export interface KycThresholdsResponse {
@@ -120,6 +191,85 @@ export async function submitForReview(): Promise<ApiResponse<KycSubmissionRespon
 }
 
 // ============================================
+// BVN VERIFICATION API FUNCTIONS
+// ============================================
+
+/**
+ * Get KYC routing information (which verification methods are available)
+ */
+export async function getKycRouting(): Promise<ApiResponse<KycRoutingResponse>> {
+  return apiClient.get<KycRoutingResponse>('/kyc/routing');
+}
+
+/**
+ * Set user's identity country
+ */
+export async function setIdentityCountry(
+  country: IdentityCountry,
+): Promise<ApiResponse<{ success: boolean; country: IdentityCountry }>> {
+  return apiClient.post<{ success: boolean; country: IdentityCountry }>('/kyc/country', { country });
+}
+
+/**
+ * Get detailed KYC verification status
+ */
+export async function getVerificationStatus(): Promise<ApiResponse<KycVerificationStatusResponse>> {
+  return apiClient.get<KycVerificationStatusResponse>('/kyc/verification-status');
+}
+
+/**
+ * Initiate BVN verification - sends OTP to BVN phone
+ */
+export async function initiateBvnVerification(bvn: string): Promise<ApiResponse<BvnInitiateResponse>> {
+  return apiClient.post<BvnInitiateResponse>('/kyc/bvn/initiate', { bvn });
+}
+
+/**
+ * Complete BVN verification with OTP
+ */
+export async function completeBvnVerification(
+  sessionId: string,
+  otp: string,
+): Promise<ApiResponse<BvnVerificationResponse>> {
+  return apiClient.post<BvnVerificationResponse>('/kyc/bvn/complete', { sessionId, otp });
+}
+
+/**
+ * Resend OTP for BVN verification
+ */
+export async function resendBvnOtp(sessionId: string): Promise<ApiResponse<ResendOtpResponse>> {
+  return apiClient.post<ResendOtpResponse>('/kyc/bvn/resend-otp', { sessionId });
+}
+
+/**
+ * Get active BVN OTP session status
+ */
+export async function getBvnSessionStatus(): Promise<ApiResponse<BvnSessionStatusResponse>> {
+  return apiClient.get<BvnSessionStatusResponse>('/kyc/bvn/session');
+}
+
+/**
+ * Direct BVN verification (without OTP)
+ */
+export async function verifyBvn(bvn: string): Promise<ApiResponse<BvnVerificationResponse>> {
+  return apiClient.post<BvnVerificationResponse>('/kyc/bvn/verify', { bvn });
+}
+
+/**
+ * Get BVN verification status
+ */
+export async function getBvnStatus(): Promise<
+  ApiResponse<{
+    hasVerifiedBvn: boolean;
+    maskedBvn?: string;
+    verifiedAt?: string;
+    verifiedName?: string;
+  }>
+> {
+  return apiClient.get('/kyc/bvn/status');
+}
+
+// ============================================
 // HELPER FUNCTIONS
 // ============================================
 
@@ -166,4 +316,14 @@ export const kycApi = {
   uploadDocument,
   deleteDocument,
   submitForReview,
+  // BVN verification
+  getKycRouting,
+  setIdentityCountry,
+  getVerificationStatus,
+  initiateBvnVerification,
+  completeBvnVerification,
+  resendBvnOtp,
+  getBvnSessionStatus,
+  verifyBvn,
+  getBvnStatus,
 };

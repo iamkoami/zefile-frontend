@@ -672,23 +672,23 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
               <span className="text-xs">{t("preview")}</span>
             </button>
 
-            {/* Upload New Version */}
-            <button
-              onClick={() => setShowVersionUploadModal(true)}
-              disabled={expiryStatus.isExpired}
-              className="flex flex-col items-center gap-1 px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              aria-label={
-                expiryStatus.isExpired ? t("expired") : t("uploadVersion")
-              }
-              title={expiryStatus.isExpired ? t("transferExpired") : undefined}
-            >
-              <GitPullRequest className="w-6 h-6" strokeWidth={1.5} />
-              <span className="text-xs">{t("uploadVersion")}</span>
-            </button>
-
             {/* Sender-only actions */}
             {role === "sender" && (
               <>
+                {/* Upload New Version */}
+                <button
+                  onClick={() => setShowVersionUploadModal(true)}
+                  disabled={expiryStatus.isExpired}
+                  className="flex flex-col items-center gap-1 px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  aria-label={
+                    expiryStatus.isExpired ? t("expired") : t("uploadVersion")
+                  }
+                  title={expiryStatus.isExpired ? t("transferExpired") : undefined}
+                >
+                  <GitPullRequest className="w-6 h-6" strokeWidth={1.5} />
+                  <span className="text-xs">{t("uploadVersion")}</span>
+                </button>
+
                 {/* Transfer/Forward */}
                 <button
                   onClick={handleTransfer}

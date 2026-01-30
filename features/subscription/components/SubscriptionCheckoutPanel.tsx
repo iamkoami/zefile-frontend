@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { CreditCard, SmartphoneDevice, CheckCircle, XmarkCircle, Crown, Sparks, NavArrowDown } from 'iconoir-react';
+import { CreditCard, SmartphoneDevice, CheckCircle, XmarkCircle, Crown, Sparks, NavArrowDown, RefreshDouble, InfoCircle } from 'iconoir-react';
 import LoadingPanel from '@/components/LoadingPanel';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
@@ -516,9 +516,16 @@ export function SubscriptionCheckoutPanel() {
                         />
                       )}
                     </div>
-                    <span className="flex-1 text-left font-medium text-[#171717]">
-                      {provider.name}
-                    </span>
+                    <div className="flex-1 text-left">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-[#171717]">
+                          {provider.name}
+                        </span>
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 rounded">
+                          {tSub('manualRenewal')}
+                        </span>
+                      </div>
+                    </div>
                     <div
                       className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
                         isSelected ? 'border-[#5E53E0]' : 'border-gray-300'
@@ -545,9 +552,17 @@ export function SubscriptionCheckoutPanel() {
                 <div className="w-10 h-10 flex items-center justify-center bg-gray-100 rounded">
                   <CreditCard className="w-6 h-6 text-gray-500" />
                 </div>
-                <span className="flex-1 text-left font-medium text-[#171717]">
-                  {t('payWithCard')}
-                </span>
+                <div className="flex-1 text-left">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-[#171717]">
+                      {t('payWithCard')}
+                    </span>
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded">
+                      <RefreshDouble className="w-3 h-3" />
+                      {tSub('autoRenews')}
+                    </span>
+                  </div>
+                </div>
                 <div
                   className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
                     selectedMethod?.type === 'card' ? 'border-[#5E53E0]' : 'border-gray-300'
@@ -558,6 +573,40 @@ export function SubscriptionCheckoutPanel() {
                   )}
                 </div>
               </button>
+            </div>
+          )}
+
+          {/* Auto-renewal info box based on selected method */}
+          {selectedMethod && (
+            <div className={`mt-4 p-4 rounded-lg flex items-start gap-3 ${
+              selectedMethod.type === 'card'
+                ? 'bg-green-50 border border-green-200'
+                : 'bg-amber-50 border border-amber-200'
+            }`}>
+              <InfoCircle className={`w-5 h-5 flex-shrink-0 mt-0.5 ${
+                selectedMethod.type === 'card' ? 'text-green-600' : 'text-amber-600'
+              }`} />
+              <div className="text-sm">
+                {selectedMethod.type === 'card' ? (
+                  <>
+                    <p className="font-medium text-green-800 mb-1">
+                      {tSub('autoRenewalEnabled')}
+                    </p>
+                    <p className="text-green-700">
+                      {tSub('cardAutoRenewalDescription')}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="font-medium text-amber-800 mb-1">
+                      {tSub('manualRenewalRequired')}
+                    </p>
+                    <p className="text-amber-700">
+                      {tSub('mobileMoneyRenewalDescription')}
+                    </p>
+                  </>
+                )}
+              </div>
             </div>
           )}
         </div>

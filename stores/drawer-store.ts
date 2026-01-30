@@ -18,6 +18,7 @@ export type DrawerView = 'transfers' | 'contacts' | 'subscriptions' | 'payment' 
 // Account sidebar menu items (sidebar navigation, not stack-based)
 export type AccountMenuItem =
   | 'settings'       // Account settings (profile, preferences)
+  | 'subscription'   // Subscription settings with auto-renewal (Epic 15)
   | 'transactions'   // Transaction history (Story 1-7)
   | 'payouts'        // Payout status (Story 1-8)
   | 'verification'   // Identity verification

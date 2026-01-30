@@ -1,189 +1,72 @@
 'use client';
 
-
-import { useEffect, useState, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
-import Head from 'next/head';
-import Link from 'next/link';
-import { getTransferByCodeUseCase } from '@/features/storage/domain/usecases/get_transfer_by_code.usecase';
-import { TransferEntity, TrackingParams } from '@/features/storage/domain/entities/transfer.entity';
-import { DownloadPage } from '@/features/storage/presentation/components/DownloadPage';
+import { useEffect, Suspense } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import LoadingPanel from '@/components/LoadingPanel';
 
 /**
- * Download Landing Page Component
- * Wrapped in Suspense to handle useSearchParams
+ * Download Landing Page Redirect
+ * Redirects /downloads?code={shortCode} to /t/{shortCode}
+ * Preserves tracking parameters
  */
-function TransferDownloadContent() {
+function DownloadRedirect() {
   const searchParams = useSearchParams();
-
-  const [transfer, setTransfer] = useState<TransferEntity | null>(null);
-  const [trackingParams, setTrackingParams] = useState<TrackingParams>({});
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [passwordRequired, setPasswordRequired] = useState(false);
-  const [password, setPassword] = useState('');
+  const router = useRouter();
 
   useEffect(() => {
-    // Get short code from query parameter or path
-    const shortCodeFromQuery = searchParams?.get('code');
-    const pathParts = typeof window !== 'undefined' ? window.location.pathname.split('/') : [];
-    const shortCodeFromPath = pathParts.length > 2 ? pathParts[2] : null;
+    // Get short code from query parameter (may include z- prefix)
+    const codeParam = searchParams?.get('code');
 
-    const shortCode = shortCodeFromQuery || shortCodeFromPath;
+    if (codeParam) {
+      // Strip z- prefix if present (e.g., "z-KacqsK9MHn" → "KacqsK9MHn")
+      const shortCode = codeParam.startsWith('z-') ? codeParam.slice(2) : codeParam;
 
-    if (!shortCode) {
-      setError('Invalid transfer link');
-      setLoading(false);
-      return;
+      // Build query string for tracking params
+      const trackingParams = new URLSearchParams();
+      const z_exp = searchParams?.get('z_exp');
+      const z_sid = searchParams?.get('z_sid');
+      const z_src = searchParams?.get('z_src');
+      const z_network = searchParams?.get('z_network');
+      const z_ts = searchParams?.get('z_ts');
+
+      if (z_exp) trackingParams.set('z_exp', z_exp);
+      if (z_sid) trackingParams.set('z_sid', z_sid);
+      if (z_src) trackingParams.set('z_src', z_src);
+      if (z_network) trackingParams.set('z_network', z_network);
+      if (z_ts) trackingParams.set('z_ts', z_ts);
+
+      const queryString = trackingParams.toString();
+      const redirectUrl = `/t/${shortCode}${queryString ? `?${queryString}` : ''}`;
+
+      // Redirect to the new transfer landing page
+      router.replace(redirectUrl);
+    } else {
+      // No code provided, redirect to home
+      router.replace('/');
     }
-
-    // Extract tracking parameters
-    const tracking: TrackingParams = {
-      z_exp: searchParams?.get('z_exp') || undefined,
-      z_sid: searchParams?.get('z_sid') || undefined,
-      z_src: searchParams?.get('z_src') || 'link',
-      z_network: searchParams?.get('z_network') || undefined,
-      z_ts: searchParams?.get('z_ts') || Date.now().toString(),
-    };
-    setTrackingParams(tracking);
-
-    // Fetch transfer information
-    fetchTransfer(shortCode);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
-
-  const fetchTransfer = async (shortCode: string, pwd?: string) => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const transferData = await getTransferByCodeUseCase.execute({
-        shortCode,
-        password: pwd || password || undefined,
-      });
-
-      setTransfer(transferData);
-      setPasswordRequired(false);
-    } catch (err) {
-      console.error('Error fetching transfer:', err);
-      const error = err as Error;
-
-      // Check if password is required
-      if (error.message?.includes('password') || error.message?.includes('401')) {
-        setPasswordRequired(true);
-        setError('This transfer is password protected');
-      } else if (error.message?.includes('404') || error.message?.includes('not found')) {
-        setError('Transfer not found or expired');
-      } else {
-        setError(error.message || 'Failed to load transfer');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handlePasswordSubmit = (pwd: string) => {
-    setPassword(pwd);
-    const shortCodeFromQuery = searchParams?.get('code');
-    const pathParts = typeof window !== 'undefined' ? window.location.pathname.split('/') : [];
-    const shortCodeFromPath = pathParts.length > 2 ? pathParts[2] : null;
-    const shortCode = shortCodeFromQuery || shortCodeFromPath || '';
-    fetchTransfer(shortCode, pwd);
-  };
-
-  if (loading) {
-    return (
-      <>
-        <Head>
-          <meta name="robots" content="noindex, nofollow, noarchive, nosnippet" />
-          <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet" />
-          <title>Loading Transfer - ZeFile</title>
-        </Head>
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading transfer...</p>
-          </div>
-        </div>
-      </>
-    );
-  }
-
-  if (error && !passwordRequired) {
-    return (
-      <>
-        <Head>
-          <meta name="robots" content="noindex, nofollow, noarchive, nosnippet" />
-          <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet" />
-          <title>Transfer Not Available - ZeFile</title>
-        </Head>
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
-          <div className="text-center max-w-md mx-auto px-4">
-            <div className="bg-white rounded-lg shadow-lg p-8">
-              <svg
-                className="w-16 h-16 text-red-500 mx-auto mb-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">Transfer Not Available</h1>
-              <p className="text-gray-600 mb-6">{error}</p>
-              <Link
-                href="/"
-                className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Go to Homepage
-              </Link>
-            </div>
-          </div>
-        </div>
-      </>
-    );
-  }
+  }, [searchParams, router]);
 
   return (
-    <>
-      <Head>
-        <meta name="robots" content="noindex, nofollow, noarchive, nosnippet" />
-        <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet" />
-        <title>Download Files - ZeFile</title>
-      </Head>
-      <DownloadPage
-        transfer={transfer}
-        trackingParams={trackingParams}
-        passwordRequired={passwordRequired}
-        onPasswordSubmit={handlePasswordSubmit}
-        error={error}
-      />
-    </>
+    <div className="min-h-screen flex items-center justify-center bg-white">
+      <LoadingPanel />
+    </div>
   );
 }
 
 /**
  * Download Landing Page
- * Full landing page with transfer details and download options
- * URL: /downloads?code={shortCode}&z_exp=...&z_sid=...
+ * Redirects to /t/{shortCode} for consistent experience
  */
 export default function TransferDownloadPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading transfer...</p>
-          </div>
+        <div className="min-h-screen flex items-center justify-center bg-white">
+          <LoadingPanel />
         </div>
       }
     >
-      <TransferDownloadContent />
+      <DownloadRedirect />
     </Suspense>
   );
 }

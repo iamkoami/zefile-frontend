@@ -10,14 +10,15 @@ import {
   type SubscriptionTier,
   type BillingPeriod,
   TIER_LIMITS,
-  SUPPORTED_COUNTRIES,
   formatSubscriptionPrice,
-  getPricingForCountry,
   getTierPriceMinorUnits,
-  getStoredCountryCode,
-  setStoredCountryCode,
   subscriptionApi,
 } from "@/services/subscription-api";
+import {
+  useCurrencyStore,
+  COUNTRY_CONFIG,
+  ALL_COUNTRY_CODES,
+} from "@/stores/currency-store";
 
 // Feature list for each tier
 interface TierFeature {
@@ -38,14 +39,6 @@ interface TierConfig {
   highlighted?: boolean;
 }
 
-// Country display names and flags for dropdown
-const COUNTRY_CONFIG: Record<string, { name: string; flag: string }> = {
-  NG: { name: "Nigeria (NGN)", flag: "🇳🇬" },
-  GH: { name: "Ghana (GHS)", flag: "🇬🇭" },
-  KE: { name: "Kenya (KES)", flag: "🇰🇪" },
-  CI: { name: "Côte d'Ivoire (XOF)", flag: "🇨🇮" },
-  DEFAULT: { name: "International (USD)", flag: "🌍" },
-};
 
 /**
  * SubscriptionPanel - Displays subscription tiers and allows upgrades
@@ -61,30 +54,23 @@ const SubscriptionPanel: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isTrialEligible, setIsTrialEligible] = useState(false);
 
-  // Country/currency selection
-  const [countryCode, setCountryCode] = useState<string>("DEFAULT");
+  // Global currency/country selection from store
+  const { countryCode, pricing, setCountryCode, hydrate } = useCurrencyStore();
   const [isCurrencyDropdownOpen, setIsCurrencyDropdownOpen] = useState(false);
 
   // FAQ accordion state
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
 
-  // Get pricing based on selected country
-  const pricing = getPricingForCountry(countryCode);
-
   // Handle country change
   const handleCountryChange = (code: string) => {
     setCountryCode(code);
-    setStoredCountryCode(code);
     setIsCurrencyDropdownOpen(false);
   };
 
-  // Load stored country code on mount
+  // Hydrate currency store on mount
   useEffect(() => {
-    const storedCountry = getStoredCountryCode();
-    if (storedCountry) {
-      setCountryCode(storedCountry);
-    }
-  }, []);
+    hydrate();
+  }, [hydrate]);
 
   // Fetch user's subscription on mount
   useEffect(() => {
@@ -284,7 +270,7 @@ const SubscriptionPanel: React.FC = () => {
             }`}
           >
             {t("annual")}
-            <span className="ml-2 text-xs text-[#87E64B] font-semibold">
+            <span className="ml-2 text-xs text-[#5E53E0] font-semibold">
               {t("save17")}
             </span>
           </button>
@@ -296,8 +282,12 @@ const SubscriptionPanel: React.FC = () => {
             onClick={() => setIsCurrencyDropdownOpen(!isCurrencyDropdownOpen)}
             className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-[#171717] hover:border-gray-300 transition-all"
           >
-            <span className="text-lg">{COUNTRY_CONFIG[countryCode]?.flag || COUNTRY_CONFIG.DEFAULT.flag}</span>
-            <span>{COUNTRY_CONFIG[countryCode]?.name || COUNTRY_CONFIG.DEFAULT.name}</span>
+            <span className="text-lg">
+              {COUNTRY_CONFIG[countryCode]?.flag || COUNTRY_CONFIG.DEFAULT.flag}
+            </span>
+            <span>
+              {COUNTRY_CONFIG[countryCode]?.name || COUNTRY_CONFIG.DEFAULT.name}
+            </span>
             <NavArrowDown
               className={`w-4 h-4 transition-transform ${isCurrencyDropdownOpen ? "rotate-180" : ""}`}
             />
@@ -311,7 +301,7 @@ const SubscriptionPanel: React.FC = () => {
                 onClick={() => setIsCurrencyDropdownOpen(false)}
               />
               <div className="absolute z-50 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
-                {[...SUPPORTED_COUNTRIES, "DEFAULT"].map((code) => (
+                {ALL_COUNTRY_CODES.map((code) => (
                   <button
                     key={code}
                     onClick={() => handleCountryChange(code)}
@@ -319,7 +309,9 @@ const SubscriptionPanel: React.FC = () => {
                       code === countryCode ? "bg-gray-50 font-medium" : ""
                     }`}
                   >
-                    <span className="text-lg">{COUNTRY_CONFIG[code]?.flag}</span>
+                    <span className="text-lg">
+                      {COUNTRY_CONFIG[code]?.flag}
+                    </span>
                     {COUNTRY_CONFIG[code]?.name}
                   </button>
                 ))}
@@ -332,7 +324,7 @@ const SubscriptionPanel: React.FC = () => {
       {/* Pricing Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
         {tiers.map((tier) => {
-          const isCurrentPlan = tier.id === currentTier;
+          const isCurrentPlan = isAuthenticated && tier.id === currentTier;
           const isHighlighted = tier.highlighted;
           const isPro = tier.id === "pro";
 

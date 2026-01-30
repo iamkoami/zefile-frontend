@@ -10,13 +10,14 @@ import {
 import OTPVerification from "./OTPVerification";
 import UploadProgressPanel from "./UploadProgressPanel";
 import CancelConfirmationPanel from "./CancelConfirmationPanel";
-import TransferCompletePanel from "./TransferCompletePanel";
+import TransferCompletePanel from "@/features/transfer/components/TransferCompletePanel";
 import MultiEmailInput from "./MultiEmailInput";
 import { transferApi, TransferDto } from "@/services/transfer-api";
 import { authApi } from "@/services/auth-api";
 import { platformApi } from "@/services/platform-api";
 import { multipartUploadService } from "@/services/multipart-upload.service";
 import { useUploadStore } from "@/stores/upload-store";
+import { useCurrentCurrency } from "@/stores/currency-store";
 
 // Interface for files from an existing transfer (reuse flow)
 export interface ReuseFile {
@@ -75,11 +76,14 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
     reset: resetGlobalUpload,
   } = useUploadStore();
 
+  // Get global currency for initial value (one-way: global → local)
+  const { currency: globalCurrency } = useCurrentCurrency();
+
   const [isDragging, setIsDragging] = useState(false);
   const [recipientEmails, setRecipientEmails] = useState<string[]>([]); // Changed from sendTo
   const [email, setEmail] = useState("");
   const [title, setTitle] = useState("");
-  const [currency, setCurrency] = useState("XOF"); // Currency selection
+  const [currency, setCurrency] = useState("XOF"); // Local currency for this transfer
   const [price, setPrice] = useState("");
   const [message, setMessage] = useState("");
   const [showInfoTooltip, setShowInfoTooltip] = useState(false);
@@ -120,6 +124,14 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
     };
     fetchConfig();
   }, []);
+
+  // Initialize local currency from global currency (one-time on mount)
+  // This does NOT sync back - changing local currency won't update header
+  useEffect(() => {
+    if (globalCurrency && panelState === "initial") {
+      setCurrency(globalCurrency);
+    }
+  }, [globalCurrency, panelState]);
 
   // Auto-transition to form when files are added (e.g., via global drag & drop)
   // Also transition back to initial when all files are removed (unless recipients or reuse files are pre-filled)
@@ -191,7 +203,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
       ZAR: "R",
       KES: "KSh",
       XOF: "CFA",
-      // USD removed
+      USD: "$",
     };
     return symbols[currencyCode] || currencyCode;
   };
@@ -699,7 +711,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
     setEmail("");
     setTitle("");
     setPrice("");
-    setCurrency("XOF"); // Reset currency to default
+    setCurrency(globalCurrency || "XOF"); // Reset to global currency
     setMessage("");
     setFormErrors({});
     setUploadProgress(0);
@@ -924,8 +936,9 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                       <option value="XOF">XOF</option>
                       <option value="NGN">NGN</option>
                       <option value="GHS">GHS</option>
-                      <option value="ZAR">ZAR</option>
                       <option value="KES">KES</option>
+                      <option value="ZAR">ZAR</option>
+                      <option value="USD">USD</option>
                     </select>
                   </div>
 

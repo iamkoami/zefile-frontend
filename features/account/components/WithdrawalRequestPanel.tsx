@@ -1,0 +1,489 @@
+'use client';
+
+import React, { useState, useEffect, useMemo } from 'react';
+import { useTranslations, useLocale } from 'next-intl';
+import {
+  Wallet,
+  Check,
+  NavArrowDown,
+  WarningTriangle,
+  Calculator,
+  Bank,
+  SmartphoneDevice,
+} from 'iconoir-react';
+import { withdrawalsApi, BalanceResponse, FeeCalculationResponse } from '@/services/withdrawals-api';
+import {
+  payoutMethodsApi,
+  PayoutMethod,
+  PayoutMethodType,
+  MOBILE_PROVIDER_NAMES,
+} from '@/services/payout-methods-api';
+import LoadingPanel from '@/components/LoadingPanel';
+
+type Step = 'form' | 'confirm' | 'success';
+
+interface WithdrawalRequestPanelProps {
+  onClose?: () => void;
+  onSuccess?: () => void;
+}
+
+/**
+ * WithdrawalRequestPanel - Request a withdrawal from available balance
+ * Stories 14-6, 14-7: Withdrawal Request Flow
+ */
+const WithdrawalRequestPanel: React.FC<WithdrawalRequestPanelProps> = ({ onClose, onSuccess }) => {
+  const t = useTranslations('withdrawals');
+  const locale = useLocale();
+
+  // State
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [step, setStep] = useState<Step>('form');
+
+  // Data
+  const [balance, setBalance] = useState<BalanceResponse | null>(null);
+  const [payoutMethods, setPayoutMethods] = useState<PayoutMethod[]>([]);
+
+  // Form
+  const [selectedMethodId, setSelectedMethodId] = useState<string>('');
+  const [amount, setAmount] = useState<string>('');
+  const [isMethodDropdownOpen, setIsMethodDropdownOpen] = useState(false);
+
+  // Fee calculation
+  const [feeCalculation, setFeeCalculation] = useState<FeeCalculationResponse | null>(null);
+  const [isCalculating, setIsCalculating] = useState(false);
+
+  // Submission
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [withdrawalReference, setWithdrawalReference] = useState<string>('');
+
+  // Load balance and payout methods
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const [balanceRes, methodsRes] = await Promise.all([
+        withdrawalsApi.getBalance(),
+        payoutMethodsApi.getPayoutMethods(),
+      ]);
+
+      if (balanceRes.data) {
+        setBalance(balanceRes.data);
+      } else if (balanceRes.error) {
+        setError(balanceRes.error.message);
+      }
+
+      if (methodsRes.data) {
+        setPayoutMethods(methodsRes.data);
+        // Auto-select default method
+        const defaultMethod = methodsRes.data.find((m) => m.isDefault);
+        if (defaultMethod) {
+          setSelectedMethodId(defaultMethod.id);
+        }
+      }
+    } catch (err) {
+      setError(t('loadError'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Calculate fee when amount changes
+  useEffect(() => {
+    const calculateFee = async () => {
+      const amountValue = parseFloat(amount);
+      if (!amountValue || amountValue <= 0) {
+        setFeeCalculation(null);
+        return;
+      }
+
+      setIsCalculating(true);
+      try {
+        const amountMinorUnits = Math.round(amountValue * 100);
+        const response = await withdrawalsApi.calculateFee(amountMinorUnits);
+        if (response.data) {
+          setFeeCalculation(response.data);
+        }
+      } catch (err) {
+        console.error('Failed to calculate fee:', err);
+      } finally {
+        setIsCalculating(false);
+      }
+    };
+
+    const debounce = setTimeout(calculateFee, 500);
+    return () => clearTimeout(debounce);
+  }, [amount]);
+
+  // Get selected method
+  const selectedMethod = useMemo(() => {
+    return payoutMethods.find((m) => m.id === selectedMethodId);
+  }, [payoutMethods, selectedMethodId]);
+
+  // Format currency
+  const formatAmount = (minorUnits: number, currency: string = 'XOF'): string => {
+    const symbols: Record<string, string> = {
+      XOF: 'Fr CFA',
+      NGN: '₦',
+      GHS: '₵',
+      KES: 'KSh',
+      ZAR: 'R',
+      USD: '$',
+    };
+    const symbol = symbols[currency] || currency;
+    const formatted = (minorUnits / 100).toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-US');
+    return currency === 'XOF' ? `${formatted} ${symbol}` : `${symbol}${formatted}`;
+  };
+
+  // Validate form
+  const isFormValid = useMemo(() => {
+    const amountValue = parseFloat(amount);
+    if (!amountValue || amountValue <= 0) return false;
+    if (!selectedMethodId) return false;
+    if (!balance) return false;
+
+    const amountMinorUnits = Math.round(amountValue * 100);
+    if (amountMinorUnits > balance.availableMinorUnits) return false;
+
+    return true;
+  }, [amount, selectedMethodId, balance]);
+
+  // Handle continue to confirm
+  const handleContinue = () => {
+    if (!isFormValid || !feeCalculation) return;
+    setStep('confirm');
+  };
+
+  // Handle submit
+  const handleSubmit = async () => {
+    if (!feeCalculation) return;
+
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      const amountMinorUnits = Math.round(parseFloat(amount) * 100);
+      const response = await withdrawalsApi.createWithdrawal({
+        amountMinorUnits,
+        payoutMethodId: selectedMethodId,
+      });
+
+      if (response.data) {
+        setWithdrawalReference(response.data.id);
+        setStep('success');
+        onSuccess?.();
+      } else if (response.error) {
+        setError(response.error.message);
+        setStep('form');
+      }
+    } catch (err) {
+      setError(t('submitError'));
+      setStep('form');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Handle withdraw all
+  const handleWithdrawAll = () => {
+    if (!balance) return;
+    const amountValue = balance.availableMinorUnits / 100;
+    setAmount(amountValue.toString());
+  };
+
+  if (isLoading) {
+    return <LoadingPanel className="py-12" />;
+  }
+
+  // Success step
+  if (step === 'success') {
+    return (
+      <div className="text-center py-8">
+        <div className="w-16 h-16 bg-[#87E64B]/20 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Check className="w-8 h-8 text-[#87E64B]" />
+        </div>
+        <h3 className="text-xl font-semibold text-[#171717] mb-2">{t('success')}</h3>
+        <p className="text-gray-500 mb-6">{t('successMessage')}</p>
+        <p className="text-sm text-gray-400 mb-6">
+          {t('processingTime')}
+        </p>
+        <button
+          onClick={onClose}
+          className="px-6 py-2 bg-[#87E64B] text-[#171717] font-medium rounded hover:bg-[#78d43f] transition-colors"
+        >
+          {t('done')}
+        </button>
+      </div>
+    );
+  }
+
+  // Confirm step
+  if (step === 'confirm') {
+    return (
+      <div>
+        <button
+          onClick={() => setStep('form')}
+          className="text-sm text-[#5E53E0] hover:underline mb-4"
+        >
+          ← {t('back')}
+        </button>
+
+        <h3 className="text-lg font-semibold text-[#171717] mb-4">{t('confirmTitle')}</h3>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 text-red-700 rounded text-sm flex items-center gap-2">
+            <WarningTriangle className="w-4 h-4" />
+            {error}
+          </div>
+        )}
+
+        <div className="bg-gray-50 rounded-lg p-4 mb-6 space-y-3">
+          <div className="flex justify-between">
+            <span className="text-gray-500">{t('amount')}</span>
+            <span className="font-medium">{formatAmount(feeCalculation?.amount || 0, balance?.currency)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-500">{t('fee')}</span>
+            <span className="text-gray-700">- {formatAmount(feeCalculation?.fee || 0, balance?.currency)}</span>
+          </div>
+          <div className="border-t pt-3 flex justify-between">
+            <span className="font-medium">{t('youWillReceive')}</span>
+            <span className="font-semibold text-[#171717]">
+              {formatAmount(feeCalculation?.netAmount || 0, balance?.currency)}
+            </span>
+          </div>
+        </div>
+
+        <div className="bg-gray-50 rounded-lg p-4 mb-6">
+          <p className="text-sm text-gray-500 mb-2">{t('destination')}</p>
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-white rounded">
+              {selectedMethod?.type === PayoutMethodType.BANK_TRANSFER ? (
+                <Bank className="w-5 h-5 text-gray-600" />
+              ) : (
+                <SmartphoneDevice className="w-5 h-5 text-gray-600" />
+              )}
+            </div>
+            <div>
+              <p className="font-medium">
+                {selectedMethod?.type === PayoutMethodType.BANK_TRANSFER
+                  ? selectedMethod?.bankName
+                  : MOBILE_PROVIDER_NAMES[selectedMethod?.provider?.toLowerCase() || ''] ||
+                    selectedMethod?.provider}
+              </p>
+              <p className="text-sm text-gray-500">
+                {selectedMethod?.type === PayoutMethodType.BANK_TRANSFER
+                  ? `${selectedMethod?.accountName} • ${selectedMethod?.accountNumber}`
+                  : selectedMethod?.phoneNumber}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex gap-3">
+          <button
+            onClick={() => setStep('form')}
+            className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 font-medium rounded hover:bg-gray-50 transition-colors"
+          >
+            {t('cancel')}
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            className="flex-1 px-4 py-3 bg-[#87E64B] text-[#171717] font-medium rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50"
+          >
+            {isSubmitting ? t('processing') : t('confirm')}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Form step
+  return (
+    <div>
+      <h3 className="text-lg font-semibold text-[#171717] mb-1">{t('requestTitle')}</h3>
+      <p className="text-sm text-gray-500 mb-6">{t('requestSubtitle')}</p>
+
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 text-red-700 rounded text-sm flex items-center gap-2">
+          <WarningTriangle className="w-4 h-4" />
+          {error}
+        </div>
+      )}
+
+      {/* Balance card */}
+      {balance && (
+        <div className="bg-gradient-to-br from-[#87E64B]/10 to-[#87E64B]/5 border border-[#87E64B]/30 rounded-lg p-4 mb-6">
+          <div className="flex items-center gap-2 mb-1">
+            <Wallet className="w-5 h-5 text-[#87E64B]" />
+            <span className="text-sm text-gray-600">{t('availableBalance')}</span>
+          </div>
+          <p className="text-2xl font-bold text-[#171717]">{balance.availableFormatted}</p>
+        </div>
+      )}
+
+      {/* No payout methods warning */}
+      {payoutMethods.length === 0 && (
+        <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <div className="flex items-start gap-2">
+            <WarningTriangle className="w-5 h-5 text-yellow-600 flex-shrink-0" />
+            <div>
+              <p className="font-medium text-yellow-800">{t('noPayoutMethods')}</p>
+              <p className="text-sm text-yellow-700 mt-1">{t('addPayoutMethodFirst')}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Form */}
+      <div className="space-y-4">
+        {/* Payout method select */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            {t('payoutMethod')}
+          </label>
+          <div className="relative">
+            <button
+              onClick={() => setIsMethodDropdownOpen(!isMethodDropdownOpen)}
+              disabled={payoutMethods.length === 0}
+              className="w-full flex items-center justify-between px-3 py-2 border border-gray-300 rounded bg-white hover:border-gray-400 transition-colors disabled:opacity-50"
+            >
+              {selectedMethod ? (
+                <div className="flex items-center gap-2">
+                  {selectedMethod.type === PayoutMethodType.BANK_TRANSFER ? (
+                    <Bank className="w-4 h-4 text-gray-500" />
+                  ) : (
+                    <SmartphoneDevice className="w-4 h-4 text-gray-500" />
+                  )}
+                  <span className="text-[#171717]">
+                    {selectedMethod.type === PayoutMethodType.BANK_TRANSFER
+                      ? `${selectedMethod.bankName} • ${selectedMethod.accountNumber}`
+                      : `${
+                          MOBILE_PROVIDER_NAMES[selectedMethod.provider?.toLowerCase() || ''] ||
+                          selectedMethod.provider
+                        } • ${selectedMethod.phoneNumber}`}
+                  </span>
+                </div>
+              ) : (
+                <span className="text-gray-400">{t('selectPayoutMethod')}</span>
+              )}
+              <NavArrowDown
+                className={`w-4 h-4 text-gray-500 transition-transform ${
+                  isMethodDropdownOpen ? 'rotate-180' : ''
+                }`}
+              />
+            </button>
+            {isMethodDropdownOpen && payoutMethods.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded shadow-lg z-10 max-h-60 overflow-y-auto">
+                {payoutMethods.map((method) => (
+                  <button
+                    key={method.id}
+                    onClick={() => {
+                      setSelectedMethodId(method.id);
+                      setIsMethodDropdownOpen(false);
+                    }}
+                    className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 ${
+                      selectedMethodId === method.id ? 'bg-[#87E64B]/10' : ''
+                    }`}
+                  >
+                    {method.type === PayoutMethodType.BANK_TRANSFER ? (
+                      <Bank className="w-4 h-4 text-gray-500" />
+                    ) : (
+                      <SmartphoneDevice className="w-4 h-4 text-gray-500" />
+                    )}
+                    <div className="flex-1">
+                      <p className="font-medium text-[#171717]">
+                        {method.type === PayoutMethodType.BANK_TRANSFER
+                          ? method.bankName
+                          : MOBILE_PROVIDER_NAMES[method.provider?.toLowerCase() || ''] ||
+                            method.provider}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {method.type === PayoutMethodType.BANK_TRANSFER
+                          ? `${method.accountName} • ${method.accountNumber}`
+                          : method.phoneNumber}
+                      </p>
+                    </div>
+                    {method.isDefault && (
+                      <span className="text-xs text-[#87E64B] font-medium">{t('default')}</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Amount input */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            {t('amount')}
+          </label>
+          <div className="relative">
+            <input
+              type="number"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="0.00"
+              className="w-full px-3 py-2 pr-24 border border-gray-300 rounded focus:outline-none focus:border-[#5E53E0]"
+            />
+            <button
+              onClick={handleWithdrawAll}
+              className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 text-xs text-[#5E53E0] hover:underline"
+            >
+              {t('withdrawAll')}
+            </button>
+          </div>
+          {balance && (
+            <p className="text-xs text-gray-400 mt-1">
+              {t('maxAmount')}: {balance.availableFormatted}
+            </p>
+          )}
+        </div>
+
+        {/* Fee calculation */}
+        {feeCalculation && (
+          <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <Calculator className="w-4 h-4" />
+              {t('feeBreakdown')}
+            </div>
+            <div className="text-sm space-y-1">
+              <div className="flex justify-between">
+                <span className="text-gray-500">{t('withdrawalFee')}</span>
+                <span>- {formatAmount(feeCalculation.fee, balance?.currency)}</span>
+              </div>
+              <div className="flex justify-between font-medium">
+                <span>{t('youWillReceive')}</span>
+                <span className="text-[#171717]">
+                  {formatAmount(feeCalculation.netAmount, balance?.currency)}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {isCalculating && (
+          <div className="text-sm text-gray-400 animate-pulse">{t('calculatingFee')}</div>
+        )}
+
+        {/* Submit */}
+        <button
+          onClick={handleContinue}
+          disabled={!isFormValid || !feeCalculation}
+          className="w-full px-4 py-3 bg-[#87E64B] text-[#171717] font-medium rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {t('continue')}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default WithdrawalRequestPanel;

@@ -94,6 +94,46 @@ export interface SubscriptionStatusResponse {
 }
 
 // ============================================
+// AUTO-RENEWAL TYPES (Epic 15)
+// ============================================
+
+export type PaymentMethodType = 'card' | 'mobile_money' | 'wallet';
+
+export interface AutoRenewStatusDto {
+  subscriptionId: string;
+  autoRenewEnabled: boolean;
+  paymentMethodType: PaymentMethodType;
+  cardLast4?: string;
+  cardType?: string;
+  planName: string;
+  planPriceMinorUnits: number;
+  currency: string;
+  currentPeriodEnd: string | null;
+  willAutoRenew: boolean;
+  autoRenewNotice?: string;
+  isInGracePeriod: boolean;
+  gracePeriodDaysRemaining?: number;
+}
+
+export interface RenewalAttemptDto {
+  id: string;
+  attemptedAt: string;
+  status: 'success' | 'failed' | 'pending';
+  paymentMethodType: PaymentMethodType;
+  amountMinorUnits: number;
+  currency: string;
+  failureReason?: string;
+}
+
+export interface PaginatedRenewalHistory {
+  items: RenewalAttemptDto[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+// ============================================
 // TIER LIMITS & FEATURES (Single source of truth)
 // ============================================
 
@@ -435,6 +475,35 @@ export const subscriptionApi = {
     daysRemaining?: number;
   }>> {
     return apiClient.post('/subscriptions/trial/start');
+  },
+
+  // ============================================
+  // AUTO-RENEWAL MANAGEMENT (Epic 15)
+  // ============================================
+
+  /**
+   * Get auto-renewal status for current subscription
+   */
+  async getAutoRenewStatus(): Promise<ApiResponse<AutoRenewStatusDto>> {
+    return apiClient.get<AutoRenewStatusDto>('/subscriptions/auto-renew');
+  },
+
+  /**
+   * Update auto-renewal setting
+   */
+  async updateAutoRenew(dto: { enabled: boolean }): Promise<ApiResponse<AutoRenewStatusDto>> {
+    return apiClient.patch<AutoRenewStatusDto>('/subscriptions/auto-renew', dto);
+  },
+
+  /**
+   * Get renewal attempt history
+   */
+  async getRenewalHistory(query: { page: number; limit: number }): Promise<ApiResponse<PaginatedRenewalHistory>> {
+    const params = new URLSearchParams({
+      page: query.page.toString(),
+      limit: query.limit.toString(),
+    });
+    return apiClient.get<PaginatedRenewalHistory>(`/subscriptions/renewal-history?${params.toString()}`);
   },
 };
 

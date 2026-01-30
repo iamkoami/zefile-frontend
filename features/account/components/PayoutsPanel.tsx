@@ -2,20 +2,35 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
-import { Wallet, Calendar, NavArrowDown, InfoCircle, Refresh, WarningCircle, Check, Clock, Send } from 'iconoir-react';
+import { Wallet, Calendar, NavArrowDown, InfoCircle, Refresh, WarningCircle, Check, Clock, Send, CreditCard, Xmark } from 'iconoir-react';
 import { payoutsApi, PayoutStatus, PayoutMethod, SenderPayoutsResponse } from '@/services/payouts-api';
+import { withdrawalsApi, BalanceResponse } from '@/services/withdrawals-api';
 import LoadingPanel from '@/components/LoadingPanel';
+import PayoutMethodsPanel from './PayoutMethodsPanel';
+import WithdrawalRequestPanel from './WithdrawalRequestPanel';
 
 // Period filter options
 type PeriodFilter = 'all' | '7days' | '30days' | '90days' | 'year';
 
+// Tab options
+type PayoutsTab = 'history' | 'methods';
+
 /**
  * PayoutsPanel - Displays payout/withdrawal status and history
  * Story 1-8: Payout status visibility
+ * Stories 14-2, 14-3, 14-6, 14-7: Payout methods and withdrawals
  */
 const PayoutsPanel: React.FC = () => {
   const t = useTranslations('payouts');
+  const tMethods = useTranslations('payoutMethods');
   const locale = useLocale();
+
+  // Tab state
+  const [activeTab, setActiveTab] = useState<PayoutsTab>('history');
+  const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+
+  // Balance state
+  const [balance, setBalance] = useState<BalanceResponse | null>(null);
 
   // State
   const [payoutsData, setPayoutsData] = useState<SenderPayoutsResponse | null>(null);
@@ -33,23 +48,30 @@ const PayoutsPanel: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
-  // Load payouts
+  // Load payouts and balance
   useEffect(() => {
-    const fetchPayouts = async () => {
+    const fetchData = async () => {
       setIsLoading(true);
       setError(null);
 
       try {
-        const response = await payoutsApi.getSenderPayouts({
-          status: statusFilter !== 'all' ? statusFilter : undefined,
-          page: currentPage,
-          limit: pageSize,
-        });
+        const [payoutsRes, balanceRes] = await Promise.all([
+          payoutsApi.getSenderPayouts({
+            status: statusFilter !== 'all' ? statusFilter : undefined,
+            page: currentPage,
+            limit: pageSize,
+          }),
+          withdrawalsApi.getBalance(),
+        ]);
 
-        if (response.data) {
-          setPayoutsData(response.data);
-        } else if (response.error) {
-          setError(response.error.message);
+        if (payoutsRes.data) {
+          setPayoutsData(payoutsRes.data);
+        } else if (payoutsRes.error) {
+          setError(payoutsRes.error.message);
+        }
+
+        if (balanceRes.data) {
+          setBalance(balanceRes.data);
         }
       } catch (err) {
         setError(t('loadError'));
@@ -58,8 +80,17 @@ const PayoutsPanel: React.FC = () => {
       }
     };
 
-    fetchPayouts();
+    fetchData();
   }, [t, statusFilter, currentPage]);
+
+  // Handle withdrawal success
+  const handleWithdrawalSuccess = async () => {
+    // Refresh balance after successful withdrawal
+    const balanceRes = await withdrawalsApi.getBalance();
+    if (balanceRes.data) {
+      setBalance(balanceRes.data);
+    }
+  };
 
   // Filter by period (client-side for now)
   const filteredPayouts = useMemo(() => {
@@ -101,8 +132,8 @@ const PayoutsPanel: React.FC = () => {
         completed += payout.amountMinorUnits;
       } else if (
         payout.status === PayoutStatus.PENDING ||
-        payout.status === PayoutStatus.PROCESSING ||
-        payout.status === PayoutStatus.SENT
+        payout.status === PayoutStatus.APPROVED ||
+        payout.status === PayoutStatus.PROCESSING
       ) {
         pending += payout.amountMinorUnits;
       }
@@ -182,17 +213,17 @@ const PayoutsPanel: React.FC = () => {
           className: 'bg-yellow-100 text-yellow-700',
           icon: <Clock className="w-3 h-3" />,
         };
+      case PayoutStatus.APPROVED:
+        return {
+          label: t('statusApproved'),
+          className: 'bg-purple-100 text-purple-700',
+          icon: <Check className="w-3 h-3" />,
+        };
       case PayoutStatus.PROCESSING:
         return {
           label: t('statusProcessing'),
           className: 'bg-blue-100 text-blue-700',
           icon: <Clock className="w-3 h-3 animate-pulse" />,
-        };
-      case PayoutStatus.SENT:
-        return {
-          label: t('statusSent'),
-          className: 'bg-purple-100 text-purple-700',
-          icon: <Send className="w-3 h-3" />,
         };
       case PayoutStatus.FAILED:
         return {
@@ -200,9 +231,15 @@ const PayoutsPanel: React.FC = () => {
           className: 'bg-red-100 text-red-700',
           icon: <WarningCircle className="w-3 h-3" />,
         };
+      case PayoutStatus.REJECTED:
+        return {
+          label: t('statusRejected'),
+          className: 'bg-red-100 text-red-700',
+          icon: <WarningCircle className="w-3 h-3" />,
+        };
       default:
         return {
-          label: status,
+          label: String(status),
           className: 'bg-gray-100 text-gray-700',
           icon: null,
         };
@@ -234,10 +271,11 @@ const PayoutsPanel: React.FC = () => {
   const statusOptions: { value: PayoutStatus | 'all'; label: string }[] = [
     { value: 'all', label: t('statusAll') },
     { value: PayoutStatus.PENDING, label: t('statusPending') },
+    { value: PayoutStatus.APPROVED, label: t('statusApproved') },
     { value: PayoutStatus.PROCESSING, label: t('statusProcessing') },
-    { value: PayoutStatus.SENT, label: t('statusSent') },
     { value: PayoutStatus.COMPLETED, label: t('statusCompleted') },
     { value: PayoutStatus.FAILED, label: t('statusFailed') },
+    { value: PayoutStatus.REJECTED, label: t('statusRejected') },
   ];
 
   if (isLoading) {
@@ -255,20 +293,22 @@ const PayoutsPanel: React.FC = () => {
   return (
     <div>
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-6">
         <h3 className="text-xl font-semibold text-[#171717] mb-2">{t('title')}</h3>
         <p className="text-gray-500 text-sm">{t('subtitle')}</p>
       </div>
 
       {/* Balance Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         {/* Available Balance */}
         <div className="bg-gradient-to-br from-[#87E64B]/10 to-[#87E64B]/5 border border-[#87E64B]/30 rounded-lg p-6">
           <div className="flex items-center gap-2 mb-2">
             <Wallet className="w-5 h-5 text-[#87E64B]" />
             <span className="text-sm text-gray-600">{t('availableBalance')}</span>
           </div>
-          <p className="text-2xl font-bold text-[#171717]">{formatAmount(availableBalance)}</p>
+          <p className="text-2xl font-bold text-[#171717]">
+            {balance?.availableFormatted || formatAmount(availableBalance)}
+          </p>
         </div>
 
         {/* Pending Payouts */}
@@ -277,7 +317,9 @@ const PayoutsPanel: React.FC = () => {
             <Clock className="w-5 h-5 text-gray-400" />
             <span className="text-sm text-gray-600">{t('pendingPayouts')}</span>
           </div>
-          <p className="text-2xl font-bold text-[#171717]">{formatAmount(pendingBalance)}</p>
+          <p className="text-2xl font-bold text-[#171717]">
+            {balance?.pendingFormatted || formatAmount(pendingBalance)}
+          </p>
         </div>
 
         {/* Total Earned */}
@@ -290,29 +332,45 @@ const PayoutsPanel: React.FC = () => {
         </div>
       </div>
 
-      {/* Withdrawal Section */}
-      <div className="bg-[#FDF8F0] border border-[#E8E0D5] rounded-lg p-6 mb-8">
-        <div className="flex items-start gap-3">
-          <InfoCircle className="w-5 h-5 text-[#5E53E0] flex-shrink-0 mt-0.5" />
-          <div>
-            <h4 className="font-medium text-[#171717] mb-1">{t('withdrawalInfo')}</h4>
-            <p className="text-sm text-gray-600">{t('withdrawalDescription')}</p>
-            <p className="text-sm text-gray-500 mt-2">
-              {t('minimumWithdrawal')}: {formatAmount(100000)}
-            </p>
-          </div>
-        </div>
-      </div>
-
       {/* Request Withdrawal Button */}
       <button
-        disabled={availableBalance < 100000}
-        className="w-full md:w-auto px-6 py-3 bg-[#87E64B] text-[#171717] font-medium rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed mb-8"
+        onClick={() => setShowWithdrawModal(true)}
+        disabled={(balance?.availableMinorUnits || 0) < 100000}
+        className="w-full md:w-auto px-6 py-3 bg-[#87E64B] text-[#171717] font-medium rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed mb-6"
       >
         {t('requestWithdrawal')}
       </button>
 
-      {/* Payout History Section */}
+      {/* Tabs */}
+      <div className="flex gap-1 border-b border-gray-200 mb-6">
+        <button
+          onClick={() => setActiveTab('history')}
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === 'history'
+              ? 'border-[#87E64B] text-[#171717]'
+              : 'border-transparent text-gray-500 hover:text-[#171717]'
+          }`}
+        >
+          {t('payoutHistory')}
+        </button>
+        <button
+          onClick={() => setActiveTab('methods')}
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
+            activeTab === 'methods'
+              ? 'border-[#87E64B] text-[#171717]'
+              : 'border-transparent text-gray-500 hover:text-[#171717]'
+          }`}
+        >
+          <CreditCard className="w-4 h-4" />
+          {tMethods('title')}
+        </button>
+      </div>
+
+      {/* Payout Methods Tab */}
+      {activeTab === 'methods' && <PayoutMethodsPanel />}
+
+      {/* Payout History Tab */}
+      {activeTab === 'history' && (
       <div>
         <div className="flex items-center justify-between mb-4">
           <h4 className="font-semibold text-[#171717]">{t('payoutHistory')}</h4>
@@ -422,12 +480,16 @@ const PayoutsPanel: React.FC = () => {
                       {/* Details Row */}
                       <div className="flex items-center gap-4 text-sm text-gray-500">
                         <span>{formatDate(payout.createdAt)}</span>
-                        <span>•</span>
-                        <span>{getMethodLabel(payout.method)}</span>
-                        {payout.accountDetailsMasked && (
+                        {payout.payoutMethod?.type && (
                           <>
                             <span>•</span>
-                            <span>{payout.accountDetailsMasked}</span>
+                            <span>{payout.payoutMethod.type === 'bank_account' ? t('methodBankTransfer') : t('methodMobileMoney')}</span>
+                          </>
+                        )}
+                        {(payout.payoutMethod?.accountNumber || payout.payoutMethod?.phoneNumber) && (
+                          <>
+                            <span>•</span>
+                            <span>{payout.payoutMethod.accountNumber || payout.payoutMethod.phoneNumber}</span>
                           </>
                         )}
                       </div>
@@ -439,8 +501,8 @@ const PayoutsPanel: React.FC = () => {
 
                       {/* Estimated Arrival */}
                       {(payout.status === PayoutStatus.PENDING ||
-                        payout.status === PayoutStatus.PROCESSING ||
-                        payout.status === PayoutStatus.SENT) &&
+                        payout.status === PayoutStatus.APPROVED ||
+                        payout.status === PayoutStatus.PROCESSING) &&
                         payout.estimatedArrival && (
                           <p className="text-sm text-gray-500 mt-2">
                             {t('estimatedArrival')}: {formatDate(payout.estimatedArrival)}
@@ -516,6 +578,30 @@ const PayoutsPanel: React.FC = () => {
           </div>
         )}
       </div>
+      )}
+
+      {/* Withdrawal Modal */}
+      {showWithdrawModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h2 className="text-lg font-semibold">{t('requestWithdrawal')}</h2>
+              <button
+                onClick={() => setShowWithdrawModal(false)}
+                className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <Xmark className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-4">
+              <WithdrawalRequestPanel
+                onClose={() => setShowWithdrawModal(false)}
+                onSuccess={handleWithdrawalSuccess}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -3,9 +3,11 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { NavArrowDown, Sparks } from "iconoir-react";
 import LanguageSwitcher from "./LanguageSwitcher";
+import CurrencySwitcher from "./CurrencySwitcher";
 import AuthPanel from "@/features/auth/components/AuthPanel";
 import { authApi } from "@/services/auth-api";
 import LoadingFullscreen from "@/components/LoadingFullscreen";
@@ -22,6 +24,8 @@ const Header = () => {
   const tUpload = useUploadTranslations("uploadProtection");
   const { openDrawer, openAccountView } = useDrawerStore();
   const { canInterrupt, reset: resetUpload } = useUploadStore();
+  const pathname = usePathname();
+  const router = useRouter();
   const [showAuthPanel, setShowAuthPanel] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('signup');
   const [showResourcesDropdown, setShowResourcesDropdown] = useState(false);
@@ -130,20 +134,38 @@ const Header = () => {
     };
   }, []);
 
+  // Helper to open drawer - navigates home first if not already there
+  const handleOpenDrawer = (drawerType: "transfers" | "contacts" | "subscriptions" | "analytics") => {
+    if (pathname === "/") {
+      openDrawer(drawerType);
+    } else {
+      router.push(`/?drawer=${drawerType}`);
+    }
+  };
+
+  // Helper to open account view - navigates home first if not already there
+  const handleOpenAccountView = (view: "settings" | "help") => {
+    if (pathname === "/") {
+      openAccountView(view);
+    } else {
+      router.push(`/?account=${view}`);
+    }
+  };
+
   const mainMenuItems = [
     { label: t("helpCenter"), href: "/help" },
     { label: t("howItWorks"), href: "/how-it-works" },
-    { label: t("pricing"), action: () => openDrawer("subscriptions") },
+    { label: t("pricing"), action: () => handleOpenDrawer("subscriptions") },
     { label: t("advertisers"), href: "/advertisers" },
     { label: t("about"), href: "/about" },
   ];
 
   const loggedInMenuItems = [
-    { label: t("transfers"), action: () => openDrawer("transfers") },
-    { label: t("analytics"), action: () => openDrawer("analytics") },
-    { label: t("accountSettings"), action: () => openAccountView("settings") },
-    { label: t("contacts"), action: () => openDrawer("contacts") },
-    { label: t("subscription"), action: () => openDrawer("subscriptions") },
+    { label: t("transfers"), action: () => handleOpenDrawer("transfers") },
+    { label: t("analytics"), action: () => handleOpenDrawer("analytics") },
+    { label: t("accountSettings"), action: () => handleOpenAccountView("settings") },
+    { label: t("contacts"), action: () => handleOpenDrawer("contacts") },
+    { label: t("subscription"), action: () => handleOpenDrawer("subscriptions") },
   ];
 
   const resourcesMenuItems = [
@@ -309,8 +331,11 @@ const Header = () => {
             </nav>
           </div>
 
-          {/* Right: Language Switcher + Auth/User Menu */}
+          {/* Right: Currency + Language Switcher + Auth/User Menu */}
           <div className="ze-header-right">
+            {/* Currency Switcher */}
+            <CurrencySwitcher />
+
             {/* Language Switcher */}
             <LanguageSwitcher />
 
@@ -360,7 +385,7 @@ const Header = () => {
                 {/* Upgrade button - Show only for free tier */}
                 {subscriptionTier === "free" && (
                   <button
-                    onClick={() => openDrawer("subscriptions")}
+                    onClick={() => handleOpenDrawer("subscriptions")}
                     className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold text-[#5E53E0] hover:text-[#4a42b8] transition-colors"
                   >
                     <Sparks className="w-4 h-4" />

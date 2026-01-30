@@ -149,13 +149,49 @@
     @apply flex items-center flex-shrink-0;
   }
 
-  /* Content Panel */
+  /* Content Panel - Time-based theming */
   .ze-content-panel {
     @apply rounded-2xl flex items-center;
-    background-color: #ECF0F4;
+    background-color: #f9f4f0;
     margin: 5px 28px 28px 28px;
     min-height: calc(100vh - 64px - 28px - 5px);
     padding: 1rem 1.5rem;
+    transition: background-color 1.5s ease-in-out, color 1.5s ease-in-out;
+  }
+
+  /* Time of day themes */
+  .ze-content-panel.ze-time-day {
+    background-color: #93E5F7;
+  }
+
+  .ze-content-panel.ze-time-evening {
+    background-color: #F9F4F0;
+  }
+
+  .ze-content-panel.ze-time-night {
+    background-color: #13121D;
+  }
+
+  /* Night mode text adjustments */
+  .ze-time-night .ze-upload-panel,
+  .ze-time-night .ze-file-preview-panel {
+    color: #FFFFFF;
+  }
+
+  .ze-time-night .ze-upload-panel .text-gray-500,
+  .ze-time-night .ze-upload-panel .text-gray-400,
+  .ze-time-night .ze-file-preview-panel .text-gray-500 {
+    color: #9CA3AF !important;
+  }
+
+  .ze-time-night .ze-upload-panel .text-gray-900,
+  .ze-time-night .ze-file-preview-panel .text-gray-900 {
+    color: #F9FAFB !important;
+  }
+
+  /* Night mode border color for upload panel */
+  .ze-time-night .ze-upload-panel {
+    border-color: #87E64B;
   }
 
   /* Panels Container */
@@ -185,13 +221,13 @@
   }
 
   .ze-menu-item:hover {
-    background-color: #E5E5E5;
+    background-color: #e5e5e5;
   }
 
   /* Primary Button */
   .ze-button-primary {
     @apply px-4 text-sm transition-colors flex items-center;
-    background-color: #87E64B;
+    background-color: #87e64b;
     color: #000000;
     border-radius: 4px;
     height: 40px;
@@ -199,45 +235,45 @@
   }
 
   .ze-button-primary:hover {
-    background-color: #75D43A;
+    background-color: #75d43a;
   }
 
   /* Transfer Button */
   .ze-transfer-button {
     @apply flex-1 py-3 px-4 transition-colors;
-    background-color: #87E64B;
+    background-color: #87e64b;
     color: #000000;
     border-radius: 4px;
     font-weight: 600;
   }
 
   .ze-transfer-button:hover:not(:disabled) {
-    background-color: #75D43A;
+    background-color: #75d43a;
   }
 
   .ze-transfer-button:disabled {
-    background-color: #D1D5DB;
-    color: #9CA3AF;
+    background-color: #d1d5db;
+    color: #9ca3af;
     cursor: not-allowed;
   }
 
   /* Options Button */
   .ze-options-button {
     @apply px-4 py-3 transition-colors;
-    border: 1px solid #D1D5DB;
+    border: 1px solid #d1d5db;
     border-radius: 4px;
-    background-color: #FFFFFF;
+    background-color: #ffffff;
   }
 
   .ze-options-button:hover {
-    background-color: #F9FAFB;
+    background-color: #f9fafb;
   }
 
   /* Form Controls */
   .ze-form-select,
   .ze-form-input {
     @apply w-full px-4 focus:outline-none transition-all;
-    background-color: #FFFFFF;
+    background-color: #ffffff;
     border: 1px solid #171717;
     border-radius: 4px;
     color: #000000;
@@ -255,7 +291,7 @@
 
   .ze-form-select:focus,
   .ze-form-input:focus {
-    border-color: #87E64B;
+    border-color: #87e64b;
     box-shadow: 0 0 0 2px rgba(135, 230, 75, 0.1);
   }
 
@@ -263,14 +299,14 @@
   .ze-upload-area {
     @apply border border-dashed cursor-pointer transition-colors;
     border-radius: 12px;
-    border-color: #D1D5DB;
-    background-color: #FFF5ED;
+    border-color: #d1d5db;
+    background-color: #fff5ed;
     padding: 24px 20px;
   }
 
   .ze-upload-area.dragging {
-    border-color: #87E64B;
-    background-color: #F0FDF4;
+    border-color: #87e64b;
+    background-color: #f0fdf4;
   }
 
   /* Options Panel */
@@ -300,9 +336,9 @@
 
   .ze-options-panel-content {
     @apply p-6;
-    background-color: #FFFFFF;
+    background-color: #ffffff;
     border-radius: 12px;
-    border: 1px solid #E5E7EB;
+    border: 1px solid #e5e7eb;
     width: 320px;
   }
 
@@ -325,9 +361,9 @@
 
   .ze-file-preview-content {
     @apply p-6;
-    background-color: #FFFFFF;
+    background-color: #ffffff;
     border-radius: 12px;
-    border: 1px solid #E5E7EB;
+    border: 1px solid #e5e7eb;
     width: 320px;
   }
 
@@ -337,11 +373,11 @@
   }
 
   .ze-file-item:hover {
-    background-color: #E5E5E5;
+    background-color: #e5e5e5;
   }
 
   .ze-add-more-section {
-    background-color: #FFF5ED;
+    background-color: #fff5ed;
   }
 }
 
@@ -391,39 +427,79 @@
 
 /* OTP Input Placeholder */
 .ze-form-input::placeholder {
-  color: #E1E1E1;
+  color: #e1e1e1;
 }
 
 /* OTP Input with light green placeholder */
 .ze-form-input.otp-input::placeholder {
-  color: #C8E6A8;
+  color: #c8e6a8;
 }
 
 /* Custom Spacing Utilities - mt (margin-top) and mb (margin-bottom) 11-20 */
 @layer utilities {
   /* Margin Top: mt-11 to mt-20 */
-  .mt-11 { margin-top: 2.75rem; }   /* 44px */
-  .mt-12 { margin-top: 3rem; }      /* 48px */
-  .mt-13 { margin-top: 3.25rem; }   /* 52px */
-  .mt-14 { margin-top: 3.5rem; }    /* 56px */
-  .mt-15 { margin-top: 3.75rem; }   /* 60px */
-  .mt-16 { margin-top: 4rem; }      /* 64px */
-  .mt-17 { margin-top: 4.25rem; }   /* 68px */
-  .mt-18 { margin-top: 4.5rem; }    /* 72px */
-  .mt-19 { margin-top: 4.75rem; }   /* 76px */
-  .mt-20 { margin-top: 5rem; }      /* 80px */
+  .mt-11 {
+    margin-top: 2.75rem;
+  } /* 44px */
+  .mt-12 {
+    margin-top: 3rem;
+  } /* 48px */
+  .mt-13 {
+    margin-top: 3.25rem;
+  } /* 52px */
+  .mt-14 {
+    margin-top: 3.5rem;
+  } /* 56px */
+  .mt-15 {
+    margin-top: 3.75rem;
+  } /* 60px */
+  .mt-16 {
+    margin-top: 4rem;
+  } /* 64px */
+  .mt-17 {
+    margin-top: 4.25rem;
+  } /* 68px */
+  .mt-18 {
+    margin-top: 4.5rem;
+  } /* 72px */
+  .mt-19 {
+    margin-top: 4.75rem;
+  } /* 76px */
+  .mt-20 {
+    margin-top: 5rem;
+  } /* 80px */
 
   /* Margin Bottom: mb-11 to mb-20 */
-  .mb-11 { margin-bottom: 2.75rem; }   /* 44px */
-  .mb-12 { margin-bottom: 3rem; }      /* 48px */
-  .mb-13 { margin-bottom: 3.25rem; }   /* 52px */
-  .mb-14 { margin-bottom: 3.5rem; }    /* 56px */
-  .mb-15 { margin-bottom: 3.75rem; }   /* 60px */
-  .mb-16 { margin-bottom: 4rem; }      /* 64px */
-  .mb-17 { margin-bottom: 4.25rem; }   /* 68px */
-  .mb-18 { margin-bottom: 4.5rem; }    /* 72px */
-  .mb-19 { margin-bottom: 4.75rem; }   /* 76px */
-  .mb-20 { margin-bottom: 5rem; }      /* 80px */
+  .mb-11 {
+    margin-bottom: 2.75rem;
+  } /* 44px */
+  .mb-12 {
+    margin-bottom: 3rem;
+  } /* 48px */
+  .mb-13 {
+    margin-bottom: 3.25rem;
+  } /* 52px */
+  .mb-14 {
+    margin-bottom: 3.5rem;
+  } /* 56px */
+  .mb-15 {
+    margin-bottom: 3.75rem;
+  } /* 60px */
+  .mb-16 {
+    margin-bottom: 4rem;
+  } /* 64px */
+  .mb-17 {
+    margin-bottom: 4.25rem;
+  } /* 68px */
+  .mb-18 {
+    margin-bottom: 4.5rem;
+  } /* 72px */
+  .mb-19 {
+    margin-bottom: 4.75rem;
+  } /* 76px */
+  .mb-20 {
+    margin-bottom: 5rem;
+  } /* 80px */
 }
 
 /* OTP Input Styles */

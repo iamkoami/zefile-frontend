@@ -1,0 +1,23 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="1200" height="630" fill="#FDFAF4"/>
+
+  <!-- Accent bar -->
+  <rect y="0" width="1200" height="8" fill="#5E53E0"/>
+
+  <!-- Logo area (placeholder) -->
+  <circle cx="600" cy="240" r="60" fill="#5E53E0"/>
+  <text x="600" y="250" text-anchor="middle" fill="white" font-family="system-ui, sans-serif" font-size="40" font-weight="bold">Z</text>
+
+  <!-- Title -->
+  <text x="600" y="360" text-anchor="middle" fill="#171717" font-family="system-ui, sans-serif" font-size="48" font-weight="bold">ZeFile</text>
+
+  <!-- Tagline -->
+  <text x="600" y="420" text-anchor="middle" fill="#5E53E0" font-family="system-ui, sans-serif" font-size="28">Secure File Transfer with Payment Protection</text>
+
+  <!-- Feature highlights -->
+  <text x="600" y="500" text-anchor="middle" fill="#666666" font-family="system-ui, sans-serif" font-size="20">Free up to 2GB • Encrypted • Get Paid Before Download</text>
+
+  <!-- Bottom accent -->
+  <rect y="622" width="1200" height="8" fill="#87E64B"/>
+</svg>

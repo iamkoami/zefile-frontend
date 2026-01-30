@@ -32,7 +32,9 @@ This feature implements the ZeFile home page based on the Figma wireframe design
   - Options button (three dots) to show/hide TransferOptionsPanel
 
 ### TransferOptionsPanel
-- **Location**: `features/home/components/TransferOptionsPanel.tsx`
+
+- **Location**: `features/transfer/components/TransferOptionsPanel.tsx`
+- **Import**: `import { TransferOptionsPanel } from '@/features/transfer';`
 - **Features**:
   - Visible only when options button is clicked
   - Four form fields:

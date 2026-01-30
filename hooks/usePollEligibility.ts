@@ -71,7 +71,7 @@ export function usePollEligibility(
         const response = await pollApi.getEligiblePoll(trigger);
 
         if (response.error) {
-          setError(response.error);
+          setError(response.error.message || 'Failed to fetch poll');
           return null;
         }
 

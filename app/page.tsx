@@ -1,29 +1,80 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Header } from '@/components/shared';
-import UploadPanel, { PanelState, ReuseTransferData } from '@/features/home/components/UploadPanel';
-import FilePreviewPanel from '@/features/home/components/FilePreviewPanel';
-import TransferOptionsPanel from '@/features/home/components/TransferOptionsPanel';
-import GlobalDragDropOverlay from '@/features/home/components/GlobalDragDropOverlay';
-import LoadingFullscreen from '@/components/LoadingFullscreen';
-import NPSSurveyModal from '@/components/shared/NPSSurveyModal';
-import FloatingPollWidget from '@/components/shared/FloatingPollWidget';
-import { platformApi } from '@/services/platform-api';
-import surveysApi from '@/services/surveys-api';
-import { authApi } from '@/services/auth-api';
-import { SideDrawer } from '@/features/drawer';
-import ToastContainer from '@/components/shared/Toast';
-import { UploadProtectionProvider } from '@/components/providers/UploadProtectionProvider';
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { Header } from "@/components/shared";
+import UploadPanel, {
+  PanelState,
+  ReuseTransferData,
+} from "@/features/home/components/UploadPanel";
+import FilePreviewPanel from "@/features/transfer/components/FilePreviewPanel";
+import TransferOptionsPanel from "@/features/transfer/components/TransferOptionsPanel";
+import PaperPlaneAnimation from "@/components/shared/PaperPlaneAnimation";
+import HeroText from "@/components/shared/HeroText";
+import TimeOfDayBackground from "@/components/shared/TimeOfDayBackground";
+import GlobalDragDropOverlay from "@/features/home/components/GlobalDragDropOverlay";
+import LoadingFullscreen from "@/components/LoadingFullscreen";
+import NPSSurveyModal from "@/components/shared/NPSSurveyModal";
+import FloatingPollWidget from "@/components/shared/FloatingPollWidget";
+import { platformApi } from "@/services/platform-api";
+import surveysApi from "@/services/surveys-api";
+import { authApi } from "@/services/auth-api";
+import { SideDrawer } from "@/features/drawer";
+import ToastContainer from "@/components/shared/Toast";
+import { UploadProtectionProvider } from "@/components/providers/UploadProtectionProvider";
+import { useDrawerStore } from "@/stores/drawer-store";
+import { useTimeOfDay } from "@/hooks/useTimeOfDay";
 
 export default function Home() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const { openDrawer, openAccountView } = useDrawerStore();
+  const { timeOfDay } = useTimeOfDay();
+
   const [showOptions, setShowOptions] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [maxUploadSize, setMaxUploadSize] = useState<number>(2147483648); // Default 2GB
   const [isLoading, setIsLoading] = useState(true);
-  const [uploadPanelState, setUploadPanelState] = useState<PanelState>('initial');
-  const [reuseTransferData, setReuseTransferData] = useState<ReuseTransferData | null>(null);
+  const [uploadPanelState, setUploadPanelState] =
+    useState<PanelState>("initial");
+  const [reuseTransferData, setReuseTransferData] =
+    useState<ReuseTransferData | null>(null);
   const [showNpsSurvey, setShowNpsSurvey] = useState(false);
+
+  // Handle drawer/account query params from navigation
+  useEffect(() => {
+    const drawerParam = searchParams.get("drawer");
+    const accountParam = searchParams.get("account");
+
+    if (drawerParam) {
+      const validDrawers = [
+        "transfers",
+        "contacts",
+        "subscriptions",
+        "analytics",
+      ];
+      if (validDrawers.includes(drawerParam)) {
+        openDrawer(
+          drawerParam as
+            | "transfers"
+            | "contacts"
+            | "subscriptions"
+            | "analytics",
+        );
+      }
+      // Clean up URL
+      router.replace("/", { scroll: false });
+    }
+
+    if (accountParam) {
+      const validViews = ["settings", "help"];
+      if (validViews.includes(accountParam)) {
+        openAccountView(accountParam as "settings" | "help");
+      }
+      // Clean up URL
+      router.replace("/", { scroll: false });
+    }
+  }, [searchParams, openDrawer, openAccountView, router]);
 
   // Calculate total size of selected files using useMemo
   const selectedFilesSize = useMemo(() => {
@@ -39,7 +90,7 @@ export default function Home() {
           setMaxUploadSize(response.data.maxUploadSize);
         }
       } catch (error) {
-        console.error('Failed to fetch platform config:', error);
+        console.error("Failed to fetch platform config:", error);
       }
     };
     fetchConfig();
@@ -62,7 +113,7 @@ export default function Home() {
         }
       } catch (error) {
         // Silently fail - NPS survey is not critical
-        console.error('Failed to check NPS survey status:', error);
+        console.error("Failed to check NPS survey status:", error);
       }
     };
     checkNpsSurvey();
@@ -73,15 +124,15 @@ export default function Home() {
   }, []);
 
   const handleAddMoreFiles = useCallback((newFiles: File[]) => {
-    setSelectedFiles(prev => [...prev, ...newFiles]);
+    setSelectedFiles((prev) => [...prev, ...newFiles]);
   }, []);
 
   const handleRemoveFile = useCallback((index: number) => {
-    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
   }, []);
 
   const handleToggleOptions = useCallback(() => {
-    setShowOptions(prev => !prev);
+    setShowOptions((prev) => !prev);
   }, []);
 
   const handleClearReuseData = useCallback(() => {
@@ -90,9 +141,7 @@ export default function Home() {
 
   // Listen for add-transfer-files-to-upload event from TransferDetailsPanel
   useEffect(() => {
-    const handleAddTransferFiles = (
-      event: CustomEvent<ReuseTransferData>
-    ) => {
+    const handleAddTransferFiles = (event: CustomEvent<ReuseTransferData>) => {
       const { transferId, files, title } = event.detail;
       if (transferId && files && files.length > 0) {
         setReuseTransferData({ transferId, files, title });
@@ -100,14 +149,14 @@ export default function Home() {
     };
 
     window.addEventListener(
-      'add-transfer-files-to-upload',
-      handleAddTransferFiles as EventListener
+      "add-transfer-files-to-upload",
+      handleAddTransferFiles as EventListener,
     );
 
     return () => {
       window.removeEventListener(
-        'add-transfer-files-to-upload',
-        handleAddTransferFiles as EventListener
+        "add-transfer-files-to-upload",
+        handleAddTransferFiles as EventListener,
       );
     };
   }, []);
@@ -144,14 +193,28 @@ export default function Home() {
         <Header />
 
         {/* Main Content */}
-        <main id="ze-main-content" className="pt-0 pb-0" style={{ minHeight: 'calc(100vh - 64px)' }}>
-          <div id="ze-content-panel" className="ze-content-panel">
+        <main
+          id="ze-main-content"
+          className="pt-0 pb-0"
+          style={{ minHeight: "calc(100vh - 64px)", position: "relative" }}
+        >
+          <div
+            id="ze-content-panel"
+            className={`ze-content-panel ze-time-${timeOfDay}`}
+            style={{ position: "relative", overflow: "hidden" }}
+          >
+            {/* Decorative elements - inside panel, on desktop right side */}
+            <TimeOfDayBackground timeOfDay={timeOfDay} />
+            <HeroText isVisible={true} timeOfDay={timeOfDay} />
+            <PaperPlaneAnimation isVisible={true} />
+
             <div
               id="ze-panels-container"
               className="ze-panels-container"
               style={{
-                position: 'relative',
-                transition: 'all 800ms ease-in-out',
+                position: "relative",
+                transition: "all 800ms ease-in-out",
+                zIndex: 10,
               }}
             >
               {/* Upload Panel */}
@@ -172,7 +235,15 @@ export default function Home() {
                 files={selectedFiles}
                 onRemoveFile={handleRemoveFile}
                 onAddMoreFiles={handleAddMoreFiles}
-                isVisible={(selectedFiles.length > 0 || reuseTransferData !== null || uploadPanelState === 'form') && uploadPanelState !== 'otp' && uploadPanelState !== 'uploading' && uploadPanelState !== 'cancel-confirm' && uploadPanelState !== 'complete'}
+                isVisible={
+                  (selectedFiles.length > 0 ||
+                    reuseTransferData !== null ||
+                    uploadPanelState === "form") &&
+                  uploadPanelState !== "otp" &&
+                  uploadPanelState !== "uploading" &&
+                  uploadPanelState !== "cancel-confirm" &&
+                  uploadPanelState !== "complete"
+                }
                 maxUploadSize={maxUploadSize}
                 selectedFilesSize={selectedFilesSize}
                 reuseTransferData={reuseTransferData}

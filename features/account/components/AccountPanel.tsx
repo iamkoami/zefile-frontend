@@ -2,11 +2,13 @@
 
 import React from 'react';
 import { useTranslations } from 'next-intl';
-import { Settings, Page, Wallet, ShieldCheck, InfoCircle } from 'iconoir-react';
+import { Settings, Page, Wallet, ShieldCheck, InfoCircle, RefreshDouble } from 'iconoir-react';
 import { useDrawerStore, AccountMenuItem } from '@/stores/drawer-store';
 import TransactionsPanel from './TransactionsPanel';
 import PayoutsPanel from './PayoutsPanel';
-import { KYCUploadPanel } from '@/features/kyc/components/KYCUploadPanel';
+import SubscriptionSettingsPanel from './SubscriptionSettingsPanel';
+import AccountSettingsContent from './AccountSettingsContent';
+import { KYCFlowPanel } from '@/features/kyc/components/KYCFlowPanel';
 
 interface MenuItem {
   id: AccountMenuItem;
@@ -25,6 +27,7 @@ const AccountPanel: React.FC = () => {
 
   const menuItems: MenuItem[] = [
     { id: 'settings', icon: <Settings className="w-5 h-5" />, labelKey: 'settings' },
+    { id: 'subscription', icon: <RefreshDouble className="w-5 h-5" />, labelKey: 'subscription' },
     { id: 'transactions', icon: <Page className="w-5 h-5" />, labelKey: 'transactions' },
     { id: 'payouts', icon: <Wallet className="w-5 h-5" />, labelKey: 'payouts' },
     { id: 'verification', icon: <ShieldCheck className="w-5 h-5" />, labelKey: 'verification' },
@@ -35,6 +38,8 @@ const AccountPanel: React.FC = () => {
     switch (activeAccountMenu) {
       case 'settings':
         return <AccountSettingsContent />;
+      case 'subscription':
+        return <SubscriptionSettingsPanel />;
       case 'transactions':
         return <TransactionsPanel />;
       case 'payouts':
@@ -94,30 +99,12 @@ const AccountPanel: React.FC = () => {
 };
 
 /**
- * AccountSettingsContent - Placeholder for account settings
- * TODO: Implement full settings (profile, preferences, notifications)
- */
-const AccountSettingsContent: React.FC = () => {
-  const t = useTranslations('account');
-
-  return (
-    <div>
-      <h3 className="text-xl font-semibold text-[#171717] mb-6">
-        {t('settingsTitle')}
-      </h3>
-      <p className="text-gray-500">
-        {t('settingsPlaceholder')}
-      </p>
-    </div>
-  );
-};
-
-/**
  * VerificationContent - KYC identity verification
  * Story 4.2: KYC Document Submission
+ * Story 16.5 & 16.6: BVN Verification & Multi-Step Flow
  */
 const VerificationContent: React.FC = () => {
-  return <KYCUploadPanel />;
+  return <KYCFlowPanel />;
 };
 
 /**
