@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { useTranslations, useLocale } from 'next-intl';
+import React, { useState, useEffect, useMemo } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import {
   Wallet,
   Check,
@@ -9,18 +9,55 @@ import {
   WarningTriangle,
   Calculator,
   Bank,
-  SmartphoneDevice,
-} from 'iconoir-react';
-import { withdrawalsApi, BalanceResponse, FeeCalculationResponse } from '@/services/withdrawals-api';
+} from "iconoir-react";
+import {
+  withdrawalsApi,
+  BalanceResponse,
+  FeeCalculationResponse,
+} from "@/services/withdrawals-api";
 import {
   payoutMethodsApi,
   PayoutMethod,
   PayoutMethodType,
   MOBILE_PROVIDER_NAMES,
-} from '@/services/payout-methods-api';
-import LoadingPanel from '@/components/LoadingPanel';
+} from "@/services/payout-methods-api";
+import LoadingPanel from "@/components/LoadingPanel";
 
-type Step = 'form' | 'confirm' | 'success';
+// Provider icon component - uses SVG icons from /public/icons/payment/
+const ProviderIcon: React.FC<{ provider: string; size?: "sm" | "md" }> = ({
+  provider,
+  size = "sm",
+}) => {
+  const sizeClasses = {
+    sm: "w-5 h-5",
+    md: "w-6 h-6",
+  };
+
+  // Map provider names to icon filenames
+  const iconMap: Record<string, string> = {
+    mtn: "mtn",
+    orange: "orange",
+    wave: "wave",
+    mpesa: "mpesa",
+    vodafone: "vodafone",
+    airtel: "airtel",
+    tigo: "tigo",
+    moov: "moov",
+    free: "orange",
+  };
+
+  const iconName = iconMap[provider.toLowerCase()] || "mtn";
+
+  return (
+    <img
+      src={`/icons/payment/${iconName}.svg`}
+      alt={provider}
+      className={`${sizeClasses[size]} object-contain`}
+    />
+  );
+};
+
+type Step = "form" | "confirm" | "success";
 
 interface WithdrawalRequestPanelProps {
   onClose?: () => void;
@@ -31,31 +68,34 @@ interface WithdrawalRequestPanelProps {
  * WithdrawalRequestPanel - Request a withdrawal from available balance
  * Stories 14-6, 14-7: Withdrawal Request Flow
  */
-const WithdrawalRequestPanel: React.FC<WithdrawalRequestPanelProps> = ({ onClose, onSuccess }) => {
-  const t = useTranslations('withdrawals');
+const WithdrawalRequestPanel: React.FC<WithdrawalRequestPanelProps> = ({
+  onClose,
+  onSuccess,
+}) => {
+  const t = useTranslations("withdrawals");
   const locale = useLocale();
 
   // State
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [step, setStep] = useState<Step>('form');
+  const [step, setStep] = useState<Step>("form");
 
   // Data
   const [balance, setBalance] = useState<BalanceResponse | null>(null);
   const [payoutMethods, setPayoutMethods] = useState<PayoutMethod[]>([]);
 
   // Form
-  const [selectedMethodId, setSelectedMethodId] = useState<string>('');
-  const [amount, setAmount] = useState<string>('');
+  const [selectedMethodId, setSelectedMethodId] = useState<string>("");
+  const [amount, setAmount] = useState<string>("");
   const [isMethodDropdownOpen, setIsMethodDropdownOpen] = useState(false);
 
   // Fee calculation
-  const [feeCalculation, setFeeCalculation] = useState<FeeCalculationResponse | null>(null);
+  const [feeCalculation, setFeeCalculation] =
+    useState<FeeCalculationResponse | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
 
   // Submission
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [withdrawalReference, setWithdrawalReference] = useState<string>('');
 
   // Load balance and payout methods
   useEffect(() => {
@@ -87,7 +127,7 @@ const WithdrawalRequestPanel: React.FC<WithdrawalRequestPanelProps> = ({ onClose
         }
       }
     } catch (err) {
-      setError(t('loadError'));
+      setError(t("loadError"));
     } finally {
       setIsLoading(false);
     }
@@ -110,7 +150,7 @@ const WithdrawalRequestPanel: React.FC<WithdrawalRequestPanelProps> = ({ onClose
           setFeeCalculation(response.data);
         }
       } catch (err) {
-        console.error('Failed to calculate fee:', err);
+        console.error("Failed to calculate fee:", err);
       } finally {
         setIsCalculating(false);
       }
@@ -126,18 +166,25 @@ const WithdrawalRequestPanel: React.FC<WithdrawalRequestPanelProps> = ({ onClose
   }, [payoutMethods, selectedMethodId]);
 
   // Format currency
-  const formatAmount = (minorUnits: number, currency: string = 'XOF'): string => {
+  const formatAmount = (
+    minorUnits: number,
+    currency: string = "XOF",
+  ): string => {
     const symbols: Record<string, string> = {
-      XOF: 'Fr CFA',
-      NGN: '₦',
-      GHS: '₵',
-      KES: 'KSh',
-      ZAR: 'R',
-      USD: '$',
+      XOF: "Fr CFA",
+      NGN: "₦",
+      GHS: "₵",
+      KES: "KSh",
+      ZAR: "R",
+      USD: "$",
     };
     const symbol = symbols[currency] || currency;
-    const formatted = (minorUnits / 100).toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-US');
-    return currency === 'XOF' ? `${formatted} ${symbol}` : `${symbol}${formatted}`;
+    const formatted = (minorUnits / 100).toLocaleString(
+      locale === "fr" ? "fr-FR" : "en-US",
+    );
+    return currency === "XOF"
+      ? `${formatted} ${symbol}`
+      : `${symbol}${formatted}`;
   };
 
   // Validate form
@@ -156,7 +203,7 @@ const WithdrawalRequestPanel: React.FC<WithdrawalRequestPanelProps> = ({ onClose
   // Handle continue to confirm
   const handleContinue = () => {
     if (!isFormValid || !feeCalculation) return;
-    setStep('confirm');
+    setStep("confirm");
   };
 
   // Handle submit
@@ -174,16 +221,15 @@ const WithdrawalRequestPanel: React.FC<WithdrawalRequestPanelProps> = ({ onClose
       });
 
       if (response.data) {
-        setWithdrawalReference(response.data.id);
-        setStep('success');
+        setStep("success");
         onSuccess?.();
       } else if (response.error) {
         setError(response.error.message);
-        setStep('form');
+        setStep("form");
       }
     } catch (err) {
-      setError(t('submitError'));
-      setStep('form');
+      setError(t("submitError"));
+      setStep("form");
     } finally {
       setIsSubmitting(false);
     }
@@ -201,39 +247,41 @@ const WithdrawalRequestPanel: React.FC<WithdrawalRequestPanelProps> = ({ onClose
   }
 
   // Success step
-  if (step === 'success') {
+  if (step === "success") {
     return (
       <div className="text-center py-8">
         <div className="w-16 h-16 bg-[#87E64B]/20 rounded-full flex items-center justify-center mx-auto mb-4">
           <Check className="w-8 h-8 text-[#87E64B]" />
         </div>
-        <h3 className="text-xl font-semibold text-[#171717] mb-2">{t('success')}</h3>
-        <p className="text-gray-500 mb-6">{t('successMessage')}</p>
-        <p className="text-sm text-gray-400 mb-6">
-          {t('processingTime')}
-        </p>
+        <h3 className="text-xl font-semibold text-[#171717] mb-2">
+          {t("success")}
+        </h3>
+        <p className="text-gray-500 mb-6">{t("successMessage")}</p>
+        <p className="text-sm text-gray-400 mb-6">{t("processingTime")}</p>
         <button
           onClick={onClose}
-          className="px-6 py-2 bg-[#87E64B] text-[#171717] font-medium rounded hover:bg-[#78d43f] transition-colors"
+          className="px-6 py-2 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors"
         >
-          {t('done')}
+          {t("done")}
         </button>
       </div>
     );
   }
 
   // Confirm step
-  if (step === 'confirm') {
+  if (step === "confirm") {
     return (
       <div>
         <button
-          onClick={() => setStep('form')}
+          onClick={() => setStep("form")}
           className="text-sm text-[#5E53E0] hover:underline mb-4"
         >
-          ← {t('back')}
+          ← {t("back")}
         </button>
 
-        <h3 className="text-lg font-semibold text-[#171717] mb-4">{t('confirmTitle')}</h3>
+        <h3 className="text-lg font-semibold text-[#171717] mb-4">
+          {t("confirmTitle")}
+        </h3>
 
         {error && (
           <div className="mb-4 p-3 bg-red-50 text-red-700 rounded text-sm flex items-center gap-2">
@@ -244,15 +292,19 @@ const WithdrawalRequestPanel: React.FC<WithdrawalRequestPanelProps> = ({ onClose
 
         <div className="bg-gray-50 rounded-lg p-4 mb-6 space-y-3">
           <div className="flex justify-between">
-            <span className="text-gray-500">{t('amount')}</span>
-            <span className="font-medium">{formatAmount(feeCalculation?.amount || 0, balance?.currency)}</span>
+            <span className="text-gray-500">{t("amount")}</span>
+            <span className="font-medium">
+              {formatAmount(feeCalculation?.amount || 0, balance?.currency)}
+            </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-500">{t('fee')}</span>
-            <span className="text-gray-700">- {formatAmount(feeCalculation?.fee || 0, balance?.currency)}</span>
+            <span className="text-gray-500">{t("fee")}</span>
+            <span className="text-gray-700">
+              - {formatAmount(feeCalculation?.fee || 0, balance?.currency)}
+            </span>
           </div>
           <div className="border-t pt-3 flex justify-between">
-            <span className="font-medium">{t('youWillReceive')}</span>
+            <span className="font-medium">{t("youWillReceive")}</span>
             <span className="font-semibold text-[#171717]">
               {formatAmount(feeCalculation?.netAmount || 0, balance?.currency)}
             </span>
@@ -260,21 +312,25 @@ const WithdrawalRequestPanel: React.FC<WithdrawalRequestPanelProps> = ({ onClose
         </div>
 
         <div className="bg-gray-50 rounded-lg p-4 mb-6">
-          <p className="text-sm text-gray-500 mb-2">{t('destination')}</p>
+          <p className="text-sm text-gray-500 mb-2">{t("destination")}</p>
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-white rounded">
-              {selectedMethod?.type === PayoutMethodType.BANK_TRANSFER ? (
+            {selectedMethod?.type === PayoutMethodType.BANK_TRANSFER ? (
+              <div className="p-2 bg-white rounded">
                 <Bank className="w-5 h-5 text-gray-600" />
-              ) : (
-                <SmartphoneDevice className="w-5 h-5 text-gray-600" />
-              )}
-            </div>
+              </div>
+            ) : (
+              <ProviderIcon
+                provider={selectedMethod?.provider || ""}
+                size="md"
+              />
+            )}
             <div>
               <p className="font-medium">
                 {selectedMethod?.type === PayoutMethodType.BANK_TRANSFER
                   ? selectedMethod?.bankName
-                  : MOBILE_PROVIDER_NAMES[selectedMethod?.provider?.toLowerCase() || ''] ||
-                    selectedMethod?.provider}
+                  : MOBILE_PROVIDER_NAMES[
+                      selectedMethod?.provider?.toLowerCase() || ""
+                    ] || selectedMethod?.provider}
               </p>
               <p className="text-sm text-gray-500">
                 {selectedMethod?.type === PayoutMethodType.BANK_TRANSFER
@@ -287,17 +343,17 @@ const WithdrawalRequestPanel: React.FC<WithdrawalRequestPanelProps> = ({ onClose
 
         <div className="flex gap-3">
           <button
-            onClick={() => setStep('form')}
-            className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 font-medium rounded hover:bg-gray-50 transition-colors"
+            onClick={() => setStep("form")}
+            className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 font-bold rounded hover:bg-gray-50 transition-colors"
           >
-            {t('cancel')}
+            {t("cancel")}
           </button>
           <button
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="flex-1 px-4 py-3 bg-[#87E64B] text-[#171717] font-medium rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50"
+            className="flex-1 px-4 py-3 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50"
           >
-            {isSubmitting ? t('processing') : t('confirm')}
+            {isSubmitting ? t("processing") : t("confirm")}
           </button>
         </div>
       </div>
@@ -307,8 +363,10 @@ const WithdrawalRequestPanel: React.FC<WithdrawalRequestPanelProps> = ({ onClose
   // Form step
   return (
     <div>
-      <h3 className="text-lg font-semibold text-[#171717] mb-1">{t('requestTitle')}</h3>
-      <p className="text-sm text-gray-500 mb-6">{t('requestSubtitle')}</p>
+      <h3 className="text-lg font-semibold text-[#171717] mb-1">
+        {t("requestTitle")}
+      </h3>
+      <p className="text-sm text-gray-500 mb-6">{t("requestSubtitle")}</p>
 
       {error && (
         <div className="mb-4 p-3 bg-red-50 text-red-700 rounded text-sm flex items-center gap-2">
@@ -322,9 +380,13 @@ const WithdrawalRequestPanel: React.FC<WithdrawalRequestPanelProps> = ({ onClose
         <div className="bg-gradient-to-br from-[#87E64B]/10 to-[#87E64B]/5 border border-[#87E64B]/30 rounded-lg p-4 mb-6">
           <div className="flex items-center gap-2 mb-1">
             <Wallet className="w-5 h-5 text-[#87E64B]" />
-            <span className="text-sm text-gray-600">{t('availableBalance')}</span>
+            <span className="text-sm text-gray-600">
+              {t("availableBalance")}
+            </span>
           </div>
-          <p className="text-2xl font-bold text-[#171717]">{balance.availableFormatted}</p>
+          <p className="text-2xl font-bold text-[#171717]">
+            {balance.availableFormatted}
+          </p>
         </div>
       )}
 
@@ -333,9 +395,20 @@ const WithdrawalRequestPanel: React.FC<WithdrawalRequestPanelProps> = ({ onClose
         <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
           <div className="flex items-start gap-2">
             <WarningTriangle className="w-5 h-5 text-yellow-600 flex-shrink-0" />
-            <div>
-              <p className="font-medium text-yellow-800">{t('noPayoutMethods')}</p>
-              <p className="text-sm text-yellow-700 mt-1">{t('addPayoutMethodFirst')}</p>
+            <div className="flex-1">
+              <p className="font-medium text-yellow-800">
+                {t("noPayoutMethods")}
+              </p>
+              <p className="text-sm text-yellow-700 mt-1">
+                {t("addPayoutMethodFirst")}
+              </p>
+              {/* Direct action button - closes modal so user sees Methods tab */}
+              <button
+                onClick={onClose}
+                className="mt-3 px-4 py-2 bg-[#5E53E0] text-white text-sm font-bold rounded hover:bg-[#4d44c9] transition-colors"
+              >
+                {t("addPayoutMethodAction")}
+              </button>
             </div>
           </div>
         </div>
@@ -346,7 +419,7 @@ const WithdrawalRequestPanel: React.FC<WithdrawalRequestPanelProps> = ({ onClose
         {/* Payout method select */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            {t('payoutMethod')}
+            {t("payoutMethod")}
           </label>
           <div className="relative">
             <button
@@ -357,25 +430,29 @@ const WithdrawalRequestPanel: React.FC<WithdrawalRequestPanelProps> = ({ onClose
               {selectedMethod ? (
                 <div className="flex items-center gap-2">
                   {selectedMethod.type === PayoutMethodType.BANK_TRANSFER ? (
-                    <Bank className="w-4 h-4 text-gray-500" />
+                    <Bank className="w-5 h-5 text-gray-500" />
                   ) : (
-                    <SmartphoneDevice className="w-4 h-4 text-gray-500" />
+                    <ProviderIcon
+                      provider={selectedMethod.provider || ""}
+                      size="md"
+                    />
                   )}
                   <span className="text-[#171717]">
                     {selectedMethod.type === PayoutMethodType.BANK_TRANSFER
                       ? `${selectedMethod.bankName} • ${selectedMethod.accountNumber}`
                       : `${
-                          MOBILE_PROVIDER_NAMES[selectedMethod.provider?.toLowerCase() || ''] ||
-                          selectedMethod.provider
+                          MOBILE_PROVIDER_NAMES[
+                            selectedMethod.provider?.toLowerCase() || ""
+                          ] || selectedMethod.provider
                         } • ${selectedMethod.phoneNumber}`}
                   </span>
                 </div>
               ) : (
-                <span className="text-gray-400">{t('selectPayoutMethod')}</span>
+                <span className="text-gray-400">{t("selectPayoutMethod")}</span>
               )}
               <NavArrowDown
                 className={`w-4 h-4 text-gray-500 transition-transform ${
-                  isMethodDropdownOpen ? 'rotate-180' : ''
+                  isMethodDropdownOpen ? "rotate-180" : ""
                 }`}
               />
             </button>
@@ -389,20 +466,24 @@ const WithdrawalRequestPanel: React.FC<WithdrawalRequestPanelProps> = ({ onClose
                       setIsMethodDropdownOpen(false);
                     }}
                     className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 ${
-                      selectedMethodId === method.id ? 'bg-[#87E64B]/10' : ''
+                      selectedMethodId === method.id ? "bg-[#87E64B]/10" : ""
                     }`}
                   >
                     {method.type === PayoutMethodType.BANK_TRANSFER ? (
-                      <Bank className="w-4 h-4 text-gray-500" />
+                      <Bank className="w-5 h-5 text-gray-500" />
                     ) : (
-                      <SmartphoneDevice className="w-4 h-4 text-gray-500" />
+                      <ProviderIcon
+                        provider={method.provider || ""}
+                        size="md"
+                      />
                     )}
                     <div className="flex-1">
                       <p className="font-medium text-[#171717]">
                         {method.type === PayoutMethodType.BANK_TRANSFER
                           ? method.bankName
-                          : MOBILE_PROVIDER_NAMES[method.provider?.toLowerCase() || ''] ||
-                            method.provider}
+                          : MOBILE_PROVIDER_NAMES[
+                              method.provider?.toLowerCase() || ""
+                            ] || method.provider}
                       </p>
                       <p className="text-xs text-gray-500">
                         {method.type === PayoutMethodType.BANK_TRANSFER
@@ -411,7 +492,9 @@ const WithdrawalRequestPanel: React.FC<WithdrawalRequestPanelProps> = ({ onClose
                       </p>
                     </div>
                     {method.isDefault && (
-                      <span className="text-xs text-[#87E64B] font-medium">{t('default')}</span>
+                      <span className="text-xs text-[#87E64B] font-bold">
+                        {t("default")}
+                      </span>
                     )}
                   </button>
                 ))}
@@ -423,7 +506,7 @@ const WithdrawalRequestPanel: React.FC<WithdrawalRequestPanelProps> = ({ onClose
         {/* Amount input */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            {t('amount')}
+            {t("amount")}
           </label>
           <div className="relative">
             <input
@@ -437,12 +520,12 @@ const WithdrawalRequestPanel: React.FC<WithdrawalRequestPanelProps> = ({ onClose
               onClick={handleWithdrawAll}
               className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 text-xs text-[#5E53E0] hover:underline"
             >
-              {t('withdrawAll')}
+              {t("withdrawAll")}
             </button>
           </div>
           {balance && (
             <p className="text-xs text-gray-400 mt-1">
-              {t('maxAmount')}: {balance.availableFormatted}
+              {t("maxAmount")}: {balance.availableFormatted}
             </p>
           )}
         </div>
@@ -452,15 +535,17 @@ const WithdrawalRequestPanel: React.FC<WithdrawalRequestPanelProps> = ({ onClose
           <div className="bg-gray-50 rounded-lg p-3 space-y-2">
             <div className="flex items-center gap-2 text-sm text-gray-500">
               <Calculator className="w-4 h-4" />
-              {t('feeBreakdown')}
+              {t("feeBreakdown")}
             </div>
             <div className="text-sm space-y-1">
               <div className="flex justify-between">
-                <span className="text-gray-500">{t('withdrawalFee')}</span>
-                <span>- {formatAmount(feeCalculation.fee, balance?.currency)}</span>
+                <span className="text-gray-500">{t("withdrawalFee")}</span>
+                <span>
+                  - {formatAmount(feeCalculation.fee, balance?.currency)}
+                </span>
               </div>
               <div className="flex justify-between font-medium">
-                <span>{t('youWillReceive')}</span>
+                <span>{t("youWillReceive")}</span>
                 <span className="text-[#171717]">
                   {formatAmount(feeCalculation.netAmount, balance?.currency)}
                 </span>
@@ -470,16 +555,18 @@ const WithdrawalRequestPanel: React.FC<WithdrawalRequestPanelProps> = ({ onClose
         )}
 
         {isCalculating && (
-          <div className="text-sm text-gray-400 animate-pulse">{t('calculatingFee')}</div>
+          <div className="text-sm text-gray-400 animate-pulse">
+            {t("calculatingFee")}
+          </div>
         )}
 
         {/* Submit */}
         <button
           onClick={handleContinue}
           disabled={!isFormValid || !feeCalculation}
-          className="w-full px-4 py-3 bg-[#87E64B] text-[#171717] font-medium rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full px-4 py-3 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {t('continue')}
+          {t("continue")}
         </button>
       </div>
     </div>

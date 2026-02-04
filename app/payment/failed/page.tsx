@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import Header from '@/components/shared/Header';
+import LoadingFullscreen from '@/components/LoadingFullscreen';
 import { PaymentFailureCard, PaymentErrorCode } from '@/features/payment/components/PaymentFailureCard';
 import { paymentApi, PaymentStatusV2Response } from '@/services/payment-api';
 
@@ -110,14 +111,7 @@ export default function PaymentFailedPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-white">
-        <Header />
-        <div className="flex items-center justify-center py-24">
-          <div className="w-8 h-8 border-4 border-red-400 border-t-transparent rounded-full animate-spin" />
-        </div>
-      </div>
-    );
+    return <LoadingFullscreen />;
   }
 
   return (

@@ -39,13 +39,12 @@ interface TierConfig {
   highlighted?: boolean;
 }
 
-
 /**
  * SubscriptionPanel - Displays subscription tiers and allows upgrades
  */
 const SubscriptionPanel: React.FC = () => {
   const t = useTranslations("subscriptions");
-  const { openSubscriptionCheckout, closeDrawer } = useDrawerStore();
+  const { openSubscriptionCheckout, closeDrawer, pushView, setSubscriptionCheckout } = useDrawerStore();
 
   const [currentTier, setCurrentTier] = useState<SubscriptionTier>("free");
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>("monthly");
@@ -219,13 +218,28 @@ const SubscriptionPanel: React.FC = () => {
     // Skip if current plan
     if (tier === currentTier) return;
 
-    // Open checkout with selected country pricing
+    // Get amount for selected tier
     const amountInMinorUnits = getTierPriceMinorUnits(
       tier,
       billingPeriod,
       countryCode,
     );
 
+    // Epic 24: If user is on a paid tier, show upgrade preview with proration
+    if (currentTier !== "free") {
+      // Store checkout data and navigate to upgrade preview
+      setSubscriptionCheckout({
+        tier,
+        billingPeriod,
+        amount: amountInMinorUnits,
+        currency: pricing.currency,
+        countryCode,
+      });
+      pushView("subscription-upgrade-preview");
+      return;
+    }
+
+    // Free users go directly to country selection checkout
     openSubscriptionCheckout(
       tier,
       billingPeriod,
@@ -243,7 +257,7 @@ const SubscriptionPanel: React.FC = () => {
     <div className="subscription-panel">
       {/* Header */}
       <div className="mt-8 mb-16">
-        <h1 className="text-3xl font-bold text-[#171717] mb-2">{t("title")}</h1>
+        <h1 className="text-4xl font-bold text-[#171717] mb-2">{t("title")}</h1>
         <p className="text-gray-600">{t("subtitle")}</p>
       </div>
 

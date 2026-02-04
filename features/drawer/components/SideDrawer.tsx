@@ -9,8 +9,25 @@ import ContactsPanel from '@/features/contacts/components/ContactsPanel';
 import TransferDetailsPanel from '@/features/transfer/components/TransferDetailsPanel';
 import TransferPreviewPanel from '@/features/transfer/components/TransferPreviewPanel';
 import SubscriptionPanel from '@/features/subscription/components/SubscriptionPanel';
-import SubscriptionCheckoutPanel from '@/features/subscription/components/SubscriptionCheckoutPanel';
-import { PaymentMethodPanel, PaymentPhonePanel, PaymentPromptPanel } from '@/features/payment/components/PaymentPanels';
+import {
+  SubscriptionCountryPanel,
+  SubscriptionMethodPanel,
+  SubscriptionPhonePanel,
+  SubscriptionCardPanel,
+  SubscriptionProcessingPanel,
+  SubscriptionSuccessPanel,
+  SubscriptionFailedPanel,
+} from '@/features/subscription/components/SubscriptionCheckoutPanels';
+import UpgradePreviewPanel from '@/features/subscription/components/UpgradePreviewPanel';
+import {
+  PaymentMethodPanel,
+  PaymentPhonePanel,
+  PaymentPromptPanel,
+  CardPaymentPanel,
+  PaymentProcessingPanel,
+  PaymentSuccessPanel,
+  PaymentFailedPanel,
+} from '@/features/payment/components/PaymentPanels';
 import AccountPanel from '@/features/account/components/AccountPanel';
 import AnalyticsPanel from '@/features/analytics/components/AnalyticsPanel';
 import DrawerFooter from './DrawerFooter';
@@ -104,9 +121,20 @@ const SideDrawer: React.FC = () => {
         'transfer-details': 1,
         'transfer-preview': 2,
         'subscription-checkout': 1,
+        'subscription-upgrade-preview': 1,  // Epic 24: Upgrade proration preview
+        'subscription-method': 2,
+        'subscription-phone': 3,
+        'subscription-card': 3,
+        'subscription-processing': 4,
+        'subscription-success': 5,
+        'subscription-failed': 5,
         'payment-method': 0,
         'payment-phone': 1,
         'payment-prompt': 2,
+        'payment-card': 2,
+        'payment-processing': 3,
+        'payment-success': 4,
+        'payment-failed': 4,
       };
       const prevDepth = viewDepth[prevView] ?? 0;
       const currentDepth = viewDepth[currentContentView] ?? 0;
@@ -332,12 +360,68 @@ const SideDrawer: React.FC = () => {
               <SubscriptionPanel />
             </AnimatedView>
 
-            {/* Subscription checkout view with animation */}
+            {/* Subscription checkout: country selection */}
             <AnimatedView
               isActive={currentContentView === 'subscription-checkout' && view === 'subscriptions'}
               direction={animationDirection}
             >
-              <SubscriptionCheckoutPanel />
+              <SubscriptionCountryPanel />
+            </AnimatedView>
+
+            {/* Subscription upgrade: proration preview (Epic 24) */}
+            <AnimatedView
+              isActive={currentContentView === 'subscription-upgrade-preview' && view === 'subscriptions'}
+              direction={animationDirection}
+            >
+              <UpgradePreviewPanel />
+            </AnimatedView>
+
+            {/* Subscription checkout: payment method selection */}
+            <AnimatedView
+              isActive={currentContentView === 'subscription-method' && view === 'subscriptions'}
+              direction={animationDirection}
+            >
+              <SubscriptionMethodPanel />
+            </AnimatedView>
+
+            {/* Subscription checkout: phone input */}
+            <AnimatedView
+              isActive={currentContentView === 'subscription-phone' && view === 'subscriptions'}
+              direction={animationDirection}
+            >
+              <SubscriptionPhonePanel />
+            </AnimatedView>
+
+            {/* Subscription checkout: card payment with Paystack popup */}
+            <AnimatedView
+              isActive={currentContentView === 'subscription-card' && view === 'subscriptions'}
+              direction={animationDirection}
+            >
+              <SubscriptionCardPanel />
+            </AnimatedView>
+
+            {/* Subscription checkout: processing */}
+            <AnimatedView
+              isActive={currentContentView === 'subscription-processing' && view === 'subscriptions'}
+              direction={animationDirection}
+            >
+              <SubscriptionProcessingPanel />
+            </AnimatedView>
+
+            {/* Subscription checkout: success */}
+            <AnimatedView
+              isActive={currentContentView === 'subscription-success' && view === 'subscriptions'}
+              direction={animationDirection}
+            >
+              <SubscriptionSuccessPanel />
+            </AnimatedView>
+
+            {/* Subscription checkout: failed */}
+            <AnimatedView
+              isActive={currentContentView === 'subscription-failed' && view === 'subscriptions'}
+              direction={animationDirection}
+            >
+              <SubscriptionFailedPanel />
             </AnimatedView>
 
             {/* Transfer details view with animation */}
@@ -356,7 +440,7 @@ const SideDrawer: React.FC = () => {
               direction={animationDirection}
             >
               {selectedTransfer && (
-                <TransferPreviewPanel transfer={selectedTransfer} />
+                <TransferPreviewPanel transfer={selectedTransfer} role={transferRole || undefined} />
               )}
             </AnimatedView>
 
@@ -382,6 +466,38 @@ const SideDrawer: React.FC = () => {
               direction={animationDirection}
             >
               <PaymentPromptPanel />
+            </AnimatedView>
+
+            {/* Card payment view (Epic 19) */}
+            <AnimatedView
+              isActive={currentContentView === 'payment-card' && view === 'payment'}
+              direction={animationDirection}
+            >
+              <CardPaymentPanel />
+            </AnimatedView>
+
+            {/* Payment processing view (Epic 19) */}
+            <AnimatedView
+              isActive={currentContentView === 'payment-processing' && view === 'payment'}
+              direction={animationDirection}
+            >
+              <PaymentProcessingPanel />
+            </AnimatedView>
+
+            {/* Payment success view (Epic 19) */}
+            <AnimatedView
+              isActive={currentContentView === 'payment-success' && view === 'payment'}
+              direction={animationDirection}
+            >
+              <PaymentSuccessPanel />
+            </AnimatedView>
+
+            {/* Payment failed view (Epic 19) */}
+            <AnimatedView
+              isActive={currentContentView === 'payment-failed' && view === 'payment'}
+              direction={animationDirection}
+            >
+              <PaymentFailedPanel />
             </AnimatedView>
 
             {/* Account view (sidebar layout, no animation) */}

@@ -1,17 +1,23 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { useTranslations } from 'next-intl';
-import { ShieldCheck, Check, WarningCircle, Refresh, ArrowLeft } from 'iconoir-react';
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useTranslations } from "next-intl";
+import {
+  ShieldCheck,
+  Check,
+  WarningCircle,
+  Refresh,
+  ArrowLeft,
+} from "iconoir-react";
 import {
   kycApi,
   BvnInitiateResponse,
   BvnVerificationResponse,
   BvnSessionStatusResponse,
-} from '@/services/kyc-api';
-import { toast } from '@/components/shared/Toast';
+} from "@/services/kyc-api";
+import { toast } from "@/components/shared/Toast";
 
-type VerificationStep = 'input' | 'otp' | 'success' | 'pending' | 'error';
+type VerificationStep = "input" | "otp" | "success" | "pending" | "error";
 
 /**
  * Retry configuration for API calls
@@ -55,7 +61,7 @@ async function withRetry<T>(
       const delay = Math.min(baseDelay + jitter, config.maxDelayMs);
 
       console.log(`Retry attempt ${attempt + 1} after ${Math.round(delay)}ms`);
-      await new Promise(resolve => setTimeout(resolve, delay));
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
 
@@ -67,12 +73,12 @@ async function withRetry<T>(
  */
 function isRetryableError(error: unknown): boolean {
   // Network errors are retryable
-  if (error instanceof TypeError && error.message.includes('fetch')) {
+  if (error instanceof TypeError && error.message.includes("fetch")) {
     return true;
   }
 
   // Check for API response errors
-  if (typeof error === 'object' && error !== null) {
+  if (typeof error === "object" && error !== null) {
     const errObj = error as Record<string, unknown>;
     const status = errObj.status as number | undefined;
 
@@ -108,14 +114,14 @@ interface BVNVerificationFormProps {
 export function BVNVerificationForm({
   onSuccess,
   onSwitchToDocuments,
-  className = '',
+  className = "",
 }: BVNVerificationFormProps) {
-  const t = useTranslations('kyc');
+  const t = useTranslations("kyc");
 
   // Form state
-  const [step, setStep] = useState<VerificationStep>('input');
-  const [bvn, setBvn] = useState('');
-  const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [step, setStep] = useState<VerificationStep>("input");
+  const [bvn, setBvn] = useState("");
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [phoneMasked, setPhoneMasked] = useState<string | null>(null);
 
@@ -130,7 +136,8 @@ export function BVNVerificationForm({
   const [resendCooldown, setResendCooldown] = useState(0);
 
   // Result state
-  const [verificationResult, setVerificationResult] = useState<BvnVerificationResponse | null>(null);
+  const [verificationResult, setVerificationResult] =
+    useState<BvnVerificationResponse | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // OTP input refs
@@ -147,10 +154,10 @@ export function BVNVerificationForm({
           setExpiresIn(response.data.expiresIn || 0);
           setRemainingAttempts(response.data.remainingAttempts || 3);
           setRemainingResends(response.data.remainingResends || 3);
-          setStep('otp');
+          setStep("otp");
         }
       } catch (error) {
-        console.error('Failed to check session:', error);
+        console.error("Failed to check session:", error);
       } finally {
         setIsCheckingSession(false);
       }
@@ -197,7 +204,7 @@ export function BVNVerificationForm({
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
   // Validate BVN format
@@ -207,7 +214,7 @@ export function BVNVerificationForm({
 
   // Handle BVN input
   const handleBvnChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, '').slice(0, 11);
+    const value = e.target.value.replace(/\D/g, "").slice(0, 11);
     setBvn(value);
     setErrorMessage(null);
   };
@@ -230,9 +237,12 @@ export function BVNVerificationForm({
   // Handle OTP paste
   const handleOtpPaste = (e: React.ClipboardEvent) => {
     e.preventDefault();
-    const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    const pastedData = e.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, 6);
     if (pastedData.length === 6) {
-      const newOtp = pastedData.split('');
+      const newOtp = pastedData.split("");
       setOtp(newOtp);
       otpInputRefs.current[5]?.focus();
     }
@@ -240,7 +250,7 @@ export function BVNVerificationForm({
 
   // Handle OTP backspace
   const handleOtpKeyDown = (index: number, e: React.KeyboardEvent) => {
-    if (e.key === 'Backspace' && !otp[index] && index > 0) {
+    if (e.key === "Backspace" && !otp[index] && index > 0) {
       otpInputRefs.current[index - 1]?.focus();
     }
   };
@@ -248,7 +258,7 @@ export function BVNVerificationForm({
   // Initiate BVN verification with retry logic
   const handleInitiate = async () => {
     if (!isValidBvn(bvn)) {
-      setErrorMessage(t('bvnInvalidFormat'));
+      setErrorMessage(t("bvnInvalidFormat"));
       return;
     }
 
@@ -263,7 +273,7 @@ export function BVNVerificationForm({
       );
 
       if (response.error) {
-        setErrorMessage(response.error.message || t('bvnVerificationFailed'));
+        setErrorMessage(response.error.message || t("bvnVerificationFailed"));
         return;
       }
 
@@ -273,8 +283,8 @@ export function BVNVerificationForm({
           setSessionId(response.data.sessionId);
           setPhoneMasked(response.data.phoneMasked || null);
           setExpiresIn(response.data.expiresIn || 600);
-          setStep('otp');
-          toast.success(t('bvnOtpSent'));
+          setStep("otp");
+          toast.success(t("bvnOtpSent"));
         } else {
           // Direct verification (no OTP needed)
           toast.success(response.data.message);
@@ -282,15 +292,15 @@ export function BVNVerificationForm({
             success: true,
             message: response.data.message,
           });
-          setStep('success');
+          setStep("success");
           onSuccess?.({ success: true, message: response.data.message });
         }
       } else {
-        setErrorMessage(response.data?.message || t('bvnVerificationFailed'));
+        setErrorMessage(response.data?.message || t("bvnVerificationFailed"));
       }
     } catch (error) {
-      console.error('BVN initiation failed:', error);
-      setErrorMessage(t('bvnVerificationFailed'));
+      console.error("BVN initiation failed:", error);
+      setErrorMessage(t("bvnVerificationFailed"));
     } finally {
       setIsLoading(false);
     }
@@ -298,9 +308,9 @@ export function BVNVerificationForm({
 
   // Verify OTP with retry logic
   const handleVerifyOtp = async () => {
-    const otpValue = otp.join('');
+    const otpValue = otp.join("");
     if (otpValue.length !== 6 || !sessionId) {
-      setErrorMessage(t('bvnOtpInvalid'));
+      setErrorMessage(t("bvnOtpInvalid"));
       return;
     }
 
@@ -315,9 +325,9 @@ export function BVNVerificationForm({
       );
 
       if (response.error) {
-        setErrorMessage(response.error.message || t('bvnVerificationFailed'));
+        setErrorMessage(response.error.message || t("bvnVerificationFailed"));
         setRemainingAttempts((prev) => Math.max(0, prev - 1));
-        setOtp(['', '', '', '', '', '']);
+        setOtp(["", "", "", "", "", ""]);
         otpInputRefs.current[0]?.focus();
         return;
       }
@@ -325,14 +335,14 @@ export function BVNVerificationForm({
       if (response.data?.success) {
         setVerificationResult(response.data);
 
-        if (response.data.kycStatus === 'verified') {
-          setStep('success');
-          toast.success(t('bvnVerificationSuccess'));
+        if (response.data.kycStatus === "verified") {
+          setStep("success");
+          toast.success(t("bvnVerificationSuccess"));
         } else if (response.data.requiresReview) {
-          setStep('pending');
-          toast.info(t('bvnPendingReview'));
+          setStep("pending");
+          toast.info(t("bvnPendingReview"));
         } else {
-          setStep('success');
+          setStep("success");
           toast.success(response.data.message);
         }
 
@@ -341,13 +351,13 @@ export function BVNVerificationForm({
         if (response.data?.remainingAttempts !== undefined) {
           setRemainingAttempts(response.data.remainingAttempts);
         }
-        setErrorMessage(response.data?.message || t('bvnVerificationFailed'));
-        setOtp(['', '', '', '', '', '']);
+        setErrorMessage(response.data?.message || t("bvnVerificationFailed"));
+        setOtp(["", "", "", "", "", ""]);
         otpInputRefs.current[0]?.focus();
       }
     } catch (error) {
-      console.error('OTP verification failed:', error);
-      setErrorMessage(t('bvnVerificationFailed'));
+      console.error("OTP verification failed:", error);
+      setErrorMessage(t("bvnVerificationFailed"));
     } finally {
       setIsLoading(false);
     }
@@ -363,23 +373,25 @@ export function BVNVerificationForm({
       const response = await kycApi.resendBvnOtp(sessionId);
 
       if (response.error) {
-        toast.error(response.error.message || t('bvnResendFailed'));
+        toast.error(response.error.message || t("bvnResendFailed"));
         return;
       }
 
       if (response.data?.success) {
         setExpiresIn(response.data.expiresIn || 600);
-        setRemainingResends(response.data.remainingResends ?? remainingResends - 1);
+        setRemainingResends(
+          response.data.remainingResends ?? remainingResends - 1,
+        );
         setResendCooldown(30); // 30 second cooldown
-        setOtp(['', '', '', '', '', '']);
-        toast.success(t('bvnOtpResent'));
+        setOtp(["", "", "", "", "", ""]);
+        toast.success(t("bvnOtpResent"));
         otpInputRefs.current[0]?.focus();
       } else {
-        toast.error(response.data?.message || t('bvnResendFailed'));
+        toast.error(response.data?.message || t("bvnResendFailed"));
       }
     } catch (error) {
-      console.error('Resend OTP failed:', error);
-      toast.error(t('bvnResendFailed'));
+      console.error("Resend OTP failed:", error);
+      toast.error(t("bvnResendFailed"));
     } finally {
       setIsLoading(false);
     }
@@ -387,9 +399,9 @@ export function BVNVerificationForm({
 
   // Go back to BVN input
   const handleBack = () => {
-    setStep('input');
+    setStep("input");
     setSessionId(null);
-    setOtp(['', '', '', '', '', '']);
+    setOtp(["", "", "", "", "", ""]);
     setErrorMessage(null);
   };
 
@@ -403,17 +415,20 @@ export function BVNVerificationForm({
   }
 
   // Render success state
-  if (step === 'success') {
+  if (step === "success") {
     return (
       <div className={`text-center py-8 ${className}`}>
         <div className="w-16 h-16 mx-auto mb-4 bg-[#87E64B]/20 rounded-full flex items-center justify-center">
           <Check className="w-8 h-8 text-[#87E64B]" />
         </div>
-        <h3 className="text-xl font-semibold text-[#171717] mb-2">{t('bvnVerified')}</h3>
-        <p className="text-gray-600 mb-4">{t('bvnVerifiedDescription')}</p>
+        <h3 className="text-xl font-semibold text-[#171717] mb-2">
+          {t("bvnVerified")}
+        </h3>
+        <p className="text-gray-600 mb-4">{t("bvnVerifiedDescription")}</p>
         {verificationResult?.verifiedName && (
           <p className="text-sm text-gray-500">
-            {t('bvnVerifiedAs')}: <strong>{verificationResult.verifiedName}</strong>
+            {t("bvnVerifiedAs")}:{" "}
+            <strong>{verificationResult.verifiedName}</strong>
           </p>
         )}
       </div>
@@ -421,26 +436,29 @@ export function BVNVerificationForm({
   }
 
   // Render pending review state
-  if (step === 'pending') {
+  if (step === "pending") {
     return (
       <div className={`text-center py-8 ${className}`}>
         <div className="w-16 h-16 mx-auto mb-4 bg-yellow-100 rounded-full flex items-center justify-center">
           <ShieldCheck className="w-8 h-8 text-yellow-600" />
         </div>
-        <h3 className="text-xl font-semibold text-[#171717] mb-2">{t('bvnPendingTitle')}</h3>
-        <p className="text-gray-600 mb-4">{t('bvnPendingDescription')}</p>
+        <h3 className="text-xl font-semibold text-[#171717] mb-2">
+          {t("bvnPendingTitle")}
+        </h3>
+        <p className="text-gray-600 mb-4">{t("bvnPendingDescription")}</p>
         {verificationResult?.verifiedName && (
           <p className="text-sm text-gray-500 mb-4">
-            {t('bvnVerifiedAs')}: <strong>{verificationResult.verifiedName}</strong>
+            {t("bvnVerifiedAs")}:{" "}
+            <strong>{verificationResult.verifiedName}</strong>
           </p>
         )}
-        <p className="text-xs text-gray-400">{t('bvnPendingReviewTime')}</p>
+        <p className="text-xs text-gray-400">{t("bvnPendingReviewTime")}</p>
       </div>
     );
   }
 
   // Render OTP input step
-  if (step === 'otp') {
+  if (step === "otp") {
     return (
       <div className={`space-y-6 ${className}`}>
         {/* Header */}
@@ -453,9 +471,11 @@ export function BVNVerificationForm({
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h3 className="text-lg font-semibold text-[#171717]">{t('bvnEnterOtp')}</h3>
+            <h3 className="text-lg font-semibold text-[#171717]">
+              {t("bvnEnterOtp")}
+            </h3>
             <p className="text-sm text-gray-600">
-              {t('bvnOtpSentTo')} <strong>{phoneMasked || '****'}</strong>
+              {t("bvnOtpSentTo")} <strong>{phoneMasked || "****"}</strong>
             </p>
           </div>
         </div>
@@ -464,7 +484,7 @@ export function BVNVerificationForm({
         <div
           className="flex justify-center gap-2"
           role="group"
-          aria-label={t('bvnOtpInputGroup')}
+          aria-label={t("bvnOtpInputGroup")}
         >
           {otp.map((digit, index) => (
             <input
@@ -481,12 +501,12 @@ export function BVNVerificationForm({
               onPaste={index === 0 ? handleOtpPaste : undefined}
               className={`w-12 h-14 text-center text-xl font-semibold border-2 rounded transition-colors outline-none ${
                 errorMessage
-                  ? 'border-red-400 focus:border-red-500'
-                  : 'border-gray-300 focus:border-[#5E53E0]'
+                  ? "border-red-400 focus:border-red-500"
+                  : "border-gray-300 focus:border-[#5E53E0]"
               }`}
               disabled={isLoading}
-              aria-label={t('bvnOtpDigit', { position: index + 1 })}
-              aria-describedby={errorMessage ? 'otp-error' : undefined}
+              aria-label={t("bvnOtpDigit", { position: index + 1 })}
+              aria-describedby={errorMessage ? "otp-error" : undefined}
               autoComplete="one-time-code"
               pattern="[0-9]*"
             />
@@ -510,14 +530,14 @@ export function BVNVerificationForm({
         <div className="text-center text-sm text-gray-500">
           {expiresIn > 0 ? (
             <p>
-              {t('bvnOtpExpiresIn')} <strong>{formatTime(expiresIn)}</strong>
+              {t("bvnOtpExpiresIn")} <strong>{formatTime(expiresIn)}</strong>
             </p>
           ) : (
-            <p className="text-red-500">{t('bvnOtpExpired')}</p>
+            <p className="text-red-500">{t("bvnOtpExpired")}</p>
           )}
           {remainingAttempts < 3 && (
             <p className="mt-1 text-yellow-600">
-              {t('bvnAttemptsRemaining', { count: remainingAttempts })}
+              {t("bvnAttemptsRemaining", { count: remainingAttempts })}
             </p>
           )}
         </div>
@@ -532,10 +552,10 @@ export function BVNVerificationForm({
           >
             <Refresh className="w-4 h-4" />
             {resendCooldown > 0
-              ? `${t('bvnResendIn')} ${resendCooldown}s`
+              ? `${t("bvnResendIn")} ${resendCooldown}s`
               : remainingResends <= 0
-                ? t('bvnNoResendsLeft')
-                : t('bvnResendOtp')}
+                ? t("bvnNoResendsLeft")
+                : t("bvnResendOtp")}
           </button>
         </div>
 
@@ -543,10 +563,10 @@ export function BVNVerificationForm({
         <button
           type="button"
           onClick={handleVerifyOtp}
-          disabled={isLoading || otp.join('').length !== 6 || expiresIn <= 0}
+          disabled={isLoading || otp.join("").length !== 6 || expiresIn <= 0}
           className="w-full py-3 bg-[#87E64B] text-[#171717] font-semibold rounded hover:bg-[#78d43f] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          {isLoading ? t('bvnVerifying') : t('bvnVerify')}
+          {isLoading ? t("bvnVerifying") : t("bvnVerify")}
         </button>
 
         {/* Switch to documents */}
@@ -556,7 +576,7 @@ export function BVNVerificationForm({
             onClick={onSwitchToDocuments}
             className="w-full py-2 text-[#5E53E0] text-sm font-medium hover:underline"
           >
-            {t('bvnUseDocumentsInstead')}
+            {t("bvnUseDocumentsInstead")}
           </button>
         )}
       </div>
@@ -568,28 +588,32 @@ export function BVNVerificationForm({
     <div className={`space-y-6 ${className}`}>
       {/* Header */}
       <div>
-        <h3 className="text-lg font-semibold text-[#171717]">{t('bvnTitle')}</h3>
-        <p className="text-sm text-gray-600 mt-1">{t('bvnDescription')}</p>
+        <h3 className="text-lg font-semibold text-[#171717]">
+          {t("bvnTitle")}
+        </h3>
+        <p className="text-sm text-gray-600 mt-1">{t("bvnDescription")}</p>
       </div>
 
       {/* BVN Input */}
       <div>
-        <label className="block text-sm font-medium text-[#171717] mb-1">{t('bvnNumber')}</label>
+        <label className="block text-sm font-medium text-[#171717] mb-1">
+          {t("bvnNumber")}
+        </label>
         <input
           type="text"
           inputMode="numeric"
           value={bvn}
           onChange={handleBvnChange}
-          placeholder={t('bvnPlaceholder')}
+          placeholder={t("bvnPlaceholder")}
           maxLength={11}
           className={`w-full px-4 py-3 border-2 rounded text-lg tracking-widest font-mono transition-colors outline-none ${
             errorMessage
-              ? 'border-red-400 focus:border-red-500'
-              : 'border-gray-300 focus:border-[#5E53E0]'
+              ? "border-red-400 focus:border-red-500"
+              : "border-gray-300 focus:border-[#5E53E0]"
           }`}
           disabled={isLoading}
         />
-        <p className="text-xs text-gray-500 mt-1">{t('bvnHint')}</p>
+        <p className="text-xs text-gray-500 mt-1">{t("bvnHint")}</p>
       </div>
 
       {/* Error message */}
@@ -602,7 +626,7 @@ export function BVNVerificationForm({
 
       {/* Security notice */}
       <div className="bg-blue-50 border border-blue-200 rounded p-4">
-        <p className="text-sm text-blue-800">{t('bvnSecurityNotice')}</p>
+        <p className="text-sm text-blue-800">{t("bvnSecurityNotice")}</p>
       </div>
 
       {/* Submit button */}
@@ -610,9 +634,9 @@ export function BVNVerificationForm({
         type="button"
         onClick={handleInitiate}
         disabled={isLoading || !isValidBvn(bvn)}
-        className="w-full py-3 bg-[#87E64B] text-[#171717] font-semibold rounded hover:bg-[#78d43f] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        className="w-full py-3 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
-        {isLoading ? t('bvnVerifying') : t('bvnContinue')}
+        {isLoading ? t("bvnVerifying") : t("bvnContinue")}
       </button>
 
       {/* Switch to documents */}
@@ -622,7 +646,7 @@ export function BVNVerificationForm({
           onClick={onSwitchToDocuments}
           className="w-full py-2 text-[#5E53E0] text-sm font-medium hover:underline"
         >
-          {t('bvnUseDocumentsInstead')}
+          {t("bvnUseDocumentsInstead")}
         </button>
       )}
     </div>

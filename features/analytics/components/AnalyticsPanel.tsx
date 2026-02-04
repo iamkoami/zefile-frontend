@@ -21,6 +21,7 @@ import {
 import { toast } from "@/components/shared/Toast";
 import LoadingPanel from "@/components/LoadingPanel";
 import { useCurrentCurrency } from "@/stores/currency-store";
+import { formatInDisplayCurrency } from "@/lib/currency";
 
 type TimePeriod = "week" | "month";
 
@@ -41,24 +42,6 @@ const AnalyticsPanel: React.FC = () => {
   const [trends, setTrends] = useState<AnalyticsTrends | null>(null);
   const [period, setPeriod] = useState<TimePeriod>("week");
   const [isPeriodDropdownOpen, setIsPeriodDropdownOpen] = useState(false);
-
-  // Format currency using global currency setting
-  const formatCurrency = useCallback(
-    (amount: number, currency?: string) => {
-      const displayCurrency = currency || globalCurrency || "USD";
-      try {
-        return new Intl.NumberFormat(locale === "fr" ? "fr-FR" : "en-US", {
-          style: "currency",
-          currency: displayCurrency,
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 0,
-        }).format(amount);
-      } catch {
-        return `${amount} ${displayCurrency}`;
-      }
-    },
-    [locale, globalCurrency],
-  );
 
   // Format number
   const formatNumber = useCallback(
@@ -214,7 +197,7 @@ const AnalyticsPanel: React.FC = () => {
               </span>
             </div>
             <p className="text-xl font-bold text-gray-900">
-              {formatCurrency(overview.totalRevenue, globalCurrency)}
+              {formatInDisplayCurrency(overview.totalRevenue, overview.currency, globalCurrency, { showFreeForZero: false })}
             </p>
           </div>
 
@@ -241,31 +224,41 @@ const AnalyticsPanel: React.FC = () => {
           </h2>
 
           {/* Simple bar chart */}
-          <div className="flex items-end gap-1 h-32">
-            {trends.data.map((point, index) => {
-              const maxDownloads = getMaxValue(trends.data, "downloads");
-              const height = (point.downloads / maxDownloads) * 100;
+          <div className="flex flex-col">
+            {/* Bars container */}
+            <div className="flex items-end gap-1 h-32">
+              {trends.data.map((point) => {
+                const maxDownloads = getMaxValue(trends.data, "downloads");
+                const barHeight = maxDownloads > 0 ? (point.downloads / maxDownloads) * 100 : 0;
 
-              return (
-                <div
-                  key={point.date}
-                  className="flex-1 flex flex-col items-center"
-                  title={`${formatDate(point.date)}: ${point.downloads} ${t("downloads")}`}
-                >
+                return (
                   <div
-                    className="w-full bg-[#87E64B] rounded-t hover:bg-[#78d43f] transition-colors cursor-pointer"
-                    style={{ height: `${Math.max(height, 2)}%` }}
-                  />
+                    key={point.date}
+                    className="flex-1 h-full flex items-end"
+                    title={`${formatDate(point.date)}: ${point.downloads} ${t("downloads")}`}
+                  >
+                    <div
+                      className="w-full bg-[#87E64B] rounded-t hover:bg-[#78d43f] transition-colors cursor-pointer min-h-[2px]"
+                      style={{ height: `${Math.max(barHeight, 2)}%` }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+            {/* Date labels container */}
+            <div className="flex gap-1 mt-2">
+              {trends.data.map((point, index) => (
+                <div key={`label-${point.date}`} className="flex-1 text-center">
                   {(index === 0 ||
                     index === trends.data.length - 1 ||
                     index === Math.floor(trends.data.length / 2)) && (
-                    <span className="text-xs font-medium text-gray-400 mt-2">
+                    <span className="text-xs font-medium text-gray-400">
                       {formatDate(point.date)}
                     </span>
                   )}
                 </div>
-              );
-            })}
+              ))}
+            </div>
           </div>
 
           {/* Totals */}
@@ -320,7 +313,7 @@ const AnalyticsPanel: React.FC = () => {
                   </div>
                   {transfer.revenue > 0 && (
                     <span className="text-[#5E53E0] font-medium">
-                      {formatCurrency(transfer.revenue, transfer.currency)}
+                      {formatInDisplayCurrency(transfer.revenue, transfer.currency, globalCurrency)}
                     </span>
                   )}
                 </div>

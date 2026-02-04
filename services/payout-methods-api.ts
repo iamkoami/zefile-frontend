@@ -81,6 +81,7 @@ export interface VerifyAccountRequest {
 
 /**
  * Supported countries with their currencies and mobile money providers
+ * Only includes countries supported by Paystack for transfers/payouts
  */
 export const SUPPORTED_COUNTRIES = [
   {
@@ -100,14 +101,6 @@ export const SUPPORTED_COUNTRIES = [
     mobileProviders: ['mtn', 'vodafone', 'tigo'],
   },
   {
-    code: 'KE',
-    name: 'Kenya',
-    currency: 'KES',
-    supportsBankTransfer: true,
-    supportsMobileMoney: true,
-    mobileProviders: ['mpesa'],
-  },
-  {
     code: 'ZA',
     name: 'South Africa',
     currency: 'ZAR',
@@ -116,52 +109,20 @@ export const SUPPORTED_COUNTRIES = [
     mobileProviders: [],
   },
   {
-    code: 'TZ',
-    name: 'Tanzania',
-    currency: 'TZS',
-    supportsBankTransfer: true,
+    code: 'KE',
+    name: 'Kenya',
+    currency: 'KES',
+    supportsBankTransfer: false,
     supportsMobileMoney: true,
-    mobileProviders: ['mpesa', 'tigopesa', 'airtel'],
-  },
-  {
-    code: 'UG',
-    name: 'Uganda',
-    currency: 'UGX',
-    supportsBankTransfer: true,
-    supportsMobileMoney: true,
-    mobileProviders: ['mtn', 'airtel'],
-  },
-  {
-    code: 'RW',
-    name: 'Rwanda',
-    currency: 'RWF',
-    supportsBankTransfer: true,
-    supportsMobileMoney: true,
-    mobileProviders: ['mtn'],
+    mobileProviders: ['mpesa'],
   },
   {
     code: 'CI',
     name: "Côte d'Ivoire",
     currency: 'XOF',
-    supportsBankTransfer: true,
+    supportsBankTransfer: false,
     supportsMobileMoney: true,
-    mobileProviders: ['mtn', 'orange', 'moov'],
-  },
-  {
-    code: 'SN',
-    name: 'Senegal',
-    currency: 'XOF',
-    supportsBankTransfer: true,
-    supportsMobileMoney: true,
-    mobileProviders: ['orange', 'free'],
-  },
-  {
-    code: 'CM',
-    name: 'Cameroon',
-    currency: 'XAF',
-    supportsBankTransfer: true,
-    supportsMobileMoney: true,
-    mobileProviders: ['mtn', 'orange'],
+    mobileProviders: ['mtn', 'orange', 'wave'],
   },
 ];
 
@@ -177,6 +138,7 @@ export const MOBILE_PROVIDER_NAMES: Record<string, string> = {
   airtel: 'Airtel Money',
   orange: 'Orange Money',
   moov: 'Moov Money',
+  wave: 'Wave',
   free: 'Free Money',
 };
 

@@ -11,6 +11,7 @@
     "deploy:cloudflare": "wrangler pages deploy .vercel/output/static"
   },
   "dependencies": {
+    "@paystack/inline-js": "^2.22.7",
     "@radix-ui/react-slot": "^1.2.3",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",

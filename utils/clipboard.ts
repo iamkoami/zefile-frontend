@@ -125,3 +125,96 @@ export async function copyTransferLink(
     errorMessage: errorMessage ?? 'Failed to copy link',
   });
 }
+
+/**
+ * Network types for share tracking
+ */
+export type ShareNetwork = 'whatsapp' | 'facebook' | 'twitter' | 'linkedin' | 'telegram' | 'email';
+
+/**
+ * Build a share URL with network tracking hint
+ * The z_network param tells the redirect handler which network the user came from
+ */
+export function buildShareUrl(shortCode: string, network: ShareNetwork): string {
+  const baseUrl = buildShortUrl(shortCode);
+  return `${baseUrl}?z_network=${network}`;
+}
+
+/**
+ * Get the share URL for a specific network
+ * Opens the appropriate share dialog with the transfer link
+ */
+export function getShareLink(
+  shortCode: string,
+  network: ShareNetwork,
+  options?: { title?: string; message?: string }
+): string {
+  const shareUrl = buildShareUrl(shortCode, network);
+  const encodedUrl = encodeURIComponent(shareUrl);
+  const encodedTitle = encodeURIComponent(options?.title || '');
+  const encodedMessage = encodeURIComponent(options?.message || '');
+
+  switch (network) {
+    case 'whatsapp':
+      // WhatsApp supports text with URL
+      const whatsappText = options?.message
+        ? `${options.message} ${shareUrl}`
+        : shareUrl;
+      return `https://api.whatsapp.com/send?text=${encodeURIComponent(whatsappText)}`;
+
+    case 'facebook':
+      return `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`;
+
+    case 'twitter':
+      // Twitter/X supports text with URL
+      const tweetText = options?.message
+        ? `${options.message} ${shareUrl}`
+        : shareUrl;
+      return `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
+
+    case 'linkedin':
+      return `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`;
+
+    case 'telegram':
+      // Telegram supports URL and text separately
+      return `https://t.me/share/url?url=${encodedUrl}&text=${encodedMessage}`;
+
+    case 'email':
+      // Email with subject and body
+      const subject = options?.title || 'Check out this file transfer';
+      const body = options?.message
+        ? `${options.message}\n\n${shareUrl}`
+        : `Download your files here:\n${shareUrl}`;
+      return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+    default:
+      return shareUrl;
+  }
+}
+
+/**
+ * Open share dialog for a specific network
+ * Uses window.open for social networks, location.href for email
+ */
+export function openShareDialog(
+  shortCode: string,
+  network: ShareNetwork,
+  options?: { title?: string; message?: string }
+): void {
+  const shareLink = getShareLink(shortCode, network, options);
+
+  if (network === 'email') {
+    window.location.href = shareLink;
+  } else {
+    // Open in popup window for social networks
+    const width = 600;
+    const height = 400;
+    const left = (window.innerWidth - width) / 2;
+    const top = (window.innerHeight - height) / 2;
+    window.open(
+      shareLink,
+      'share',
+      `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no,scrollbars=yes`
+    );
+  }
+}

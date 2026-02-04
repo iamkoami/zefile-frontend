@@ -66,6 +66,10 @@ export interface TransferDto {
   }>;
   // Versioning
   versionCount?: number;
+  // Payment status - true if a successful payment exists
+  isPaid?: boolean;
+  // Payment requirement - true if payment is required for this transfer
+  paymentRequired?: boolean;
 }
 
 export interface UpdateTransferDto {
@@ -80,12 +84,14 @@ export interface UpdateTitleDto {
 }
 
 export interface UpdatePasswordDto {
-  senderId: string;
+  senderId?: string; // For sender (unpaid transfers)
+  receiverEmail?: string; // For receiver (paid transfers)
   password?: string; // Empty or undefined to remove password protection
 }
 
 export interface SecureDeleteDto {
-  senderId: string;
+  senderId?: string; // For sender (unpaid transfers)
+  receiverEmail?: string; // For receiver (paid transfers)
 }
 
 export interface BatchDeleteDto {
@@ -106,7 +112,8 @@ export interface BatchDeleteResponse {
 }
 
 export interface ReuseTransferDto {
-  senderId: string;
+  senderId?: string; // For sender (unpaid transfers)
+  receiverEmail?: string; // For receiver (paid transfers)
   recipientEmails: string[];
   title?: string;
   message?: string;
@@ -160,6 +167,42 @@ export interface DeleteVersionResponse {
   message: string;
   deletedFiles: number;
   freedBytes: number;
+}
+
+// Link tracking types
+export interface LogAccessDto {
+  sessionId: string;
+  source?: 'link' | 'email' | 'qr';
+  network?: 'direct' | 'whatsapp' | 'facebook' | 'twitter' | 'linkedin' | 'instagram' | 'telegram' | 'email' | 'other';
+  referrer?: string;
+}
+
+export interface NetworkBreakdownDto {
+  network: string;
+  count: number;
+}
+
+export interface SourceBreakdownDto {
+  source: string;
+  count: number;
+}
+
+export interface RecentAccessDto {
+  sessionId: string;
+  network: string;
+  source: string;
+  accessedAt: string;
+  converted: boolean;
+}
+
+export interface TransferAnalyticsDto {
+  totalAccesses: number;
+  uniqueSessions: number;
+  byNetwork: NetworkBreakdownDto[];
+  bySource: SourceBreakdownDto[];
+  converted: boolean;
+  conversionNetwork: string | null;
+  recentAccesses: RecentAccessDto[];
 }
 
 export interface RequestTransferOtpDto {
@@ -348,6 +391,72 @@ export class TransferApi {
   }
 
   /**
+   * Add recipients to an existing transfer
+   * Sends email notifications to newly added recipients
+   * @param transferId The transfer ID
+   * @param data Data with senderId OR receiverEmail and array of new recipient emails
+   */
+  async addRecipientsToTransfer(
+    transferId: string,
+    data: { senderId?: string; receiverEmail?: string; emails: string[] }
+  ): Promise<ApiResponse<{
+    success: boolean;
+    message: string;
+    addedRecipients?: string[];
+    totalRecipients?: number;
+  }>> {
+    return apiClient.patch<{
+      success: boolean;
+      message: string;
+      addedRecipients?: string[];
+      totalRecipients?: number;
+    }>(`/transfers/${transferId}/recipients`, data);
+  }
+
+  /**
+   * Remove a recipient from an existing transfer
+   * @param transferId The transfer ID
+   * @param data Data with senderId OR receiverEmail and email to remove
+   */
+  async removeRecipientFromTransfer(
+    transferId: string,
+    data: { senderId?: string; receiverEmail?: string; email: string }
+  ): Promise<ApiResponse<{
+    success: boolean;
+    message: string;
+    remainingRecipients?: string[];
+  }>> {
+    return apiClient.post<{
+      success: boolean;
+      message: string;
+      remainingRecipients?: string[];
+    }>(`/transfers/${transferId}/recipients/remove`, data);
+  }
+
+  /**
+   * Update a recipient email in an existing transfer
+   * Sends notification to the new recipient
+   * @param transferId The transfer ID
+   * @param data Data with senderId OR receiverEmail, oldEmail, newEmail, and optional addToContacts flag
+   */
+  async updateRecipientInTransfer(
+    transferId: string,
+    data: { senderId?: string; receiverEmail?: string; oldEmail: string; newEmail: string; addToContacts?: boolean }
+  ): Promise<ApiResponse<{
+    success: boolean;
+    message: string;
+    updatedRecipients?: string[];
+    addedToContacts?: boolean;
+  }>> {
+    return apiClient.post<{
+      success: boolean;
+      message: string;
+      updatedRecipients?: string[];
+      addedToContacts?: boolean;
+    }>(`/transfers/${transferId}/recipients/update`, data);
+  }
+
+  /**
    * Delete transfer securely (with ownership validation)
    * Uses POST to allow body data for ownership validation
    * @param transferId The transfer ID
@@ -443,6 +552,53 @@ export class TransferApi {
     return apiClient.post<DeleteVersionResponse>(
       `/transfers/${transferId}/versions/${versionId}/delete`,
       data
+    );
+  }
+
+  /**
+   * Log recipient access to a transfer
+   * Registers the recipient email and adds to Brevo for tracking
+   * @param shortCode The transfer short code
+   * @param email The recipient email accessing the transfer
+   */
+  async logRecipientAccess(
+    shortCode: string,
+    email: string
+  ): Promise<ApiResponse<{ success: boolean }>> {
+    return apiClient.post<{ success: boolean }>(
+      `/transfers/code/${shortCode}/access`,
+      { email }
+    );
+  }
+
+  /**
+   * Log link access for tracking analytics
+   * Called when someone visits a transfer link (before payment)
+   * @param shortCode The transfer short code
+   * @param data Access data including sessionId, source, network
+   */
+  async logLinkAccess(
+    shortCode: string,
+    data: LogAccessDto
+  ): Promise<ApiResponse<{ success: boolean; accessId?: string }>> {
+    return apiClient.post<{ success: boolean; accessId?: string }>(
+      `/transfers/${shortCode}/access`,
+      data
+    );
+  }
+
+  /**
+   * Get transfer link analytics for the sender
+   * Returns access breakdown by network, source, and recent accesses
+   * @param transferId The transfer ID (not shortCode)
+   * @param senderId The sender user ID for ownership validation
+   */
+  async getTransferAnalytics(
+    transferId: string,
+    senderId: string
+  ): Promise<ApiResponse<TransferAnalyticsDto>> {
+    return apiClient.get<TransferAnalyticsDto>(
+      `/transfers/${transferId}/analytics?senderId=${senderId}`
     );
   }
 }

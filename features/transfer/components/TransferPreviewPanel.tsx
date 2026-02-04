@@ -1,27 +1,62 @@
-'use client';
+"use client";
 
-import React, { useCallback, useState, useMemo, useEffect } from 'react';
-import { Download, PageEdit, MediaImage, VideoCamera, MusicDoubleNote, Archive, Page, TriangleFlag, PlaySolid, Xmark, NavArrowLeft, NavArrowRight, Sort, NavArrowDown, CreditCard, RefreshDouble } from 'iconoir-react';
-import { useTranslations, useLocale } from 'next-intl';
-import { TransferDto, transferApi, TransferVersionDto } from '@/services/transfer-api';
-import { storageApi } from '@/services/storage-api';
-import { toast } from '@/components/shared/Toast';
-import { useDrawerStore } from '@/stores/drawer-store';
-import FilePreviewView from './FilePreviewView';
-import LoadingPanel from '@/components/LoadingPanel';
-import VerifiedBadge from '@/components/shared/VerifiedBadge';
+import React, { useCallback, useState, useMemo, useEffect } from "react";
+import {
+  Download,
+  PageEdit,
+  MediaImage,
+  VideoCamera,
+  MusicDoubleNote,
+  Archive,
+  Page,
+  PlaySolid,
+  Xmark,
+  NavArrowLeft,
+  NavArrowRight,
+  Sort,
+  NavArrowDown,
+  CreditCard,
+  RefreshDouble,
+} from "iconoir-react";
+import { useTranslations, useLocale } from "next-intl";
+import {
+  TransferDto,
+  transferApi,
+  TransferVersionDto,
+} from "@/services/transfer-api";
+import { storageApi } from "@/services/storage-api";
+import { toast } from "@/components/shared/Toast";
+import { useDrawerStore } from "@/stores/drawer-store";
+import FilePreviewView from "./FilePreviewView";
+import LoadingPanel from "@/components/LoadingPanel";
+import VerifiedBadge from "@/components/shared/VerifiedBadge";
+import ReportIssueButton from "@/components/shared/ReportIssueButton";
+import { useCurrencyStore } from "@/stores/currency-store";
+import {
+  convertCurrency,
+  formatCurrencyAmount,
+  type CurrencyCode,
+} from "@/lib/currency";
 
 // API URL for thumbnail proxy
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
-type SortField = 'name' | 'date' | 'size';
-type SortDirection = 'asc' | 'desc';
+type SortField = "name" | "date" | "size";
+type SortDirection = "asc" | "desc";
 
 interface TransferPreviewPanelProps {
   transfer: TransferDto;
+  role?: "sender" | "receiver";
 }
 
-type FilePreviewType = 'image' | 'video' | 'audio' | 'pdf' | 'document' | 'archive' | 'other';
+type FilePreviewType =
+  | "image"
+  | "video"
+  | "audio"
+  | "pdf"
+  | "document"
+  | "archive"
+  | "other";
 
 /**
  * TransferPreviewPanel - Shows file preview gallery for a transfer
@@ -30,28 +65,76 @@ type FilePreviewType = 'image' | 'video' | 'audio' | 'pdf' | 'document' | 'archi
  */
 const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
   transfer,
+  role,
 }) => {
-  const t = useTranslations('transferPreview');
+  const t = useTranslations("transferPreview");
   const locale = useLocale();
   const { setOnBeforeBack, openPaymentFlow } = useDrawerStore();
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [isDownloadingAll, setIsDownloadingAll] = useState(false);
-  const [sortField, setSortField] = useState<SortField>('name');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [sortField, setSortField] = useState<SortField>("name");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
-  const [selectedFileIndex, setSelectedFileIndex] = useState<number | null>(null);
+  const [selectedFileIndex, setSelectedFileIndex] = useState<number | null>(
+    null,
+  );
   // Store fetched preview data for files that don't have pre-generated ones
   // Includes URL and watermark status for security
-  const [fetchedPreviews, setFetchedPreviews] = useState<Record<string, { url: string; isWatermarked: boolean }>>({});
+  const [fetchedPreviews, setFetchedPreviews] = useState<
+    Record<string, { url: string; isWatermarked: boolean }>
+  >({});
 
   // Version selection state
   const [versions, setVersions] = useState<TransferVersionDto[]>([]);
-  const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
+  const [selectedVersionId, setSelectedVersionId] = useState<string | null>(
+    null,
+  );
   const [isVersionDropdownOpen, setIsVersionDropdownOpen] = useState(false);
   const [isLoadingVersions, setIsLoadingVersions] = useState(false);
 
-  const paymentT = useTranslations('payment');
-  const versionT = useTranslations('versionHistory');
+  const paymentT = useTranslations("payment");
+  const versionT = useTranslations("versionHistory");
+  const { pricing } = useCurrencyStore();
+  const displayCurrency = pricing.currency as CurrencyCode;
+
+  // Check if transfer requires payment (must be before early return for hooks consistency)
+  // Use backend's paymentRequired field if available, otherwise fall back to price > 0
+  const requiresPayment = useMemo(() => {
+    // Backend provides explicit paymentRequired field
+    if (transfer?.paymentRequired !== undefined) {
+      return transfer.paymentRequired && (transfer?.price ?? 0) > 0;
+    }
+    // Fallback: infer from price (backward compatibility)
+    return (
+      transfer?.price !== undefined &&
+      transfer?.price !== null &&
+      transfer?.price > 0
+    );
+  }, [transfer?.paymentRequired, transfer?.price]);
+
+  // Determine if Pay button should show (only for unpaid receivers of paid transfers)
+  const showPayButton = useMemo(() => {
+    // Sender never sees Pay button
+    if (role === "sender") return false;
+
+    // Free transfers show Download
+    if (!requiresPayment) return false;
+
+    // Already paid transfers show Download
+    if (transfer?.isPaid) return false;
+
+    // Receiver with unpaid transfer sees Pay button
+    return true;
+  }, [role, requiresPayment, transfer?.isPaid]);
+
+  // Compute if user can view original files (payment-based, NOT role-based)
+  // Both sender and receiver see the same view - watermarked until paid
+  const canViewOriginal = useMemo(() => {
+    // Free transfer - both see original
+    if (!requiresPayment) return true;
+    // Paid transfer - both see original only after payment
+    return transfer?.isPaid === true;
+  }, [requiresPayment, transfer?.isPaid]);
 
   // Show loading panel if transfer data is not available
   if (!transfer || !transfer.files || transfer.files.length === 0) {
@@ -60,52 +143,79 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
 
   // Format file size
   const formatSize = (bytes: number): string => {
-    if (bytes === 0) return '0 B';
+    if (bytes === 0) return "0 B";
     const k = 1024;
-    const sizes = locale === 'fr' ? ['o', 'Ko', 'Mo', 'Go', 'To'] : ['B', 'KB', 'MB', 'GB', 'TB'];
+    const sizes =
+      locale === "fr"
+        ? ["o", "Ko", "Mo", "Go", "To"]
+        : ["B", "KB", "MB", "GB", "TB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
   };
 
   // Get file type category
-  const getFileType = (mimeType: string, extension: string): FilePreviewType => {
+  const getFileType = (
+    mimeType: string,
+    extension: string,
+  ): FilePreviewType => {
     const mime = mimeType.toLowerCase();
     const ext = extension.toLowerCase();
-    if (mime.startsWith('image/') || ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'].includes(ext)) {
-      return 'image';
+    if (
+      mime.startsWith("image/") ||
+      ["jpg", "jpeg", "png", "gif", "webp", "svg", "bmp"].includes(ext)
+    ) {
+      return "image";
     }
-    if (mime.startsWith('video/') || ['mp4', 'avi', 'mov', 'webm', 'mkv', 'flv'].includes(ext)) {
-      return 'video';
+    if (
+      mime.startsWith("video/") ||
+      ["mp4", "avi", "mov", "webm", "mkv", "flv"].includes(ext)
+    ) {
+      return "video";
     }
-    if (mime.startsWith('audio/') || ['mp3', 'wav', 'ogg', 'aac', 'm4a', 'flac'].includes(ext)) {
-      return 'audio';
+    if (
+      mime.startsWith("audio/") ||
+      ["mp3", "wav", "ogg", "aac", "m4a", "flac"].includes(ext)
+    ) {
+      return "audio";
     }
-    if (mime === 'application/pdf' || ext === 'pdf') {
-      return 'pdf';
+    if (mime === "application/pdf" || ext === "pdf") {
+      return "pdf";
     }
-    if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) {
-      return 'archive';
+    if (["zip", "rar", "7z", "tar", "gz"].includes(ext)) {
+      return "archive";
     }
-    if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'csv', 'rtf'].includes(ext)) {
-      return 'document';
+    if (
+      [
+        "doc",
+        "docx",
+        "xls",
+        "xlsx",
+        "ppt",
+        "pptx",
+        "txt",
+        "csv",
+        "rtf",
+      ].includes(ext)
+    ) {
+      return "document";
     }
-    return 'other';
+    return "other";
   };
 
   // Get file icon based on type
   const getFileIcon = (fileType: FilePreviewType) => {
     switch (fileType) {
-      case 'image':
+      case "image":
         return <MediaImage className="w-12 h-12 text-gray-400" />;
-      case 'video':
+      case "video":
         return <VideoCamera className="w-12 h-12 text-gray-400" />;
-      case 'audio':
+      case "audio":
         return <MusicDoubleNote className="w-12 h-12 text-gray-400" />;
-      case 'pdf':
+      case "pdf":
         return <PageEdit className="w-12 h-12 text-red-400" />;
-      case 'archive':
+      case "archive":
         return <Archive className="w-12 h-12 text-yellow-500" />;
-      case 'document':
+      case "document":
         return <PageEdit className="w-12 h-12 text-blue-400" />;
       default:
         return <Page className="w-12 h-12 text-gray-400" />;
@@ -114,7 +224,7 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
 
   // Check if file is previewable in lightbox
   const isLightboxPreviewable = (fileType: FilePreviewType): boolean => {
-    return fileType === 'image' || fileType === 'video';
+    return fileType === "image" || fileType === "video";
   };
 
   // Filter to get only current version files
@@ -145,9 +255,12 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
     return currentVersionFiles.map((file, index) => {
       const fileName = file.filename || file.fileName || `File ${index + 1}`;
       const fileSizeRaw = file.size || file.fileSize || 0;
-      const fileSize = typeof fileSizeRaw === 'string' ? parseInt(fileSizeRaw, 10) : fileSizeRaw;
-      const mimeType = file.mimeType || file.fileType || '';
-      const extension = fileName.split('.').pop()?.toLowerCase() || '';
+      const fileSize =
+        typeof fileSizeRaw === "string"
+          ? parseInt(fileSizeRaw, 10)
+          : fileSizeRaw;
+      const mimeType = file.mimeType || file.fileType || "";
+      const extension = fileName.split(".").pop()?.toLowerCase() || "";
       const fileType = getFileType(mimeType, extension);
 
       return {
@@ -162,16 +275,26 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
     });
   }, [currentVersionFiles]);
 
-  // Fetch previews for files that don't have pre-generated preview URLs
-  // This handles the async preview generation case
+  // Fetch previews for files that need preview URLs
+  // When canViewOriginal is true, fetch original URLs for all previewable files (for thumbnails)
+  // Otherwise, only fetch for files without pre-generated thumbnails
   useEffect(() => {
     const fetchMissingPreviews = async () => {
-      const filesToFetch = processedFiles.filter(file => {
-        // Only fetch for previewable types (images, videos) that don't have thumbnails
-        const needsPreview = (file.fileType === 'image' || file.fileType === 'video')
-          && !file.thumbnailUrl
-          && !fetchedPreviews[file.id];
-        return needsPreview;
+      const filesToFetch = processedFiles.filter((file) => {
+        // Only fetch for previewable types (images, videos)
+        if (file.fileType !== "image" && file.fileType !== "video") return false;
+
+        const existingFetch = fetchedPreviews[file.id];
+
+        // If we can view original, check if we need to re-fetch
+        // Re-fetch if: no existing fetch, OR existing fetch is watermarked but we now want original
+        if (canViewOriginal) {
+          return !existingFetch || existingFetch.isWatermarked;
+        }
+
+        // When not authorized for original, only fetch for files without pre-generated thumbnails
+        // and that we haven't already fetched
+        return !existingFetch && !file.thumbnailUrl;
       });
 
       if (filesToFetch.length === 0) return;
@@ -182,7 +305,9 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
           try {
             const response = await storageApi.getFilePreviewUrl(
               transfer.shortCode,
-              file.id
+              file.id,
+              undefined, // password
+              { requestOriginal: canViewOriginal },
             );
             if (response.data?.url) {
               return {
@@ -193,16 +318,22 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
             }
             return null;
           } catch (error) {
-            console.warn(`Failed to fetch preview for ${file.fileName}:`, error);
+            console.warn(
+              `Failed to fetch preview for ${file.fileName}:`,
+              error,
+            );
             return null;
           }
-        })
+        }),
       );
 
       // Update state with fetched preview data
-      const newPreviews: Record<string, { url: string; isWatermarked: boolean }> = {};
+      const newPreviews: Record<
+        string,
+        { url: string; isWatermarked: boolean }
+      > = {};
       results.forEach((result) => {
-        if (result.status === 'fulfilled' && result.value) {
+        if (result.status === "fulfilled" && result.value) {
           newPreviews[result.value.fileId] = {
             url: result.value.url,
             isWatermarked: result.value.isWatermarked,
@@ -211,18 +342,22 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
       });
 
       if (Object.keys(newPreviews).length > 0) {
-        setFetchedPreviews(prev => ({ ...prev, ...newPreviews }));
+        setFetchedPreviews((prev) => ({ ...prev, ...newPreviews }));
       }
     };
 
     fetchMissingPreviews();
-  }, [processedFiles, transfer.shortCode, fetchedPreviews]);
+  }, [processedFiles, transfer.shortCode, fetchedPreviews, canViewOriginal]);
 
   // Fetch version history when transfer has multiple versions
   useEffect(() => {
     const fetchVersions = async () => {
       // Only fetch if transfer has version info
-      if (!transfer.id || !transfer.versionCount || transfer.versionCount <= 1) {
+      if (
+        !transfer.id ||
+        !transfer.versionCount ||
+        transfer.versionCount <= 1
+      ) {
         return;
       }
 
@@ -232,13 +367,13 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
         if (response.data && response.data.length > 0) {
           setVersions(response.data);
           // Default to the default version
-          const defaultVersion = response.data.find(v => v.isDefault);
+          const defaultVersion = response.data.find((v) => v.isDefault);
           if (defaultVersion) {
             setSelectedVersionId(defaultVersion.id);
           }
         }
       } catch (error) {
-        console.error('Failed to fetch versions:', error);
+        console.error("Failed to fetch versions:", error);
       } finally {
         setIsLoadingVersions(false);
       }
@@ -253,54 +388,79 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
 
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      if (!target.closest('[data-version-dropdown]')) {
+      if (!target.closest("[data-version-dropdown]")) {
         setIsVersionDropdownOpen(false);
       }
     };
 
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
   }, [isVersionDropdownOpen]);
 
   // Get the currently selected version info
   const selectedVersion = useMemo(() => {
     if (!selectedVersionId || versions.length === 0) return null;
-    return versions.find(v => v.id === selectedVersionId) || null;
+    return versions.find((v) => v.id === selectedVersionId) || null;
   }, [selectedVersionId, versions]);
 
   // Helper to get thumbnail URL for grid display (from file data or fetched)
-  // SECURITY: Only return watermarked previews to prevent exposing original files
-  const getThumbnailUrl = useCallback((file: typeof processedFiles[number]): string | null => {
-    // First check if file has pre-generated thumbnail - use backend proxy endpoint
-    // (thumbnailUrl is now an S3 key, not a direct URL)
-    if (file.thumbnailUrl) {
-      return `${API_URL}/storage/thumbnail/${file.id}?type=thumbnail`;
-    }
-    // Then check fetched preview - ONLY if watermarked (security: don't expose original files)
-    const fetched = fetchedPreviews[file.id];
-    if (fetched?.isWatermarked) return fetched.url;
-    return null;
-  }, [fetchedPreviews]);
-
-  // Helper to get preview URL for lightbox - ONLY returns watermarked previews
-  // This prevents showing full original files in large format
-  const getLightboxUrl = useCallback((file: typeof processedFiles[number]): string | null => {
-    if (file.fileType === 'video') {
-      // For videos, prefer previewClipUrl (20-sec watermarked clip) via proxy
-      const previewClip = (file as Record<string, unknown>).previewClipUrl as string | null | undefined;
-      if (previewClip) return `${API_URL}/storage/thumbnail/${file.id}?type=preview`;
-      // Fall back to fetched URL only if watermarked
+  // When canViewOriginal is true (paid or free), returns original file thumbnails
+  // Otherwise, returns watermarked previews for security
+  const getThumbnailUrl = useCallback(
+    (file: (typeof processedFiles)[number]): string | null => {
       const fetched = fetchedPreviews[file.id];
+
+      // If user can view original and we have a fetched URL, use it (original file)
+      if (canViewOriginal && fetched) {
+        return fetched.url;
+      }
+
+      // Otherwise, use watermarked thumbnail via backend proxy
+      if (file.thumbnailUrl) {
+        return `${API_URL}/storage/thumbnail/${file.id}?type=thumbnail`;
+      }
+
+      // Fallback to fetched preview only if watermarked
+      if (fetched?.isWatermarked) return fetched.url;
+      return null;
+    },
+    [fetchedPreviews, canViewOriginal],
+  );
+
+  // Helper to get preview URL for lightbox
+  // When canViewOriginal is true (paid or free), returns original files
+  // Otherwise, returns only watermarked previews for security
+  const getLightboxUrl = useCallback(
+    (file: (typeof processedFiles)[number]): string | null => {
+      const fetched = fetchedPreviews[file.id];
+
+      // If user can view original and we have a fetched URL, use it (original file)
+      if (canViewOriginal && fetched) {
+        return fetched.url;
+      }
+
+      // Otherwise, fall back to watermarked previews
+      if (file.fileType === "video") {
+        // For videos, prefer previewClipUrl (20-sec watermarked clip) via proxy
+        const previewClip = (file as Record<string, unknown>).previewClipUrl as
+          | string
+          | null
+          | undefined;
+        if (previewClip)
+          return `${API_URL}/storage/thumbnail/${file.id}?type=preview`;
+        // Fall back to fetched URL only if watermarked
+        if (fetched?.isWatermarked) return fetched.url;
+        return null; // Don't show original file in lightbox
+      }
+      // For images, check pre-generated thumbnail (always watermarked) via proxy
+      if (file.thumbnailUrl)
+        return `${API_URL}/storage/thumbnail/${file.id}?type=thumbnail`;
+      // Check fetched preview only if watermarked
       if (fetched?.isWatermarked) return fetched.url;
       return null; // Don't show original file in lightbox
-    }
-    // For images, check pre-generated thumbnail (always watermarked) via proxy
-    if (file.thumbnailUrl) return `${API_URL}/storage/thumbnail/${file.id}?type=thumbnail`;
-    // Check fetched preview only if watermarked
-    const fetched = fetchedPreviews[file.id];
-    if (fetched?.isWatermarked) return fetched.url;
-    return null; // Don't show original file in lightbox
-  }, [fetchedPreviews]);
+    },
+    [fetchedPreviews, canViewOriginal],
+  );
 
   // Sort files based on current sort field and direction
   const sortedFiles = useMemo(() => {
@@ -310,50 +470,64 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
       let comparison = 0;
 
       switch (sortField) {
-        case 'name':
+        case "name":
           comparison = a.fileName.localeCompare(b.fileName);
           break;
-        case 'size':
+        case "size":
           comparison = a.fileSize - b.fileSize;
           break;
-        case 'date':
+        case "date":
           // Use createdAt if available, fallback to index order
-          const dateA = (a as Record<string, unknown>).createdAt ? new Date((a as Record<string, unknown>).createdAt as string).getTime() : 0;
-          const dateB = (b as Record<string, unknown>).createdAt ? new Date((b as Record<string, unknown>).createdAt as string).getTime() : 0;
+          const dateA = (a as Record<string, unknown>).createdAt
+            ? new Date(
+                (a as Record<string, unknown>).createdAt as string,
+              ).getTime()
+            : 0;
+          const dateB = (b as Record<string, unknown>).createdAt
+            ? new Date(
+                (b as Record<string, unknown>).createdAt as string,
+              ).getTime()
+            : 0;
           comparison = dateA - dateB;
           break;
       }
 
-      return sortDirection === 'asc' ? comparison : -comparison;
+      return sortDirection === "asc" ? comparison : -comparison;
     });
 
     return files;
   }, [processedFiles, sortField, sortDirection]);
 
   // Handle sort change
-  const handleSortChange = useCallback((field: SortField) => {
-    if (field === sortField) {
-      // Toggle direction if same field
-      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
-    } else {
-      // Set new field with ascending direction
-      setSortField(field);
-      setSortDirection('asc');
-    }
-    setIsSortDropdownOpen(false);
-  }, [sortField]);
+  const handleSortChange = useCallback(
+    (field: SortField) => {
+      if (field === sortField) {
+        // Toggle direction if same field
+        setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+      } else {
+        // Set new field with ascending direction
+        setSortField(field);
+        setSortDirection("asc");
+      }
+      setIsSortDropdownOpen(false);
+    },
+    [sortField],
+  );
 
   // Get sort label
-  const getSortLabel = useCallback((field: SortField): string => {
-    switch (field) {
-      case 'name':
-        return t('sortByName');
-      case 'date':
-        return t('sortByDate');
-      case 'size':
-        return t('sortBySize');
-    }
-  }, [t]);
+  const getSortLabel = useCallback(
+    (field: SortField): string => {
+      switch (field) {
+        case "name":
+          return t("sortByName");
+        case "date":
+          return t("sortByDate");
+        case "size":
+          return t("sortBySize");
+      }
+    },
+    [t],
+  );
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -361,13 +535,13 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
 
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      if (!target.closest('[data-sort-dropdown]')) {
+      if (!target.closest("[data-sort-dropdown]")) {
         setIsSortDropdownOpen(false);
       }
     };
 
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
   }, [isSortDropdownOpen]);
 
   // Get display title
@@ -377,13 +551,13 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
     if (firstFile) {
       return firstFile.fileName;
     }
-    return t('untitled');
+    return t("untitled");
   };
 
   // Get sender email
   const getSenderEmail = (): string | null => {
     if (!transfer.senderId) return null;
-    if (typeof transfer.senderId === 'object' && transfer.senderId.email) {
+    if (typeof transfer.senderId === "object" && transfer.senderId.email) {
       return transfer.senderId.email;
     }
     return null;
@@ -392,8 +566,8 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
   // Check if sender is KYC verified
   const isSenderVerified = (): boolean => {
     if (!transfer.senderId) return false;
-    if (typeof transfer.senderId === 'object' && transfer.senderId.kycStatus) {
-      return transfer.senderId.kycStatus === 'verified';
+    if (typeof transfer.senderId === "object" && transfer.senderId.kycStatus) {
+      return transfer.senderId.kycStatus === "verified";
     }
     return false;
   };
@@ -402,7 +576,10 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
   const senderVerified = isSenderVerified();
 
   // Calculate total size
-  const totalSize = processedFiles.reduce((acc, file) => acc + file.fileSize, 0);
+  const totalSize = processedFiles.reduce(
+    (acc, file) => acc + file.fileSize,
+    0,
+  );
   const fileCount = processedFiles.length;
 
   // Get expiry info
@@ -415,15 +592,15 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
   }, [expiryDateStr]);
 
   const getExpiryText = (): string => {
-    if (!expiryDateStr) return t('noExpiration');
+    if (!expiryDateStr) return t("noExpiration");
     const now = new Date();
     const expiry = new Date(expiryDateStr);
-    if (isNaN(expiry.getTime())) return t('invalidDate');
+    if (isNaN(expiry.getTime())) return t("invalidDate");
     const diffTime = expiry.getTime() - now.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    if (diffDays <= 0) return t('expired');
-    if (diffDays === 1) return t('expiresIn1Day');
-    return t('expiresInDays', { days: diffDays });
+    if (diffDays <= 0) return t("expired");
+    if (diffDays === 1) return t("expiresIn1Day");
+    return t("expiresInDays", { days: diffDays });
   };
 
   // Handle download all (secure two-step flow)
@@ -439,68 +616,74 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
       const response = await storageApi.streamZipDownload(
         transfer.shortCode,
         undefined, // password is handled elsewhere
-        selectedVersionId || undefined
+        selectedVersionId || undefined,
       );
 
       if (response.error) {
-        toast.error(response.error.message || t('downloadError'));
+        toast.error(response.error.message || t("downloadError"));
       }
       // Success - browser handles the download after redirect
     } catch (error) {
-      console.error('Download all failed:', error);
-      toast.error(t('downloadError'));
+      console.error("Download all failed:", error);
+      toast.error(t("downloadError"));
     } finally {
       // Brief delay before resetting (browser takes over download)
       setTimeout(() => setIsDownloadingAll(false), 1000);
     }
   }, [transfer.shortCode, isDownloadingAll, t, selectedVersionId]);
 
-  // Handle report transfer
-  const handleReport = useCallback(() => {
-    // Open report page/modal
-    const reportUrl = `mailto:report@zefile.io?subject=Report Transfer: ${transfer.shortCode}&body=I would like to report this transfer (${transfer.shortCode}) for the following reason:`;
-    window.location.href = reportUrl;
-  }, [transfer.shortCode]);
-
-  // Check if transfer requires payment
-  const requiresPayment = useMemo(() => {
-    return transfer.price !== undefined && transfer.price !== null && transfer.price > 0;
-  }, [transfer.price]);
-
   // Get currency symbol for display
   const getCurrencySymbol = useCallback((currency?: string): string => {
     const symbols: Record<string, string> = {
-      XOF: 'CFA',
-      NGN: '₦',
-      GHS: '₵',
-      KES: 'KSh',
-      ZAR: 'R',
-      USD: '$',
-      EUR: '€',
+      XOF: "CFA",
+      NGN: "₦",
+      GHS: "₵",
+      KES: "KSh",
+      ZAR: "R",
+      USD: "$",
+      EUR: "€",
     };
-    return symbols[currency || 'XOF'] || currency || 'CFA';
+    return symbols[currency || "XOF"] || currency || "CFA";
   }, []);
 
-  // Format price for display
-  const formatPrice = useCallback((price: number, currency?: string): string => {
-    const symbol = getCurrencySymbol(currency);
-    // Price is in minor units
-    const majorUnits = price / 100;
-    return `${symbol}${majorUnits.toLocaleString()}`;
-  }, [getCurrencySymbol]);
+  // Format price for display with currency conversion
+  const formatPrice = useCallback(
+    (price: number, originalCurrency?: string): string => {
+      // Price is in minor units, convert to major units
+      const majorUnits = price / 100;
+      const sourceCurrency = (originalCurrency || "XOF") as CurrencyCode;
+
+      // Convert to display currency if different
+      if (sourceCurrency !== displayCurrency) {
+        const convertedAmount = convertCurrency(
+          majorUnits,
+          sourceCurrency,
+          displayCurrency,
+        );
+        return formatCurrencyAmount(convertedAmount, displayCurrency);
+      }
+
+      // Same currency, just format
+      return formatCurrencyAmount(majorUnits, sourceCurrency);
+    },
+    [displayCurrency],
+  );
 
   // Open payment flow in drawer (replaces modal)
   const handlePayClick = useCallback(() => {
-    openPaymentFlow(transfer, senderEmail || '');
+    openPaymentFlow(transfer, senderEmail || "");
   }, [transfer, senderEmail, openPaymentFlow]);
 
   // Open lightbox for previewable files (double-click for quick preview)
-  const openLightbox = useCallback((index: number) => {
-    const file = sortedFiles[index];
-    if (file.isPreviewable) {
-      setLightboxIndex(index);
-    }
-  }, [sortedFiles]);
+  const openLightbox = useCallback(
+    (index: number) => {
+      const file = sortedFiles[index];
+      if (file.isPreviewable) {
+        setLightboxIndex(index);
+      }
+    },
+    [sortedFiles],
+  );
 
   // Open file preview panel (single click)
   const openFilePreview = useCallback((index: number) => {
@@ -533,53 +716,63 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
   }, []);
 
   // Navigate lightbox
-  const navigateLightbox = useCallback((direction: 'prev' | 'next') => {
-    if (lightboxIndex === null) return;
+  const navigateLightbox = useCallback(
+    (direction: "prev" | "next") => {
+      if (lightboxIndex === null) return;
 
-    // Find next/prev previewable file
-    let newIndex = lightboxIndex;
-    const step = direction === 'next' ? 1 : -1;
+      // Find next/prev previewable file
+      let newIndex = lightboxIndex;
+      const step = direction === "next" ? 1 : -1;
 
-    do {
-      newIndex = (newIndex + step + sortedFiles.length) % sortedFiles.length;
-    } while (!sortedFiles[newIndex].isPreviewable && newIndex !== lightboxIndex);
+      do {
+        newIndex = (newIndex + step + sortedFiles.length) % sortedFiles.length;
+      } while (
+        !sortedFiles[newIndex].isPreviewable &&
+        newIndex !== lightboxIndex
+      );
 
-    if (sortedFiles[newIndex].isPreviewable) {
-      setLightboxIndex(newIndex);
-    }
-  }, [lightboxIndex, sortedFiles]);
+      if (sortedFiles[newIndex].isPreviewable) {
+        setLightboxIndex(newIndex);
+      }
+    },
+    [lightboxIndex, sortedFiles],
+  );
 
   // Handle keyboard navigation in lightbox
   useEffect(() => {
     if (lightboxIndex === null) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') closeLightbox();
-      if (e.key === 'ArrowLeft') navigateLightbox('prev');
-      if (e.key === 'ArrowRight') navigateLightbox('next');
+      if (e.key === "Escape") closeLightbox();
+      if (e.key === "ArrowLeft") navigateLightbox("prev");
+      if (e.key === "ArrowRight") navigateLightbox("next");
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, [lightboxIndex, closeLightbox, navigateLightbox]);
 
   // File count text
   const fileCountText =
     fileCount === 1
-      ? t('file', { count: fileCount })
-      : t('files', { count: fileCount });
+      ? t("file", { count: fileCount })
+      : t("files", { count: fileCount });
 
   // Get current lightbox file
-  const currentLightboxFile = lightboxIndex !== null ? sortedFiles[lightboxIndex] : null;
+  const currentLightboxFile =
+    lightboxIndex !== null ? sortedFiles[lightboxIndex] : null;
 
   // Count previewable files for lightbox counter
-  const previewableCount = sortedFiles.filter(f => f.isPreviewable).length;
-  const currentPreviewableIndex = lightboxIndex !== null
-    ? sortedFiles.slice(0, lightboxIndex + 1).filter(f => f.isPreviewable).length
-    : 0;
+  const previewableCount = sortedFiles.filter((f) => f.isPreviewable).length;
+  const currentPreviewableIndex =
+    lightboxIndex !== null
+      ? sortedFiles.slice(0, lightboxIndex + 1).filter((f) => f.isPreviewable)
+          .length
+      : 0;
 
   // Get selected file for FilePreviewView
-  const selectedFile = selectedFileIndex !== null ? sortedFiles[selectedFileIndex] : null;
+  const selectedFile =
+    selectedFileIndex !== null ? sortedFiles[selectedFileIndex] : null;
 
   // Convert sorted files to FileData format for navigation
   const allFilesForNav = sortedFiles.map((f) => ({
@@ -588,8 +781,14 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
     size: f.fileSize,
     mimeType: f.mimeType,
     thumbnailUrl: f.thumbnailUrl || null,
-    previewClipUrl: (f as Record<string, unknown>).previewClipUrl as string | null | undefined,
-    waveformUrl: (f as Record<string, unknown>).waveformUrl as string | null | undefined,
+    previewClipUrl: (f as Record<string, unknown>).previewClipUrl as
+      | string
+      | null
+      | undefined,
+    waveformUrl: (f as Record<string, unknown>).waveformUrl as
+      | string
+      | null
+      | undefined,
   }));
 
   // Handle navigation between files
@@ -608,13 +807,22 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
           size: selectedFile.fileSize,
           mimeType: selectedFile.mimeType,
           thumbnailUrl: selectedFile.thumbnailUrl || null,
-          previewClipUrl: (selectedFile as Record<string, unknown>).previewClipUrl as string | null | undefined,
-          waveformUrl: (selectedFile as Record<string, unknown>).waveformUrl as string | null | undefined,
+          previewClipUrl: (selectedFile as Record<string, unknown>)
+            .previewClipUrl as string | null | undefined,
+          waveformUrl: (selectedFile as Record<string, unknown>).waveformUrl as
+            | string
+            | null
+            | undefined,
         }}
         shortCode={transfer.shortCode}
+        transferId={transfer.id}
+        role={role === "sender" ? "sender" : "recipient"}
+        userEmail={senderEmail || undefined}
         allFiles={allFilesForNav}
         currentIndex={selectedFileIndex}
         onNavigate={handleFileNavigate}
+        isPaid={transfer.isPaid}
+        requiresPayment={requiresPayment}
       />
     );
   }
@@ -629,7 +837,7 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
           </h1>
           {senderEmail && (
             <p className="text-sm text-gray-600 mb-2 flex items-center gap-1">
-              {t('from', { email: senderEmail })}
+              {t("from", { email: senderEmail })}
               {senderVerified && <VerifiedBadge size="sm" />}
             </p>
           )}
@@ -639,36 +847,42 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
         </div>
         <div className="flex items-center gap-3">
           {/* Report Link */}
-          <button
-            onClick={handleReport}
-            className="flex items-center gap-2 px-4 py-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-            aria-label={t('reportTransfer')}
-          >
-            <TriangleFlag className="w-5 h-5" />
-            <span className="hidden sm:inline">{t('report')}</span>
-          </button>
+          <ReportIssueButton
+            transferId={transfer.id}
+            shortCode={transfer.shortCode}
+            userEmail={senderEmail || undefined}
+            role={role === "sender" ? "sender" : "recipient"}
+            variant="button"
+            className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 border-0"
+          />
 
-          {/* Pay Button (shown when transfer has price) */}
-          {requiresPayment ? (
+          {/* Pay Button (shown when transfer has price, user is receiver, and not already paid) */}
+          {showPayButton ? (
             <button
               onClick={handlePayClick}
               disabled={isExpired}
-              className="flex items-center gap-2 px-5 py-2.5 bg-[#87E64B] text-[#171717] font-medium rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              title={isExpired ? t('transferExpired') : undefined}
+              className="flex items-center gap-2 px-5 py-2.5 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title={isExpired ? t("transferExpired") : undefined}
             >
               <CreditCard className="w-5 h-5" />
-              {isExpired ? t('expired') : `${paymentT('payFor')} ${formatPrice(transfer.price || 0, transfer.currency)}`}
+              {isExpired
+                ? t("expired")
+                : `${paymentT("payFor")} ${formatPrice(transfer.price || 0, transfer.currency)}`}
             </button>
           ) : (
-            /* Download All Button (shown when transfer is free) */
+            /* Download All Button (shown when transfer is free or user is sender) */
             <button
               onClick={handleDownloadAll}
               disabled={isDownloadingAll || isExpired}
               className="flex items-center gap-2 px-5 py-2.5 bg-[#87E64B] text-[#171717] font-medium rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              title={isExpired ? t('transferExpired') : undefined}
+              title={isExpired ? t("transferExpired") : undefined}
             >
               <Download className="w-5 h-5" />
-              {isExpired ? t('expired') : (isDownloadingAll ? t('downloading') : t('downloadAll'))}
+              {isExpired
+                ? t("expired")
+                : isDownloadingAll
+                  ? t("downloading")
+                  : t("downloadAll")}
             </button>
           )}
         </div>
@@ -680,14 +894,14 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
           <div className="flex items-center gap-3">
             <RefreshDouble className="w-5 h-5 text-gray-500" />
             <span className="text-sm text-gray-700">
-              {versionT('viewingVersion', {
+              {versionT("viewingVersion", {
                 current: selectedVersion.versionNumber,
                 total: versions.length,
               })}
             </span>
             {!selectedVersion.isDefault && (
               <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded">
-                {versionT('notLatest')}
+                {versionT("notLatest")}
               </span>
             )}
           </div>
@@ -698,8 +912,12 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
               onClick={() => setIsVersionDropdownOpen(!isVersionDropdownOpen)}
               className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 rounded transition-colors"
             >
-              <span className="font-medium">{selectedVersion.versionLabel}</span>
-              <NavArrowDown className={`w-4 h-4 transition-transform ${isVersionDropdownOpen ? 'rotate-180' : ''}`} />
+              <span className="font-medium">
+                {selectedVersion.versionLabel}
+              </span>
+              <NavArrowDown
+                className={`w-4 h-4 transition-transform ${isVersionDropdownOpen ? "rotate-180" : ""}`}
+              />
             </button>
 
             {isVersionDropdownOpen && (
@@ -712,20 +930,22 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
                       setIsVersionDropdownOpen(false);
                     }}
                     className={`w-full flex items-center justify-between px-3 py-2 text-sm text-left hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg ${
-                      selectedVersionId === version.id ? 'bg-gray-50' : ''
+                      selectedVersionId === version.id ? "bg-gray-50" : ""
                     }`}
                   >
                     <div className="flex flex-col">
-                      <span className={`font-medium ${version.isDefault ? 'text-[#5E53E0]' : 'text-gray-700'}`}>
+                      <span
+                        className={`font-medium ${version.isDefault ? "text-[#5E53E0]" : "text-gray-700"}`}
+                      >
                         {version.versionLabel}
                         {version.isDefault && (
                           <span className="ml-2 text-xs text-[#87E64B]">
-                            ({versionT('current')})
+                            ({versionT("current")})
                           </span>
                         )}
                       </span>
                       <span className="text-xs text-gray-500">
-                        {versionT('fileCount', { count: version.fileCount })}
+                        {versionT("fileCount", { count: version.fileCount })}
                       </span>
                     </div>
                     {selectedVersionId === version.id && (
@@ -748,23 +968,27 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
           >
             <Sort className="w-4 h-4" />
             {getSortLabel(sortField)}
-            <NavArrowDown className={`w-4 h-4 transition-transform ${isSortDropdownOpen ? 'rotate-180' : ''}`} />
+            <NavArrowDown
+              className={`w-4 h-4 transition-transform ${isSortDropdownOpen ? "rotate-180" : ""}`}
+            />
           </button>
 
           {isSortDropdownOpen && (
             <div className="absolute right-0 mt-1 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
-              {(['name', 'date', 'size'] as SortField[]).map((field) => (
+              {(["name", "date", "size"] as SortField[]).map((field) => (
                 <button
                   key={field}
                   onClick={() => handleSortChange(field)}
                   className={`w-full flex items-center justify-between px-3 py-2 text-sm text-left hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg ${
-                    sortField === field ? 'bg-gray-50 text-[#5E53E0] font-medium' : 'text-gray-700'
+                    sortField === field
+                      ? "bg-gray-50 text-[#5E53E0] font-medium"
+                      : "text-gray-700"
                   }`}
                 >
                   <span>{getSortLabel(field)}</span>
                   {sortField === field && (
                     <span className="text-xs text-gray-400">
-                      {sortDirection === 'asc' ? '↑' : '↓'}
+                      {sortDirection === "asc" ? "↑" : "↓"}
                     </span>
                   )}
                 </button>
@@ -786,7 +1010,7 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
             <div className="aspect-square flex items-center justify-center bg-gray-100 relative">
               {getThumbnailUrl(file) ? (
                 <img
-                  src={getThumbnailUrl(file) || ''}
+                  src={getThumbnailUrl(file) || ""}
                   alt={file.fileName}
                   className="w-full h-full object-cover"
                   loading="lazy"
@@ -798,7 +1022,7 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
               )}
 
               {/* Video play indicator */}
-              {file.fileType === 'video' && (
+              {file.fileType === "video" && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <div className="w-14 h-14 bg-black/50 rounded-full flex items-center justify-center">
                     <PlaySolid className="w-7 h-7 text-white ml-1" />
@@ -809,7 +1033,10 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
 
             {/* File info */}
             <div className="p-3">
-              <p className="text-sm font-medium text-gray-900 truncate" title={file.fileName}>
+              <p
+                className="text-sm font-medium text-gray-900 truncate"
+                title={file.fileName}
+              >
                 {file.fileName}
               </p>
               <p className="text-xs text-gray-500 mt-1">
@@ -830,7 +1057,7 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
           <button
             onClick={closeLightbox}
             className="absolute top-4 right-4 p-2 text-white/80 hover:text-white transition-colors z-10"
-            aria-label={t('close')}
+            aria-label={t("close")}
           >
             <Xmark className="w-8 h-8" />
           </button>
@@ -839,16 +1066,22 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
           {previewableCount > 1 && (
             <>
               <button
-                onClick={(e) => { e.stopPropagation(); navigateLightbox('prev'); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigateLightbox("prev");
+                }}
                 className="absolute left-4 top-1/2 -translate-y-1/2 p-3 text-white/80 hover:text-white transition-colors"
-                aria-label={t('previous')}
+                aria-label={t("previous")}
               >
                 <NavArrowLeft className="w-10 h-10" />
               </button>
               <button
-                onClick={(e) => { e.stopPropagation(); navigateLightbox('next'); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigateLightbox("next");
+                }}
                 className="absolute right-4 top-1/2 -translate-y-1/2 p-3 text-white/80 hover:text-white transition-colors"
-                aria-label={t('next')}
+                aria-label={t("next")}
               >
                 <NavArrowRight className="w-10 h-10" />
               </button>
@@ -867,19 +1100,21 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
               if (!previewUrl) {
                 return (
                   <div className="flex flex-col items-center justify-center text-white/70">
-                    {currentLightboxFile.fileType === 'video' ? (
+                    {currentLightboxFile.fileType === "video" ? (
                       <VideoCamera className="w-24 h-24 mb-4" />
                     ) : (
                       <MediaImage className="w-24 h-24 mb-4" />
                     )}
-                    <p className="text-lg">{t('previewNotReady')}</p>
-                    <p className="text-sm mt-2 text-white/50">{t('previewGenerating')}</p>
+                    <p className="text-lg">{t("previewNotReady")}</p>
+                    <p className="text-sm mt-2 text-white/50">
+                      {t("previewGenerating")}
+                    </p>
                   </div>
                 );
               }
 
               // Show watermarked preview
-              if (currentLightboxFile.fileType === 'image') {
+              if (currentLightboxFile.fileType === "image") {
                 return (
                   <img
                     src={previewUrl}
@@ -889,7 +1124,7 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
                 );
               }
 
-              if (currentLightboxFile.fileType === 'video') {
+              if (currentLightboxFile.fileType === "video") {
                 return (
                   <video
                     src={previewUrl}
@@ -910,12 +1145,12 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
               {currentLightboxFile.fileName}
             </p>
             <p className="text-white/70 text-xs text-center mt-1">
-              {formatSize(currentLightboxFile.fileSize)} • {currentPreviewableIndex} / {previewableCount}
+              {formatSize(currentLightboxFile.fileSize)} •{" "}
+              {currentPreviewableIndex} / {previewableCount}
             </p>
           </div>
         </div>
       )}
-
     </div>
   );
 };

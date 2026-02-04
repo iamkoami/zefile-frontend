@@ -19,7 +19,6 @@ import FloatingPollWidget from "@/components/shared/FloatingPollWidget";
 import { platformApi } from "@/services/platform-api";
 import surveysApi from "@/services/surveys-api";
 import { authApi } from "@/services/auth-api";
-import { SideDrawer } from "@/features/drawer";
 import ToastContainer from "@/components/shared/Toast";
 import { UploadProtectionProvider } from "@/components/providers/UploadProtectionProvider";
 import { useDrawerStore } from "@/stores/drawer-store";
@@ -185,9 +184,6 @@ export default function Home() {
 
         {/* Global Drag and Drop Overlay */}
         <GlobalDragDropOverlay onFilesDropped={handleAddMoreFiles} />
-
-        {/* Side Drawer - Transfers & Contacts */}
-        <SideDrawer />
 
         {/* Header */}
         <Header />

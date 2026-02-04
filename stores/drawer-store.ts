@@ -29,17 +29,28 @@ export type DrawerContentView =
   | 'list'           // Main list view (transfers or contacts)
   | 'transfer-details' // Transfer details (sender or receiver)
   | 'transfer-preview' // Transfer preview (file gallery)
-  | 'subscription-checkout' // Subscription checkout/upgrade
+  | 'subscription-checkout' // Subscription checkout - country selection
+  | 'subscription-upgrade-preview' // Subscription upgrade - proration preview (Epic 24)
+  | 'subscription-method'   // Subscription checkout - payment method
+  | 'subscription-phone'    // Subscription checkout - phone input
+  | 'subscription-card'     // Subscription checkout - card payment with Paystack popup
+  | 'subscription-processing' // Subscription checkout - processing/polling
+  | 'subscription-success'  // Subscription checkout - success
+  | 'subscription-failed'   // Subscription checkout - failed
   | 'payment-method'  // Payment method selection
   | 'payment-phone'   // Phone number input for mobile money
-  | 'payment-prompt'; // Mobile money STK push prompt
+  | 'payment-prompt'  // Mobile money STK push prompt
+  | 'payment-card'    // Card payment with Paystack popup (Epic 19)
+  | 'payment-processing' // Payment processing/polling (Epic 19)
+  | 'payment-success' // Payment success panel (Epic 19)
+  | 'payment-failed'; // Payment failed panel (Epic 19)
 
 // Role determines which variant of transfer details to show
 export type TransferRole = 'sender' | 'receiver';
 
 // Payment method type for drawer state
 export interface PaymentMethodInfo {
-  type: 'card' | 'mobile_money';
+  type: 'card' | 'mobile_money' | 'bank_transfer' | 'ussd' | 'opay_wallet';
   provider?: string;
 }
 
@@ -51,6 +62,24 @@ export interface PaymentFlowData {
   paymentReference: string;
   paymentAmount: number;
   senderEmail: string;
+  // Epic 19: Additional payment flow state
+  lastPaymentMethod?: 'card' | 'mobile_money' | 'bank_transfer' | 'ussd' | 'opay_wallet';
+  paymentError?: {
+    code: string;
+    message: string;
+  };
+  transactionDetails?: {
+    reference: string;
+    amount: number;
+    currency: string;
+    paidAt: Date;
+  };
+  // Epic 24: Upgrade proration data
+  isUpgrade?: boolean;
+  creditAmount?: number;
+  creditDisplayAmount?: string;
+  amountDue?: number;
+  amountDueDisplayAmount?: string;
 }
 
 // Subscription checkout data (uses types from subscription-api)
@@ -113,6 +142,7 @@ interface DrawerState {
   popView: () => void;
   canGoBack: () => boolean;
   resetNavigation: () => void;
+  clearBackNavigation: () => void; // Clear stack and onBeforeBack only (hides back button)
 
   // Custom back handler setter
   setOnBeforeBack: (handler: (() => boolean) | null) => void;
@@ -223,6 +253,13 @@ export const useDrawerStore = create<DrawerState>((set, get) => ({
       currentContentView: 'list',
       selectedTransfer: null,
       transferRole: null,
+      onBeforeBack: null,
+    });
+  },
+
+  clearBackNavigation: () => {
+    set({
+      navigationStack: [],
       onBeforeBack: null,
     });
   },

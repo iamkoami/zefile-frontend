@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { useTranslations } from 'next-intl';
-import { usersApi, UserProfile } from '@/services/users-api';
-import LoadingPanel from '@/components/LoadingPanel';
-import ProfileSection from './sections/ProfileSection';
-import DataPrivacySection from './sections/DataPrivacySection';
-import SecuritySection from './sections/SecuritySection';
-import DangerZoneSection from './sections/DangerZoneSection';
+import React, { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
+import { usersApi, UserProfile } from "@/services/users-api";
+import LoadingPanel from "@/components/LoadingPanel";
+import ProfileSection from "./sections/ProfileSection";
+import DataPrivacySection from "./sections/DataPrivacySection";
+import SecuritySection from "./sections/SecuritySection";
+import DangerZoneSection from "./sections/DangerZoneSection";
 
 /**
  * AccountSettingsContent - Main account settings page
@@ -19,7 +19,7 @@ import DangerZoneSection from './sections/DangerZoneSection';
  * - SecuritySection: Logout from all devices
  */
 const AccountSettingsContent: React.FC = () => {
-  const t = useTranslations('account');
+  const t = useTranslations("account");
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -37,10 +37,10 @@ const AccountSettingsContent: React.FC = () => {
       if (response.data) {
         setUser(response.data);
       } else if (response.error) {
-        setError(response.error.message || t('loadProfileError'));
+        setError(response.error.message || t("loadProfileError"));
       }
     } catch {
-      setError(t('loadProfileError'));
+      setError(t("loadProfileError"));
     } finally {
       setIsLoading(false);
     }
@@ -61,9 +61,9 @@ const AccountSettingsContent: React.FC = () => {
         <p className="text-red-500 mb-4">{error}</p>
         <button
           onClick={loadUserProfile}
-          className="px-4 py-2 bg-[#87E64B] text-[#171717] rounded hover:bg-[#78d43f] font-medium"
+          className="px-4 py-2 bg-[#87E64B] text-[#171717] rounded hover:bg-[#78d43f] font-bold"
         >
-          {t('retry')}
+          {t("retry")}
         </button>
       </div>
     );
@@ -72,18 +72,15 @@ const AccountSettingsContent: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div>
-        <h3 className="text-xl font-semibold text-[#171717]">
-          {t('settingsTitle')}
+      <div className="mb-10">
+        <h3 className="text-2xl font-semibold text-[#171717]">
+          {t("settingsTitle")}
         </h3>
-        <p className="text-gray-500 mt-1">{t('settingsDescription')}</p>
+        <p className="text-gray-500 mt-1">{t("settingsDescription")}</p>
       </div>
 
       {/* Profile Section */}
-      <ProfileSection
-        user={user}
-        onUpdate={handleUserUpdate}
-      />
+      <ProfileSection user={user} onUpdate={handleUserUpdate} />
 
       {/* Data & Privacy Section */}
       <DataPrivacySection />

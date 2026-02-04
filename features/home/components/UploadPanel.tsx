@@ -115,11 +115,19 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch service charge percentage on mount
+  // Uses tier-specific rate for authenticated users, default (15%) for anonymous
   useEffect(() => {
     const fetchConfig = async () => {
-      const response = await platformApi.getPublicConfig();
+      // Try user-specific config first (includes tier-based service charge)
+      const response = await platformApi.getUserConfig();
       if (response.data) {
         setServiceChargePercentage(response.data.serviceChargePercentage);
+      } else {
+        // Fallback to public config if user-config fails
+        const publicResponse = await platformApi.getPublicConfig();
+        if (publicResponse.data) {
+          setServiceChargePercentage(publicResponse.data.serviceChargePercentage);
+        }
       }
     };
     fetchConfig();

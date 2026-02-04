@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Download,
   PageEdit,
@@ -9,7 +9,6 @@ import {
   MusicDoubleNote,
   Archive,
   Page,
-  TriangleFlag,
   NavArrowLeft,
   NavArrowRight,
 } from "iconoir-react";
@@ -17,6 +16,7 @@ import { useTranslations, useLocale } from "next-intl";
 import { storageApi } from "@/services/storage-api";
 import { toast } from "@/components/shared/Toast";
 import LoadingPanel from "@/components/LoadingPanel";
+import ReportIssueButton from "@/components/shared/ReportIssueButton";
 
 // API URL for thumbnail proxy
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
@@ -43,6 +43,9 @@ interface FileData {
 interface FilePreviewViewProps {
   file: FileData;
   shortCode: string;
+  transferId: string;
+  role?: 'sender' | 'recipient';
+  userEmail?: string;
   password?: string;
   /** All files in the transfer for navigation */
   allFiles?: FileData[];
@@ -50,6 +53,10 @@ interface FilePreviewViewProps {
   currentIndex?: number;
   /** Callback when navigating to a different file */
   onNavigate?: (index: number) => void;
+  /** Whether the transfer has been paid for */
+  isPaid?: boolean;
+  /** Whether the transfer requires payment (price > 0) */
+  requiresPayment?: boolean;
 }
 
 /**
@@ -60,10 +67,15 @@ interface FilePreviewViewProps {
 const FilePreviewView: React.FC<FilePreviewViewProps> = ({
   file,
   shortCode,
+  transferId,
+  role = 'recipient',
+  userEmail,
   password,
   allFiles,
   currentIndex,
   onNavigate,
+  isPaid,
+  requiresPayment,
 }) => {
   const t = useTranslations("filePreview");
   const locale = useLocale();
@@ -91,6 +103,27 @@ const FilePreviewView: React.FC<FilePreviewViewProps> = ({
     }
   }, [canGoNext, onNavigate, currentIndex, allFiles]);
 
+  // Compute download permission based on role and payment status
+  const canDownload = useMemo(() => {
+    // Sender always can download their own files
+    if (role === 'sender') return true;
+
+    // Free transfer - everyone can download
+    if (!requiresPayment) return true;
+
+    // Paid transfer - receiver can only download if they've paid
+    return isPaid === true;
+  }, [role, requiresPayment, isPaid]);
+
+  // Compute if user can view original files (payment-based, NOT role-based)
+  // Both sender and receiver see the same view - watermarked until paid
+  const canViewOriginal = useMemo(() => {
+    // Free transfer - both see original
+    if (!requiresPayment) return true;
+    // Paid transfer - both see original only after payment
+    return isPaid === true;
+  }, [requiresPayment, isPaid]);
+
   // Handle keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -102,11 +135,6 @@ const FilePreviewView: React.FC<FilePreviewViewProps> = ({
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [handlePrev, handleNext]);
 
-  // Handle report
-  const handleReport = useCallback(() => {
-    const reportUrl = `mailto:report@zefile.io?subject=Report File: ${file.name}&body=I would like to report this file (${file.name}) from transfer (${shortCode}) for the following reason:`;
-    window.location.href = reportUrl;
-  }, [file.name, shortCode]);
 
   // Format file size
   const formatSize = (bytes: number): string => {
@@ -209,7 +237,12 @@ const FilePreviewView: React.FC<FilePreviewViewProps> = ({
   // For images: use thumbnailUrl (watermarked thumbnail)
   // For PDFs: we always want to show the actual PDF in a viewer, not just a thumbnail
   // Returns the proxy URL that will redirect to a presigned S3 URL
-  const hasPreGeneratedPreview = (): string | null => {
+  const hasPreGeneratedPreview = useCallback((): string | null => {
+    // If user can view original, skip watermarked previews and fetch original via API
+    if (canViewOriginal) {
+      return null;
+    }
+
     // All pre-generated previews now go through the backend proxy endpoint
     // which converts S3 keys to presigned URLs
     if (fileType === "video" && file.previewClipUrl) {
@@ -224,7 +257,7 @@ const FilePreviewView: React.FC<FilePreviewViewProps> = ({
     // PDFs: Don't return thumbnail - we want to fetch the actual PDF for viewing
     // The thumbnail is only used for grid display, not for preview view
     return null;
-  };
+  }, [canViewOriginal, fileType, file.previewClipUrl, file.thumbnailUrl, file.id]);
 
   // Fetch presigned URL for preview (only if no pre-generated preview)
   useEffect(() => {
@@ -251,26 +284,34 @@ const FilePreviewView: React.FC<FilePreviewViewProps> = ({
           shortCode,
           file.id,
           password,
+          { requestOriginal: canViewOriginal },
         );
 
         if (response.error) {
           setError(response.error.message || t("previewError"));
         } else if (response.data) {
-          const responseIsWatermarked = response.data.isWatermarked ?? false;
-
-          // PDFs can be shown in iframe viewer without watermark requirement
-          // since iframe viewing prevents easy downloading
-          if (fileType === "pdf") {
+          if (canViewOriginal) {
+            // Payment complete or free transfer - show original
             setPreviewUrl(response.data.url);
             setPreviewMimeType(response.data.mimeType);
-          } else if (!responseIsWatermarked) {
-            // SECURITY: Images/videos require watermarked preview - never show original
-            setPreviewUrl(null);
-            setPreviewMimeType(null);
-            setError(t("previewNotAvailable"));
           } else {
-            setPreviewUrl(response.data.url);
-            setPreviewMimeType(response.data.mimeType);
+            // Not paid yet - enforce watermark check
+            const responseIsWatermarked = response.data.isWatermarked ?? false;
+
+            // PDFs can be shown in iframe viewer without watermark requirement
+            // since iframe viewing prevents easy downloading
+            if (fileType === "pdf") {
+              setPreviewUrl(response.data.url);
+              setPreviewMimeType(response.data.mimeType);
+            } else if (!responseIsWatermarked) {
+              // SECURITY: Images/videos require watermarked preview - never show original
+              setPreviewUrl(null);
+              setPreviewMimeType(null);
+              setError(t("previewNotAvailable"));
+            } else {
+              setPreviewUrl(response.data.url);
+              setPreviewMimeType(response.data.mimeType);
+            }
           }
         }
       } catch (err) {
@@ -286,10 +327,12 @@ const FilePreviewView: React.FC<FilePreviewViewProps> = ({
     shortCode,
     password,
     canPreview,
+    canViewOriginal,
     t,
     file.previewClipUrl,
     file.thumbnailUrl,
     fileType,
+    hasPreGeneratedPreview,
   ]);
 
   // Handle download
@@ -452,15 +495,21 @@ const FilePreviewView: React.FC<FilePreviewViewProps> = ({
           </div>
         </div>
 
-        {/* Download button */}
-        <button
-          onClick={handleDownload}
-          disabled={isDownloading}
-          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#87E64B] text-[#171717] font-semibold rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50"
-        >
-          <Download className="w-5 h-5" />
-          {isDownloading ? t("downloading") : t("download")}
-        </button>
+        {/* Download button or payment required message */}
+        {canDownload ? (
+          <button
+            onClick={handleDownload}
+            disabled={isDownloading}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#87E64B] text-[#171717] font-semibold rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50"
+          >
+            <Download className="w-5 h-5" />
+            {isDownloading ? t("downloading") : t("download")}
+          </button>
+        ) : (
+          <div className="w-full text-gray-500 text-sm text-center py-3 bg-gray-100 rounded-lg">
+            {t("paymentRequiredToDownload")}
+          </div>
+        )}
       </div>
 
       {/* Right panel - Preview */}
@@ -468,14 +517,14 @@ const FilePreviewView: React.FC<FilePreviewViewProps> = ({
         {/* Top bar with report and navigation */}
         <div className="flex items-center justify-between px-4 py-3 bg-[#1a1a1a]">
           {/* Report button */}
-          <button
-            onClick={handleReport}
-            className="flex items-center gap-2 px-2 py-1 text-white/70 hover:text-white transition-colors"
-            aria-label={t("report")}
-          >
-            <TriangleFlag className="w-5 h-5" />
-            <span className="text-sm">{t("report")}</span>
-          </button>
+          <ReportIssueButton
+            transferId={transferId}
+            shortCode={shortCode}
+            userEmail={userEmail}
+            role={role === 'sender' ? 'sender' : 'recipient'}
+            variant="link"
+            className="text-white/70 hover:text-white"
+          />
 
           {/* File navigation */}
           {canNavigate && allFiles && currentIndex !== undefined ? (

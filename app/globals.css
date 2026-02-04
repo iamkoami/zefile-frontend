@@ -142,7 +142,7 @@
   }
 
   .ze-header-center {
-    @apply flex-1 flex items-center justify-center;
+    @apply flex-1 flex items-center justify-end mr-8;
   }
 
   .ze-header-right {
@@ -156,42 +156,44 @@
     margin: 5px 28px 28px 28px;
     min-height: calc(100vh - 64px - 28px - 5px);
     padding: 1rem 1.5rem;
-    transition: background-color 1.5s ease-in-out, color 1.5s ease-in-out;
+    transition:
+      background-color 1.5s ease-in-out,
+      color 1.5s ease-in-out;
   }
 
   /* Time of day themes */
   .ze-content-panel.ze-time-day {
-    background-color: #93E5F7;
+    background-color: #93e5f7;
   }
 
   .ze-content-panel.ze-time-evening {
-    background-color: #F9F4F0;
+    background-color: #f9f4f0;
   }
 
   .ze-content-panel.ze-time-night {
-    background-color: #13121D;
+    background-color: #13121d;
   }
 
   /* Night mode text adjustments */
   .ze-time-night .ze-upload-panel,
   .ze-time-night .ze-file-preview-panel {
-    color: #FFFFFF;
+    color: #ffffff;
   }
 
   .ze-time-night .ze-upload-panel .text-gray-500,
   .ze-time-night .ze-upload-panel .text-gray-400,
   .ze-time-night .ze-file-preview-panel .text-gray-500 {
-    color: #9CA3AF !important;
+    color: #9ca3af !important;
   }
 
   .ze-time-night .ze-upload-panel .text-gray-900,
   .ze-time-night .ze-file-preview-panel .text-gray-900 {
-    color: #F9FAFB !important;
+    color: #f9fafb !important;
   }
 
   /* Night mode border color for upload panel */
   .ze-time-night .ze-upload-panel {
-    border-color: #87E64B;
+    border-color: #87e64b;
   }
 
   /* Panels Container */

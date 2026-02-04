@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import LoadingFullscreen from '@/components/LoadingFullscreen';
 import {
   PlanCard,
   FeatureComparisonTable,
@@ -80,6 +81,10 @@ export default function PricingPage() {
   };
 
   const tiers: SubscriptionTier[] = ['free', 'starter', 'pro'];
+
+  if (isLoading) {
+    return <LoadingFullscreen />;
+  }
 
   return (
     <div className="min-h-screen bg-[#F5F5F0] py-16">

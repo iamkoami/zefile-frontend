@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { NavArrowDown, Sparks } from "iconoir-react";
 import LanguageSwitcher from "./LanguageSwitcher";
@@ -24,10 +23,8 @@ const Header = () => {
   const tUpload = useUploadTranslations("uploadProtection");
   const { openDrawer, openAccountView } = useDrawerStore();
   const { canInterrupt, reset: resetUpload } = useUploadStore();
-  const pathname = usePathname();
-  const router = useRouter();
   const [showAuthPanel, setShowAuthPanel] = useState(false);
-  const [authMode, setAuthMode] = useState<'login' | 'signup'>('signup');
+  const [authMode, setAuthMode] = useState<"login" | "signup">("signup");
   const [showResourcesDropdown, setShowResourcesDropdown] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -73,13 +70,20 @@ const Header = () => {
 
     // Handle custom auth state change event (e.g., from OTP verification during upload)
     const handleAuthStateChange = (
-      event: CustomEvent<{ isAuthenticated: boolean; user?: any; reason?: string }>,
+      event: CustomEvent<{
+        isAuthenticated: boolean;
+        user?: any;
+        reason?: string;
+      }>,
     ) => {
       setIsAuthTransitioning(true);
 
       // Handle session expiration - show toast notification
-      if (!event.detail.isAuthenticated && event.detail.reason === 'session_expired') {
-        toast.error(t('sessionExpired'));
+      if (
+        !event.detail.isAuthenticated &&
+        event.detail.reason === "session_expired"
+      ) {
+        toast.error(t("sessionExpired"));
       }
 
       // Short delay to allow fade-out before updating state
@@ -134,22 +138,16 @@ const Header = () => {
     };
   }, []);
 
-  // Helper to open drawer - navigates home first if not already there
-  const handleOpenDrawer = (drawerType: "transfers" | "contacts" | "subscriptions" | "analytics") => {
-    if (pathname === "/") {
-      openDrawer(drawerType);
-    } else {
-      router.push(`/?drawer=${drawerType}`);
-    }
+  // Helper to open drawer - drawer is now globally available on all pages
+  const handleOpenDrawer = (
+    drawerType: "transfers" | "contacts" | "subscriptions" | "analytics",
+  ) => {
+    openDrawer(drawerType);
   };
 
-  // Helper to open account view - navigates home first if not already there
+  // Helper to open account view - drawer is now globally available on all pages
   const handleOpenAccountView = (view: "settings" | "help") => {
-    if (pathname === "/") {
-      openAccountView(view);
-    } else {
-      router.push(`/?account=${view}`);
-    }
+    openAccountView(view);
   };
 
   const mainMenuItems = [
@@ -162,17 +160,20 @@ const Header = () => {
 
   const loggedInMenuItems = [
     { label: t("transfers"), action: () => handleOpenDrawer("transfers") },
-    { label: t("analytics"), action: () => handleOpenDrawer("analytics") },
-    { label: t("accountSettings"), action: () => handleOpenAccountView("settings") },
+    /*   { label: t("analytics"), action: () => handleOpenDrawer("analytics") },
+    {label: t("accountSettings"), action: () => handleOpenAccountView("settings")}, */
     { label: t("contacts"), action: () => handleOpenDrawer("contacts") },
-    { label: t("subscription"), action: () => handleOpenDrawer("subscriptions") },
+    {
+      label: t("subscription"),
+      action: () => handleOpenDrawer("subscriptions"),
+    },
   ];
 
   const resourcesMenuItems = [
-    { label: t("helpCenter"), href: "/help" },
+    { label: t("about"), href: "/about" },
     { label: t("howItWorks"), href: "/how-it-works" },
     { label: t("advertisers"), href: "/advertisers" },
-    { label: t("about"), href: "/about" },
+    { label: t("helpCenter"), href: "/help" },
   ];
 
   const handleResourcesMouseEnter = () => {
@@ -342,7 +343,9 @@ const Header = () => {
             {/* Separator */}
             <div
               id="ze-menu-separator"
-              className="ze-menu-separator h-6 mx-3 w-px bg-gray-300"
+              className={`ze-menu-separator h-6 mx-3 w-px bg-gray-300 transition-opacity duration-300 ease-in-out ${
+                isAuthTransitioning ? "opacity-0" : "opacity-100"
+              }`}
             />
 
             {/* Connect Menu - Show only when not authenticated */}
@@ -355,7 +358,7 @@ const Header = () => {
               >
                 <button
                   onClick={() => {
-                    setAuthMode('login');
+                    setAuthMode("login");
                     setShowAuthPanel(true);
                   }}
                   className="ze-menu-item"
@@ -364,7 +367,7 @@ const Header = () => {
                 </button>
                 <button
                   onClick={() => {
-                    setAuthMode('signup');
+                    setAuthMode("signup");
                     setShowAuthPanel(true);
                   }}
                   className="ze-button-primary"

@@ -232,14 +232,23 @@ export function formatCurrencyAmount(
  * @param amount - The original amount
  * @param originalCurrency - The original currency code
  * @param displayCurrency - The currency to display in
+ * @param options - Optional settings
+ * @param options.showFreeForZero - If true, returns "Free" for zero amounts (default: true)
  * @returns Formatted string in display currency
  */
 export function formatInDisplayCurrency(
   amount: number,
   originalCurrency: CurrencyCode | string,
-  displayCurrency: CurrencyCode | string
+  displayCurrency: CurrencyCode | string,
+  options?: { showFreeForZero?: boolean }
 ): string {
-  if (amount === 0) return "Free";
+  const showFreeForZero = options?.showFreeForZero ?? true;
+
+  if (amount === 0) {
+    if (showFreeForZero) return "Free";
+    // Return formatted zero in display currency
+    return formatCurrencyAmount(0, displayCurrency);
+  }
 
   const convertedAmount = convertCurrency(amount, originalCurrency, displayCurrency);
   return formatCurrencyAmount(convertedAmount, displayCurrency);

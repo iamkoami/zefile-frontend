@@ -72,6 +72,7 @@ export interface InitializeSubscriptionRequest {
   mobileMoneyProvider?: string;
   phoneNumber?: string;
   callbackUrl?: string;
+  countryCode?: string;
 }
 
 export interface InitializeSubscriptionResponse {
@@ -131,6 +132,58 @@ export interface PaginatedRenewalHistory {
   page: number;
   limit: number;
   totalPages: number;
+}
+
+// ============================================
+// PRORATED UPGRADE TYPES (Epic 24)
+// ============================================
+
+export interface UpgradePreviewRequest {
+  tier: SubscriptionTier;
+  billingPeriod: BillingPeriod;
+  countryCode?: string;
+}
+
+export interface UpgradePreviewResponse {
+  canUpgrade: boolean;
+  reason?: string;
+  currentTier: SubscriptionTier;
+  currentBillingPeriod: BillingPeriod | null;
+  targetTier: SubscriptionTier;
+  targetBillingPeriod: BillingPeriod;
+  currentPlanPrice: number;
+  totalDaysInPeriod: number;
+  daysUsed: number;
+  daysRemaining: number;
+  creditAmount: number;
+  newPlanPrice: number;
+  amountDue: number;
+  excessCredit: number;
+  currency: string;
+  creditDisplayAmount: string;
+  amountDueDisplayAmount: string;
+  newPlanPriceDisplayAmount: string;
+  currentPeriodEnd: string | null;
+  newPeriodEnd: string;
+}
+
+export interface InitiateUpgradeRequest {
+  tier: SubscriptionTier;
+  billingPeriod: BillingPeriod;
+  countryCode?: string;
+  callbackUrl?: string;
+}
+
+export interface InitiateUpgradeResponse {
+  authorizationUrl: string;
+  reference: string;
+  accessCode: string;
+  amount: number;
+  currency: string;
+  status: string;
+  displayAmount: string;
+  creditApplied: number;
+  creditDisplayAmount: string;
 }
 
 // ============================================
@@ -475,6 +528,35 @@ export const subscriptionApi = {
     daysRemaining?: number;
   }>> {
     return apiClient.post('/subscriptions/trial/start');
+  },
+
+  // ============================================
+  // PRORATED UPGRADE (Epic 24)
+  // ============================================
+
+  /**
+   * Get upgrade preview with proration details
+   */
+  async getUpgradePreview(
+    params: UpgradePreviewRequest
+  ): Promise<ApiResponse<UpgradePreviewResponse>> {
+    const query = new URLSearchParams({
+      tier: params.tier,
+      billingPeriod: params.billingPeriod,
+    });
+    if (params.countryCode) {
+      query.set('countryCode', params.countryCode);
+    }
+    return apiClient.get<UpgradePreviewResponse>(`/subscriptions/upgrade-preview?${query.toString()}`);
+  },
+
+  /**
+   * Initiate a prorated subscription upgrade
+   */
+  async initiateUpgrade(
+    data: InitiateUpgradeRequest
+  ): Promise<ApiResponse<InitiateUpgradeResponse>> {
+    return apiClient.post<InitiateUpgradeResponse>('/subscriptions/upgrade', data);
   },
 
   // ============================================

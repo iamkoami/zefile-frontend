@@ -1,31 +1,53 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useTranslations } from 'next-intl';
-import { ShieldCheck, Check, NavArrowDown, ArrowLeft, WarningCircle } from 'iconoir-react';
+import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
+import {
+  ShieldCheck,
+  Check,
+  NavArrowDown,
+  ArrowLeft,
+  WarningCircle,
+} from "iconoir-react";
 import {
   kycApi,
   KycRoutingResponse,
   KycVerificationStatusResponse,
   IdentityCountry,
   BvnVerificationResponse,
-} from '@/services/kyc-api';
-import { toast } from '@/components/shared/Toast';
-import { BVNVerificationForm } from './BVNVerificationForm';
-import { KYCUploadPanel } from './KYCUploadPanel';
+} from "@/services/kyc-api";
+import { toast } from "@/components/shared/Toast";
+import { BVNVerificationForm } from "./BVNVerificationForm";
+import { KYCUploadPanel } from "./KYCUploadPanel";
 
-type KycFlowStep = 'loading' | 'country' | 'method' | 'bvn' | 'documents' | 'success' | 'pending';
+type KycFlowStep =
+  | "loading"
+  | "country"
+  | "method"
+  | "bvn"
+  | "documents"
+  | "success"
+  | "pending";
 
-// Supported countries with BVN availability
-const COUNTRIES: { code: IdentityCountry; name: string; nameFr: string; flag: string; hasBvn: boolean }[] = [
-  { code: 'NG', name: 'Nigeria', nameFr: 'Nigeria', flag: '🇳🇬', hasBvn: true },
-  { code: 'GH', name: 'Ghana', nameFr: 'Ghana', flag: '🇬🇭', hasBvn: false },
-  { code: 'KE', name: 'Kenya', nameFr: 'Kenya', flag: '🇰🇪', hasBvn: false },
-  { code: 'SN', name: 'Senegal', nameFr: 'Sénégal', flag: '🇸🇳', hasBvn: false },
-  { code: 'CI', name: "Côte d'Ivoire", nameFr: "Côte d'Ivoire", flag: '🇨🇮', hasBvn: false },
-  { code: 'BJ', name: 'Benin', nameFr: 'Bénin', flag: '🇧🇯', hasBvn: false },
-  { code: 'TG', name: 'Togo', nameFr: 'Togo', flag: '🇹🇬', hasBvn: false },
-  { code: 'OTHER', name: 'Other', nameFr: 'Autre', flag: '🌍', hasBvn: false },
+// Paystack-supported countries only (no International option)
+// BVN verification available for Nigeria only
+const COUNTRIES: {
+  code: IdentityCountry;
+  name: string;
+  nameFr: string;
+  flag: string;
+  hasBvn: boolean;
+}[] = [
+  { code: "NG", name: "Nigeria", nameFr: "Nigeria", flag: "🇳🇬", hasBvn: true },
+  { code: "GH", name: "Ghana", nameFr: "Ghana", flag: "🇬🇭", hasBvn: false },
+  { code: "KE", name: "Kenya", nameFr: "Kenya", flag: "🇰🇪", hasBvn: false },
+  {
+    code: "CI",
+    name: "Côte d'Ivoire",
+    nameFr: "Côte d'Ivoire",
+    flag: "🇨🇮",
+    hasBvn: false,
+  },
 ];
 
 interface KYCFlowPanelProps {
@@ -46,17 +68,22 @@ interface KYCFlowPanelProps {
  * 3. For other countries: Proceed to document upload
  * 4. Complete verification
  */
-export function KYCFlowPanel({ onComplete, className = '' }: KYCFlowPanelProps) {
-  const t = useTranslations('kyc');
+export function KYCFlowPanel({
+  onComplete,
+  className = "",
+}: KYCFlowPanelProps) {
+  const t = useTranslations("kyc");
 
   // Flow state
-  const [step, setStep] = useState<KycFlowStep>('loading');
-  const [selectedCountry, setSelectedCountry] = useState<IdentityCountry | null>(null);
+  const [step, setStep] = useState<KycFlowStep>("loading");
+  const [selectedCountry, setSelectedCountry] =
+    useState<IdentityCountry | null>(null);
   const [isCountryDropdownOpen, setIsCountryDropdownOpen] = useState(false);
 
   // API data
   const [routing, setRouting] = useState<KycRoutingResponse | null>(null);
-  const [verificationStatus, setVerificationStatus] = useState<KycVerificationStatusResponse | null>(null);
+  const [verificationStatus, setVerificationStatus] =
+    useState<KycVerificationStatusResponse | null>(null);
 
   // Loading state
   const [isLoading, setIsLoading] = useState(true);
@@ -80,29 +107,31 @@ export function KYCFlowPanel({ onComplete, className = '' }: KYCFlowPanelProps) 
           setVerificationStatus(statusData);
 
           // Check if already verified or pending
-          if (statusData.kycStatus === 'verified') {
-            setStep('success');
-          } else if (statusData.kycStatus === 'pending') {
-            setStep('pending');
+          if (statusData.kycStatus === "verified") {
+            setStep("success");
+          } else if (statusData.kycStatus === "pending") {
+            setStep("pending");
           } else if (statusData.identityCountry) {
             // Country already set - determine next step
             setSelectedCountry(statusData.identityCountry);
-            const country = COUNTRIES.find((c) => c.code === statusData.identityCountry);
+            const country = COUNTRIES.find(
+              (c) => c.code === statusData.identityCountry,
+            );
             if (country?.hasBvn && routingRes.data?.bvnAvailable) {
-              setStep('method');
+              setStep("method");
             } else {
-              setStep('documents');
+              setStep("documents");
             }
           } else {
             // Need to select country
-            setStep('country');
+            setStep("country");
           }
         } else {
-          setStep('country');
+          setStep("country");
         }
       } catch (error) {
-        console.error('Failed to fetch KYC status:', error);
-        setStep('country');
+        console.error("Failed to fetch KYC status:", error);
+        setStep("country");
       } finally {
         setIsLoading(false);
       }
@@ -121,66 +150,66 @@ export function KYCFlowPanel({ onComplete, className = '' }: KYCFlowPanelProps) 
       const response = await kycApi.setIdentityCountry(country);
 
       if (response.error) {
-        toast.error(response.error.message || t('countrySetFailed'));
+        toast.error(response.error.message || t("countrySetFailed"));
         return;
       }
 
       // Check if BVN is available for this country
       const countryInfo = COUNTRIES.find((c) => c.code === country);
       if (countryInfo?.hasBvn) {
-        setStep('method');
+        setStep("method");
       } else {
-        setStep('documents');
+        setStep("documents");
       }
     } catch (error) {
-      console.error('Failed to set country:', error);
-      toast.error(t('countrySetFailed'));
+      console.error("Failed to set country:", error);
+      toast.error(t("countrySetFailed"));
     } finally {
       setIsSettingCountry(false);
     }
   };
 
   // Handle method selection
-  const handleMethodSelect = (method: 'bvn' | 'documents') => {
+  const handleMethodSelect = (method: "bvn" | "documents") => {
     setStep(method);
   };
 
   // Handle BVN verification success
   const handleBvnSuccess = (result: BvnVerificationResponse) => {
-    if (result.kycStatus === 'verified') {
-      setStep('success');
+    if (result.kycStatus === "verified") {
+      setStep("success");
     } else if (result.requiresReview) {
-      setStep('pending');
+      setStep("pending");
     } else {
-      setStep('success');
+      setStep("success");
     }
     onComplete?.();
   };
 
   // Handle document submission success
   const handleDocumentSuccess = () => {
-    setStep('pending');
+    setStep("pending");
     onComplete?.();
   };
 
   // Handle back navigation
   const handleBack = () => {
-    if (step === 'method') {
-      setStep('country');
+    if (step === "method") {
+      setStep("country");
       setSelectedCountry(null);
-    } else if (step === 'bvn' || step === 'documents') {
+    } else if (step === "bvn" || step === "documents") {
       const country = COUNTRIES.find((c) => c.code === selectedCountry);
       if (country?.hasBvn) {
-        setStep('method');
+        setStep("method");
       } else {
-        setStep('country');
+        setStep("country");
         setSelectedCountry(null);
       }
     }
   };
 
   // Render loading state
-  if (step === 'loading' || isLoading) {
+  if (step === "loading" || isLoading) {
     return (
       <div className={`flex items-center justify-center py-12 ${className}`}>
         <div className="animate-spin w-8 h-8 border-2 border-[#5E53E0] border-t-transparent rounded-full" />
@@ -189,19 +218,22 @@ export function KYCFlowPanel({ onComplete, className = '' }: KYCFlowPanelProps) 
   }
 
   // Render success state
-  if (step === 'success') {
+  if (step === "success") {
     return (
       <div className={`text-center py-8 ${className}`}>
         <div className="w-16 h-16 mx-auto mb-4 bg-[#87E64B]/20 rounded-full flex items-center justify-center">
           <Check className="w-8 h-8 text-[#87E64B]" />
         </div>
-        <h3 className="text-xl font-semibold text-[#171717] mb-2">{t('verificationComplete')}</h3>
-        <p className="text-gray-600">{t('verificationCompleteDescription')}</p>
+        <h3 className="text-xl font-semibold text-[#171717] mb-2">
+          {t("verificationComplete")}
+        </h3>
+        <p className="text-gray-600">{t("verificationCompleteDescription")}</p>
         {verificationStatus?.verifiedFirstName && (
           <p className="text-sm text-gray-500 mt-4">
-            {t('verifiedAs')}:{' '}
+            {t("verifiedAs")}:{" "}
             <strong>
-              {verificationStatus.verifiedFirstName} {verificationStatus.verifiedLastName}
+              {verificationStatus.verifiedFirstName}{" "}
+              {verificationStatus.verifiedLastName}
             </strong>
           </p>
         )}
@@ -210,33 +242,41 @@ export function KYCFlowPanel({ onComplete, className = '' }: KYCFlowPanelProps) 
   }
 
   // Render pending state
-  if (step === 'pending') {
+  if (step === "pending") {
     return (
       <div className={`text-center py-8 ${className}`}>
         <div className="w-16 h-16 mx-auto mb-4 bg-yellow-100 rounded-full flex items-center justify-center">
           <ShieldCheck className="w-8 h-8 text-yellow-600" />
         </div>
-        <h3 className="text-xl font-semibold text-[#171717] mb-2">{t('verificationPendingTitle')}</h3>
-        <p className="text-gray-600 mb-4">{t('verificationPendingDescription')}</p>
-        <p className="text-xs text-gray-400">{t('verificationPendingTime')}</p>
+        <h3 className="text-xl font-semibold text-[#171717] mb-2">
+          {t("verificationPendingTitle")}
+        </h3>
+        <p className="text-gray-600 mb-4">
+          {t("verificationPendingDescription")}
+        </p>
+        <p className="text-xs text-gray-400">{t("verificationPendingTime")}</p>
       </div>
     );
   }
 
   // Render country selection
-  if (step === 'country') {
+  if (step === "country") {
     return (
-      <div className={`space-y-6 ${className}`}>
+      <div className={`space-y-6 ${className} `}>
         {/* Header */}
-        <div>
-          <h2 className="text-xl font-semibold text-[#171717]">{t('identityVerification')}</h2>
-          <p className="text-sm text-gray-600 mt-1">{t('selectCountryDescription')}</p>
+        <div className="mb-10">
+          <h2 className="text-2xl font-semibold text-[#171717]">
+            {t("identityVerification")}
+          </h2>
+          <p className="text-sm text-gray-600 mt-1">
+            {t("selectCountryDescription")}
+          </p>
         </div>
 
         {/* Country Selector */}
         <div className="relative">
           <label className="block text-sm font-medium text-[#171717] mb-2">
-            {t('yourCountry')}
+            {t("yourCountry")}
           </label>
           <button
             type="button"
@@ -245,21 +285,23 @@ export function KYCFlowPanel({ onComplete, className = '' }: KYCFlowPanelProps) 
             className="w-full flex items-center justify-between px-4 py-3 bg-white border border-gray-300 rounded text-left hover:border-gray-400 transition-colors disabled:opacity-50"
           >
             <span
-              className={`flex items-center gap-3 ${selectedCountry ? 'text-[#171717]' : 'text-gray-400'}`}
+              className={`flex items-center gap-3 ${selectedCountry ? "text-[#171717]" : "text-gray-400"}`}
             >
               {selectedCountry ? (
                 <>
                   <span className="text-2xl">
                     {COUNTRIES.find((c) => c.code === selectedCountry)?.flag}
                   </span>
-                  <span>{COUNTRIES.find((c) => c.code === selectedCountry)?.name}</span>
+                  <span>
+                    {COUNTRIES.find((c) => c.code === selectedCountry)?.name}
+                  </span>
                 </>
               ) : (
-                t('selectCountry')
+                t("selectCountry")
               )}
             </span>
             <NavArrowDown
-              className={`w-5 h-5 text-gray-400 transition-transform ${isCountryDropdownOpen ? 'rotate-180' : ''}`}
+              className={`w-5 h-5 text-gray-400 transition-transform ${isCountryDropdownOpen ? "rotate-180" : ""}`}
             />
           </button>
 
@@ -271,14 +313,16 @@ export function KYCFlowPanel({ onComplete, className = '' }: KYCFlowPanelProps) 
                   type="button"
                   onClick={() => handleCountrySelect(country.code)}
                   className={`w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3 ${
-                    country.code === selectedCountry ? 'bg-gray-50 font-medium' : ''
+                    country.code === selectedCountry
+                      ? "bg-gray-50 font-medium"
+                      : ""
                   }`}
                 >
                   <span className="text-2xl">{country.flag}</span>
                   <span className="flex-1">{country.name}</span>
                   {country.hasBvn && (
                     <span className="text-xs text-[#5E53E0] bg-[#5E53E0]/10 px-2 py-0.5 rounded">
-                      {t('bvnAvailable')}
+                      {t("bvnAvailable")}
                     </span>
                   )}
                 </button>
@@ -289,14 +333,14 @@ export function KYCFlowPanel({ onComplete, className = '' }: KYCFlowPanelProps) 
 
         {/* Info notice */}
         <div className="bg-gray-50 border border-gray-200 rounded p-4">
-          <p className="text-sm text-gray-600">{t('countrySelectionInfo')}</p>
+          <p className="text-sm text-gray-600">{t("countrySelectionInfo")}</p>
         </div>
       </div>
     );
   }
 
   // Render method selection (for Nigerian users)
-  if (step === 'method') {
+  if (step === "method") {
     return (
       <div className={`space-y-6 ${className}`}>
         {/* Header */}
@@ -309,8 +353,12 @@ export function KYCFlowPanel({ onComplete, className = '' }: KYCFlowPanelProps) 
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h2 className="text-xl font-semibold text-[#171717]">{t('chooseVerificationMethod')}</h2>
-            <p className="text-sm text-gray-600 mt-1">{t('chooseMethodDescription')}</p>
+            <h2 className="text-xl font-semibold text-[#171717]">
+              {t("chooseVerificationMethod")}
+            </h2>
+            <p className="text-sm text-gray-600 mt-1">
+              {t("chooseMethodDescription")}
+            </p>
           </div>
         </div>
 
@@ -319,7 +367,7 @@ export function KYCFlowPanel({ onComplete, className = '' }: KYCFlowPanelProps) 
           {/* BVN Option */}
           <button
             type="button"
-            onClick={() => handleMethodSelect('bvn')}
+            onClick={() => handleMethodSelect("bvn")}
             className="w-full p-6 border-2 border-gray-200 rounded-lg hover:border-[#5E53E0] hover:bg-[#5E53E0]/5 transition-all text-left group"
           >
             <div className="flex items-start gap-4">
@@ -327,13 +375,19 @@ export function KYCFlowPanel({ onComplete, className = '' }: KYCFlowPanelProps) 
                 <ShieldCheck className="w-6 h-6 text-[#5E53E0]" />
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-[#171717] mb-1">{t('bvnMethodTitle')}</h3>
-                <p className="text-sm text-gray-600 mb-2">{t('bvnMethodDescription')}</p>
+                <h3 className="text-lg font-semibold text-[#171717] mb-1">
+                  {t("bvnMethodTitle")}
+                </h3>
+                <p className="text-sm text-gray-600 mb-2">
+                  {t("bvnMethodDescription")}
+                </p>
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-[#87E64B] bg-[#87E64B]/10 px-2 py-0.5 rounded font-medium">
-                    {t('recommended')}
+                    {t("recommended")}
                   </span>
-                  <span className="text-xs text-gray-500">{t('instantVerification')}</span>
+                  <span className="text-xs text-gray-500">
+                    {t("instantVerification")}
+                  </span>
                 </div>
               </div>
             </div>
@@ -342,7 +396,7 @@ export function KYCFlowPanel({ onComplete, className = '' }: KYCFlowPanelProps) 
           {/* Document Upload Option */}
           <button
             type="button"
-            onClick={() => handleMethodSelect('documents')}
+            onClick={() => handleMethodSelect("documents")}
             className="w-full p-6 border-2 border-gray-200 rounded-lg hover:border-gray-300 transition-all text-left group"
           >
             <div className="flex items-start gap-4">
@@ -350,9 +404,15 @@ export function KYCFlowPanel({ onComplete, className = '' }: KYCFlowPanelProps) 
                 <span className="text-2xl">📄</span>
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-[#171717] mb-1">{t('documentMethodTitle')}</h3>
-                <p className="text-sm text-gray-600 mb-2">{t('documentMethodDescription')}</p>
-                <span className="text-xs text-gray-500">{t('manualReview')}</span>
+                <h3 className="text-lg font-semibold text-[#171717] mb-1">
+                  {t("documentMethodTitle")}
+                </h3>
+                <p className="text-sm text-gray-600 mb-2">
+                  {t("documentMethodDescription")}
+                </p>
+                <span className="text-xs text-gray-500">
+                  {t("manualReview")}
+                </span>
               </div>
             </div>
           </button>
@@ -362,7 +422,7 @@ export function KYCFlowPanel({ onComplete, className = '' }: KYCFlowPanelProps) 
   }
 
   // Render BVN verification
-  if (step === 'bvn') {
+  if (step === "bvn") {
     return (
       <div className={className}>
         {/* Back button */}
@@ -373,20 +433,20 @@ export function KYCFlowPanel({ onComplete, className = '' }: KYCFlowPanelProps) 
             className="inline-flex items-center gap-2 text-gray-500 hover:text-[#171717] transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span className="text-sm">{t('back')}</span>
+            <span className="text-sm">{t("back")}</span>
           </button>
         </div>
 
         <BVNVerificationForm
           onSuccess={handleBvnSuccess}
-          onSwitchToDocuments={() => setStep('documents')}
+          onSwitchToDocuments={() => setStep("documents")}
         />
       </div>
     );
   }
 
   // Render document upload
-  if (step === 'documents') {
+  if (step === "documents") {
     return (
       <div className={className}>
         {/* Back button */}
@@ -397,7 +457,7 @@ export function KYCFlowPanel({ onComplete, className = '' }: KYCFlowPanelProps) 
             className="inline-flex items-center gap-2 text-gray-500 hover:text-[#171717] transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span className="text-sm">{t('back')}</span>
+            <span className="text-sm">{t("back")}</span>
           </button>
         </div>
 
@@ -410,7 +470,7 @@ export function KYCFlowPanel({ onComplete, className = '' }: KYCFlowPanelProps) 
   return (
     <div className={`text-center py-8 ${className}`}>
       <WarningCircle className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-      <p className="text-gray-600">{t('unexpectedError')}</p>
+      <p className="text-gray-600">{t("unexpectedError")}</p>
     </div>
   );
 }

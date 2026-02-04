@@ -12,9 +12,9 @@ export { default as CancelConfirmationPanel } from './CancelConfirmationPanel';
 export { default as MultiEmailInput } from './MultiEmailInput';
 export { default as GlobalDragDropOverlay } from './GlobalDragDropOverlay';
 export { default as CelebrationModal } from './CelebrationModal';
-export { default as PaperPlaneAnimation } from './PaperPlaneAnimation';
-export { default as HeroText } from './HeroText';
-export { default as TimeOfDayBackground } from './TimeOfDayBackground';
+export { default as PaperPlaneAnimation } from '@/components/shared/PaperPlaneAnimation';
+export { default as HeroText } from '@/components/shared/HeroText';
+export { default as TimeOfDayBackground } from '@/components/shared/TimeOfDayBackground';
 
 // Re-export transfer components for backwards compatibility
 export { TransferOptionsPanel } from '@/features/transfer/components';

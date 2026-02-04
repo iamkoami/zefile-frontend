@@ -374,7 +374,7 @@ const ReportIssueModal: React.FC<ReportIssueModalProps> = ({
               <button
                 type="submit"
                 disabled={isSubmitting || isUploading}
-                className="w-full py-2.5 bg-[#5E53E0] text-white font-medium rounded hover:bg-[#4d44c7] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="w-full py-2.5 bg-[#87E64B] text-[#171717] font-medium rounded hover:bg-[#78d43f] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {isSubmitting ? t('submitting') : t('submit')}
               </button>

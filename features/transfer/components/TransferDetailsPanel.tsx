@@ -12,6 +12,7 @@ import {
   Xmark,
   GitPullRequest,
   RefreshDouble,
+  CreditCard,
 } from "iconoir-react";
 import ReportIssueButton from "@/components/shared/ReportIssueButton";
 import { useTranslations, useLocale } from "next-intl";
@@ -23,6 +24,8 @@ import ConfirmationModal from "@/components/shared/ConfirmationModal";
 import VersionUploadModal from "./VersionUploadModal";
 import VersionHistorySection from "./VersionHistorySection";
 import TransferInsightsSection from "./TransferInsightsSection";
+import LinkAnalyticsSection from "./LinkAnalyticsSection";
+import ShareButtons from "./ShareButtons";
 import { getCurrentUserId, getCurrentUserEmail } from "@/utils/auth";
 import { storageApi } from "@/services/storage-api";
 import LoadingPanel from "@/components/LoadingPanel";
@@ -42,8 +45,9 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
   role,
 }) => {
   const t = useTranslations("transferDetails");
+  const tPayment = useTranslations("payment");
   const locale = useLocale();
-  const { pushView, popView } = useDrawerStore();
+  const { pushView, popView, openPaymentFlow } = useDrawerStore();
 
   // Current transfer state (for refresh capability)
   const [currentTransfer, setCurrentTransfer] = useState<TransferDto>(transfer);
@@ -62,6 +66,21 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
     transfer?.hasPassword || false,
   );
 
+  // Add recipient state
+  const [isAddingRecipient, setIsAddingRecipient] = useState(false);
+  const [newRecipientEmail, setNewRecipientEmail] = useState("");
+  const [isSavingRecipient, setIsSavingRecipient] = useState(false);
+
+  // Edit recipient state
+  const [editingRecipientEmail, setEditingRecipientEmail] = useState<string | null>(null);
+  const [editedRecipientValue, setEditedRecipientValue] = useState("");
+  const [isSavingEditedRecipient, setIsSavingEditedRecipient] = useState(false);
+  const [addToContactsOnEdit, setAddToContactsOnEdit] = useState(false);
+
+  // Delete recipient state
+  const [recipientToDelete, setRecipientToDelete] = useState<string | null>(null);
+  const [isDeletingRecipient, setIsDeletingRecipient] = useState(false);
+
   // Copy link state
   const [isCopied, setIsCopied] = useState(false);
 
@@ -77,6 +96,60 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
 
   // Version upload modal state
   const [showVersionUploadModal, setShowVersionUploadModal] = useState(false);
+
+  // Check if transfer requires payment
+  // Use backend's paymentRequired field if available, otherwise fall back to price > 0
+  const requiresPayment = useMemo(() => {
+    if (currentTransfer?.paymentRequired !== undefined) {
+      return currentTransfer.paymentRequired && (currentTransfer?.price ?? 0) > 0;
+    }
+    return (
+      currentTransfer?.price !== undefined &&
+      currentTransfer?.price !== null &&
+      currentTransfer?.price > 0
+    );
+  }, [currentTransfer?.paymentRequired, currentTransfer?.price]);
+
+  // Determine if Pay button should show (only for unpaid receivers of paid transfers)
+  const showPayButton = useMemo(() => {
+    // Sender never sees Pay button
+    if (role === "sender") return false;
+    // Free transfers show Download
+    if (!requiresPayment) return false;
+    // Already paid transfers show Download
+    if (currentTransfer?.isPaid) return false;
+    // Receiver with unpaid transfer sees Pay button
+    return true;
+  }, [role, requiresPayment, currentTransfer?.isPaid]);
+
+  // Permission model for paid transfers
+  // When a transfer is paid, control shifts from sender to receiver
+  const actionPermissions = useMemo(() => {
+    const isPaid = currentTransfer?.isPaid || false;
+    const isSender = role === "sender";
+    const isReceiver = role === "receiver";
+
+    return {
+      // Recipients: sender when unpaid, receiver when paid
+      canAddRecipient: isPaid ? isReceiver : isSender,
+      canRemoveRecipient: isPaid ? isReceiver : isSender,
+      canEditRecipient: isPaid ? isReceiver : isSender,
+      // Password: sender when unpaid, receiver when paid
+      canEditPassword: isPaid ? isReceiver : isSender,
+      // Version upload: sender only when unpaid (never for receiver, never when paid)
+      canUploadVersion: !isPaid && isSender,
+      // Delete/Forward: sender when unpaid, receiver when paid
+      canDeleteTransfer: isPaid ? isReceiver : isSender,
+      canTransferForward: isPaid ? isReceiver : isSender,
+      // Title: sender only when unpaid (immutable after payment)
+      canEditTitle: !isPaid && isSender,
+      // Analytics and Version History: visible to both sender and receiver (when paid)
+      canViewAnalytics: isSender || (isReceiver && isPaid),
+      canViewVersionHistory: isSender || (isReceiver && isPaid),
+      // Track paid status for API calls
+      isPaid,
+    };
+  }, [currentTransfer?.isPaid, role]);
 
   // Preview regeneration state
   const [regeneratingFileId, setRegeneratingFileId] = useState<string | null>(null);
@@ -288,6 +361,17 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
     }
   }, [currentTransfer?.shortCode, isDownloadingAll, t]);
 
+  // Handle pay button click - opens payment flow
+  const handlePayClick = useCallback(() => {
+    if (!currentTransfer) return;
+    // Get sender email for payment flow
+    const senderEmail =
+      typeof currentTransfer.senderId === "object"
+        ? currentTransfer.senderId?.email || ""
+        : "";
+    openPaymentFlow(currentTransfer, senderEmail);
+  }, [currentTransfer, openPaymentFlow]);
+
   // Handle single file download - direct download without zipping
   const handleSingleFileDownload = useCallback(
     async (fileId: string, filename: string) => {
@@ -400,8 +484,16 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
   // ========== PASSWORD EDITING ==========
   const handleSavePassword = useCallback(async () => {
     if (!currentTransfer?.id) return;
-    const userId = getCurrentUserId();
-    if (!userId) {
+
+    // Determine auth parameter based on paid status and role
+    const isPaidTransfer = actionPermissions.isPaid;
+    const isReceiverAction = role === "receiver" && isPaidTransfer;
+
+    const authParam = isReceiverAction
+      ? { receiverEmail: getCurrentUserEmail() || undefined }
+      : { senderId: getCurrentUserId() || undefined };
+
+    if (!authParam.senderId && !authParam.receiverEmail) {
       toast.error(t("passwordUpdateError"));
       return;
     }
@@ -411,7 +503,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
       const response = await transferApi.updateTransferPassword(
         currentTransfer.id,
         {
-          senderId: userId,
+          ...authParam,
           password: passwordValue.trim() || undefined, // Empty = remove protection
         },
       );
@@ -434,12 +526,200 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
     } finally {
       setIsSavingPassword(false);
     }
-  }, [currentTransfer?.id, passwordValue, t]);
+  }, [currentTransfer?.id, passwordValue, t, actionPermissions.isPaid, role]);
 
   const handleCancelPassword = useCallback(() => {
     setIsEditingPassword(false);
     setPasswordValue("");
   }, []);
+
+  // ========== ADD RECIPIENT ==========
+  const handleAddRecipient = useCallback(async () => {
+    if (!currentTransfer?.id || !newRecipientEmail.trim()) return;
+
+    // Determine auth parameter based on paid status and role
+    const isPaidTransfer = actionPermissions.isPaid;
+    const isReceiverAction = role === "receiver" && isPaidTransfer;
+
+    const authParam = isReceiverAction
+      ? { receiverEmail: getCurrentUserEmail() || undefined }
+      : { senderId: getCurrentUserId() || undefined };
+
+    if (!authParam.senderId && !authParam.receiverEmail) {
+      toast.error(t("addRecipientError"));
+      return;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const trimmedEmail = newRecipientEmail.trim().toLowerCase();
+    if (!emailRegex.test(trimmedEmail)) {
+      toast.error(t("invalidEmail"));
+      return;
+    }
+
+    // Check if email is already in recipients list
+    const existingEmails = (currentTransfer?.recipientEmails || []).map((e) =>
+      e.toLowerCase()
+    );
+    if (existingEmails.includes(trimmedEmail)) {
+      toast.error(t("recipientAlreadyExists"));
+      return;
+    }
+
+    setIsSavingRecipient(true);
+    try {
+      const response = await transferApi.addRecipientsToTransfer(
+        currentTransfer.id,
+        {
+          ...authParam,
+          emails: [newRecipientEmail.trim()],
+        },
+      );
+
+      if (response.data?.success) {
+        toast.success(t("recipientAdded"));
+        setIsAddingRecipient(false);
+        setNewRecipientEmail("");
+        // Refresh transfer data to show new recipient
+        refreshTransferData();
+      } else {
+        toast.error(response.data?.message || t("addRecipientError"));
+      }
+    } catch {
+      toast.error(t("addRecipientError"));
+    } finally {
+      setIsSavingRecipient(false);
+    }
+  }, [currentTransfer?.id, newRecipientEmail, t, refreshTransferData, actionPermissions.isPaid, role]);
+
+  const handleCancelAddRecipient = useCallback(() => {
+    setIsAddingRecipient(false);
+    setNewRecipientEmail("");
+  }, []);
+
+  // ========== EDIT RECIPIENT ==========
+  const handleStartEditRecipient = useCallback((email: string) => {
+    setEditingRecipientEmail(email);
+    setEditedRecipientValue(email);
+    setAddToContactsOnEdit(false);
+  }, []);
+
+  const handleCancelEditRecipient = useCallback(() => {
+    setEditingRecipientEmail(null);
+    setEditedRecipientValue("");
+    setAddToContactsOnEdit(false);
+  }, []);
+
+  const handleSaveEditedRecipient = useCallback(async () => {
+    if (!currentTransfer?.id || !editingRecipientEmail) return;
+
+    const trimmedEmail = editedRecipientValue.trim().toLowerCase();
+    if (!trimmedEmail) {
+      toast.error(t("enterValidEmail"));
+      return;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      toast.error(t("enterValidEmail"));
+      return;
+    }
+
+    // If no change, just cancel
+    if (trimmedEmail === editingRecipientEmail.toLowerCase()) {
+      handleCancelEditRecipient();
+      return;
+    }
+
+    // Determine auth parameter based on paid status and role
+    const isPaidTransfer = actionPermissions.isPaid;
+    const isReceiverAction = role === "receiver" && isPaidTransfer;
+
+    const authParam = isReceiverAction
+      ? { receiverEmail: getCurrentUserEmail() || undefined }
+      : { senderId: getCurrentUserId() || undefined };
+
+    if (!authParam.senderId && !authParam.receiverEmail) {
+      toast.error(t("updateRecipientError"));
+      return;
+    }
+
+    setIsSavingEditedRecipient(true);
+    try {
+      const response = await transferApi.updateRecipientInTransfer(currentTransfer.id, {
+        ...authParam,
+        oldEmail: editingRecipientEmail,
+        newEmail: trimmedEmail,
+        // Only add to contacts for sender (receivers don't have contact list)
+        addToContacts: !isReceiverAction && addToContactsOnEdit,
+      });
+
+      if (response.data?.success) {
+        toast.success(t("recipientUpdated"));
+        handleCancelEditRecipient();
+        // Refresh transfer data to get updated recipients
+        refreshTransferData?.();
+      } else {
+        toast.error(response.data?.message || t("updateRecipientError"));
+      }
+    } catch {
+      toast.error(t("updateRecipientError"));
+    } finally {
+      setIsSavingEditedRecipient(false);
+    }
+  }, [currentTransfer?.id, editingRecipientEmail, editedRecipientValue, addToContactsOnEdit, t, handleCancelEditRecipient, refreshTransferData, actionPermissions.isPaid, role]);
+
+  // ========== DELETE RECIPIENT ==========
+  const handleDeleteRecipientClick = useCallback((email: string) => {
+    setRecipientToDelete(email);
+  }, []);
+
+  const handleCancelDeleteRecipient = useCallback(() => {
+    setRecipientToDelete(null);
+  }, []);
+
+  const handleConfirmDeleteRecipient = useCallback(async () => {
+    if (!currentTransfer?.id || !recipientToDelete) return;
+
+    // Determine auth parameter based on paid status and role
+    const isPaidTransfer = actionPermissions.isPaid;
+    const isReceiverAction = role === "receiver" && isPaidTransfer;
+
+    const authParam = isReceiverAction
+      ? { receiverEmail: getCurrentUserEmail() || undefined }
+      : { senderId: getCurrentUserId() || undefined };
+
+    if (!authParam.senderId && !authParam.receiverEmail) {
+      toast.error(t("removeRecipientError"));
+      setRecipientToDelete(null);
+      return;
+    }
+
+    setIsDeletingRecipient(true);
+    try {
+      const response = await transferApi.removeRecipientFromTransfer(currentTransfer.id, {
+        ...authParam,
+        email: recipientToDelete,
+      });
+
+      if (response.data?.success) {
+        toast.success(t("recipientRemoved"));
+        setRecipientToDelete(null);
+        // Refresh transfer data to get updated recipients
+        refreshTransferData?.();
+      } else {
+        toast.error(response.data?.message || t("removeRecipientError"));
+        setRecipientToDelete(null);
+      }
+    } catch {
+      toast.error(t("removeRecipientError"));
+      setRecipientToDelete(null);
+    } finally {
+      setIsDeletingRecipient(false);
+    }
+  }, [currentTransfer?.id, recipientToDelete, t, refreshTransferData, actionPermissions.isPaid, role]);
 
   // ========== DELETE ==========
   const handleDeleteClick = useCallback(() => {
@@ -448,8 +728,16 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
 
   const handleConfirmDelete = useCallback(async () => {
     if (!currentTransfer?.id) return;
-    const userId = getCurrentUserId();
-    if (!userId) {
+
+    // Determine auth parameter based on paid status and role
+    const isPaidTransfer = actionPermissions.isPaid;
+    const isReceiverAction = role === "receiver" && isPaidTransfer;
+
+    const authParam = isReceiverAction
+      ? { receiverEmail: getCurrentUserEmail() || undefined }
+      : { senderId: getCurrentUserId() || undefined };
+
+    if (!authParam.senderId && !authParam.receiverEmail) {
       toast.error(t("deleteError"));
       setShowDeleteConfirmation(false);
       return;
@@ -459,9 +747,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
     try {
       const response = await transferApi.deleteTransferSecure(
         currentTransfer.id,
-        {
-          senderId: userId,
-        },
+        authParam,
       );
 
       if (response.data?.success) {
@@ -479,7 +765,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
     } finally {
       setIsDeleting(false);
     }
-  }, [currentTransfer?.id, popView, t]);
+  }, [currentTransfer?.id, popView, t, actionPermissions.isPaid, role]);
 
   const handleCancelDelete = useCallback(() => {
     setShowDeleteConfirmation(false);
@@ -590,7 +876,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
                 <h1 className="text-3xl font-bold text-gray-900">
                   {displayTitle}
                 </h1>
-                {role === "sender" && (
+                {actionPermissions.canEditTitle && (
                   <button
                     onClick={handleEditTitle}
                     disabled={expiryStatus.isExpired}
@@ -620,7 +906,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
         </div>
 
         {/* Short link and actions row */}
-        <div className="flex items-center justify-between gap-4 mb-12 border-t border-b border-gray-200 py-5">
+        <div className="flex items-center justify-between gap-4 mb-4 border-t border-b border-gray-200 py-5">
           {/* Short link input with copy button */}
           <div className="flex-1 max-w-md">
             <div className="flex items-center border border-[#171717] rounded overflow-hidden">
@@ -646,19 +932,32 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
 
           {/* Action buttons */}
           <div className="flex items-center gap-2">
-            {/* Download All */}
-            <button
-              onClick={handleDownload}
-              disabled={isDownloadingAll || expiryStatus.isExpired}
-              className="flex flex-col items-center gap-1 px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              aria-label={expiryStatus.isExpired ? t("expired") : t("download")}
-              title={expiryStatus.isExpired ? t("transferExpired") : undefined}
-            >
-              <Download className="w-6 h-6" strokeWidth={1.5} />
-              <span className="text-xs">
-                {isDownloadingAll ? t("preparing") : t("download")}
-              </span>
-            </button>
+            {/* Pay or Download - based on payment status */}
+            {showPayButton ? (
+              <button
+                onClick={handlePayClick}
+                disabled={expiryStatus.isExpired}
+                className="flex flex-col items-center gap-1 px-4 py-2 text-[#5E53E0] hover:text-[#4a42b8] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label={expiryStatus.isExpired ? t("expired") : tPayment("payAndDownload")}
+                title={expiryStatus.isExpired ? t("transferExpired") : undefined}
+              >
+                <CreditCard className="w-6 h-6" strokeWidth={1.5} />
+                <span className="text-xs">{tPayment("payAndDownload")}</span>
+              </button>
+            ) : (
+              <button
+                onClick={handleDownload}
+                disabled={isDownloadingAll || expiryStatus.isExpired}
+                className="flex flex-col items-center gap-1 px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label={expiryStatus.isExpired ? t("expired") : t("download")}
+                title={expiryStatus.isExpired ? t("transferExpired") : undefined}
+              >
+                <Download className="w-6 h-6" strokeWidth={1.5} />
+                <span className="text-xs">
+                  {isDownloadingAll ? t("preparing") : t("download")}
+                </span>
+              </button>
+            )}
 
             {/* Preview */}
             <button
@@ -672,63 +971,75 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
               <span className="text-xs">{t("preview")}</span>
             </button>
 
-            {/* Sender-only actions */}
-            {role === "sender" && (
-              <>
-                {/* Upload New Version */}
-                <button
-                  onClick={() => setShowVersionUploadModal(true)}
-                  disabled={expiryStatus.isExpired}
-                  className="flex flex-col items-center gap-1 px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  aria-label={
-                    expiryStatus.isExpired ? t("expired") : t("uploadVersion")
-                  }
-                  title={expiryStatus.isExpired ? t("transferExpired") : undefined}
-                >
-                  <GitPullRequest className="w-6 h-6" strokeWidth={1.5} />
-                  <span className="text-xs">{t("uploadVersion")}</span>
-                </button>
+            {/* Report Issue - visible to both sender and receiver */}
+            {currentTransfer?.id && currentTransfer?.shortCode && (
+              <ReportIssueButton
+                transferId={currentTransfer.id}
+                shortCode={currentTransfer.shortCode}
+                userEmail={getCurrentUserEmail() || undefined}
+                role={role === "sender" ? "sender" : "recipient"}
+                variant="icon"
+              />
+            )}
 
-                {/* Transfer/Forward */}
-                <button
-                  onClick={handleTransfer}
-                  disabled={expiryStatus.isExpired}
-                  className="flex flex-col items-center gap-1 px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  aria-label={
-                    expiryStatus.isExpired ? t("expired") : t("transfer")
-                  }
-                  title={
-                    expiryStatus.isExpired ? t("transferExpired") : undefined
-                  }
-                >
-                  <ShareAndroid className="w-6 h-6" strokeWidth={1.5} />
-                  <span className="text-xs">{t("transfer")}</span>
-                </button>
+            {/* Upload New Version - sender only when unpaid */}
+            {actionPermissions.canUploadVersion && (
+              <button
+                onClick={() => setShowVersionUploadModal(true)}
+                disabled={expiryStatus.isExpired}
+                className="flex flex-col items-center gap-1 px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label={
+                  expiryStatus.isExpired ? t("expired") : t("uploadVersion")
+                }
+                title={expiryStatus.isExpired ? t("transferExpired") : undefined}
+              >
+                <GitPullRequest className="w-6 h-6" strokeWidth={1.5} />
+                <span className="text-xs">{t("uploadVersion")}</span>
+              </button>
+            )}
 
-                {/* Report Issue */}
-                {currentTransfer?.id && currentTransfer?.shortCode && (
-                  <ReportIssueButton
-                    transferId={currentTransfer.id}
-                    shortCode={currentTransfer.shortCode}
-                    userEmail={getCurrentUserEmail() || undefined}
-                    role="sender"
-                    variant="icon"
-                  />
-                )}
+            {/* Transfer/Forward - sender when unpaid, receiver when paid */}
+            {actionPermissions.canTransferForward && (
+              <button
+                onClick={handleTransfer}
+                disabled={expiryStatus.isExpired}
+                className="flex flex-col items-center gap-1 px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label={
+                  expiryStatus.isExpired ? t("expired") : t("transfer")
+                }
+                title={
+                  expiryStatus.isExpired ? t("transferExpired") : undefined
+                }
+              >
+                <ShareAndroid className="w-6 h-6" strokeWidth={1.5} />
+                <span className="text-xs">{t("transfer")}</span>
+              </button>
+            )}
 
-                {/* Delete */}
-                <button
-                  onClick={handleDeleteClick}
-                  className="flex flex-col items-center gap-1 px-4 py-2 text-red-500 hover:text-red-600 transition-colors"
-                  aria-label={t("delete")}
-                >
-                  <Trash className="w-6 h-6" strokeWidth={1.5} />
-                  <span className="text-xs">{t("delete")}</span>
-                </button>
-              </>
+            {/* Delete - sender when unpaid, receiver when paid */}
+            {actionPermissions.canDeleteTransfer && (
+              <button
+                onClick={handleDeleteClick}
+                className="flex flex-col items-center gap-1 px-4 py-2 text-red-500 hover:text-red-600 transition-colors"
+                aria-label={t("delete")}
+              >
+                <Trash className="w-6 h-6" strokeWidth={1.5} />
+                <span className="text-xs">{t("delete")}</span>
+              </button>
             )}
           </div>
         </div>
+
+        {/* Share buttons - sender when unpaid, receiver when paid */}
+        {actionPermissions.canTransferForward && currentTransfer?.shortCode && !expiryStatus.isExpired && (
+          <div className="mb-8">
+            <ShareButtons
+              shortCode={currentTransfer.shortCode}
+              title={displayTitle}
+              message={currentTransfer.message}
+            />
+          </div>
+        )}
 
         {/* Details grid */}
         <div className="grid grid-cols-2 gap-x-12 gap-y-6">
@@ -755,8 +1066,8 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
               </p>
             </div>
 
-            {/* Password (sender only) */}
-            {role === "sender" && (
+            {/* Password - sender when unpaid, receiver when paid */}
+            {actionPermissions.canEditPassword && (
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <h3 className="text-sm font-semibold text-gray-900">
@@ -814,24 +1125,145 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
               </div>
             )}
 
-            {/* Recipient(s) for sender / Sender for receiver */}
-            {role === "sender" ? (
+            {/* Recipient management - sender when unpaid, receiver when paid */}
+            {actionPermissions.canAddRecipient ? (
               <div>
                 <h3 className="text-sm font-semibold text-gray-900 mb-1">
-                  {t("sentTo", { count: recipients.length })}
+                  {role === "sender" ? t("sentTo", { count: recipients.length }) : t("recipients", { count: recipients.length })}
                 </h3>
-                <div className="space-y-1">
+                <div className="space-y-2">
                   {recipients.map((email, index) => (
-                    <div key={index} className="text-sm text-gray-600">
-                      <p>{email}</p>
-                      <p className="text-xs text-gray-400">
-                        {(currentTransfer.downloadCount || 0) > 0
-                          ? t("downloaded")
-                          : t("notYetDownloaded")}
-                      </p>
+                    <div key={index} className="group">
+                      {editingRecipientEmail === email ? (
+                        // Edit mode
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="email"
+                              value={editedRecipientValue}
+                              onChange={(e) => setEditedRecipientValue(e.target.value)}
+                              className="flex-1 text-sm px-3 py-1.5 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-[#5E53E0] focus:border-transparent"
+                              autoFocus
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") handleSaveEditedRecipient();
+                                if (e.key === "Escape") handleCancelEditRecipient();
+                              }}
+                            />
+                            <button
+                              onClick={handleSaveEditedRecipient}
+                              disabled={isSavingEditedRecipient || !editedRecipientValue.trim()}
+                              className="p-1.5 text-[#87E64B] hover:bg-gray-50 rounded transition-colors disabled:opacity-50"
+                              aria-label={t("save")}
+                            >
+                              <Check className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={handleCancelEditRecipient}
+                              disabled={isSavingEditedRecipient}
+                              className="p-1.5 text-gray-400 hover:bg-gray-50 rounded transition-colors disabled:opacity-50"
+                              aria-label={t("cancel")}
+                            >
+                              <Xmark className="w-4 h-4" />
+                            </button>
+                          </div>
+                          {/* Only show "Add to contacts" for sender (receivers don't have contact list for sender) */}
+                          {role === "sender" && (
+                            <label className="flex items-center gap-2 text-xs text-gray-500">
+                              <input
+                                type="checkbox"
+                                checked={addToContactsOnEdit}
+                                onChange={(e) => setAddToContactsOnEdit(e.target.checked)}
+                                className="w-3.5 h-3.5 rounded border-gray-300 text-[#5E53E0] focus:ring-[#5E53E0]"
+                              />
+                              {t("addToContacts")}
+                            </label>
+                          )}
+                        </div>
+                      ) : (
+                        // Display mode
+                        <div className="flex items-start justify-between">
+                          <div className="text-sm text-gray-600">
+                            <p>{email}</p>
+                            <p className="text-xs text-gray-400">
+                              {(currentTransfer.downloadCount || 0) > 0
+                                ? t("downloaded")
+                                : t("notYetDownloaded")}
+                            </p>
+                          </div>
+                          {!expiryStatus.isExpired && (
+                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              {actionPermissions.canEditRecipient && (
+                                <button
+                                  onClick={() => handleStartEditRecipient(email)}
+                                  className="p-1 text-gray-400 hover:text-[#5E53E0] rounded transition-colors"
+                                  aria-label={t("editRecipient")}
+                                  title={t("editRecipient")}
+                                >
+                                  <EditPencil className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                              {actionPermissions.canRemoveRecipient && recipients.length > 1 && (
+                                <button
+                                  onClick={() => handleDeleteRecipientClick(email)}
+                                  className="p-1 text-gray-400 hover:text-red-500 rounded transition-colors"
+                                  aria-label={t("removeRecipient")}
+                                  title={t("removeRecipient")}
+                                >
+                                  <Trash className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
+
+                {/* Add recipient section */}
+                {actionPermissions.canAddRecipient && !expiryStatus.isExpired && recipients.length < 10 && (
+                  <div className="mt-3">
+                    {isAddingRecipient ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="email"
+                          value={newRecipientEmail}
+                          onChange={(e) => setNewRecipientEmail(e.target.value)}
+                          placeholder={t("enterRecipientEmail")}
+                          className="flex-1 text-sm px-3 py-1.5 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-[#5E53E0] focus:border-transparent"
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleAddRecipient();
+                            if (e.key === "Escape") handleCancelAddRecipient();
+                          }}
+                        />
+                        <button
+                          onClick={handleAddRecipient}
+                          disabled={isSavingRecipient || !newRecipientEmail.trim()}
+                          className="p-1.5 text-[#87E64B] hover:bg-gray-50 rounded transition-colors disabled:opacity-50"
+                          aria-label={t("addRecipient")}
+                        >
+                          <Check className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={handleCancelAddRecipient}
+                          disabled={isSavingRecipient}
+                          className="p-1.5 text-gray-400 hover:bg-gray-50 rounded transition-colors disabled:opacity-50"
+                          aria-label={t("cancel")}
+                        >
+                          <Xmark className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setIsAddingRecipient(true)}
+                        className="text-sm text-[#5E53E0] hover:text-[#4a42b3] transition-colors"
+                      >
+                        + {t("addRecipient")}
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             ) : (
               <div>
@@ -857,11 +1289,11 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
               </div>
             )}
 
-            {/* Version history (sender only) */}
-            {role === "sender" && (
+            {/* Version history - sender always, receiver when paid */}
+            {actionPermissions.canViewVersionHistory && (
               <VersionHistorySection
                 transferId={currentTransfer.id}
-                isOwner={true}
+                isOwner={role === "sender"}
                 onVersionChange={() => {
                   // Refresh transfer data when version changes
                   refreshTransferData();
@@ -869,8 +1301,13 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
               />
             )}
 
-            {/* Transfer insights (sender only) */}
-            {role === "sender" && (
+            {/* Link analytics - sender always, receiver when paid */}
+            {actionPermissions.canViewAnalytics && (
+              <LinkAnalyticsSection transferId={currentTransfer.id} />
+            )}
+
+            {/* Transfer insights - sender always, receiver when paid */}
+            {actionPermissions.canViewAnalytics && (
               <TransferInsightsSection transferId={currentTransfer.id} />
             )}
           </div>
@@ -928,18 +1365,22 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
                           handleSingleFileDownload(file.id, fileName)
                         }
                         disabled={
-                          downloadingFileId === file.id || expiryStatus.isExpired
+                          downloadingFileId === file.id || expiryStatus.isExpired || showPayButton
                         }
                         className="p-2 text-[#87E64B] hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         aria-label={
                           expiryStatus.isExpired
                             ? t("expired")
-                            : t("downloadFile", { name: fileName })
+                            : showPayButton
+                              ? tPayment("paymentRequired")
+                              : t("downloadFile", { name: fileName })
                         }
                         title={
                           expiryStatus.isExpired
                             ? t("transferExpired")
-                            : undefined
+                            : showPayButton
+                              ? tPayment("paymentRequired")
+                              : undefined
                         }
                       >
                         <Download className="w-5 h-5" />
@@ -964,6 +1405,19 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
         isLoading={isDeleting}
         onConfirm={handleConfirmDelete}
         onCancel={handleCancelDelete}
+      />
+
+      {/* Remove recipient confirmation modal */}
+      <ConfirmationModal
+        isOpen={!!recipientToDelete}
+        type="delete"
+        title={t("removeRecipientTitle")}
+        message={t("removeRecipientMessage", { email: recipientToDelete || "" })}
+        confirmLabel={t("removeRecipientConfirm")}
+        cancelLabel={t("cancel")}
+        isLoading={isDeletingRecipient}
+        onConfirm={handleConfirmDeleteRecipient}
+        onCancel={handleCancelDeleteRecipient}
       />
 
       {/* Version upload modal */}

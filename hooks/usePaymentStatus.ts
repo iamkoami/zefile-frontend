@@ -103,6 +103,8 @@ export function usePaymentStatus(options: UsePaymentStatusOptions = {}): UsePaym
     const reference = referenceRef.current;
     if (!reference) return;
 
+    console.log('[Payment Poll] Polling for reference:', reference);
+
     // Check timeout
     if (Date.now() - startTimeRef.current > timeout) {
       setPollingStatus('timeout');
@@ -115,8 +117,13 @@ export function usePaymentStatus(options: UsePaymentStatusOptions = {}): UsePaym
       const response = await paymentApi.getPaymentStatusV2(reference);
 
       if (response.error) {
-        console.error('Failed to poll payment status:', response.error);
-        // Continue polling even on error (network glitch)
+        // Log with explicit properties to avoid empty object display
+        console.warn('[Payment Poll] Error polling reference', reference, ':', {
+          message: response.error.message || 'No message',
+          statusCode: response.error.statusCode || response.status,
+          httpStatus: response.status,
+        });
+        // Continue polling even on error (network glitch or payment not yet created)
         pollingRef.current = setTimeout(poll, interval);
         return;
       }

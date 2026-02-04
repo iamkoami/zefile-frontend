@@ -21,12 +21,14 @@ interface CountryConfig {
 }
 
 /**
- * Supported countries for Mobile Money
+ * Supported countries for Paystack payments
+ * Includes all Paystack-covered countries (GH, KE, CI, NG)
  */
 const SUPPORTED_COUNTRIES: CountryConfig[] = [
   { code: 'GH', name: 'Ghana', dialCode: '+233', flag: '🇬🇭' },
   { code: 'KE', name: 'Kenya', dialCode: '+254', flag: '🇰🇪' },
   { code: 'CI', name: "Côte d'Ivoire", dialCode: '+225', flag: '🇨🇮' },
+  { code: 'NG', name: 'Nigeria', dialCode: '+234', flag: '🇳🇬' },
 ];
 
 /**
@@ -36,6 +38,10 @@ interface PhoneNumberInputProps {
   value: string;
   onChange: (phoneNumber: string, isValid: boolean, countryCode: CountryCode) => void;
   defaultCountry?: CountryCode;
+  /** Controlled country code - when set, syncs phone input country with parent */
+  countryCode?: CountryCode;
+  /** Hide the country selector dropdown (when country is controlled externally) */
+  hideCountrySelector?: boolean;
   error?: string;
   disabled?: boolean;
 }
@@ -53,6 +59,8 @@ export function PhoneNumberInput({
   value,
   onChange,
   defaultCountry = 'GH',
+  countryCode,
+  hideCountrySelector = false,
   error,
   disabled = false,
 }: PhoneNumberInputProps) {
@@ -64,8 +72,21 @@ export function PhoneNumberInput({
   const [localValue, setLocalValue] = useState(value);
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  // Get detected country from localStorage and set as default
+  // Sync with controlled countryCode prop from parent
   useEffect(() => {
+    if (countryCode) {
+      const country = SUPPORTED_COUNTRIES.find((c) => c.code === countryCode);
+      if (country && country.code !== selectedCountry.code) {
+        setSelectedCountry(country);
+      }
+    }
+  }, [countryCode, selectedCountry.code]);
+
+  // Get detected country from localStorage and set as default (only when not controlled)
+  useEffect(() => {
+    // Skip if countryCode is controlled by parent
+    if (countryCode) return;
+
     const cachedCountry = localStorage.getItem('zefile_detected_country');
     if (cachedCountry) {
       const country = SUPPORTED_COUNTRIES.find((c) => c.code === cachedCountry);
@@ -73,7 +94,7 @@ export function PhoneNumberInput({
         setSelectedCountry(country);
       }
     }
-  }, []);
+  }, [countryCode]);
 
   /**
    * Format phone number as user types
@@ -193,21 +214,29 @@ export function PhoneNumberInput({
       </label>
 
       <div className="relative flex">
-        {/* Country Selector */}
+        {/* Country Selector - disabled when hideCountrySelector is true */}
         <div className="relative">
-          <button
-            type="button"
-            onClick={() => !disabled && setIsDropdownOpen(!isDropdownOpen)}
-            disabled={disabled}
-            className="flex items-center gap-2 px-3 py-3 border border-r-0 border-gray-300 rounded-l bg-gray-50 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed min-w-[110px]"
-          >
-            <span className="text-xl">{selectedCountry.flag}</span>
-            <span className="text-sm font-medium text-gray-700">{selectedCountry.dialCode}</span>
-            <NavArrowDown className="w-4 h-4 text-gray-500" />
-          </button>
+          {hideCountrySelector ? (
+            // Static display when country is controlled externally
+            <div className="flex items-center gap-2 px-3 py-3 border border-r-0 border-gray-300 rounded-l bg-gray-100 min-w-[110px]">
+              <span className="text-xl">{selectedCountry.flag}</span>
+              <span className="text-sm font-medium text-gray-700">{selectedCountry.dialCode}</span>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => !disabled && setIsDropdownOpen(!isDropdownOpen)}
+              disabled={disabled}
+              className="flex items-center gap-2 px-3 py-3 border border-r-0 border-gray-300 rounded-l bg-gray-50 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed min-w-[110px]"
+            >
+              <span className="text-xl">{selectedCountry.flag}</span>
+              <span className="text-sm font-medium text-gray-700">{selectedCountry.dialCode}</span>
+              <NavArrowDown className="w-4 h-4 text-gray-500" />
+            </button>
+          )}
 
-          {/* Dropdown */}
-          {isDropdownOpen && (
+          {/* Dropdown - only show when not hidden and open */}
+          {!hideCountrySelector && isDropdownOpen && (
             <div className="absolute top-full left-0 mt-1 w-56 bg-white border border-gray-200 rounded shadow-lg z-50">
               {SUPPORTED_COUNTRIES.map((country) => (
                 <button

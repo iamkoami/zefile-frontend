@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Download, PageEdit, ArrowDown } from 'iconoir-react';
 import Header from '@/components/shared/Header';
+import LoadingFullscreen from '@/components/LoadingFullscreen';
 import { paymentApi, PaymentStatusV2Response } from '@/services/payment-api';
 import { transferApi, TransferDto } from '@/services/transfer-api';
 import { storageApi } from '@/services/storage-api';
@@ -105,7 +106,10 @@ export default function PaymentSuccessPage() {
 
   const calculateTotalSize = (): number => {
     if (!transfer?.files) return 0;
-    return transfer.files.reduce((acc, file) => acc + (Number(file.size) || 0), 0);
+    return transfer.files.reduce((acc, file) => {
+      const fileSize = Number(file.fileSize) || Number(file.size) || 0;
+      return acc + fileSize;
+    }, 0);
   };
 
   const handleDownload = async () => {
@@ -128,14 +132,7 @@ export default function PaymentSuccessPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-white">
-        <Header />
-        <div className="flex items-center justify-center py-24">
-          <div className="w-8 h-8 border-4 border-[#87E64B] border-t-transparent rounded-full animate-spin" />
-        </div>
-      </div>
-    );
+    return <LoadingFullscreen />;
   }
 
   return (

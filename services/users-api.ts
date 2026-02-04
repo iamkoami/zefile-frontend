@@ -141,6 +141,27 @@ export class UsersApi {
   async cancelDeletion(): Promise<ApiResponse<{ success: boolean; message: string }>> {
     return apiClient.post<{ success: boolean; message: string }>('/users/me/cancel-deletion', {});
   }
+
+  /**
+   * Upload user avatar/profile picture
+   * @param file - The image file to upload (JPEG, PNG, or WebP, max 5MB)
+   */
+  async uploadAvatar(file: File): Promise<ApiResponse<{ profilePictureUrl: string; message: string }>> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    return apiClient.upload<{ profilePictureUrl: string; message: string }>(
+      '/users/me/avatar',
+      formData
+    );
+  }
+
+  /**
+   * Delete user avatar/profile picture
+   */
+  async deleteAvatar(): Promise<ApiResponse<{ success: boolean; message: string }>> {
+    return apiClient.delete<{ success: boolean; message: string }>('/users/me/avatar');
+  }
 }
 
 // Export singleton instance

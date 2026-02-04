@@ -371,11 +371,13 @@ export class StorageApi {
    * Used for in-app file preview without downloading
    * Returns watermarked preview if available (thumbnail for images, preview clip for video/audio)
    * Falls back to original file URL for PDFs or files without previews
+   * When requestOriginal is true and transfer is paid/free, returns original file URL
    */
   async getFilePreviewUrl(
     shortCode: string,
     fileId: string,
-    password?: string
+    password?: string,
+    options?: { requestOriginal?: boolean }
   ): Promise<ApiResponse<{
     url: string;
     filename: string;
@@ -395,7 +397,7 @@ export class StorageApi {
       previewType?: 'thumbnail' | 'previewClip' | 'waveform' | 'original';
     }>(
       '/storage/preview/url',
-      { shortCode, fileId, password }
+      { shortCode, fileId, password, requestOriginal: options?.requestOriginal }
     );
   }
 

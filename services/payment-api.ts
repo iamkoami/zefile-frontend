@@ -117,6 +117,8 @@ export interface InitializePaymentV2Request {
   mobileMoneyProvider?: MobileMoneyProviderCode;
   /** Phone number in E.164 format (required for mobile_money) */
   phoneNumber?: string;
+  /** Preferred Paystack channel for checkout (card, bank_transfer, ussd) */
+  preferredChannel?: 'card' | 'bank_transfer' | 'ussd' | 'bank' | 'qr';
 }
 
 /**
@@ -372,5 +374,14 @@ export const paymentApi = {
     const url = `/v2/payments/history${queryString ? `?${queryString}` : ''}`;
 
     return apiClient.get<PaymentHistoryResponseDto>(url);
+  },
+
+  /**
+   * Cancel a pending payment
+   * Called when user closes drawer or clicks cancel during payment flow
+   * Idempotent - safe to call multiple times
+   */
+  async cancelPayment(reference: string): Promise<ApiResponse<{ success: boolean; message: string }>> {
+    return apiClient.post<{ success: boolean; message: string }>(`/v2/payments/${reference}/cancel`);
   },
 };

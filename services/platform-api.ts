@@ -95,12 +95,37 @@ export interface PlatformConfig {
   serviceChargePercentage: number;
 }
 
+/**
+ * User-specific platform configuration
+ * Returns tier-specific service charge based on user's subscription
+ */
+export interface UserPlatformConfig {
+  serviceChargePercentage: number;
+  tier: SubscriptionTier | 'free';
+  maxUploadSize: number;
+}
+
 export class PlatformApi {
   /**
    * Get public platform configuration (legacy endpoint)
+   * Returns default FREE tier service charge (15%)
    */
   async getPublicConfig(): Promise<ApiResponse<PlatformConfig>> {
     return apiClient.get<PlatformConfig>('/platform-settings/public/config');
+  }
+
+  /**
+   * Get user-specific platform configuration
+   * Returns tier-specific service charge based on user's subscription:
+   * - FREE: 15%
+   * - STARTER: 10%
+   * - PRO: 5%
+   *
+   * Works for both authenticated and unauthenticated users.
+   * Unauthenticated users get FREE tier rate.
+   */
+  async getUserConfig(): Promise<ApiResponse<UserPlatformConfig>> {
+    return apiClient.get<UserPlatformConfig>('/platform-settings/user-config');
   }
 
   /**
