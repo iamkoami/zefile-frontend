@@ -38,6 +38,7 @@
   "devDependencies": {
     "@cloudflare/next-on-pages": "^1",
     "@eslint/eslintrc": "^3",
+    "@swc/helpers": "^0.5.18",
     "eslint": "^9",
     "eslint-config-next": "15.3.4",
     "vercel": "^39"
