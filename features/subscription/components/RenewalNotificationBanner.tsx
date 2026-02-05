@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { Calendar, InfoCircle } from 'iconoir-react';
 import { subscriptionApi, UserSubscription } from '@/services/subscription-api';
+import { authApi } from '@/services/auth-api';
 
 interface RenewalNotificationBannerProps {
   /** Size variant */
@@ -39,6 +40,11 @@ export function RenewalNotificationBanner({
 
   useEffect(() => {
     const fetchSubscription = async () => {
+      if (!authApi.isAuthenticated()) {
+        setIsLoading(false);
+        return;
+      }
+
       try {
         const response = await subscriptionApi.getCurrentSubscription();
         if (response.data) {

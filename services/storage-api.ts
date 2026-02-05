@@ -422,6 +422,23 @@ export class StorageApi {
       {}
     );
   }
+
+  /**
+   * Verify transfer password
+   * Used by download page to authenticate access to password-protected transfers
+   * @param shortCode - The transfer short code
+   * @param password - The password to verify
+   * @returns Success response or error
+   */
+  async verifyTransferPassword(
+    shortCode: string,
+    password: string
+  ): Promise<ApiResponse<{ success: boolean }>> {
+    return apiClient.post<{ success: boolean }>('/storage/verify-password', {
+      shortCode,
+      password,
+    });
+  }
 }
 
 // Export singleton instance

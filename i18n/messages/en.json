@@ -145,6 +145,7 @@
   "filePreview": {
     "element": "item",
     "elements": "items",
+    "transferOptionsLabel": "Transfer options",
     "addMoreFiles": "Add more files",
     "dropFilesToAdd": "Drop files or folders here to add them",
     "removeFile": "Remove file",
@@ -173,8 +174,32 @@
     "validityDuration": "Validity period",
     "day": "day",
     "days": "days",
-    "sendSizeLimit": "Send size limit",
-    "setPassword": "Set a password"
+    "sizeLimitLabel": "Size limit",
+    "loading": "Loading...",
+    "setPassword": "Set a password",
+    "passwordSet": "Password protected",
+    "passwordMinLength": "Password must be at least {min} characters",
+    "validity": {
+      "day1": "1 day",
+      "days3": "3 days",
+      "days7": "7 days",
+      "days14": "14 days",
+      "days30": "30 days",
+      "days60": "60 days",
+      "days90": "90 days"
+    },
+    "sizeLimit": {
+      "2gb": "2 GB",
+      "5gb": "5 GB",
+      "10gb": "10 GB",
+      "20gb": "20 GB",
+      "30gb": "30 GB",
+      "50gb": "50 GB"
+    },
+    "tierRequired": "Requires {tier}",
+    "freeTier": "Free",
+    "starterTier": "Starter",
+    "proTier": "Pro"
   },
   "fileTypes": {
     "images": "Images (JPG, PNG, GIF, WebP, BMP, TIFF, SVG)",
@@ -721,7 +746,8 @@
     "sortByDate": "Date",
     "sortBySize": "Size",
     "previewNotReady": "Preview not available",
-    "previewGenerating": "Preview is being generated. Please try again later."
+    "previewGenerating": "Preview is being generated. Please try again later.",
+    "publicAccessMessage": "This is a preview only. Ask the sender for full download access."
   },
   "confirmationModal": {
     "yes": "Yes",
@@ -1780,10 +1806,17 @@
     "generalSubtitle": "We looked everywhere, but this page decided to go off-grid. Maybe it's on vacation?",
     "transferNotFoundTitle": "This transfer has vanished into thin air.",
     "transferNotFoundSubtitle": "The sender may have deleted it, or the link might be incorrect. Don't worry — you can reach out to them or start fresh.",
-    "transferExpiredTitle": "Time's up! This transfer has expired.",
-    "transferExpiredSubtitle": "Like a shooting star, it was beautiful while it lasted. Ask the sender for a fresh link, or send your own magic.",
-    "startTransfer": "Start your own transfer",
+    "transferExpiredTitle": "This masterpiece has left the gallery.",
+    "transferExpiredSubtitle": "Art comes and goes, but creativity is forever. Ask for a new link or share your own creations with the world!",
+    "startTransfer": "Share your art",
     "createNew": "Create a new transfer",
+    "goHome": "Back to home"
+  },
+  "serverError": {
+    "title": "Oops! Something went sideways.",
+    "subtitle": "Our servers hit a creative block. Don't worry, our team is working on it. In the meantime, try again or start fresh.",
+    "tryAgain": "Try again",
+    "startTransfer": "Start a transfer",
     "goHome": "Back to home"
   },
   "adminNotifications": {

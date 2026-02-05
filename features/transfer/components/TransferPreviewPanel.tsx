@@ -112,8 +112,16 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
     );
   }, [transfer?.paymentRequired, transfer?.price]);
 
+  // Check if this is a public access transfer
+  const isPublicTransfer = useMemo(() => {
+    return transfer?.accessControl === "public";
+  }, [transfer?.accessControl]);
+
   // Determine if Pay button should show (only for unpaid receivers of paid transfers)
   const showPayButton = useMemo(() => {
+    // Public transfers never show Pay button
+    if (isPublicTransfer) return false;
+
     // Sender never sees Pay button
     if (role === "sender") return false;
 
@@ -125,7 +133,16 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
 
     // Receiver with unpaid transfer sees Pay button
     return true;
-  }, [role, requiresPayment, transfer?.isPaid]);
+  }, [role, requiresPayment, transfer?.isPaid, isPublicTransfer]);
+
+  // Determine if Download button should show
+  const showDownloadButton = useMemo(() => {
+    // Public transfers never show Download button
+    if (isPublicTransfer) return false;
+
+    // For non-public transfers, show download when pay button is not shown
+    return !showPayButton;
+  }, [isPublicTransfer, showPayButton]);
 
   // Compute if user can view original files (payment-based, NOT role-based)
   // Both sender and receiver see the same view - watermarked until paid
@@ -857,7 +874,7 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
           />
 
           {/* Pay Button (shown when transfer has price, user is receiver, and not already paid) */}
-          {showPayButton ? (
+          {showPayButton && (
             <button
               onClick={handlePayClick}
               disabled={isExpired}
@@ -869,8 +886,10 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
                 ? t("expired")
                 : `${paymentT("payFor")} ${formatPrice(transfer.price || 0, transfer.currency)}`}
             </button>
-          ) : (
-            /* Download All Button (shown when transfer is free or user is sender) */
+          )}
+
+          {/* Download All Button (shown when transfer is free or user is sender, hidden for public) */}
+          {showDownloadButton && (
             <button
               onClick={handleDownloadAll}
               disabled={isDownloadingAll || isExpired}
@@ -887,6 +906,15 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
           )}
         </div>
       </div>
+
+      {/* Public Access Message - shown for public transfers */}
+      {isPublicTransfer && (
+        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg mb-4">
+          <p className="text-sm text-yellow-800 text-center">
+            {t("publicAccessMessage")}
+          </p>
+        </div>
+      )}
 
       {/* Version Context Bar - shows when multiple versions exist */}
       {versions.length > 1 && selectedVersion && (

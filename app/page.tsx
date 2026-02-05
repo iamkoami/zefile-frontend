@@ -25,6 +25,8 @@ import ToastContainer from "@/components/shared/Toast";
 import { UploadProtectionProvider } from "@/components/providers/UploadProtectionProvider";
 import { useDrawerStore } from "@/stores/drawer-store";
 import { useTimeOfDay } from "@/hooks/useTimeOfDay";
+import { useTierLimits, SubscriptionTier } from "@/hooks/useTierLimits";
+import { TransferOptions } from "@/features/transfer/components/TransferOptionsPanel";
 
 export default function Home() {
   const searchParams = useSearchParams();
@@ -41,6 +43,20 @@ export default function Home() {
   const [reuseTransferData, setReuseTransferData] =
     useState<ReuseTransferData | null>(null);
   const [showNpsSurvey, setShowNpsSurvey] = useState(false);
+
+  // User tier state (defaults to 'free' for unauthenticated users)
+  const [userTier, setUserTier] = useState<SubscriptionTier>('free');
+
+  // Fetch tier limits from API (dynamic values from admin configuration)
+  const tierLimitsData = useTierLimits();
+
+  // Transfer options state - shared between TransferOptionsPanel and UploadPanel
+  const [transferOptions, setTransferOptions] = useState<TransferOptions>({
+    accessControl: 'private',
+    validityDuration: '1', // Will be updated based on tier
+    password: '',
+    sizeLimit: '2', // Will be updated based on tier (in GB)
+  });
 
   // Handle drawer/account query params from navigation
   useEffect(() => {
@@ -82,13 +98,17 @@ export default function Home() {
     return selectedFiles.reduce((sum, file) => sum + file.size, 0);
   }, [selectedFiles]);
 
-  // Fetch platform configuration on mount
+  // Fetch platform configuration and user tier on mount
   useEffect(() => {
     const fetchConfig = async () => {
       try {
-        const response = await platformApi.getPublicConfig();
+        // Fetch user-specific config which includes tier
+        const response = await platformApi.getUserConfig();
         if (response.data) {
           setMaxUploadSize(response.data.maxUploadSize);
+          // Normalize tier to lowercase to match tier-limits.ts types
+          const tier = (response.data.tier?.toLowerCase() || 'free') as SubscriptionTier;
+          setUserTier(tier);
         }
       } catch (error) {
         console.error("Failed to fetch platform config:", error);
@@ -98,6 +118,18 @@ export default function Home() {
     // Don't block page render - set loading to false immediately
     setIsLoading(false);
   }, []);
+
+  // Update transfer options defaults when tier limits data loads
+  useEffect(() => {
+    if (!tierLimitsData.isLoading && userTier) {
+      setTransferOptions((prev) => ({
+        ...prev,
+        validityDuration: tierLimitsData.getDefaultValidity(userTier),
+        sizeLimit: tierLimitsData.getDefaultSizeLimit(userTier),
+      }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tierLimitsData.isLoading, userTier]);
 
   // Check NPS survey status on mount (only for authenticated users)
   useEffect(() => {
@@ -225,6 +257,7 @@ export default function Home() {
                 onPanelStateChange={setUploadPanelState}
                 reuseTransferData={reuseTransferData}
                 onClearReuseData={handleClearReuseData}
+                transferOptions={transferOptions}
               />
 
               {/* File Preview Panel - Visible when files selected OR reuse files OR form is showing */}
@@ -246,12 +279,19 @@ export default function Home() {
                 selectedFilesSize={selectedFilesSize}
                 reuseTransferData={reuseTransferData}
                 onClearReuseData={handleClearReuseData}
+                transferOptions={transferOptions}
+                tierLimitsData={tierLimitsData}
               />
 
               {/* Transfer Options Panel */}
               <TransferOptionsPanel
                 isVisible={showOptions}
                 hasFilesSelected={selectedFiles.length > 0}
+                options={transferOptions}
+                onOptionsChange={setTransferOptions}
+                onClose={() => setShowOptions(false)}
+                userTier={userTier}
+                tierLimitsData={tierLimitsData}
               />
             </div>
           </div>

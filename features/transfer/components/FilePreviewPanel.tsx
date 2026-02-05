@@ -3,6 +3,8 @@
 import React, { useRef, useState } from 'react';
 import { Plus, Xmark } from 'iconoir-react';
 import { useTranslations } from 'next-intl';
+import { TransferOptions } from './TransferOptionsPanel';
+import { UseTierLimitsReturn } from '@/hooks/useTierLimits';
 import { getFileInputAccept, validateFiles } from '@/lib/constants/supported-file-types';
 import { ReuseTransferData } from '@/features/home/components/UploadPanel';
 
@@ -15,6 +17,10 @@ interface FilePreviewPanelProps {
   selectedFilesSize: number;
   reuseTransferData?: ReuseTransferData | null;
   onClearReuseData?: () => void;
+  /** Transfer options to display (accessControl, validityDuration, password) */
+  transferOptions?: TransferOptions;
+  /** Dynamic tier limits data from API for label lookups */
+  tierLimitsData?: UseTierLimitsReturn;
 }
 
 const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({
@@ -26,11 +32,26 @@ const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({
   selectedFilesSize,
   reuseTransferData,
   onClearReuseData,
+  transferOptions,
+  tierLimitsData,
 }) => {
   const t = useTranslations('filePreview');
   const tUpload = useTranslations('upload');
+  const tOptions = useTranslations('transferOptions');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [fileError, setFileError] = useState<string>('');
+
+  // Helper to get validity period translation key from value (using dynamic data)
+  const getValidityLabelKey = (days: string): string => {
+    const option = tierLimitsData?.allValidityOptions.find((opt) => opt.value === days);
+    return option?.labelKey || `validity.days${days}`;
+  };
+
+  // Helper to get size limit translation key from value in GB (using dynamic data)
+  const getSizeLimitLabelKey = (sizeGB: string): string => {
+    const option = tierLimitsData?.allSizeLimitOptions.find((opt) => opt.value === sizeGB);
+    return option?.labelKey || `sizeLimit.${sizeGB}gb`;
+  };
 
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 B';
@@ -82,7 +103,6 @@ const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({
     const totalSize = currentSize + newFilesSize;
 
     if (totalSize > maxUploadSize) {
-      const remainingSize = maxUploadSize - currentSize;
       setFileError(
         tUpload('filesExceedLimit', {
           limit: formatBytes(maxUploadSize),
@@ -189,6 +209,33 @@ const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({
             </div>
           ))}
         </div>
+
+        {/* Transfer Options Display - Inline */}
+        {transferOptions && transferOptions.accessControl && (
+          <div
+            className="mb-4 px-3 py-2 bg-gray-50 rounded-lg text-sm text-gray-600"
+            role="region"
+            aria-label={t('transferOptionsLabel')}
+          >
+            <span>
+              {transferOptions.accessControl === 'private' && tOptions('accessPrivate')}
+              {transferOptions.accessControl === 'password' && tOptions('accessPassword')}
+              {transferOptions.accessControl === 'public' && tOptions('accessPublic')}
+            </span>
+            {transferOptions.validityDuration && (
+              <>
+                <span className="mx-2">·</span>
+                <span>{tOptions(getValidityLabelKey(transferOptions.validityDuration))}</span>
+              </>
+            )}
+            {transferOptions.sizeLimit && (
+              <>
+                <span className="mx-2">·</span>
+                <span>{tOptions(getSizeLimitLabelKey(transferOptions.sizeLimit))}</span>
+              </>
+            )}
+          </div>
+        )}
 
         {/* Add More Files Section */}
         <div>

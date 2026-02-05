@@ -12,8 +12,12 @@ export interface CreateTransferDto {
   price?: number;
   currency?: string;
   message?: string;
+  /** Access control mode: private (default), password, or public */
+  accessControl?: 'private' | 'password' | 'public';
   password?: string;
-  expiryDate?: string;
+  /** ISO date string for transfer expiry (calculated from validityDuration) */
+  expireAt?: string;
+  expiryDate?: string; // Legacy field
   maxDownloads?: number;
 }
 
@@ -40,6 +44,8 @@ export interface TransferDto {
   downloadPageViews: number;
   hasPassword?: boolean;
   password?: string;
+  // Access control mode for the transfer
+  accessControl?: 'private' | 'password' | 'public';
   senderNotifiedDownload: boolean;
   senderNotifiedExpiry: boolean;
   lastDownloadedAt?: string;

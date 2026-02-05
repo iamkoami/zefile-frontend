@@ -18,6 +18,7 @@ import { platformApi } from "@/services/platform-api";
 import { multipartUploadService } from "@/services/multipart-upload.service";
 import { useUploadStore } from "@/stores/upload-store";
 import { useCurrentCurrency } from "@/stores/currency-store";
+import { TransferOptions } from "@/features/transfer/components/TransferOptionsPanel";
 
 // Interface for files from an existing transfer (reuse flow)
 export interface ReuseFile {
@@ -44,6 +45,8 @@ interface UploadPanelProps {
   onPanelStateChange?: (state: PanelState) => void;
   reuseTransferData?: ReuseTransferData | null;
   onClearReuseData?: () => void;
+  /** Transfer options from page-level state (accessControl, validityDuration, password) */
+  transferOptions?: TransferOptions;
 }
 
 export type PanelState =
@@ -63,6 +66,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
   onPanelStateChange,
   reuseTransferData,
   onClearReuseData,
+  transferOptions,
 }) => {
   const t = useTranslations("upload");
   const tCurrency = useTranslations("currency");
@@ -341,6 +345,16 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
     return parseFloat(numericString) || 0;
   };
 
+  // Calculate expiry date from validity duration in days
+  const calculateExpiryDate = (days: string): string | undefined => {
+    if (!days) return undefined;
+    const daysNum = parseInt(days, 10);
+    if (isNaN(daysNum) || daysNum <= 0) return undefined;
+    const date = new Date();
+    date.setDate(date.getDate() + daysNum);
+    return date.toISOString();
+  };
+
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
@@ -511,6 +525,15 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
         price: parsePriceToNumber(price),
         currency: currency,
         message: message || undefined,
+        // Include transfer options if provided
+        accessControl: transferOptions?.accessControl,
+        password:
+          transferOptions?.accessControl === 'password'
+            ? transferOptions.password
+            : undefined,
+        expireAt: transferOptions?.validityDuration
+          ? calculateExpiryDate(transferOptions.validityDuration)
+          : undefined,
       });
 
       if (transferResponse.error) {

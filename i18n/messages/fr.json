@@ -146,6 +146,7 @@
   "filePreview": {
     "element": "élément",
     "elements": "éléments",
+    "transferOptionsLabel": "Options de transfert",
     "addMoreFiles": "Ajouter plus d'éléments",
     "dropFilesToAdd": "vous pouvez déposer vos fichiers ou vos dossiers sur la page pour les ajouter",
     "removeFile": "Supprimer le fichier",
@@ -174,8 +175,32 @@
     "validityDuration": "Durée de validité",
     "day": "jour",
     "days": "jours",
-    "sendSizeLimit": "Limite de la taille d'envoie",
-    "setPassword": "Définir un mot de passe"
+    "sizeLimitLabel": "Limite de taille",
+    "loading": "Chargement...",
+    "setPassword": "Définir un mot de passe",
+    "passwordSet": "Protégé par mot de passe",
+    "passwordMinLength": "Le mot de passe doit contenir au moins {min} caractères",
+    "validity": {
+      "day1": "1 jour",
+      "days3": "3 jours",
+      "days7": "7 jours",
+      "days14": "14 jours",
+      "days30": "30 jours",
+      "days60": "60 jours",
+      "days90": "90 jours"
+    },
+    "sizeLimit": {
+      "2gb": "2 Go",
+      "5gb": "5 Go",
+      "10gb": "10 Go",
+      "20gb": "20 Go",
+      "30gb": "30 Go",
+      "50gb": "50 Go"
+    },
+    "tierRequired": "Nécessite {tier}",
+    "freeTier": "Gratuit",
+    "starterTier": "Starter",
+    "proTier": "Pro"
   },
   "fileTypes": {
     "images": "Images (JPG, PNG, GIF, WebP, BMP, TIFF, SVG)",
@@ -722,7 +747,8 @@
     "sortByDate": "Date",
     "sortBySize": "Taille",
     "previewNotReady": "Aperçu non disponible",
-    "previewGenerating": "L'aperçu est en cours de génération. Veuillez réessayer plus tard."
+    "previewGenerating": "L'aperçu est en cours de génération. Veuillez réessayer plus tard.",
+    "publicAccessMessage": "Ceci est un aperçu uniquement. Demandez à l'expéditeur l'accès complet au téléchargement."
   },
   "confirmationModal": {
     "yes": "Oui",
@@ -1781,10 +1807,17 @@
     "generalSubtitle": "On a cherché partout, mais cette page a décidé de disparaître. Peut-être en vacances ?",
     "transferNotFoundTitle": "Ce transfert s'est volatilisé.",
     "transferNotFoundSubtitle": "L'expéditeur l'a peut-être supprimé, ou le lien est incorrect. Pas de panique — contactez-le ou lancez votre propre transfert.",
-    "transferExpiredTitle": "Temps écoulé ! Ce transfert a expiré.",
-    "transferExpiredSubtitle": "Comme une étoile filante, c'était beau tant que ça durait. Demandez un nouveau lien à l'expéditeur, ou envoyez votre propre magie.",
-    "startTransfer": "Lancer votre propre transfert",
+    "transferExpiredTitle": "Ce chef-d'œuvre a quitté la galerie.",
+    "transferExpiredSubtitle": "L'art va et vient, mais la créativité est éternelle. Demandez un nouveau lien ou partagez vos propres créations avec le monde !",
+    "startTransfer": "Partagez votre art",
     "createNew": "Créer un nouveau transfert",
+    "goHome": "Retour à l'accueil"
+  },
+  "serverError": {
+    "title": "Oups ! Quelque chose a dérapé.",
+    "subtitle": "Nos serveurs ont eu un blocage créatif. Pas d'inquiétude, notre équipe s'en occupe. En attendant, réessayez ou recommencez.",
+    "tryAgain": "Réessayer",
+    "startTransfer": "Lancer un transfert",
     "goHome": "Retour à l'accueil"
   },
   "adminNotifications": {

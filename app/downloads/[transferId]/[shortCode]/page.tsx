@@ -28,6 +28,9 @@ import {
   WarningCircle,
   MessageAlert,
 } from "iconoir-react";
+import Link from "next/link";
+import Lottie from "lottie-react";
+import catAnimation from "@/public/lotties/cat.json";
 import LoadingFullscreen from "@/components/LoadingFullscreen";
 import LoadingPanel from "@/components/LoadingPanel";
 import Header from "@/components/shared/Header";
@@ -101,6 +104,7 @@ export default function TransferLandingPage() {
   const searchParams = useSearchParams();
   const t = useTranslations("transferLanding");
   const tPayment = useTranslations("payment");
+  const tNotFound = useTranslations("notFound");
   const { timeOfDay } = useTimeOfDay();
 
   // Extract params from URL
@@ -130,6 +134,7 @@ export default function TransferLandingPage() {
   const [pageState, setPageState] = useState<PageState>("loading");
   const [transfer, setTransfer] = useState<TransferDto | null>(null);
   const [error, setError] = useState<string>("");
+  const [isExpiredError, setIsExpiredError] = useState(false);
 
   // Password form
   const [password, setPassword] = useState("");
@@ -222,6 +227,7 @@ export default function TransferLandingPage() {
 
           if (response.data.status === "expired") {
             setError(t("transferExpired"));
+            setIsExpiredError(true);
             setPageState("error");
             return;
           }
@@ -238,11 +244,9 @@ export default function TransferLandingPage() {
             return;
           }
 
-          if (response.data.hasPassword) {
-            setPageState("password");
-            return;
-          }
-
+          // For password-protected transfers (accessControl === 'password'),
+          // users must first verify their email, then enter the password.
+          // The password flow is triggered after email verification in handleOtpVerify.
           // Always show download panel first (payment happens when clicking download)
           setPageState("ready");
         } else {
@@ -374,16 +378,20 @@ export default function TransferLandingPage() {
     setError("");
 
     try {
-      const response = await storageApi.getTransferInfo(shortCode, password);
+      // Use dedicated password verification endpoint
+      const response = await storageApi.verifyTransferPassword(shortCode, password);
 
-      if (!response.error && response.data) {
-        // Always show download panel first (payment happens when clicking download/preview)
+      if (!response.error && response.data?.success) {
+        // Password verified - go to ready state and open preview drawer
         setPageState("ready");
+        openDrawerToView("transfers", "transfer-preview", transfer, "receiver");
       } else {
         setError(t("incorrectPassword"));
+        setPassword(""); // Clear password on error per AC3
       }
     } catch {
       setError(t("incorrectPassword"));
+      setPassword(""); // Clear password on error per AC3
     } finally {
       setIsLoading(false);
     }
@@ -474,10 +482,17 @@ export default function TransferLandingPage() {
       }
 
       setEmailConfirmed(true);
-      setPageState("ready");
-      // Open SideDrawer with TransferPreviewPanel
-      if (transfer) {
-        openDrawerToView("transfers", "transfer-preview", transfer, "receiver");
+
+      // For password-protected transfers, go to password state
+      // Otherwise, go directly to ready state and open preview
+      if (transfer?.accessControl === "password") {
+        setPageState("password");
+      } else {
+        setPageState("ready");
+        // Open SideDrawer with TransferPreviewPanel
+        if (transfer) {
+          openDrawerToView("transfers", "transfer-preview", transfer, "receiver");
+        }
       }
     } catch {
       setError(t("invalidOtp"));
@@ -511,9 +526,18 @@ export default function TransferLandingPage() {
   };
 
   // Check if user email is authorized to access this transfer
+  // - Public transfers: any email is authorized
+  // - Private/Password transfers: only listed recipients are authorized
+  // - Missing accessControl (older transfers): defaults to private behavior
   const isEmailAuthorized = (email: string): boolean => {
     if (!transfer) return false;
-    // Check if email is in recipient list (case-insensitive)
+
+    // Public transfers allow any email
+    if (transfer.accessControl === 'public') {
+      return true;
+    }
+
+    // Private and password modes require listed recipient (case-insensitive)
     const normalizedEmail = email.toLowerCase();
     return (
       transfer.recipientEmails?.some(
@@ -687,6 +711,58 @@ export default function TransferLandingPage() {
 
   // Error state
   if (pageState === "error") {
+    // Enhanced UI for expired transfers
+    if (isExpiredError) {
+      return (
+        <div className="min-h-screen bg-white">
+          <Header />
+          <main
+            style={{ minHeight: "calc(100vh - 64px)", position: "relative" }}
+          >
+            <div
+              className={`ze-content-panel ze-time-${timeOfDay}`}
+              style={{ position: "relative", overflow: "hidden" }}
+            >
+              <TimeOfDayBackground timeOfDay={timeOfDay} />
+              <HeroText isVisible={true} timeOfDay={timeOfDay} />
+              <PaperPlaneAnimation isVisible={true} />
+              <div
+                className="ze-panels-container"
+                style={{ position: "relative", zIndex: 10 }}
+              >
+                <div className="ze-upload-panel text-center py-8">
+                  <div className="align-center mx-auto mb-3">
+                    <Lottie
+                      animationData={catAnimation}
+                      loop={true}
+                      autoplay={true}
+                      style={{
+                        width: "300px",
+                        height: "auto",
+                      }}
+                    />
+                  </div>
+                  <h1 className="text-2xl font-bold text-[#171717] mb-3">
+                    {tNotFound("transferExpiredTitle")}
+                  </h1>
+                  <p className="text-gray-600 text-sm font-medium max-w-md mx-auto mb-8 leading-relaxed">
+                    {tNotFound("transferExpiredSubtitle")}
+                  </p>
+                  <Link
+                    href="/"
+                    className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors"
+                  >
+                    {tNotFound("startTransfer")}
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </main>
+        </div>
+      );
+    }
+
+    // Generic error UI for other errors
     return (
       <div className="min-h-screen bg-white">
         <Header />
