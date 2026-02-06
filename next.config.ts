@@ -18,6 +18,8 @@ const buildCSP = () => {
       'https://checkout.paystack.com',
       'https://*.posthog.com', // PostHog analytics
       'https://eu-assets.i.posthog.com',
+      'https://us-assets.i.posthog.com',
+      'https://static.cloudflareinsights.com', // Cloudflare Web Analytics
     ].filter(Boolean),
     'style-src': ["'self'", "'unsafe-inline'"], // Next.js uses inline styles
     'img-src': [
@@ -37,6 +39,9 @@ const buildCSP = () => {
       'https://*.posthog.com', // PostHog analytics
       'https://eu.i.posthog.com',
       'https://eu-assets.i.posthog.com',
+      'https://us.i.posthog.com',
+      'https://us-assets.i.posthog.com',
+      'https://static.cloudflareinsights.com', // Cloudflare Web Analytics
     ],
     'media-src': [
       "'self'",
