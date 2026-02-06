@@ -210,33 +210,6 @@ const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({
           ))}
         </div>
 
-        {/* Transfer Options Display - Inline */}
-        {transferOptions && transferOptions.accessControl && (
-          <div
-            className="mb-4 px-3 py-2 bg-gray-50 rounded-lg text-sm text-gray-600"
-            role="region"
-            aria-label={t('transferOptionsLabel')}
-          >
-            <span>
-              {transferOptions.accessControl === 'private' && tOptions('accessPrivate')}
-              {transferOptions.accessControl === 'password' && tOptions('accessPassword')}
-              {transferOptions.accessControl === 'public' && tOptions('accessPublic')}
-            </span>
-            {transferOptions.validityDuration && (
-              <>
-                <span className="mx-2">·</span>
-                <span>{tOptions(getValidityLabelKey(transferOptions.validityDuration))}</span>
-              </>
-            )}
-            {transferOptions.sizeLimit && (
-              <>
-                <span className="mx-2">·</span>
-                <span>{tOptions(getSizeLimitLabelKey(transferOptions.sizeLimit))}</span>
-              </>
-            )}
-          </div>
-        )}
-
         {/* Add More Files Section */}
         <div>
           <div className={`ze-add-more-section p-4 bg-primary-sub rounded-lg mb-3 ${selectedFilesSize >= maxUploadSize ? 'opacity-50 cursor-not-allowed' : ''}`}>
@@ -281,6 +254,33 @@ const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({
           <p className="text-sm font-medium text-center text-gray-500">
             {t('dropFilesToAdd')}
           </p>
+
+          {/* Transfer Options Display - Inline */}
+          {transferOptions && transferOptions.accessControl && (
+            <div
+              className="mt-4 px-3 py-2 bg-gray-50 rounded-lg text-sm text-gray-600"
+              role="region"
+              aria-label={t('transferOptionsLabel')}
+            >
+              <span>
+                {transferOptions.accessControl === 'private' && tOptions('accessPrivate')}
+                {transferOptions.accessControl === 'password' && tOptions('accessPassword')}
+                {transferOptions.accessControl === 'public' && tOptions('accessPublic')}
+              </span>
+              {transferOptions.validityDuration && (
+                <>
+                  <span className="mx-2">·</span>
+                  <span>{tOptions(getValidityLabelKey(transferOptions.validityDuration))}</span>
+                </>
+              )}
+              {transferOptions.sizeLimit && (
+                <>
+                  <span className="mx-2">·</span>
+                  <span>{tOptions(getSizeLimitLabelKey(transferOptions.sizeLimit))}</span>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

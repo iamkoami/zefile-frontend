@@ -31,7 +31,10 @@
     "upgrade": "Upgrade",
     "help": "Help",
     "logout": "Log out",
-    "sessionExpired": "Your session has expired. Please log in again."
+    "sessionExpired": "Your session has expired. Please log in again.",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "copyright": "Copyright © {year} ZeFile. All Rights Reserved."
   },
   "auth": {
     "phoneTab": "Phone",
@@ -106,7 +109,8 @@
     "moreFiles": "more files",
     "removeFiles": "Remove files",
     "storageLimitExceeded": "Storage limit exceeded. This file ({fileSize}) exceeds your {tier} plan limit of {limit}. Upgrade to get more storage.",
-    "upgradeForMoreStorage": "Upgrade for more storage"
+    "upgradeForMoreStorage": "Upgrade for more storage",
+    "passwordMinLength": "Transfer password must be at least {min} characters. Set it in Options."
   },
   "celebration": {
     "title": "Your first transfer is ready!",

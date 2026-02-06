@@ -377,6 +377,13 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
       errors.price = t("priceRequired");
     }
 
+    // Validate password when access control is 'password'
+    if (transferOptions?.accessControl === 'password') {
+      if (!transferOptions.password || transferOptions.password.length < 8) {
+        errors.password = t("passwordMinLength", { min: 8 });
+      }
+    }
+
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -1076,6 +1083,13 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                     current: formatBytes(selectedFilesSize),
                   })}
                 </p>
+              </div>
+            )}
+
+            {/* Password validation error */}
+            {formErrors.password && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-600">{formErrors.password}</p>
               </div>
             )}
 

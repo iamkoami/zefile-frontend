@@ -31,7 +31,10 @@
     "upgrade": "Mettre à niveau",
     "help": "Aide",
     "logout": "Se déconnecter",
-    "sessionExpired": "Votre session a expiré. Veuillez vous reconnecter."
+    "sessionExpired": "Votre session a expiré. Veuillez vous reconnecter.",
+    "openMenu": "Ouvrir le menu",
+    "closeMenu": "Fermer le menu",
+    "copyright": "Copyright © {year} ZeFile. Tous droits réservés."
   },
   "auth": {
     "phoneTab": "Téléphone",
@@ -107,7 +110,8 @@
     "moreFiles": "fichiers de plus",
     "removeFiles": "Supprimer les fichiers",
     "storageLimitExceeded": "Limite de stockage dépassée. Ce fichier ({fileSize}) dépasse la limite de votre forfait {tier} de {limit}. Passez à un forfait supérieur pour plus d'espace.",
-    "upgradeForMoreStorage": "Augmenter le stockage"
+    "upgradeForMoreStorage": "Augmenter le stockage",
+    "passwordMinLength": "Le mot de passe du transfert doit contenir au moins {min} caractères. Définissez-le dans les Options."
   },
   "celebration": {
     "title": "Votre premier transfert est prêt !",

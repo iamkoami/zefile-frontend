@@ -106,7 +106,7 @@ export default function Home() {
         const response = await platformApi.getUserConfig();
         if (response.data) {
           setMaxUploadSize(response.data.maxUploadSize);
-          // Normalize tier to lowercase to match tier-limits.ts types
+          // Normalize tier to lowercase to match SubscriptionTier type
           const tier = (response.data.tier?.toLowerCase() || 'free') as SubscriptionTier;
           setUserTier(tier);
         }

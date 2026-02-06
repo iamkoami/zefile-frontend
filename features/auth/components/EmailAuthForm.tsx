@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { authApi } from '@/services/auth-api';
 import { useCaptcha, CAPTCHA_ACTIONS } from '@/hooks/useCaptcha';
@@ -11,6 +12,7 @@ interface EmailAuthFormProps {
 }
 
 const EmailAuthForm: React.FC<EmailAuthFormProps> = ({ onSuccess }) => {
+  const router = useRouter();
   const t = useTranslations('auth');
   const { executeAsync: executeCaptcha, isEnabled: captchaEnabled } = useCaptcha();
   const [step, setStep] = useState<'email' | 'otp'>('email');
@@ -126,13 +128,11 @@ const EmailAuthForm: React.FC<EmailAuthFormProps> = ({ onSuccess }) => {
         setOtp(['', '', '', '', '', '']);
         inputRefs.current[0]?.focus();
       } else {
-        // Show full page loading before reload
+        // Soft navigation - no page reload needed
         setIsLoggingIn(true);
         onSuccess();
-        // Wait for loading overlay to show, then reload
-        setTimeout(() => {
-          window.location.reload();
-        }, 400);
+        // Use Next.js router for soft navigation (refreshes server components)
+        router.refresh();
       }
     } catch (err: any) {
       setError(err.message || t('verifyOtpError'));

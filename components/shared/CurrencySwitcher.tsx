@@ -8,7 +8,17 @@ import {
   ALL_COUNTRY_CODES,
 } from "@/stores/currency-store";
 
-const CurrencySwitcher = () => {
+interface CurrencySwitcherProps {
+  /** Direction the dropdown opens. Default is "down". */
+  dropDirection?: "up" | "down";
+  /** Horizontal alignment of the dropdown. Default is "right". */
+  dropAlign?: "left" | "right";
+}
+
+const CurrencySwitcher: React.FC<CurrencySwitcherProps> = ({
+  dropDirection = "down",
+  dropAlign = "right",
+}) => {
   const { countryCode, setCountryCode, hydrate, isHydrated } = useCurrencyStore();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -35,8 +45,6 @@ const CurrencySwitcher = () => {
     setIsDropdownOpen(false);
   };
 
-  // Show current currency code (e.g., NGN, USD, XOF)
-  const currentConfig = COUNTRY_CONFIG[countryCode] || COUNTRY_CONFIG.DEFAULT;
   const { pricing } = useCurrencyStore();
 
   if (!isHydrated) {
@@ -47,13 +55,18 @@ const CurrencySwitcher = () => {
     );
   }
 
+  const alignClass = dropAlign === "left" ? "left-0" : "right-0";
+  const dropdownPositionClass =
+    dropDirection === "up"
+      ? `absolute ${alignClass} bottom-full mb-2 w-56`
+      : `absolute ${alignClass} top-full mt-2 w-56`;
+
   return (
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
         className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded transition-colors text-gray-600 hover:bg-gray-100"
       >
-        <span className="text-base">{currentConfig.flag}</span>
         <span>{pricing.currency}</span>
         <NavArrowDown
           className={`w-3.5 h-3.5 transition-transform ${isDropdownOpen ? "rotate-180" : ""}`}
@@ -61,7 +74,7 @@ const CurrencySwitcher = () => {
       </button>
 
       {isDropdownOpen && (
-        <div className="absolute right-0 top-full mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-50 py-1">
+        <div className={`${dropdownPositionClass} bg-white border border-gray-200 rounded-lg shadow-lg z-50 py-1`}>
           {ALL_COUNTRY_CODES.map((code) => {
             const config = COUNTRY_CONFIG[code];
             const isSelected = code === countryCode;

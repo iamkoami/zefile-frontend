@@ -122,7 +122,7 @@ const TransferOptionsPanel: React.FC<TransferOptionsPanelProps> = ({
   }, [userTier, tierLimitsData?.isLoading]);
 
   // Minimum password length requirement
-  const MIN_PASSWORD_LENGTH = 4;
+  const MIN_PASSWORD_LENGTH = 8;
 
   // Handler for password
   const handlePasswordChange = (value: string) => {
@@ -185,7 +185,7 @@ const TransferOptionsPanel: React.FC<TransferOptionsPanelProps> = ({
               className="ze-form-select"
               disabled={tierLimitsData?.isLoading}
             >
-              <option value="">{tierLimitsData?.isLoading ? t('loading') : t('validityDuration')}</option>
+              <option value="" disabled>{tierLimitsData?.isLoading ? t('loading') : t('validityDuration')}</option>
               {validityOptions.map((option) => {
                 const isAvailable = tierLimitsData?.isValidityAvailable(option.days, userTier) ?? true;
                 const requiredTier = !isAvailable ? tierLimitsData?.getRequiredTierForValidity(option.days) : null;
@@ -213,7 +213,7 @@ const TransferOptionsPanel: React.FC<TransferOptionsPanelProps> = ({
               className="ze-form-select"
               disabled={tierLimitsData?.isLoading}
             >
-              <option value="">{tierLimitsData?.isLoading ? t('loading') : t('sizeLimitLabel')}</option>
+              <option value="" disabled>{tierLimitsData?.isLoading ? t('loading') : t('sizeLimitLabel')}</option>
               {sizeLimitOptions.map((option) => {
                 const isAvailable = tierLimitsData?.isSizeLimitAvailable(option.sizeGB, userTier) ?? true;
                 const requiredTier = !isAvailable ? tierLimitsData?.getRequiredTierForSize(option.sizeGB) : null;

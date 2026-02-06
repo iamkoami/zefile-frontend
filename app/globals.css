@@ -132,7 +132,7 @@
   }
 
   .ze-header-container {
-    @apply flex items-center h-16 relative;
+    @apply flex items-center justify-between h-16 relative;
     padding-left: calc(28px + 1.5rem + 12px);
     padding-right: calc(28px + 1.5rem + 12px);
   }
@@ -147,6 +147,14 @@
 
   .ze-header-right {
     @apply flex items-center flex-shrink-0;
+  }
+
+  /* Mobile/Tablet: align header padding with content-panel margin (28px) */
+  @media (max-width: 1023px) {
+    .ze-header-container {
+      padding-left: 1rem;
+      padding-right: 1.5rem;
+    }
   }
 
   /* Content Panel - Time-based theming */
