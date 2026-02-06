@@ -1,6 +1,12 @@
 /**
  * Authentication API Service
  * Handles all authentication-related API calls
+ *
+ * TODO: [SECURITY] Migrate token storage from localStorage to HttpOnly cookies.
+ * localStorage tokens are vulnerable to XSS attacks. The backend should set
+ * HttpOnly, Secure, SameSite=Strict cookies for access and refresh tokens.
+ * Migration is in progress - maintain backward compatibility with localStorage
+ * until the backend fully supports cookie-based auth.
  */
 
 import { apiClient, ApiResponse } from './api-client';
@@ -24,6 +30,7 @@ export interface AuthResponseDto {
   accessToken: string;
   refreshToken: string;
   expiresIn: number;
+  csrfToken?: string; // CSRF token for state-changing requests
   user: {
     id: string;
     email: string;
@@ -48,14 +55,23 @@ export class AuthApi {
 
   /**
    * Verify OTP and get JWT tokens
+   * Tokens are also set as HttpOnly cookies by the backend
    */
   async verifyOTP(data: VerifyOtpDto): Promise<ApiResponse<AuthResponseDto>> {
     const response = await apiClient.post<AuthResponseDto>('/auth/verify-otp', data);
 
     // Store tokens if successful
     if (response.data) {
+      // Store access token for backward compatibility (also in HttpOnly cookie)
       apiClient.setAccessToken(response.data.accessToken);
+
+      // Store CSRF token for state-changing requests
+      if (response.data.csrfToken) {
+        apiClient.setCsrfToken(response.data.csrfToken);
+      }
+
       if (typeof window !== 'undefined') {
+        // Store refresh token for backward compatibility (also in HttpOnly cookie)
         localStorage.setItem('refresh_token', response.data.refreshToken);
         localStorage.setItem('user', JSON.stringify(response.data.user));
 
@@ -85,29 +101,23 @@ export class AuthApi {
 
   /**
    * Logout and revoke refresh token
+   * Also clears HttpOnly cookies on the server side
    */
   async logout(): Promise<ApiResponse<{ message: string }>> {
     const refreshToken = typeof window !== 'undefined' ? localStorage.getItem('refresh_token') : null;
 
-    if (!refreshToken) {
-      return {
-        error: {
-          message: 'No refresh token found',
-          statusCode: 400,
-        },
-        status: 400,
-      };
-    }
-
-    const response = await apiClient.post('/auth/logout', { refreshToken });
+    // Send logout request (will clear HttpOnly cookies and optionally revoke refresh token)
+    const response = await apiClient.post('/auth/logout', { refreshToken: refreshToken || undefined });
 
     // Clear local storage
     if (typeof window !== 'undefined') {
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
+      localStorage.removeItem('csrf_token');
       localStorage.removeItem('user');
     }
     apiClient.setAccessToken(null);
+    apiClient.setCsrfToken(null);
 
     return response;
   }
@@ -121,11 +131,30 @@ export class AuthApi {
 
   /**
    * Check if user is authenticated
+   * Validates token presence and checks JWT expiry claim
    */
   isAuthenticated(): boolean {
     if (typeof window === 'undefined') return false;
     const token = apiClient.getAccessToken();
-    return token !== null;
+    if (!token) return false;
+
+    // Decode JWT payload to check expiry (no signature verification needed client-side)
+    try {
+      const parts = token.split('.');
+      if (parts.length !== 3) return false;
+      const payload = JSON.parse(atob(parts[1]));
+      if (payload.exp && typeof payload.exp === 'number') {
+        // exp is in seconds, Date.now() is in milliseconds
+        if (Date.now() >= payload.exp * 1000) {
+          return false;
+        }
+      }
+    } catch {
+      // If token cannot be decoded, treat as invalid
+      return false;
+    }
+
+    return true;
   }
 
   /**

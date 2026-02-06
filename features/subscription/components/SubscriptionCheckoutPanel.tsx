@@ -31,6 +31,7 @@ import { toast } from "@/components/shared/Toast";
 import type { MobileMoneyProvider } from "@/features/payment/components/PaymentMethodSelector";
 import type { CountryCode } from "libphonenumber-js";
 import { authApi } from "@/services/auth-api";
+import { safePaymentRedirect } from "@/utils/security";
 
 
 /**
@@ -95,6 +96,7 @@ export function SubscriptionCheckoutPanel() {
   const [paymentReference, setPaymentReference] = useState<string>("");
   const [error, setError] = useState<string>("");
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
+  const pollingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Calculate price based on selected country
   const pricing = getPricingForCountry(selectedCountry);
@@ -111,6 +113,9 @@ export function SubscriptionCheckoutPanel() {
     return () => {
       if (pollingRef.current) {
         clearInterval(pollingRef.current);
+      }
+      if (pollingTimeoutRef.current) {
+        clearTimeout(pollingTimeoutRef.current);
       }
     };
   }, []);
@@ -198,7 +203,7 @@ export function SubscriptionCheckoutPanel() {
     }, 3000);
 
     // Stop after 2 minutes
-    setTimeout(() => {
+    pollingTimeoutRef.current = setTimeout(() => {
       if (pollingRef.current) {
         clearInterval(pollingRef.current);
       }
@@ -231,7 +236,7 @@ export function SubscriptionCheckoutPanel() {
         }
 
         if (response.data?.authorizationUrl) {
-          window.location.href = response.data.authorizationUrl;
+          try { safePaymentRedirect(response.data.authorizationUrl); } catch { toast.error(t("paymentInitFailed")); }
         }
       } catch (error) {
         console.error("Subscription initialization failed:", error);

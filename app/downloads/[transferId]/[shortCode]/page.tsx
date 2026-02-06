@@ -30,7 +30,6 @@ import {
 } from "iconoir-react";
 import Link from "next/link";
 import Lottie from "lottie-react";
-import catAnimation from "@/public/lotties/cat.json";
 import LoadingFullscreen from "@/components/LoadingFullscreen";
 import LoadingPanel from "@/components/LoadingPanel";
 import Header from "@/components/shared/Header";
@@ -41,10 +40,12 @@ import { useTimeOfDay } from "@/hooks/useTimeOfDay";
 import ToastContainer from "@/components/shared/Toast";
 import { TransferSummaryCard } from "@/components/shared/TransferSummaryCard";
 import { transferApi, TransferDto } from "@/services/transfer-api";
+import { apiClient } from "@/services/api-client";
 import { paymentApi } from "@/services/payment-api";
 import { storageApi } from "@/services/storage-api";
 import { authApi } from "@/services/auth-api";
 import { toast } from "@/components/shared/Toast";
+import { safePaymentRedirect } from "@/utils/security";
 import type { MobileMoneyProvider } from "@/features/payment/components/PaymentMethodSelector";
 import { PhoneNumberInput } from "@/features/payment/components/PhoneNumberInput";
 import type { CountryCode } from "libphonenumber-js";
@@ -158,6 +159,12 @@ export default function TransferLandingPage() {
     Array<{ provider: MobileMoneyProvider; name: string; icon: string }>
   >([]);
   const [loadingProviders, setLoadingProviders] = useState(false);
+
+  // Dynamic import for Lottie animation (F-4.1: reduce bundle size)
+  const [catAnimationData, setCatAnimationData] = useState<any>(null);
+  useEffect(() => {
+    import("@/public/lotties/cat.json").then((m) => setCatAnimationData(m.default));
+  }, []);
 
   // Payment prompt
   const [paymentReference, setPaymentReference] = useState("");
@@ -334,10 +341,10 @@ export default function TransferLandingPage() {
         url = `${process.env.NEXT_PUBLIC_API_URL}/v2/payments/methods/${cachedCountry}`;
       }
 
-      const response = await fetch(url);
-      if (!response.ok) throw new Error("Failed to fetch");
+      const response = await apiClient.get(url.replace(process.env.NEXT_PUBLIC_API_URL || '', ''));
+      if (response.error) throw new Error("Failed to fetch");
 
-      const data = await response.json();
+      const data = response.data;
       if (data.countryCode && data.countryCode !== "UNKNOWN") {
         localStorage.setItem("zefile_detected_country", data.countryCode);
       }
@@ -412,7 +419,7 @@ export default function TransferLandingPage() {
     if (!customerEmail || !transfer) return;
 
     // Validate email format
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) {
+    if (!/^[a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/.test(customerEmail)) {
       toast.error(tPayment("invalidEmail"));
       return;
     }
@@ -474,11 +481,13 @@ export default function TransferLandingPage() {
       }
 
       // User is now logged in (account created if new)
-      // Log recipient access
-      try {
-        await transferApi.logRecipientAccess(shortCode, customerEmail);
-      } catch {
-        console.warn("Failed to log recipient access");
+      // Log recipient access (skip for public transfers per AC4 - Story 27.4)
+      if (transfer?.accessControl !== "public") {
+        try {
+          await transferApi.logRecipientAccess(shortCode, customerEmail);
+        } catch {
+          console.warn("Failed to log recipient access");
+        }
       }
 
       setEmailConfirmed(true);
@@ -529,6 +538,11 @@ export default function TransferLandingPage() {
   // - Public transfers: any email is authorized
   // - Private/Password transfers: only listed recipients are authorized
   // - Missing accessControl (older transfers): defaults to private behavior
+  //
+  // SECURITY NOTE: This is a client-side UX check only. The backend MUST also
+  // enforce email authorization on all download/preview endpoints to prevent
+  // bypassing by manipulating client-side state. The recipientEmails list is
+  // sent from the backend and could be intercepted or spoofed.
   const isEmailAuthorized = (email: string): boolean => {
     if (!transfer) return false;
 
@@ -597,7 +611,11 @@ export default function TransferLandingPage() {
         }
 
         if (response.data?.authorizationUrl) {
-          window.location.href = response.data.authorizationUrl;
+          try {
+            safePaymentRedirect(response.data.authorizationUrl);
+          } catch {
+            toast.error(tPayment("paymentInitFailed"));
+          }
         }
       } catch {
         toast.error(tPayment("paymentInitFailed"));
@@ -733,7 +751,7 @@ export default function TransferLandingPage() {
                 <div className="ze-upload-panel text-center py-8">
                   <div className="align-center mx-auto mb-3">
                     <Lottie
-                      animationData={catAnimation}
+                      animationData={catAnimationData}
                       loop={true}
                       autoplay={true}
                       style={{

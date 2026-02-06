@@ -1,8 +1,7 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Lottie, { LottieRefCurrentProps } from 'lottie-react';
-import zefileLogoAnimation from '@/public/lotties/zefile_logo.json';
 
 interface LoadingFullscreenProps {
   message?: string;
@@ -10,6 +9,11 @@ interface LoadingFullscreenProps {
 
 const LoadingFullscreen: React.FC<LoadingFullscreenProps> = ({ message }) => {
   const lottieRef = React.useRef<LottieRefCurrentProps>(null);
+  const [animationData, setAnimationData] = useState<object | null>(null);
+
+  useEffect(() => {
+    import('@/public/lotties/zefile_logo.json').then((m) => setAnimationData(m.default));
+  }, []);
 
   React.useEffect(() => {
     if (lottieRef.current) {
@@ -22,13 +26,15 @@ const LoadingFullscreen: React.FC<LoadingFullscreenProps> = ({ message }) => {
       className="fixed inset-0 z-50 flex flex-col items-center justify-center"
       style={{ backgroundColor: '#FFFFFF' }}
     >
-      <Lottie
-        lottieRef={lottieRef}
-        animationData={zefileLogoAnimation}
-        loop={true}
-        autoplay={true}
-        style={{ width: 102, height: 102 }}
-      />
+      {animationData && (
+        <Lottie
+          lottieRef={lottieRef}
+          animationData={animationData}
+          loop={true}
+          autoplay={true}
+          style={{ width: 102, height: 102 }}
+        />
+      )}
       {message && (
         <p className="mt-4 px-4 text-sm text-center text-gray-600 max-w-md">{message}</p>
       )}

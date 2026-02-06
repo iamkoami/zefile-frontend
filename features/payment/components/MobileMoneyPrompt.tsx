@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { CheckCircle, XmarkCircle, WarningCircle, Xmark, Refresh, Clock } from 'iconoir-react';
 import Image from 'next/image';
 import { MobileMoneyProvider } from './PaymentMethodSelector';
+import { apiClient } from '@/services/api-client';
 
 /**
  * Payment status types
@@ -113,15 +114,15 @@ export function MobileMoneyPrompt({
     }
 
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/v2/payments/${paymentReference}/status`
+      const response = await apiClient.get(
+        `/v2/payments/${paymentReference}/status`
       );
 
-      if (!response.ok) {
-        throw new Error(`HTTP error: ${response.status}`);
+      if (response.error) {
+        throw new Error(response.error.message || 'Failed to poll payment status');
       }
 
-      const data = await response.json();
+      const data = response.data;
 
       if (data.status === 'SUCCESS') {
         setStatus('success');

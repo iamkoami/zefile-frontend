@@ -8,7 +8,7 @@ import {
   isValidPhoneNumber,
   CountryCode,
   AsYouType,
-} from 'libphonenumber-js';
+} from 'libphonenumber-js/min';
 
 /**
  * Country configuration for phone number input

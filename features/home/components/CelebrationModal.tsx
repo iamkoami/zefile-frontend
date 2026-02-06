@@ -4,7 +4,6 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { ShareIos, Xmark } from 'iconoir-react';
 import Lottie, { LottieRefCurrentProps } from 'lottie-react';
-import confettiAnimation from '@/public/lotties/confetti_success.json';
 
 interface CelebrationModalProps {
   transferTitle: string;
@@ -26,7 +25,13 @@ const CelebrationModal: React.FC<CelebrationModalProps> = ({
 }) => {
   const t = useTranslations('celebration');
   const [isVisible, setIsVisible] = useState(false);
+  const [confettiAnimation, setConfettiAnimation] = useState<object | null>(null);
   const lottieRef = useRef<LottieRefCurrentProps>(null);
+
+  // Dynamic import for Lottie JSON (F-4.1: reduce bundle size)
+  useEffect(() => {
+    import('@/public/lotties/confetti_success.json').then((m) => setConfettiAnimation(m.default));
+  }, []);
 
   // Fade in modal on mount
   useEffect(() => {
@@ -66,7 +71,7 @@ const CelebrationModal: React.FC<CelebrationModalProps> = ({
 
       {/* Confetti Lottie animation - covers entire viewport */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <Lottie
+        {confettiAnimation && <Lottie
           lottieRef={lottieRef}
           animationData={confettiAnimation}
           loop={false}
@@ -78,7 +83,7 @@ const CelebrationModal: React.FC<CelebrationModalProps> = ({
             top: 0,
             left: 0,
           }}
-        />
+        />}
       </div>
 
       {/* Modal content */}

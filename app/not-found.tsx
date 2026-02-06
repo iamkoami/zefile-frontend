@@ -10,7 +10,6 @@ import Lottie, { LottieRefCurrentProps } from "lottie-react";
 import { SendDiagonal } from "iconoir-react";
 import Header from "@/components/shared/Header";
 import LoadingFullscreen from "@/components/LoadingFullscreen";
-import error404Animation from "@/public/lotties/error-404.json";
 
 /**
  * Custom 404 Not Found Page
@@ -33,6 +32,12 @@ export default function NotFound() {
   const [notFoundType, setNotFoundType] = useState<NotFoundType>("general");
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [error404Animation, setError404Animation] = useState<object | null>(null);
+
+  // Dynamic import for Lottie JSON (F-4.1: reduce bundle size)
+  useEffect(() => {
+    import("@/public/lotties/error-404.json").then((m) => setError404Animation(m.default));
+  }, []);
 
   // Show loading state briefly while page assets load
   useEffect(() => {
@@ -127,13 +132,13 @@ export default function NotFound() {
       >
         {/* Lottie Animation - 4 0 4 with hot air balloon */}
         <div className="mb-8">
-          <Lottie
+          {error404Animation && <Lottie
             lottieRef={lottieRef}
             animationData={error404Animation}
             loop={true}
             autoplay={true}
             style={{ width: 500, height: 380 }}
-          />
+          />}
         </div>
 
         {/* Title */}

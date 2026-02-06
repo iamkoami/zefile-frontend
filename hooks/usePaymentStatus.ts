@@ -85,6 +85,16 @@ export function usePaymentStatus(options: UsePaymentStatusOptions = {}): UsePaym
   const startTimeRef = useRef<number>(0);
   const referenceRef = useRef<string | null>(null);
 
+  // F-6.1: Use refs to hold latest callback references to avoid stale closures
+  const onSuccessRef = useRef(onSuccess);
+  const onFailedRef = useRef(onFailed);
+  const onTimeoutRef = useRef(onTimeout);
+
+  // Keep refs in sync with latest callbacks
+  useEffect(() => { onSuccessRef.current = onSuccess; }, [onSuccess]);
+  useEffect(() => { onFailedRef.current = onFailed; }, [onFailed]);
+  useEffect(() => { onTimeoutRef.current = onTimeout; }, [onTimeout]);
+
   /**
    * Stop polling
    */
@@ -103,13 +113,11 @@ export function usePaymentStatus(options: UsePaymentStatusOptions = {}): UsePaym
     const reference = referenceRef.current;
     if (!reference) return;
 
-    console.log('[Payment Poll] Polling for reference:', reference);
-
     // Check timeout
     if (Date.now() - startTimeRef.current > timeout) {
       setPollingStatus('timeout');
       stopPolling();
-      onTimeout?.();
+      onTimeoutRef.current?.();
       return;
     }
 
@@ -117,12 +125,6 @@ export function usePaymentStatus(options: UsePaymentStatusOptions = {}): UsePaym
       const response = await paymentApi.getPaymentStatusV2(reference);
 
       if (response.error) {
-        // Log with explicit properties to avoid empty object display
-        console.warn('[Payment Poll] Error polling reference', reference, ':', {
-          message: response.error.message || 'No message',
-          statusCode: response.error.statusCode || response.status,
-          httpStatus: response.status,
-        });
         // Continue polling even on error (network glitch or payment not yet created)
         pollingRef.current = setTimeout(poll, interval);
         return;
@@ -141,11 +143,11 @@ export function usePaymentStatus(options: UsePaymentStatusOptions = {}): UsePaym
       if (TERMINAL_STATUSES.includes(payment.status)) {
         if (payment.status === 'SUCCESS') {
           setPollingStatus('success');
-          onSuccess?.(payment);
+          onSuccessRef.current?.(payment);
         } else {
           setPollingStatus('failed');
           setError(payment.failureReason || null);
-          onFailed?.(payment);
+          onFailedRef.current?.(payment);
         }
         stopPolling();
         return;
@@ -158,7 +160,7 @@ export function usePaymentStatus(options: UsePaymentStatusOptions = {}): UsePaym
       // Continue polling even on error
       pollingRef.current = setTimeout(poll, interval);
     }
-  }, [interval, timeout, stopPolling, onSuccess, onFailed, onTimeout]);
+  }, [interval, timeout, stopPolling]);
 
   /**
    * Start polling for a payment reference

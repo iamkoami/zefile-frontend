@@ -4,7 +4,8 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { NavArrowDown, Sparks } from "iconoir-react";
+import { Menu, NavArrowDown, Sparks } from "iconoir-react";
+import MobileMenu from "./MobileMenu";
 import LanguageSwitcher from "./LanguageSwitcher";
 import CurrencySwitcher from "./CurrencySwitcher";
 import AuthPanel from "@/features/auth/components/AuthPanel";
@@ -12,6 +13,7 @@ import { authApi } from "@/services/auth-api";
 import LoadingFullscreen from "@/components/LoadingFullscreen";
 import { useDrawerStore } from "@/stores/drawer-store";
 import { useUploadStore } from "@/stores/upload-store";
+import { useTransferSelectionStore } from "@/stores/transfer-selection-store";
 import { useTranslations as useUploadTranslations } from "next-intl";
 import ConfirmationModal from "@/components/shared/ConfirmationModal";
 import { subscriptionApi, SubscriptionTier } from "@/services/subscription-api";
@@ -35,6 +37,8 @@ const Header = () => {
     useState<SubscriptionTier>("free");
   const resourcesTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
   const userTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Track auth transition for smooth animation
   const [isAuthTransitioning, setIsAuthTransitioning] = useState(false);
@@ -121,6 +125,15 @@ const Header = () => {
     );
     window.addEventListener("open-auth-panel", handleOpenAuthPanel);
     window.addEventListener("subscription-changed", handleSubscriptionChange);
+
+    // F-2.2: Clear all Zustand stores on logout to prevent stale state
+    const handleClearStores = () => {
+      useDrawerStore.getState().closeDrawer();
+      useUploadStore.getState().reset();
+      useTransferSelectionStore.getState().deselectAll();
+    };
+    window.addEventListener("clear-all-stores", handleClearStores);
+
     return () => {
       window.removeEventListener("storage", checkAuth);
       window.removeEventListener(
@@ -132,11 +145,23 @@ const Header = () => {
         "subscription-changed",
         handleSubscriptionChange,
       );
+      window.removeEventListener("clear-all-stores", handleClearStores);
       if (resourcesTimeoutRef.current)
         clearTimeout(resourcesTimeoutRef.current);
       if (userTimeoutRef.current) clearTimeout(userTimeoutRef.current);
     };
   }, []);
+
+  // Auto-close mobile menu on resize to desktop
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024 && isMobileMenuOpen) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [isMobileMenuOpen]);
 
   // Helper to open drawer - drawer is now globally available on all pages
   const handleOpenDrawer = (
@@ -243,8 +268,17 @@ const Header = () => {
       {isLoggingOut && <LoadingFullscreen />}
       <header id="ze-header" className="ze-header">
         <div className="ze-header-container">
-          {/* Left: Logo */}
+          {/* Left: Hamburger (mobile) + Logo */}
           <div id="ze-header-logo" className="ze-header-left">
+            {/* Hamburger - visible below lg */}
+            <button
+              className="mr-3 w-10 h-10 flex items-center justify-center lg:hidden"
+              onClick={() => setIsMobileMenuOpen(true)}
+              aria-label={t("openMenu")}
+            >
+              <Menu className="w-6 h-6 text-[#171717]" />
+            </button>
+
             <Link href="/" className="flex items-center">
               <Image
                 src="/zefile-logo.svg"
@@ -252,12 +286,13 @@ const Header = () => {
                 width={120}
                 height={33}
                 priority
+                className="w-[90px] h-auto lg:w-[120px]"
               />
             </Link>
           </div>
 
-          {/* Center: Main Menu */}
-          <div className="ze-header-center">
+          {/* Center: Main Menu (desktop only) */}
+          <div className="ze-header-center hidden lg:flex">
             <nav
               id="ze-main-menu"
               className={`ze-main-menu flex items-center space-x-1 transition-opacity duration-300 ease-in-out ${
@@ -334,25 +369,28 @@ const Header = () => {
 
           {/* Right: Currency + Language Switcher + Auth/User Menu */}
           <div className="ze-header-right">
-            {/* Currency Switcher */}
-            <CurrencySwitcher />
+            {/* Language + Currency Switchers */}
+            <div className="flex items-center">
+              <LanguageSwitcher />
+              <span className="text-gray-300 text-sm hidden lg:inline">|</span>
+              <div className="hidden lg:block">
+                <CurrencySwitcher />
+              </div>
+            </div>
 
-            {/* Language Switcher */}
-            <LanguageSwitcher />
-
-            {/* Separator */}
+            {/* Separator (desktop only) */}
             <div
               id="ze-menu-separator"
-              className={`ze-menu-separator h-6 mx-3 w-px bg-gray-300 transition-opacity duration-300 ease-in-out ${
+              className={`ze-menu-separator h-6 mx-3 w-px bg-gray-300 hidden lg:block transition-opacity duration-300 ease-in-out ${
                 isAuthTransitioning ? "opacity-0" : "opacity-100"
               }`}
             />
 
-            {/* Connect Menu - Show only when not authenticated */}
+            {/* Connect Menu - Desktop only */}
             {!isAuthenticated && (
               <div
                 id="ze-connect-menu"
-                className={`ze-connect-menu flex items-center space-x-1 transition-opacity duration-300 ease-in-out ${
+                className={`ze-connect-menu hidden lg:flex items-center space-x-1 transition-opacity duration-300 ease-in-out ${
                   isAuthTransitioning ? "opacity-0" : "opacity-100"
                 }`}
               >
@@ -378,10 +416,40 @@ const Header = () => {
               </div>
             )}
 
-            {/* User Menu - Show when authenticated */}
+            {/* Mobile signup button */}
+            {!isAuthenticated && (
+              <button
+                onClick={() => {
+                  setAuthMode("signup");
+                  setShowAuthPanel(true);
+                }}
+                className={`ze-button-primary ml-2 mr-1 lg:hidden transition-opacity duration-300 ease-in-out ${
+                  isAuthTransitioning ? "opacity-0" : "opacity-100"
+                }`}
+              >
+                <span className="font-bold">{t("signupBold")}</span>
+              </button>
+            )}
+
+            {/* Mobile avatar - visible on mobile when authenticated */}
+            {isAuthenticated && user && (
+              <button
+                onClick={() => setIsMobileMenuOpen(true)}
+                className={`ml-2 lg:hidden w-10 h-10 rounded-lg bg-gradient-to-br from-orange-400 to-pink-400 flex items-center justify-center transition-opacity duration-300 ease-in-out ${
+                  isAuthTransitioning ? "opacity-0" : "opacity-100"
+                }`}
+                aria-label={t("openMenu")}
+              >
+                <span className="text-white font-bold text-sm">
+                  {user.email?.[0]?.toUpperCase() || "U"}
+                </span>
+              </button>
+            )}
+
+            {/* User Menu - Desktop only */}
             {isAuthenticated && user && (
               <div
-                className={`flex items-center gap-3 transition-opacity duration-300 ease-in-out ${
+                className={`hidden lg:flex items-center gap-3 transition-opacity duration-300 ease-in-out ${
                   isAuthTransitioning ? "opacity-0" : "opacity-100"
                 }`}
               >
@@ -493,6 +561,31 @@ const Header = () => {
         isOpen={showAuthPanel}
         onClose={() => setShowAuthPanel(false)}
         mode={authMode}
+      />
+
+      {/* Mobile Menu Overlay */}
+      <MobileMenu
+        isOpen={isMobileMenuOpen}
+        onClose={() => setIsMobileMenuOpen(false)}
+        isAuthenticated={isAuthenticated}
+        user={user}
+        subscriptionTier={subscriptionTier}
+        mainMenuItems={mainMenuItems}
+        loggedInMenuItems={loggedInMenuItems}
+        resourcesMenuItems={resourcesMenuItems}
+        onOpenAuth={(mode) => {
+          setIsMobileMenuOpen(false);
+          setAuthMode(mode);
+          setShowAuthPanel(true);
+        }}
+        onLogout={() => {
+          setIsMobileMenuOpen(false);
+          handleLogoutClick();
+        }}
+        onOpenAccountSettings={() => {
+          setIsMobileMenuOpen(false);
+          handleOpenAccountView("settings");
+        }}
       />
 
       {/* Logout confirmation modal when upload is in progress */}

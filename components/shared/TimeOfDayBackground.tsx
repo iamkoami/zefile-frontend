@@ -1,9 +1,7 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Lottie from "lottie-react";
-import birdsAnimation from "@/public/lotties/birds.json";
-import starsAnimation from "@/public/lotties/stars.json";
 
 interface TimeOfDayBackgroundProps {
   timeOfDay: "day" | "evening" | "night";
@@ -22,6 +20,15 @@ const TimeOfDayBackground: React.FC<TimeOfDayBackgroundProps> = ({
 }) => {
   const showBirds = timeOfDay === "day" || timeOfDay === "evening";
   const showStars = timeOfDay === "night";
+
+  // Dynamic import for Lottie JSON files (F-4.1: reduce bundle size)
+  const [birdsAnimation, setBirdsAnimation] = useState<object | null>(null);
+  const [starsAnimation, setStarsAnimation] = useState<object | null>(null);
+
+  useEffect(() => {
+    import("@/public/lotties/birds.json").then((m) => setBirdsAnimation(m.default));
+    import("@/public/lotties/stars.json").then((m) => setStarsAnimation(m.default));
+  }, []);
 
   // White filter for day birds and night stars
   const whiteFilter = "brightness(0) invert(1)";
@@ -48,7 +55,7 @@ const TimeOfDayBackground: React.FC<TimeOfDayBackgroundProps> = ({
           filter: timeOfDay === "day" ? whiteFilter : "none",
         }}
       >
-        {showBirds && (
+        {showBirds && birdsAnimation && (
           <Lottie
             animationData={birdsAnimation}
             loop={true}
@@ -71,7 +78,7 @@ const TimeOfDayBackground: React.FC<TimeOfDayBackgroundProps> = ({
           filter: whiteFilter,
         }}
       >
-        {showStars && (
+        {showStars && starsAnimation && (
           <Lottie
             animationData={starsAnimation}
             loop={true}

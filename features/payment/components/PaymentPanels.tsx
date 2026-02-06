@@ -26,6 +26,7 @@ import type { CountryCode } from "libphonenumber-js";
 import usePaymentStatus from "@/hooks/usePaymentStatus";
 import { useCurrencyStore } from "@/stores/currency-store";
 import { getCurrentUserEmail } from "@/utils/auth";
+import { safePaymentRedirect } from "@/utils/security";
 
 // Country data - Paystack-supported countries + International (card only)
 // Paystack coverage: GH (Ghana), KE (Kenya), CI (Côte d'Ivoire), NG (Nigeria)
@@ -449,7 +450,11 @@ export function PaymentMethodPanel() {
         }
 
         if (response.data?.authorizationUrl) {
-          window.location.href = response.data.authorizationUrl;
+          try {
+            safePaymentRedirect(response.data.authorizationUrl);
+          } catch {
+            toast.error(t("paymentInitFailed"));
+          }
         }
       } catch {
         toast.error(t("paymentInitFailed"));
@@ -1500,7 +1505,6 @@ export function CardPaymentPanel() {
           currency: response.data.pricingCurrency || transfer.currency,
           ref: response.data.reference,
           onSuccess: (transaction: { reference: string }) => {
-            console.log("Payment success:", transaction.reference);
             // Navigate to processing panel for confirmation polling
             setPaymentFlowData({
               paymentReference: transaction.reference,
@@ -1514,7 +1518,6 @@ export function CardPaymentPanel() {
             pushView("payment-processing");
           },
           onCancel: () => {
-            console.log("Payment cancelled");
             setPaymentFlowData({
               paymentError: {
                 code: "CANCELLED",
@@ -1749,13 +1752,11 @@ export function PaymentProcessingPanel() {
 
     const verifyAndPoll = async () => {
       try {
-        console.log("[Payment] Verifying payment:", reference);
         // Call verify endpoint to check status with Paystack API
         const verifyResponse = await paymentApi.verifyPaymentV2(reference);
 
         if (verifyResponse.data) {
           const status = verifyResponse.data.status;
-          console.log("[Payment] Verification result:", status);
 
           if (status === "SUCCESS") {
             // Payment confirmed - navigate to success

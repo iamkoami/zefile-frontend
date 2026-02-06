@@ -6,6 +6,8 @@ import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import LoadingFullscreen from '@/components/LoadingFullscreen';
+import { safePaymentRedirect } from '@/utils/security';
+import { toast } from '@/components/shared/Toast';
 import {
   PlanCard,
   FeatureComparisonTable,
@@ -75,10 +77,17 @@ export default function PricingPage() {
       });
 
       if (response.data?.authorizationUrl) {
-        window.location.href = response.data.authorizationUrl;
+        try {
+          safePaymentRedirect(response.data.authorizationUrl);
+        } catch {
+          toast.error(t('paymentInitFailed') || 'Failed to redirect to payment provider.');
+        }
+      } else {
+        toast.error(t('paymentInitFailed') || 'No authorization URL returned from payment provider.');
       }
     } catch (error) {
       console.error('Failed to initialize subscription:', error);
+      toast.error(t('paymentInitFailed') || 'Failed to initialize subscription payment.');
     }
   };
 

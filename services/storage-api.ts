@@ -164,7 +164,8 @@ export class StorageApi {
    */
   async getZipDownloadUrl(
     data: ZipDownloadRequestDto,
-    onProgress?: (progress: number) => void
+    onProgress?: (progress: number) => void,
+    signal?: AbortSignal
   ): Promise<ApiResponse<ZipDownloadResponseDto>> {
     // 1. Request ZIP creation
     const jobResponse = await this.requestZipDownload(data);
@@ -178,6 +179,17 @@ export class StorageApi {
     // 2. Poll for completion
     return new Promise((resolve) => {
       const pollInterval = setInterval(async () => {
+        // F-4.4: Check if polling was cancelled via AbortSignal
+        if (signal?.aborted) {
+          clearInterval(pollInterval);
+          resolve({
+            data: undefined,
+            error: { message: 'ZIP download cancelled', statusCode: 0 },
+            status: 0,
+          });
+          return;
+        }
+
         try {
           const statusResponse = await this.getZipJobStatus(jobId);
 
@@ -226,7 +238,7 @@ export class StorageApi {
       }, 2000); // Poll every 2 seconds
 
       // Timeout after 10 minutes
-      setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         clearInterval(pollInterval);
         resolve({
           data: undefined,
@@ -234,6 +246,19 @@ export class StorageApi {
           status: 408,
         });
       }, 600000);
+
+      // F-4.4: Listen for abort signal to cancel polling
+      if (signal) {
+        signal.addEventListener('abort', () => {
+          clearInterval(pollInterval);
+          clearTimeout(timeoutId);
+          resolve({
+            data: undefined,
+            error: { message: 'ZIP download cancelled', statusCode: 0 },
+            status: 0,
+          });
+        }, { once: true });
+      }
     });
   }
 

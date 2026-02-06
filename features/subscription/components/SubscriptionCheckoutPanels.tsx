@@ -751,7 +751,6 @@ export function SubscriptionCardPanel() {
           currency: response.data.currency || "NGN",
           ref: response.data.reference,
           onSuccess: (transaction: { reference: string }) => {
-            console.log("Subscription payment success:", transaction.reference);
             setPaymentFlowData({
               paymentReference: transaction.reference,
               transactionDetails: {
@@ -764,7 +763,6 @@ export function SubscriptionCardPanel() {
             pushView("subscription-processing");
           },
           onCancel: () => {
-            console.log("Subscription payment cancelled");
             setPaymentFlowData({
               paymentError: {
                 code: "CANCELLED",

@@ -13,7 +13,6 @@ export const SUPPORTED_FILE_TYPES = {
     'image/gif',
     'image/bmp',
     'image/tiff',
-    'image/svg+xml',
   ],
 
   // Videos
@@ -105,7 +104,6 @@ export const SUPPORTED_EXTENSIONS = {
   bmp: 'image/bmp',
   tiff: 'image/tiff',
   tif: 'image/tiff',
-  svg: 'image/svg+xml',
 
   // Videos
   mp4: 'video/mp4',
@@ -163,14 +161,44 @@ export const getSupportedExtensionsDisplay = (): string => {
 };
 
 /**
- * Validate file against supported types
+ * Get supported MIME type for a file extension
  */
-export const validateFile = (file: File): { valid: boolean; error?: string } => {
-  // Check MIME type
-  if (!isSupportedMimeType(file.type)) {
+const getMimeTypeForExtension = (filename: string): string | undefined => {
+  const ext = filename.split('.').pop()?.toLowerCase();
+  if (!ext) return undefined;
+  return (SUPPORTED_EXTENSIONS as Record<string, string>)[ext];
+};
+
+/**
+ * Validate file against supported types
+ * @param file - The file to validate
+ * @param options - Optional validation options
+ * @param options.maxSizeBytes - Maximum file size in bytes
+ */
+export const validateFile = (
+  file: File,
+  options?: { maxSizeBytes?: number }
+): { valid: boolean; error?: string } => {
+  // F-3.3: Check file size if maxSizeBytes is provided
+  if (options?.maxSizeBytes && file.size > options.maxSizeBytes) {
+    const maxSizeMB = Math.round(options.maxSizeBytes / (1024 * 1024));
     return {
       valid: false,
-      error: `Le type de fichier "${file.name}" n'est pas supporté. Types acceptés : images, vidéos, PDFs, audio, documents, archives.`,
+      error: `File "${file.name}" exceeds the maximum size of ${maxSizeMB} MB.`,
+    };
+  }
+
+  // Check MIME type
+  const mimeSupported = isSupportedMimeType(file.type);
+
+  // F-3.2: Also validate file extension alongside MIME type
+  const extMime = getMimeTypeForExtension(file.name);
+  const extSupported = extMime !== undefined;
+
+  if (!mimeSupported && !extSupported) {
+    return {
+      valid: false,
+      error: `Unsupported file type: "${file.name}". Accepted types: images, videos, PDFs, audio, documents, archives.`,
     };
   }
 
@@ -200,8 +228,8 @@ export const validateFiles = (files: File[]): { valid: boolean; errors: string[]
  * Human-readable file type categories
  */
 export const FILE_TYPE_CATEGORIES = {
-  images: 'Images (JPG, PNG, GIF, WebP, BMP, TIFF, SVG)',
-  videos: 'Vidéos (MP4, AVI, MOV, WebM, MKV, FLV)',
+  images: 'Images (JPG, PNG, GIF, WebP, BMP, TIFF)',
+  videos: 'Videos (MP4, AVI, MOV, WebM, MKV, FLV)',
   pdfs: 'PDFs',
   audio: 'Audio (MP3, WAV, OGG, AAC, M4A, FLAC)',
   documents: 'Documents (Word, Excel, PowerPoint, TXT, CSV, RTF)',
