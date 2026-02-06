@@ -273,10 +273,12 @@ export class ApiClient {
 
       if (!response.ok) {
         // Handle 401 - attempt token refresh and retry
+        // Skip retry for auth endpoints (login, refresh) to avoid loops
         const headersObj = options.headers as Record<string, string> | undefined;
         const isRetry = headersObj?.['X-No-Retry'] === 'true';
+        const isAuthEndpoint = endpoint.includes('/auth/') && (endpoint.includes('/login') || endpoint.includes('/refresh') || endpoint.includes('/verify'));
 
-        if (response.status === 401 && !isRetry) {
+        if (response.status === 401 && !isRetry && !isAuthEndpoint) {
           const refreshed = await this.attemptTokenRefresh();
           if (refreshed) {
             // Retry the original request with new token
