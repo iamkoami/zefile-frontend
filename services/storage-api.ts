@@ -343,12 +343,13 @@ export class StorageApi {
    * @param shortCode - Transfer short code
    * @param password - Optional password for protected transfers
    * @param versionId - Optional version ID to download specific version (default: current version)
+   * @param email - Optional email for payment verification on paid transfers
    */
-  async streamZipDownload(shortCode: string, password?: string, versionId?: string): Promise<ApiResponse<void>> {
+  async streamZipDownload(shortCode: string, password?: string, versionId?: string, email?: string): Promise<ApiResponse<void>> {
     // Step 1: Get signed download URL
     const response = await apiClient.post<{ downloadUrl: string; expiresIn: number }>(
       '/storage/download/zip/token',
-      { shortCode, password, versionId }
+      { shortCode, password, versionId, email }
     );
 
     if (response.error) {

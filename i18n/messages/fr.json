@@ -243,6 +243,7 @@
     "unauthorized": "Vous n'êtes pas autorisé à accéder à ce transfert",
     "transferNotFound": "Transfert introuvable",
     "transferExpired": "Ce transfert a expiré",
+    "expired": "Expiré",
     "loading": "Chargement...",
     "paymentRequired": "Paiement requis pour accéder aux fichiers",
     "free": "Gratuit",
@@ -1847,5 +1848,12 @@
     "typeWithdrawalRequested": "Retrait demandé",
     "searchPlaceholder": "Rechercher par référence ou e-mail...",
     "noNotifications": "Aucune notification trouvée"
+  },
+  "errors": {
+    "tooManyRequests": "Trop de requêtes. Veuillez patienter un instant et réessayer.",
+    "serverError": "Un problème est survenu de notre côté. Veuillez réessayer plus tard.",
+    "serviceUnavailable": "Le serveur est temporairement indisponible. Veuillez réessayer plus tard.",
+    "timeout": "Délai d'attente dépassé. Veuillez réessayer.",
+    "connectionFailed": "Impossible de se connecter au serveur. Veuillez vérifier votre connexion et réessayer."
   }
 }

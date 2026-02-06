@@ -21,6 +21,32 @@ export interface ApiError {
   statusCode: number;
   error?: string;
   code?: string;
+  /** Translation key for known error types (e.g. "errors.tooManyRequests"). Use with t() in components. */
+  errorKey?: string;
+}
+
+/**
+ * Detect known technical errors and return a translation key.
+ * Components use: t(error.errorKey) || error.message
+ */
+function getErrorKey(statusCode: number, rawMessage?: string): string | undefined {
+  switch (statusCode) {
+    case 429: return "errors.tooManyRequests";
+    case 500: return "errors.serverError";
+    case 502:
+    case 503:
+    case 504: return "errors.serviceUnavailable";
+    case 408: return "errors.timeout";
+  }
+
+  if (!rawMessage) return undefined;
+
+  if (/ThrottlerException|too many requests/i.test(rawMessage)) return "errors.tooManyRequests";
+  if (/internal server error/i.test(rawMessage)) return "errors.serverError";
+  if (/ECONNREFUSED/i.test(rawMessage)) return "errors.connectionFailed";
+  if (/ETIMEDOUT/i.test(rawMessage)) return "errors.timeout";
+
+  return undefined;
 }
 
 export class ApiClient {
@@ -280,6 +306,7 @@ export class ApiClient {
             statusCode: response.status,
             error: responseData?.error,
             code: responseData?.code,
+            errorKey: getErrorKey(response.status, responseData?.message),
           },
           status: response.status,
         };
@@ -295,8 +322,9 @@ export class ApiClient {
       if (error.name === 'AbortError') {
         return {
           error: {
-            message: 'Request timeout. Please try again.',
+            message: 'Request timeout',
             statusCode: 408,
+            errorKey: 'errors.timeout',
           },
           status: 408,
         };
@@ -309,10 +337,9 @@ export class ApiClient {
 
       return {
         error: {
-          message: isConnectionError
-            ? 'Unable to connect to the server. Please check your connection and try again.'
-            : error.message || 'Network error',
+          message: error.message || 'Network error',
           statusCode: 0,
+          errorKey: isConnectionError ? 'errors.connectionFailed' : undefined,
         },
         status: 0,
       };
@@ -400,6 +427,7 @@ export class ApiClient {
                 message: responseData?.message || 'Upload failed',
                 statusCode: xhr.status,
                 error: responseData?.error,
+                errorKey: getErrorKey(xhr.status, responseData?.message),
               },
               status: xhr.status,
             });
@@ -419,8 +447,9 @@ export class ApiClient {
       xhr.addEventListener('error', () => {
         resolve({
           error: {
-            message: 'Unable to connect to the server. Please check your connection and try again.',
+            message: 'Connection error',
             statusCode: 0,
+            errorKey: 'errors.connectionFailed',
           },
           status: 0,
         });
@@ -432,6 +461,7 @@ export class ApiClient {
           error: {
             message: 'Request timeout',
             statusCode: 408,
+            errorKey: 'errors.timeout',
           },
           status: 408,
         });

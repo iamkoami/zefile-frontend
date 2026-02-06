@@ -47,6 +47,8 @@ type SortDirection = "asc" | "desc";
 interface TransferPreviewPanelProps {
   transfer: TransferDto;
   role?: "sender" | "receiver";
+  /** Verified password for password-protected transfers (passed from landing page after verification) */
+  password?: string;
 }
 
 type FilePreviewType =
@@ -66,6 +68,7 @@ type FilePreviewType =
 const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
   transfer,
   role,
+  password: verifiedPassword,
 }) => {
   const t = useTranslations("transferPreview");
   const locale = useLocale();
@@ -323,7 +326,7 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
             const response = await storageApi.getFilePreviewUrl(
               transfer.shortCode,
               file.id,
-              undefined, // password
+              verifiedPassword,
               { requestOriginal: canViewOriginal },
             );
             if (response.data?.url) {
@@ -632,7 +635,7 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
       // Pass selectedVersionId to download specific version (or default if null)
       const response = await storageApi.streamZipDownload(
         transfer.shortCode,
-        undefined, // password is handled elsewhere
+        verifiedPassword,
         selectedVersionId || undefined,
       );
 
@@ -835,6 +838,7 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
         transferId={transfer.id}
         role={role === "sender" ? "sender" : "recipient"}
         userEmail={senderEmail || undefined}
+        password={verifiedPassword}
         allFiles={allFilesForNav}
         currentIndex={selectedFileIndex}
         onNavigate={handleFileNavigate}

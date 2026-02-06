@@ -14,6 +14,7 @@ interface EmailAuthFormProps {
 const EmailAuthForm: React.FC<EmailAuthFormProps> = ({ onSuccess }) => {
   const router = useRouter();
   const t = useTranslations('auth');
+  const tErrors = useTranslations('errors');
   const { executeAsync: executeCaptcha, isEnabled: captchaEnabled } = useCaptcha();
   const [step, setStep] = useState<'email' | 'otp'>('email');
   const [email, setEmail] = useState('');
@@ -64,7 +65,8 @@ const EmailAuthForm: React.FC<EmailAuthFormProps> = ({ onSuccess }) => {
         if (response.error.code === 'CAPTCHA_FAILED') {
           setError(t('captchaFailed'));
         } else {
-          setError(response.error.message);
+          const errorKey = response.error.errorKey;
+          setError(errorKey ? tErrors(errorKey.replace('errors.', '')) : response.error.message);
         }
       } else {
         setSentTo(email);
@@ -124,7 +126,8 @@ const EmailAuthForm: React.FC<EmailAuthFormProps> = ({ onSuccess }) => {
       const response = await authApi.verifyOTP({ email, otp: otpCode });
 
       if (response.error) {
-        setError(response.error.message);
+        const errorKey = response.error.errorKey;
+        setError(errorKey ? tErrors(errorKey.replace('errors.', '')) : response.error.message);
         setOtp(['', '', '', '', '', '']);
         inputRefs.current[0]?.focus();
       } else {
@@ -161,7 +164,8 @@ const EmailAuthForm: React.FC<EmailAuthFormProps> = ({ onSuccess }) => {
         if (response.error.code === 'CAPTCHA_FAILED') {
           setError(t('captchaFailed'));
         } else {
-          setError(response.error.message);
+          const errorKey = response.error.errorKey;
+          setError(errorKey ? tErrors(errorKey.replace('errors.', '')) : response.error.message);
         }
       } else {
         setResendCountdown(30);

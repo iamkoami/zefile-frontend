@@ -232,7 +232,13 @@ export default function TransferLandingPage() {
 
           setTransfer(response.data);
 
-          if (response.data.status === "expired") {
+          // Check if transfer is expired by status OR by expireAt date
+          const isExpired =
+            response.data.status === "expired" ||
+            (response.data.expireAt &&
+              new Date(response.data.expireAt).getTime() < Date.now());
+
+          if (isExpired) {
             setError(t("transferExpired"));
             setIsExpiredError(true);
             setPageState("error");
@@ -389,9 +395,9 @@ export default function TransferLandingPage() {
       const response = await storageApi.verifyTransferPassword(shortCode, password);
 
       if (!response.error && response.data?.success) {
-        // Password verified - go to ready state and open preview drawer
+        // Password verified - go to ready state and open preview drawer with verified password
         setPageState("ready");
-        openDrawerToView("transfers", "transfer-preview", transfer, "receiver");
+        openDrawerToView("transfers", "transfer-preview", transfer, "receiver", password);
       } else {
         setError(t("incorrectPassword"));
         setPassword(""); // Clear password on error per AC3
@@ -570,10 +576,16 @@ export default function TransferLandingPage() {
     if (user?.email) {
       // User is logged in - check if their email is authorized
       if (isEmailAuthorized(user.email)) {
-        // Authorized - open SideDrawer with TransferPreviewPanel
         setCustomerEmail(user.email);
         setEmailConfirmed(true);
-        openDrawerToView("transfers", "transfer-preview", transfer, "receiver");
+
+        // Password-protected transfers require password even for logged-in users
+        if (transfer.accessControl === "password") {
+          setPageState("password");
+        } else {
+          // Authorized - open SideDrawer with TransferPreviewPanel
+          openDrawerToView("transfers", "transfer-preview", transfer, "receiver");
+        }
       } else {
         // Not authorized - show error
         setError(t("unauthorized"));
@@ -667,6 +679,8 @@ export default function TransferLandingPage() {
       const response = await storageApi.streamZipDownload(
         transfer.shortCode,
         password || undefined,
+        undefined, // versionId
+        customerEmail || undefined, // email for payment verification
       );
 
       if (response.error) {

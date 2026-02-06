@@ -242,6 +242,7 @@
     "unauthorized": "You are not authorized to access this transfer",
     "transferNotFound": "Transfer not found",
     "transferExpired": "This transfer has expired",
+    "expired": "Expired",
     "loading": "Loading...",
     "paymentRequired": "Payment is required before downloading",
     "free": "Free",
@@ -1846,5 +1847,12 @@
     "typeWithdrawalRequested": "Withdrawal Requested",
     "searchPlaceholder": "Search by reference or email...",
     "noNotifications": "No notifications found"
+  },
+  "errors": {
+    "tooManyRequests": "Too many requests. Please wait a moment and try again.",
+    "serverError": "Something went wrong on our end. Please try again later.",
+    "serviceUnavailable": "The server is temporarily unavailable. Please try again later.",
+    "timeout": "Request timeout. Please try again.",
+    "connectionFailed": "Unable to connect to the server. Please check your connection and try again."
   }
 }

@@ -124,6 +124,9 @@ interface DrawerState {
   selectedTransfer: TransferDto | null;
   transferRole: TransferRole | null;
 
+  // Verified password for password-protected transfers (set after password verification on landing page)
+  transferPassword: string | null;
+
   // Account view sidebar navigation (non-stack based)
   activeAccountMenu: AccountMenuItem;
 
@@ -148,7 +151,10 @@ interface DrawerState {
   setOnBeforeBack: (handler: (() => boolean) | null) => void;
 
   // Direct navigation (no back button - closes drawer on dismiss)
-  openDrawerToView: (view: DrawerView, contentView: DrawerContentView, transfer?: TransferDto, role?: TransferRole) => void;
+  openDrawerToView: (view: DrawerView, contentView: DrawerContentView, transfer?: TransferDto, role?: TransferRole, password?: string) => void;
+
+  // Set verified password for password-protected transfers
+  setTransferPassword: (password: string | null) => void;
 
   // Payment flow actions
   setPaymentMethod: (method: PaymentMethodInfo | null) => void;
@@ -179,6 +185,7 @@ export const useDrawerStore = create<DrawerState>((set, get) => ({
   currentContentView: 'list',
   selectedTransfer: null,
   transferRole: null,
+  transferPassword: null,
   activeAccountMenu: 'settings',
   onBeforeBack: null,
 
@@ -191,6 +198,7 @@ export const useDrawerStore = create<DrawerState>((set, get) => ({
       currentContentView: 'list',
       selectedTransfer: null,
       transferRole: null,
+      transferPassword: null,
       onBeforeBack: null,
     }),
 
@@ -202,6 +210,7 @@ export const useDrawerStore = create<DrawerState>((set, get) => ({
       currentContentView: 'list',
       selectedTransfer: null,
       transferRole: null,
+      transferPassword: null,
       onBeforeBack: null,
     }),
 
@@ -266,10 +275,12 @@ export const useDrawerStore = create<DrawerState>((set, get) => ({
 
   setOnBeforeBack: (handler) => set({ onBeforeBack: handler }),
 
+  setTransferPassword: (password) => set({ transferPassword: password }),
+
   // Open drawer directly to a specific content view without navigation stack
   // Used when opening from outside the drawer (e.g., TransferCompletePanel)
   // Shows close button instead of back button
-  openDrawerToView: (view, contentView, transfer, role) =>
+  openDrawerToView: (view, contentView, transfer, role, password) =>
     set({
       isOpen: true,
       view,
@@ -278,6 +289,7 @@ export const useDrawerStore = create<DrawerState>((set, get) => ({
       currentContentView: contentView,
       selectedTransfer: transfer ?? null,
       transferRole: role ?? null,
+      transferPassword: password ?? null,
       onBeforeBack: null,
     }),
 
