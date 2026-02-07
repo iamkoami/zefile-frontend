@@ -43,6 +43,9 @@ const Header = () => {
   // Track auth transition for smooth animation
   const [isAuthTransitioning, setIsAuthTransitioning] = useState(false);
 
+  // Track whether initial auth check has completed (prevents flash of unauthenticated UI)
+  const [isAuthChecked, setIsAuthChecked] = useState(false);
+
   // Fetch subscription tier
   const fetchSubscription = async () => {
     try {
@@ -58,9 +61,23 @@ const Header = () => {
   };
 
   useEffect(() => {
-    const checkAuth = () => {
-      const authenticated = authApi.isAuthenticated();
-      const userData = authApi.getStoredUser();
+    const checkAuth = async () => {
+      let authenticated = authApi.isAuthenticated();
+      let userData = authApi.getStoredUser();
+
+      // If access token expired but refresh token exists, silently refresh
+      if (!authenticated && typeof window !== "undefined" && localStorage.getItem("refresh_token")) {
+        try {
+          const refreshed = await authApi.refreshToken(localStorage.getItem("refresh_token")!);
+          if (refreshed.data) {
+            authenticated = authApi.isAuthenticated();
+            userData = authApi.getStoredUser();
+          }
+        } catch {
+          // Refresh failed - stay unauthenticated
+        }
+      }
+
       setIsAuthenticated(authenticated);
       setUser(userData);
 
@@ -117,7 +134,7 @@ const Header = () => {
       fetchSubscription();
     };
 
-    checkAuth();
+    checkAuth().then(() => setIsAuthChecked(true));
     window.addEventListener("storage", checkAuth);
     window.addEventListener(
       "auth-state-change",
@@ -299,7 +316,7 @@ const Header = () => {
                 isAuthTransitioning ? "opacity-0" : "opacity-100"
               }`}
             >
-              {!isAuthenticated &&
+              {isAuthChecked && !isAuthenticated &&
                 mainMenuItems.map((item) =>
                   item.action ? (
                     <button
@@ -321,7 +338,7 @@ const Header = () => {
                 )}
 
               {/* Logged in menu items */}
-              {isAuthenticated && (
+              {isAuthChecked && isAuthenticated && (
                 <div className="flex items-center space-x-1">
                   {loggedInMenuItems.map((item) => (
                     <button
@@ -387,7 +404,7 @@ const Header = () => {
             />
 
             {/* Connect Menu - Desktop only */}
-            {!isAuthenticated && (
+            {isAuthChecked && !isAuthenticated && (
               <div
                 id="ze-connect-menu"
                 className={`ze-connect-menu hidden lg:flex items-center space-x-1 transition-opacity duration-300 ease-in-out ${
@@ -417,7 +434,7 @@ const Header = () => {
             )}
 
             {/* Mobile signup button */}
-            {!isAuthenticated && (
+            {isAuthChecked && !isAuthenticated && (
               <button
                 onClick={() => {
                   setAuthMode("signup");
@@ -432,7 +449,7 @@ const Header = () => {
             )}
 
             {/* Mobile avatar - visible on mobile when authenticated */}
-            {isAuthenticated && user && (
+            {isAuthChecked && isAuthenticated && user && (
               <button
                 onClick={() => setIsMobileMenuOpen(true)}
                 className={`ml-2 lg:hidden w-10 h-10 rounded-lg bg-gradient-to-br from-orange-400 to-pink-400 flex items-center justify-center transition-opacity duration-300 ease-in-out ${
@@ -447,7 +464,7 @@ const Header = () => {
             )}
 
             {/* User Menu - Desktop only */}
-            {isAuthenticated && user && (
+            {isAuthChecked && isAuthenticated && user && (
               <div
                 className={`hidden lg:flex items-center gap-3 transition-opacity duration-300 ease-in-out ${
                   isAuthTransitioning ? "opacity-0" : "opacity-100"

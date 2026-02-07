@@ -5,11 +5,18 @@ export const runtime = 'edge';
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import LoadingFullscreen from '@/components/LoadingFullscreen';
 import Header from '@/components/shared/Header';
-import { WarningCircle } from 'iconoir-react';
+import TimeOfDayBackground from '@/components/shared/TimeOfDayBackground';
+import HeroText from '@/components/shared/HeroText';
+import PaperPlaneAnimation from '@/components/shared/PaperPlaneAnimation';
 import { transferApi } from '@/services/transfer-api';
 import { detectNetwork } from '@/utils/network-detection';
+import { useTimeOfDay } from '@/hooks/useTimeOfDay';
+
+const Lottie = dynamic(() => import('lottie-react'), { ssr: false });
 
 /**
  * Download Landing Page Redirect
@@ -20,7 +27,15 @@ function DownloadRedirect() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const t = useTranslations('transferLanding');
+  const tNotFound = useTranslations('notFound');
+  const { timeOfDay } = useTimeOfDay();
   const [error, setError] = useState<string | null>(null);
+
+  // Dynamic import for cat lottie animation
+  const [catAnimationData, setCatAnimationData] = useState<any>(null);
+  useEffect(() => {
+    import('@/public/lotties/cat.json').then((m) => setCatAnimationData(m.default));
+  }, []);
 
   useEffect(() => {
     async function redirect() {
@@ -82,11 +97,50 @@ function DownloadRedirect() {
     return (
       <div className="min-h-screen bg-white">
         <Header />
-        <div className="flex flex-col items-center justify-center" style={{ minHeight: 'calc(100vh - 64px)' }}>
-          <WarningCircle className="w-12 h-12 text-red-500 mb-4" />
-          <h1 className="text-xl font-bold text-[#171717] mb-2">{t('error')}</h1>
-          <p className="text-gray-600 text-sm">{error}</p>
-        </div>
+        <main
+          style={{ minHeight: 'calc(100vh - 64px)', position: 'relative' }}
+        >
+          <div
+            className={`ze-content-panel ze-time-${timeOfDay}`}
+            style={{ position: 'relative', overflow: 'hidden' }}
+          >
+            <TimeOfDayBackground timeOfDay={timeOfDay} />
+            <HeroText isVisible={true} timeOfDay={timeOfDay} />
+            <PaperPlaneAnimation isVisible={true} />
+            <div
+              className="ze-panels-container"
+              style={{ position: 'relative', zIndex: 10 }}
+            >
+              <div className="ze-upload-panel text-center py-8">
+                <div className="align-center mx-auto mb-3">
+                  {catAnimationData && (
+                    <Lottie
+                      animationData={catAnimationData}
+                      loop={true}
+                      autoplay={true}
+                      style={{
+                        width: '300px',
+                        height: 'auto',
+                      }}
+                    />
+                  )}
+                </div>
+                <h1 className="text-2xl font-bold text-[#171717] mb-3">
+                  {tNotFound('transferNotFoundTitle')}
+                </h1>
+                <p className="text-gray-600 text-sm font-medium max-w-md mx-auto mb-8 leading-relaxed">
+                  {tNotFound('transferNotFoundSubtitle')}
+                </p>
+                <Link
+                  href="/"
+                  className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors"
+                >
+                  {tNotFound('startTransfer')}
+                </Link>
+              </div>
+            </div>
+          </div>
+        </main>
       </div>
     );
   }

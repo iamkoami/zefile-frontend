@@ -10,6 +10,7 @@ import { getLocale, getMessages } from "next-intl/server";
 import PostHogProvider from "@/components/providers/PostHogProvider";
 import { OrganizationJsonLd, WebSiteJsonLd } from "@/components/seo/JsonLd";
 import GlobalSideDrawer from "@/components/providers/GlobalSideDrawer";
+import ToastContainer from "@/components/shared/Toast";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -190,6 +191,7 @@ export default async function RootLayout({
         <NextIntlClientProvider messages={messages} locale={locale}>
           <Suspense fallback={null}>
             <PostHogProvider>
+              <ToastContainer />
               {children}
               <GlobalSideDrawer />
             </PostHogProvider>

@@ -83,7 +83,7 @@ const AccountPanel: React.FC = () => {
   return (
     <div className="flex h-full -mx-16 -my-8">
       {/* Left Sidebar */}
-      <aside className="w-72 flex-shrink-0 border-r border-gray-200 py-8 px-6">
+      <aside className="w-72 flex-shrink-0 border-r border-gray-200 py-8 px-6 sticky top-0 self-start">
         {/* Section Title */}
         <h2 className="text-3xl font-bold text-[#171717] mb-8 px-4">
           {t("title")}

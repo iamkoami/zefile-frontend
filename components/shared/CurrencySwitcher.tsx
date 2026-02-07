@@ -67,6 +67,7 @@ const CurrencySwitcher: React.FC<CurrencySwitcherProps> = ({
         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
         className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded transition-colors text-gray-600 hover:bg-gray-100"
       >
+        <span className="text-base">{COUNTRY_CONFIG[countryCode]?.flag}</span>
         <span>{pricing.currency}</span>
         <NavArrowDown
           className={`w-3.5 h-3.5 transition-transform ${isDropdownOpen ? "rotate-180" : ""}`}
