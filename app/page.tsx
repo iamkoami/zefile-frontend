@@ -172,6 +172,18 @@ export default function Home() {
     setReuseTransferData(null);
   }, []);
 
+  // Close options panel when transfer process starts
+  useEffect(() => {
+    if (
+      uploadPanelState === "otp" ||
+      uploadPanelState === "uploading" ||
+      uploadPanelState === "cancel-confirm" ||
+      uploadPanelState === "complete"
+    ) {
+      setShowOptions(false);
+    }
+  }, [uploadPanelState]);
+
   // Listen for add-transfer-files-to-upload event from TransferDetailsPanel
   useEffect(() => {
     const handleAddTransferFiles = (event: CustomEvent<ReuseTransferData>) => {

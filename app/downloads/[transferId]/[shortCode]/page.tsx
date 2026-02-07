@@ -570,11 +570,29 @@ export default function TransferLandingPage() {
   const handlePreviewClick = () => {
     if (!transfer) return;
 
+    // Public transfers - anyone can preview without authentication
+    if (transfer.accessControl === "public") {
+      openDrawerToView("transfers", "transfer-preview", transfer, "receiver");
+      return;
+    }
+
     // Check if user is already logged in
     const user = authApi.getStoredUser();
 
     if (user?.email) {
-      // User is logged in - check if their email is authorized
+      // Check if logged-in user is the sender - direct access, no verification needed
+      const isSender =
+        (typeof transfer.senderId === "object" && transfer.senderId?.id === user.id) ||
+        (typeof transfer.senderId === "object" && transfer.senderId?.email?.toLowerCase() === user.email.toLowerCase());
+
+      if (isSender) {
+        setCustomerEmail(user.email);
+        setEmailConfirmed(true);
+        openDrawerToView("transfers", "transfer-preview", transfer, "sender");
+        return;
+      }
+
+      // User is logged in - check if their email is authorized as recipient
       if (isEmailAuthorized(user.email)) {
         setCustomerEmail(user.email);
         setEmailConfirmed(true);
@@ -587,9 +605,8 @@ export default function TransferLandingPage() {
           openDrawerToView("transfers", "transfer-preview", transfer, "receiver");
         }
       } else {
-        // Not authorized - show error
-        setError(t("unauthorized"));
-        setPageState("error");
+        // Logged-in email not authorized - let user enter the correct email
+        setPageState("email");
       }
     } else {
       // Not logged in - show email confirmation panel
@@ -714,11 +731,21 @@ export default function TransferLandingPage() {
     if (!transfer?.expireAt) return "";
     const now = new Date();
     const expiry = new Date(transfer.expireAt);
-    const diffTime = expiry.getTime() - now.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const diffMs = expiry.getTime() - now.getTime();
 
-    if (diffDays <= 0) return t("expired");
-    return `${diffDays} ${diffDays === 1 ? tPayment("day") : tPayment("days")}`;
+    if (diffMs <= 0) return t("expired");
+
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffDays >= 1) {
+      return `${diffDays} ${diffDays === 1 ? tPayment("day") : tPayment("days")}`;
+    }
+    if (diffHours >= 1) {
+      return `${diffHours} ${diffHours === 1 ? tPayment("hour") : tPayment("hours")}`;
+    }
+    return `${diffMinutes} ${diffMinutes === 1 ? tPayment("minute") : tPayment("minutes")}`;
   };
 
   const getProviderName = (provider?: string): string => {
@@ -1697,7 +1724,7 @@ export default function TransferLandingPage() {
                 )}
 
                 {/* Transfer Title */}
-                <h2 className="text-base font-bold text-[#171717] mb-4">
+                <h2 className="text-base font-bold text-[#171717] mb-4 break-all">
                   {transfer.title || t("untitled")}
                 </h2>
 
