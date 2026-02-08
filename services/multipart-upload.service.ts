@@ -496,7 +496,7 @@ class MultipartUploadService {
         versionId,
       });
     }
-    const CONCURRENT_UPLOADS = 4;
+    const CONCURRENT_UPLOADS = 6;
 
     // Track progress for each chunk
     const chunkProgress = new Map<number, number>();

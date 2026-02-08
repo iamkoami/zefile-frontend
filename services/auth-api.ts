@@ -138,6 +138,11 @@ export class AuthApi {
       }
       return true;
     }
+    // Rate-limited or server error — don't invalidate a valid session,
+    // trust cached user data instead of forcing logout
+    if (response.status === 429 || response.status >= 500 || response.status === 0) {
+      return this.getStoredUser() !== null;
+    }
     return false;
   }
 

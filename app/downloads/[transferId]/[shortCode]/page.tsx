@@ -135,7 +135,7 @@ export default function TransferLandingPage() {
   const [pageState, setPageState] = useState<PageState>("loading");
   const [transfer, setTransfer] = useState<TransferDto | null>(null);
   const [error, setError] = useState<string>("");
-  const [isExpiredError, setIsExpiredError] = useState(false);
+  const [errorType, setErrorType] = useState<"not-found" | "expired" | "cancelled" | "not-ready" | "generic" | null>(null);
 
   // Password form
   const [password, setPassword] = useState("");
@@ -203,6 +203,8 @@ export default function TransferLandingPage() {
     timeout: 120000,
     onSuccess: () => {
       toast.success(tPayment("paymentSuccessful"));
+      // Mark transfer as paid locally so UI reflects payment status
+      setTransfer((prev) => prev ? { ...prev, isPaid: true } : prev);
       setTimeout(() => {
         setPageState("ready");
       }, 2000);
@@ -226,6 +228,7 @@ export default function TransferLandingPage() {
           // Verify transferId matches (extra security)
           if (response.data.id !== transferId) {
             setError(t("transferNotFound"));
+            setErrorType("not-found");
             setPageState("error");
             return;
           }
@@ -240,19 +243,21 @@ export default function TransferLandingPage() {
 
           if (isExpired) {
             setError(t("transferExpired"));
-            setIsExpiredError(true);
+            setErrorType("expired");
             setPageState("error");
             return;
           }
 
           if (response.data.status === "cancelled") {
             setError(t("transferCancelled"));
+            setErrorType("cancelled");
             setPageState("error");
             return;
           }
 
           if (response.data.status === "pending") {
             setError(t("transferNotReady"));
+            setErrorType("not-ready");
             setPageState("error");
             return;
           }
@@ -264,12 +269,14 @@ export default function TransferLandingPage() {
           setPageState("ready");
         } else {
           setError(response.error?.message || t("transferNotFound"));
+          setErrorType("not-found");
           setPageState("error");
         }
       } catch (err: unknown) {
         const errorMessage =
           err instanceof Error ? err.message : t("transferNotFound");
         setError(errorMessage);
+        setErrorType("not-found");
         setPageState("error");
       }
     };
@@ -762,64 +769,26 @@ export default function TransferLandingPage() {
     return <LoadingFullscreen />;
   }
 
-  // Error state
+  // Error state — resolve title/subtitle from errorType
   if (pageState === "error") {
-    // Enhanced UI for expired transfers
-    if (isExpiredError) {
-      return (
-        <div className="min-h-screen bg-white">
-          <Header />
-          <main
-            style={{ minHeight: "calc(100vh - 64px)", position: "relative" }}
-          >
-            <div
-              className={`ze-content-panel ze-time-${timeOfDay}`}
-              style={{ position: "relative", overflow: "hidden" }}
-            >
-              <TimeOfDayBackground timeOfDay={timeOfDay} />
-              <HeroText isVisible={true} timeOfDay={timeOfDay} />
-              <PaperPlaneAnimation isVisible={true} />
-              <div
-                className="ze-panels-container"
-                style={{ position: "relative", zIndex: 10 }}
-              >
-                <div className="ze-upload-panel text-center py-8">
-                  <div className="align-center mx-auto mb-3">
-                    <Lottie
-                      animationData={catAnimationData}
-                      loop={true}
-                      autoplay={true}
-                      style={{
-                        width: "300px",
-                        height: "auto",
-                      }}
-                    />
-                  </div>
-                  <h1 className="text-2xl font-bold text-[#171717] mb-3">
-                    {tNotFound("transferExpiredTitle")}
-                  </h1>
-                  <p className="text-gray-600 text-sm font-medium max-w-md mx-auto mb-8 leading-relaxed">
-                    {tNotFound("transferExpiredSubtitle")}
-                  </p>
-                  <Link
-                    href="/"
-                    className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors"
-                  >
-                    {tNotFound("startTransfer")}
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </main>
-        </div>
-      );
-    }
+    const errorTitleKey =
+      errorType === "expired" ? "transferExpiredTitle"
+      : errorType === "cancelled" ? "transferCancelledTitle"
+      : errorType === "not-ready" ? "transferNotReadyTitle"
+      : "transferNotFoundTitle";
 
-    // Generic error UI for other errors
+    const errorSubtitleKey =
+      errorType === "expired" ? "transferExpiredSubtitle"
+      : errorType === "cancelled" ? "transferCancelledSubtitle"
+      : errorType === "not-ready" ? "transferNotReadySubtitle"
+      : "transferNotFoundSubtitle";
+
     return (
       <div className="min-h-screen bg-white">
         <Header />
-        <main style={{ minHeight: "calc(100vh - 64px)", position: "relative" }}>
+        <main
+          style={{ minHeight: "calc(100vh - 64px)", position: "relative" }}
+        >
           <div
             className={`ze-content-panel ze-time-${timeOfDay}`}
             style={{ position: "relative", overflow: "hidden" }}
@@ -831,12 +800,32 @@ export default function TransferLandingPage() {
               className="ze-panels-container"
               style={{ position: "relative", zIndex: 10 }}
             >
-              <div className="ze-upload-panel text-center">
-                <WarningCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-                <h1 className="text-xl font-bold text-[#171717] mb-2">
-                  {t("error")}
+              <div className="ze-upload-panel text-center py-8">
+                <div className="align-center mx-auto mb-3">
+                  {catAnimationData && (
+                    <Lottie
+                      animationData={catAnimationData}
+                      loop={true}
+                      autoplay={true}
+                      style={{
+                        width: "300px",
+                        height: "auto",
+                      }}
+                    />
+                  )}
+                </div>
+                <h1 className="text-2xl font-bold text-[#171717] mb-3">
+                  {tNotFound(errorTitleKey)}
                 </h1>
-                <p className="text-gray-600 text-sm">{error}</p>
+                <p className="text-gray-600 text-sm font-medium max-w-md mx-auto mb-8 leading-relaxed">
+                  {tNotFound(errorSubtitleKey)}
+                </p>
+                <Link
+                  href="/"
+                  className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors"
+                >
+                  {tNotFound("startTransfer")}
+                </Link>
               </div>
             </div>
           </div>
@@ -1544,9 +1533,9 @@ export default function TransferLandingPage() {
   }
 
   // Preview state - shows file preview modal
-  // For paid transfers, shows payment button. For free transfers, shows download button.
+  // For paid transfers that haven't been paid yet, shows payment button. Otherwise, shows download button.
   if (pageState === "preview" && transfer) {
-    const isPaidTransfer = transfer.price && transfer.price > 0;
+    const requiresPaymentAction = transfer.price && transfer.price > 0 && !transfer.isPaid;
     const formatPrice = (price: number, currency: string) => {
       if (currency === "XOF") return `${price.toLocaleString()} Fr CFA`;
       return `${price.toLocaleString()} ${currency}`;
@@ -1609,7 +1598,7 @@ export default function TransferLandingPage() {
                 </button>
 
                 {/* Price Info for Paid Transfers */}
-                {isPaidTransfer && (
+                {requiresPaymentAction && (
                   <div className="bg-gray-50 rounded-lg p-4 mb-4">
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-600">
@@ -1626,7 +1615,7 @@ export default function TransferLandingPage() {
                 )}
 
                 {/* Download/Payment Button */}
-                {isPaidTransfer ? (
+                {requiresPaymentAction ? (
                   <button
                     onClick={() => setPageState("payment")}
                     className="w-full px-6 py-3.5 bg-[#87E64B] text-[#171717] font-medium rounded hover:bg-[#78d43f] transition-colors flex items-center justify-center gap-2"

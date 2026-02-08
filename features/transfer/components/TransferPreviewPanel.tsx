@@ -2,7 +2,6 @@
 
 import React, { useCallback, useState, useMemo, useEffect } from "react";
 import {
-  Download,
   PageEdit,
   MediaImage,
   VideoCamera,
@@ -74,7 +73,6 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
   const locale = useLocale();
   const { setOnBeforeBack, openPaymentFlow } = useDrawerStore();
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-  const [isDownloadingAll, setIsDownloadingAll] = useState(false);
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
@@ -138,14 +136,6 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
     return true;
   }, [role, requiresPayment, transfer?.isPaid, isPublicTransfer]);
 
-  // Determine if Download button should show
-  const showDownloadButton = useMemo(() => {
-    // Public transfers never show Download button
-    if (isPublicTransfer) return false;
-
-    // For non-public transfers, show download when pay button is not shown
-    return !showPayButton;
-  }, [isPublicTransfer, showPayButton]);
 
   // Compute if user can view original files (payment-based, NOT role-based)
   // Both sender and receiver see the same view - watermarked until paid
@@ -623,35 +613,6 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
     return t("expiresInDays", { days: diffDays });
   };
 
-  // Handle download all (secure two-step flow)
-  const handleDownloadAll = useCallback(async () => {
-    if (!transfer.shortCode || isDownloadingAll) {
-      return;
-    }
-
-    setIsDownloadingAll(true);
-    try {
-      // Two-step secure download: POST for token, then redirect to signed URL
-      // Pass selectedVersionId to download specific version (or default if null)
-      const response = await storageApi.streamZipDownload(
-        transfer.shortCode,
-        verifiedPassword,
-        selectedVersionId || undefined,
-      );
-
-      if (response.error) {
-        toast.error(response.error.message || t("downloadError"));
-      }
-      // Success - browser handles the download after redirect
-    } catch (error) {
-      console.error("Download all failed:", error);
-      toast.error(t("downloadError"));
-    } finally {
-      // Brief delay before resetting (browser takes over download)
-      setTimeout(() => setIsDownloadingAll(false), 1000);
-    }
-  }, [transfer.shortCode, isDownloadingAll, t, selectedVersionId]);
-
   // Get currency symbol for display
   const getCurrencySymbol = useCallback((currency?: string): string => {
     const symbols: Record<string, string> = {
@@ -892,22 +853,7 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
             </button>
           )}
 
-          {/* Download All Button (shown when transfer is free or user is sender, hidden for public) */}
-          {showDownloadButton && (
-            <button
-              onClick={handleDownloadAll}
-              disabled={isDownloadingAll || isExpired}
-              className="flex items-center gap-2 px-5 py-2.5 bg-[#87E64B] text-[#171717] font-medium rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              title={isExpired ? t("transferExpired") : undefined}
-            >
-              <Download className="w-5 h-5" />
-              {isExpired
-                ? t("expired")
-                : isDownloadingAll
-                  ? t("downloading")
-                  : t("downloadAll")}
-            </button>
-          )}
+          {/* Download All Button - hidden (download available from TransferDetailsPanel) */}
         </div>
       </div>
 

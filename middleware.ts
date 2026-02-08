@@ -26,6 +26,8 @@ function buildCspHeader(nonce: string): string {
       "'self'",
       'data:',
       'blob:',
+      process.env.NEXT_PUBLIC_API_URL || 'https://api.zefile.io',
+      'https://api-dev.zefile.io',
       'https://*.wasabisys.com',
       'https://s3.eu-central-1.wasabisys.com',
     ],
@@ -33,6 +35,7 @@ function buildCspHeader(nonce: string): string {
     'connect-src': [
       "'self'",
       process.env.NEXT_PUBLIC_API_URL || 'https://api.zefile.io',
+      'https://api-dev.zefile.io',
       'https://*.wasabisys.com',
       'https://s3.eu-central-1.wasabisys.com',
       'https://api.paystack.co',
@@ -46,6 +49,8 @@ function buildCspHeader(nonce: string): string {
     'media-src': [
       "'self'",
       'blob:',
+      process.env.NEXT_PUBLIC_API_URL || 'https://api.zefile.io',
+      'https://api-dev.zefile.io',
       'https://*.wasabisys.com',
       'https://s3.eu-central-1.wasabisys.com',
     ],

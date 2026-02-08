@@ -108,6 +108,8 @@ const TransferItem: React.FC<TransferItemProps> = ({
   };
 
   const expiryInfo = getDaysUntilExpiry();
+  const isExpired = transfer.status === 'expired' || transfer.status === 'cancelled' ||
+    (expiryDateStr ? new Date(expiryDateStr).getTime() <= Date.now() : false);
   const downloadStatus = (transfer.downloadCount || 0) > 0 ? t('downloaded') : t('notDownloaded');
   const versionCount = transfer.versionCount || 1;
 
@@ -228,17 +230,21 @@ const TransferItem: React.FC<TransferItemProps> = ({
             }`}
             aria-hidden={!isActive || selectionMode}
           >
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onPreview(transfer);
-              }}
-              className="text-sm text-[#87E64B] hover:text-[#9ef55e] underline transition-colors focus:outline-none"
-              tabIndex={isActive && !selectionMode ? 0 : -1}
-            >
-              {t('preview')}
-            </button>
-            <span className="text-gray-500 mx-1">-</span>
+            {!isExpired && (
+              <>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onPreview(transfer);
+                  }}
+                  className="text-sm text-[#87E64B] hover:text-[#9ef55e] underline transition-colors focus:outline-none"
+                  tabIndex={isActive && !selectionMode ? 0 : -1}
+                >
+                  {t('preview')}
+                </button>
+                <span className="text-gray-500 mx-1">-</span>
+              </>
+            )}
             <button
               onClick={(e) => {
                 e.stopPropagation();

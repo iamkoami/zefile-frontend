@@ -111,6 +111,8 @@ export function PaymentMethodPanel() {
     selectedTransfer,
     payload,
     pushView,
+    popView,
+    canGoBack,
     setPaymentMethod,
     setPaymentFlowData,
     closeDrawer,
@@ -180,26 +182,32 @@ export function PaymentMethodPanel() {
     }
   }, [payload?.paymentFlowData?.senderEmail]);
 
-  // Set custom back handler to show back button and close drawer from first payment screen
-  // Also cancel any pending payment when drawer is closed
+  // Set custom back handler for payment method screen
+  // If opened from inside drawer (has stack), go back to previous view
+  // If opened from outside (no stack), close drawer
   useEffect(() => {
     setOnBeforeBack(() => {
-      // Cancel any pending payment (fire and forget - don't block drawer close)
+      // Cancel any pending payment (fire and forget - don't block navigation)
       const reference = payload?.paymentFlowData?.paymentReference;
       if (reference) {
         paymentApi.cancelPayment(reference).catch(() => {
-          // Silently log - don't show toast as drawer is closing
           console.error("Failed to cancel payment:", reference);
         });
       }
       resetPaymentFlow();
-      closeDrawer();
+
+      // If there's a navigation stack, go back to previous view (e.g., transfer details)
+      if (canGoBack()) {
+        popView();
+      } else {
+        closeDrawer();
+      }
       return true; // Handler took care of it
     });
 
     // Cleanup on unmount
     return () => setOnBeforeBack(null);
-  }, [setOnBeforeBack, closeDrawer, resetPaymentFlow, payload?.paymentFlowData?.paymentReference]);
+  }, [setOnBeforeBack, closeDrawer, popView, canGoBack, resetPaymentFlow, payload?.paymentFlowData?.paymentReference]);
 
   // Fetch mobile money providers when country changes or mobile money is selected
   useEffect(() => {

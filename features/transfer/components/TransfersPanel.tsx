@@ -230,10 +230,14 @@ const TransfersPanel: React.FC = () => {
         : [];
 
       // Extract transfer data from successful transactions
+      // Set isPaid: true since these come from successful payment transactions
       const paidTransferData = paidTransactionsData
         .filter((transaction) => transaction.transferId !== null)
         .map((transaction) =>
-          normalizeTransfer(transaction.transferId as TransferDto)
+          normalizeTransfer({
+            ...(transaction.transferId as TransferDto),
+            isPaid: true,
+          })
         );
 
       const deduplicatedPaid = deduplicateTransfers(paidTransferData);

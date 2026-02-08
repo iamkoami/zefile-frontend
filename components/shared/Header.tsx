@@ -10,6 +10,7 @@ import LanguageSwitcher from "./LanguageSwitcher";
 import CurrencySwitcher from "./CurrencySwitcher";
 import AuthPanel from "@/features/auth/components/AuthPanel";
 import { authApi } from "@/services/auth-api";
+import { apiClient } from "@/services/api-client";
 import LoadingFullscreen from "@/components/LoadingFullscreen";
 import { useDrawerStore } from "@/stores/drawer-store";
 import { useUploadStore } from "@/stores/upload-store";
@@ -65,7 +66,10 @@ const Header = () => {
       let authenticated = authApi.isAuthenticated();
       let userData = authApi.getStoredUser();
 
-      // If user data exists (hint of previous login), verify with server via cookie
+      // If user data exists (hint of previous login), verify with server via cookie.
+      // verifyAuth() calls GET /auth/me — if 401, api-client automatically attempts
+      // token refresh and retries. No need for a manual refresh fallback here
+      // (double-refresh can trigger replay detection and revoke ALL tokens).
       if (userData) {
         try {
           const verified = await authApi.verifyAuth();
@@ -73,15 +77,9 @@ const Header = () => {
             authenticated = true;
             userData = authApi.getStoredUser();
           } else {
-            // Cookie expired or invalid - try refresh
-            const refreshed = await authApi.refreshToken();
-            if (refreshed.data) {
-              authenticated = true;
-              userData = authApi.getStoredUser();
-            } else {
-              authenticated = false;
-              userData = null;
-            }
+            // api-client already tried token refresh internally — session is truly expired
+            authenticated = false;
+            userData = null;
           }
         } catch {
           // Server unreachable - use cached user data as hint
@@ -91,8 +89,9 @@ const Header = () => {
       setIsAuthenticated(authenticated);
       setUser(userData);
 
-      // Fetch subscription when authenticated
+      // Fetch subscription and CSRF token when authenticated
       if (authenticated) {
+        apiClient.initCsrfToken();
         fetchSubscription();
       } else {
         setSubscriptionTier("free");

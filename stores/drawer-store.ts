@@ -107,6 +107,7 @@ export interface DrawerPayload {
 
 // Navigation stack entry for back button functionality
 export interface NavigationEntry {
+  view?: DrawerView;
   contentView: DrawerContentView;
   transfer?: TransferDto;
   role?: TransferRole;
@@ -248,6 +249,8 @@ export const useDrawerStore = create<DrawerState>((set, get) => ({
         currentContentView: previousEntry.contentView,
         selectedTransfer: previousEntry.transfer ?? null,
         transferRole: previousEntry.role ?? null,
+        // Restore top-level view if stored (e.g., going back from payment to transfers)
+        ...(previousEntry.view ? { view: previousEntry.view } : {}),
       });
     }
   },
@@ -335,11 +338,27 @@ export const useDrawerStore = create<DrawerState>((set, get) => ({
   },
 
   // Open payment flow for a transfer (starts at payment-method view)
+  // Preserves navigation stack when called from inside an open drawer
   openPaymentFlow: (transfer, senderEmail) => {
+    const state = get();
+    const isAlreadyOpen = state.isOpen;
+
+    // If drawer is already open, push current view onto the stack so back button works
+    const navigationStack = isAlreadyOpen
+      ? [...state.navigationStack, {
+          view: state.view,
+          contentView: state.currentContentView,
+          transfer: state.selectedTransfer ?? undefined,
+          role: state.transferRole ?? undefined,
+          previousTab: state.payload?.preSelectedTab,
+        }]
+      : [];
+
     set({
       isOpen: true,
       view: 'payment',
       payload: {
+        ...state.payload,
         paymentFlowData: {
           phoneNumber: '',
           phoneCountryCode: 'GH',
@@ -349,7 +368,7 @@ export const useDrawerStore = create<DrawerState>((set, get) => ({
           senderEmail,
         },
       },
-      navigationStack: [],
+      navigationStack,
       currentContentView: 'payment-method',
       selectedTransfer: transfer,
       transferRole: null,

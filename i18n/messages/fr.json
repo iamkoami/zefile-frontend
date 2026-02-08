@@ -757,7 +757,8 @@
     "sortBySize": "Taille",
     "previewNotReady": "Aperçu non disponible",
     "previewGenerating": "L'aperçu est en cours de génération. Veuillez réessayer plus tard.",
-    "publicAccessMessage": "Ceci est un aperçu uniquement. Demandez à l'expéditeur l'accès complet au téléchargement."
+    "publicAccessMessage": "Ceci est un aperçu uniquement. Demandez à l'expéditeur l'accès complet au téléchargement.",
+    "transferExpired": "Ce transfert a expiré"
   },
   "confirmationModal": {
     "yes": "Oui",
@@ -1818,6 +1819,10 @@
     "transferNotFoundSubtitle": "L'expéditeur l'a peut-être supprimé, ou le lien est incorrect. Pas de panique, contactez-le ou lancez votre propre transfert.",
     "transferExpiredTitle": "Ce chef-d'œuvre a quitté la galerie.",
     "transferExpiredSubtitle": "L'art va et vient, mais la créativité est éternelle. Demandez un nouveau lien ou partagez vos propres créations avec le monde !",
+    "transferCancelledTitle": "Ce transfert a été annulé.",
+    "transferCancelledSubtitle": "L'expéditeur a décidé d'annuler ce transfert. Contactez-le si vous avez besoin des fichiers, ou lancez votre propre aventure créative !",
+    "transferNotReadyTitle": "Ce transfert est encore en préparation.",
+    "transferNotReadySubtitle": "L'expéditeur prépare encore ce transfert. Revenez bientôt, ou commencez à partager vos propres créations !",
     "startTransfer": "Partagez votre art",
     "createNew": "Créer un nouveau transfert",
     "goHome": "Retour à l'accueil"

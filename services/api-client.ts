@@ -129,11 +129,15 @@ export class ApiClient {
         return true;
       }
 
-      // Refresh failed - logout user
-      this.handleLogout();
+      // Only logout on definitive auth rejection (server explicitly says refresh token is invalid).
+      // Don't logout on 403 (could be CSRF/permission issue), 5xx, or 429 — those are transient.
+      if (response.status === 401) {
+        this.handleLogout();
+      }
       return false;
     } catch {
-      this.handleLogout();
+      // Network error (server down/restarting) — don't logout, just fail silently.
+      // The user's session cookies are still valid and will work when the server is back.
       return false;
     }
   }

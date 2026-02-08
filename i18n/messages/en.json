@@ -756,7 +756,8 @@
     "sortBySize": "Size",
     "previewNotReady": "Preview not available",
     "previewGenerating": "Preview is being generated. Please try again later.",
-    "publicAccessMessage": "This is a preview only. Ask the sender for full download access."
+    "publicAccessMessage": "This is a preview only. Ask the sender for full download access.",
+    "transferExpired": "This transfer has expired"
   },
   "confirmationModal": {
     "yes": "Yes",
@@ -1817,6 +1818,10 @@
     "transferNotFoundSubtitle": "The sender may have deleted it, or the link might be incorrect. Don't worry, you can reach out to them or start fresh.",
     "transferExpiredTitle": "This masterpiece has left the gallery.",
     "transferExpiredSubtitle": "Art comes and goes, but creativity is forever. Ask for a new link or share your own creations with the world!",
+    "transferCancelledTitle": "This transfer has been called off.",
+    "transferCancelledSubtitle": "The sender decided to cancel this transfer. Reach out to them if you need the files, or start your own creative journey!",
+    "transferNotReadyTitle": "This transfer is still warming up.",
+    "transferNotReadySubtitle": "The sender is still preparing this transfer. Check back shortly, or start sharing your own creations!",
     "startTransfer": "Share your art",
     "createNew": "Create a new transfer",
     "goHome": "Back to home"
