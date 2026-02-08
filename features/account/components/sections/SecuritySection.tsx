@@ -31,14 +31,12 @@ const SecuritySection: React.FC = () => {
         const count = response.data.count;
         toast.success(t("logoutAllSuccess", { count: count.toString() }));
 
-        // Clear all local storage and auth state
+        // Clear local state (tokens are in HttpOnly cookies, cleared by backend)
         if (typeof window !== "undefined") {
-          localStorage.removeItem("access_token");
-          localStorage.removeItem("refresh_token");
           localStorage.removeItem("user");
           sessionStorage.clear();
         }
-        apiClient.setAccessToken(null);
+        apiClient.setCsrfToken(null);
 
         // Close drawer and redirect to home
         closeDrawer();

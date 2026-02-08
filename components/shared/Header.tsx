@@ -65,16 +65,26 @@ const Header = () => {
       let authenticated = authApi.isAuthenticated();
       let userData = authApi.getStoredUser();
 
-      // If access token expired but refresh token exists, silently refresh
-      if (!authenticated && typeof window !== "undefined" && localStorage.getItem("refresh_token")) {
+      // If user data exists (hint of previous login), verify with server via cookie
+      if (userData) {
         try {
-          const refreshed = await authApi.refreshToken(localStorage.getItem("refresh_token")!);
-          if (refreshed.data) {
-            authenticated = authApi.isAuthenticated();
+          const verified = await authApi.verifyAuth();
+          if (verified) {
+            authenticated = true;
             userData = authApi.getStoredUser();
+          } else {
+            // Cookie expired or invalid - try refresh
+            const refreshed = await authApi.refreshToken();
+            if (refreshed.data) {
+              authenticated = true;
+              userData = authApi.getStoredUser();
+            } else {
+              authenticated = false;
+              userData = null;
+            }
           }
         } catch {
-          // Refresh failed - stay unauthenticated
+          // Server unreachable - use cached user data as hint
         }
       }
 

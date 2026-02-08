@@ -4,10 +4,8 @@
  * Uses HttpOnly cookies for authentication (set by backend)
  * Includes CSRF token for state-changing requests
  *
- * TODO: [SECURITY] Complete migration from localStorage JWT tokens to HttpOnly cookies.
- * Currently maintains backward compatibility with localStorage tokens while the backend
- * transitions to cookie-based auth. Once migration is complete, remove all
- * localStorage token operations (getAccessToken, setAccessToken, etc.).
+ * Authentication is cookie-only (HttpOnly, Secure, SameSite).
+ * No tokens are stored in localStorage to prevent XSS-based token theft.
  */
 
 export interface ApiResponse<T = any> {
@@ -52,7 +50,6 @@ function getErrorKey(statusCode: number, rawMessage?: string): string | undefine
 export class ApiClient {
   private baseURL: string;
   private timeout: number;
-  private accessToken: string | null = null; // Kept for backward compatibility
   private csrfToken: string | null = null;
   private isRefreshing: boolean = false;
   private refreshPromise: Promise<boolean> | null = null;
@@ -60,26 +57,13 @@ export class ApiClient {
   constructor() {
     this.baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
     this.timeout = parseInt(process.env.NEXT_PUBLIC_API_TIMEOUT || '600000'); // 10 minutes default for file uploads
-
-    // Load tokens from localStorage if available (backward compatibility)
-    if (typeof window !== 'undefined') {
-      this.csrfToken = localStorage.getItem('csrf_token');
-      this.accessToken = localStorage.getItem('access_token');
-    }
   }
 
   /**
-   * Set CSRF token for state-changing requests
+   * Set CSRF token for state-changing requests (in-memory only)
    */
   setCsrfToken(token: string | null): void {
     this.csrfToken = token;
-    if (typeof window !== 'undefined') {
-      if (token) {
-        localStorage.setItem('csrf_token', token);
-      } else {
-        localStorage.removeItem('csrf_token');
-      }
-    }
   }
 
   /**
@@ -90,6 +74,13 @@ export class ApiClient {
   }
 
   /**
+   * Initialize CSRF token from server (call on app init when user is authenticated)
+   */
+  async initCsrfToken(): Promise<void> {
+    await this.refreshCsrfToken();
+  }
+
+  /**
    * Check if method is state-changing (requires CSRF protection)
    */
   private isStateChangingMethod(method: string): boolean {
@@ -97,7 +88,7 @@ export class ApiClient {
   }
 
   /**
-   * Attempt to refresh the access token using the refresh token
+   * Attempt to refresh the access token using the refresh token cookie
    * Returns true if refresh succeeded, false otherwise
    */
   private async attemptTokenRefresh(): Promise<boolean> {
@@ -119,30 +110,22 @@ export class ApiClient {
 
   /**
    * Perform the actual token refresh
-   * Uses HttpOnly cookie (automatically included) or falls back to localStorage token
+   * Uses HttpOnly cookie (automatically included by the browser)
    */
   private async doTokenRefresh(): Promise<boolean> {
     if (typeof window === 'undefined') return false;
-
-    // Get refresh token from localStorage (backward compatibility)
-    const refreshToken = localStorage.getItem('refresh_token');
 
     try {
       const response = await fetch(`${this.baseURL}/auth/refresh-token`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include', // Include HttpOnly cookies
-        // Send refresh token in body for backward compatibility
-        body: JSON.stringify({ refreshToken: refreshToken || undefined }),
+        body: JSON.stringify({}),
       });
 
       if (response.ok) {
-        const data = await response.json();
-        if (data.accessToken) {
-          this.setAccessToken(data.accessToken);
-          return true;
-        }
-        // Even without accessToken in body, cookies may have been updated
+        // Refresh CSRF token after successful token refresh
+        await this.refreshCsrfToken();
         return true;
       }
 
@@ -179,14 +162,10 @@ export class ApiClient {
   /**
    * Handle logout when refresh fails
    */
-  private handleLogout(): void {
+  handleLogout(): void {
     if (typeof window === 'undefined') return;
 
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('csrf_token');
     localStorage.removeItem('user');
-    this.accessToken = null;
     this.csrfToken = null;
 
     // Dispatch event to notify UI about auth state change
@@ -199,35 +178,6 @@ export class ApiClient {
   }
 
   /**
-   * Set access token for authenticated requests (backward compatibility)
-   */
-  setAccessToken(token: string | null) {
-    this.accessToken = token;
-    if (token) {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('access_token', token);
-      }
-    } else {
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('access_token');
-      }
-    }
-  }
-
-  /**
-   * Get access token from memory or localStorage (backward compatibility)
-   */
-  getAccessToken(): string | null {
-    if (this.accessToken) {
-      return this.accessToken;
-    }
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('access_token');
-    }
-    return null;
-  }
-
-  /**
    * Make HTTP request
    */
   private async request<T = any>(
@@ -237,17 +187,11 @@ export class ApiClient {
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
     const url = `${this.baseURL}${endpoint}`;
-    const token = this.getAccessToken();
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...(options.headers as Record<string, string>),
     };
-
-    // Add Authorization header for backward compatibility
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
 
     // Add CSRF token for state-changing requests
     if (this.isStateChangingMethod(method) && this.csrfToken) {
@@ -281,7 +225,7 @@ export class ApiClient {
         if (response.status === 401 && !isRetry && !isAuthEndpoint) {
           const refreshed = await this.attemptTokenRefresh();
           if (refreshed) {
-            // Retry the original request with new token
+            // Retry the original request with refreshed cookies
             return this.request<T>(method, endpoint, data, {
               ...options,
               headers: { ...(headersObj || {}), 'X-No-Retry': 'true' },
@@ -388,7 +332,6 @@ export class ApiClient {
    */
   async upload<T = any>(endpoint: string, formData: FormData, onProgress?: (progress: number) => void, isRetry: boolean = false): Promise<ApiResponse<T>> {
     const url = `${this.baseURL}${endpoint}`;
-    const token = this.getAccessToken();
 
     return new Promise((resolve) => {
       const xhr = new XMLHttpRequest();
@@ -418,7 +361,7 @@ export class ApiClient {
             if (xhr.status === 401 && !isRetry) {
               const refreshed = await this.attemptTokenRefresh();
               if (refreshed) {
-                // Retry the upload with new token
+                // Retry the upload with refreshed cookies
                 resolve(await this.upload<T>(endpoint, formData, onProgress, true));
                 return;
               }
@@ -478,11 +421,6 @@ export class ApiClient {
 
       // Include cookies for authentication
       xhr.withCredentials = true;
-
-      // Add Authorization header for backward compatibility
-      if (token) {
-        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-      }
 
       // Add CSRF token for upload (POST request)
       if (this.csrfToken) {

@@ -434,8 +434,8 @@ export default function TransferLandingPage() {
     setError("");
 
     try {
-      // Check if email is authorized to access this transfer
-      if (!isEmailAuthorized(customerEmail)) {
+      // Check if email is authorized to access this transfer (server-side)
+      if (!(await isEmailAuthorized(customerEmail))) {
         setError(t("unauthorized"));
         setIsLoading(false);
         return;
@@ -540,34 +540,28 @@ export default function TransferLandingPage() {
     }
   };
 
-  // Check if user email is authorized to access this transfer
+  // Check if user email is authorized to access this transfer via backend API
   // - Public transfers: any email is authorized
   // - Private/Password transfers: only listed recipients are authorized
-  // - Missing accessControl (older transfers): defaults to private behavior
-  //
-  // SECURITY NOTE: This is a client-side UX check only. The backend MUST also
-  // enforce email authorization on all download/preview endpoints to prevent
-  // bypassing by manipulating client-side state. The recipientEmails list is
-  // sent from the backend and could be intercepted or spoofed.
-  const isEmailAuthorized = (email: string): boolean => {
+  // Authorization is enforced server-side to prevent client-side manipulation
+  const isEmailAuthorized = async (email: string): Promise<boolean> => {
     if (!transfer) return false;
 
-    // Public transfers allow any email
+    // Public transfers allow any email (quick client-side check)
     if (transfer.accessControl === 'public') {
       return true;
     }
 
-    // Private and password modes require listed recipient (case-insensitive)
-    const normalizedEmail = email.toLowerCase();
-    return (
-      transfer.recipientEmails?.some(
-        (recipientEmail) => recipientEmail.toLowerCase() === normalizedEmail,
-      ) || false
-    );
+    try {
+      const response = await storageApi.verifyRecipientAccess(transfer.shortCode, email);
+      return response.data?.authorized ?? false;
+    } catch {
+      return false;
+    }
   };
 
   // Handle clicking preview button from ready state
-  const handlePreviewClick = () => {
+  const handlePreviewClick = async () => {
     if (!transfer) return;
 
     // Public transfers - anyone can preview without authentication
@@ -592,8 +586,8 @@ export default function TransferLandingPage() {
         return;
       }
 
-      // User is logged in - check if their email is authorized as recipient
-      if (isEmailAuthorized(user.email)) {
+      // User is logged in - check if their email is authorized as recipient (server-side)
+      if (await isEmailAuthorized(user.email)) {
         setCustomerEmail(user.email);
         setEmailConfirmed(true);
 

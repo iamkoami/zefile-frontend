@@ -29,7 +29,8 @@ export interface TransferDto {
   id: string;
   shortCode: string;
   senderId: string | { id: string; email: string; kycStatus?: 'none' | 'pending' | 'under_review' | 'verified' | 'rejected' };
-  recipientEmails: string[]; // Changed to array
+  recipientEmails?: string[]; // Present in authenticated endpoints, stripped from public
+  recipientCount?: number; // Present in public endpoints instead of recipientEmails
   title?: string;
   price?: number;
   currency?: string;
@@ -530,15 +531,14 @@ export class TransferApi {
   /**
    * Get version limit information for a transfer
    * Returns current version count, max allowed, and tier info
+   * Ownership validated via JWT on the backend
    * @param transferId The transfer ID
-   * @param senderId The sender/owner user ID
    */
   async getVersionLimits(
     transferId: string,
-    senderId: string
   ): Promise<ApiResponse<VersionLimitDto>> {
     return apiClient.get<VersionLimitDto>(
-      `/transfers/${transferId}/version-limits?senderId=${senderId}`
+      `/transfers/${transferId}/version-limits`
     );
   }
 

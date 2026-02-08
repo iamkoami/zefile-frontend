@@ -465,6 +465,20 @@ export class StorageApi {
       password,
     });
   }
+
+  /**
+   * Verify if an email is authorized to access a transfer
+   * Server-side check instead of exposing recipient emails publicly
+   */
+  async verifyRecipientAccess(
+    shortCode: string,
+    email: string
+  ): Promise<ApiResponse<{ authorized: boolean }>> {
+    return apiClient.post<{ authorized: boolean }>('/storage/verify-recipient-access', {
+      shortCode,
+      email,
+    });
+  }
 }
 
 // Export singleton instance

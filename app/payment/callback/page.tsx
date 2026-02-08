@@ -20,7 +20,7 @@ export default function PaymentCallbackPage() {
 
     if (paymentReference) {
       // Redirect to processing page with reference
-      router.push(`/payment/processing?reference=${paymentReference}`);
+      router.push(`/payment/processing?reference=${encodeURIComponent(paymentReference)}`);
     } else {
       // No reference found, redirect to home
       router.push('/');

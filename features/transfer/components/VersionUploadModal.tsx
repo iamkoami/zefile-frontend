@@ -71,12 +71,9 @@ const VersionUploadModal: React.FC<VersionUploadModalProps> = ({
     if (!isOpen) return;
 
     const fetchVersionLimits = async () => {
-      const userId = getCurrentUserId();
-      if (!userId) return;
-
       setIsLoadingLimits(true);
       try {
-        const response = await transferApi.getVersionLimits(transfer.id, userId);
+        const response = await transferApi.getVersionLimits(transfer.id);
         if (response.data) {
           setVersionLimit(response.data);
         }
