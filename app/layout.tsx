@@ -1,8 +1,6 @@
 // Polyfill localStorage for SSR (must be first import)
 import "@/lib/localStorage-polyfill";
 
-export const runtime = "edge";
-
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
