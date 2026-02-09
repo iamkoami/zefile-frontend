@@ -143,7 +143,8 @@ export class ApiClient {
   }
 
   /**
-   * Refresh CSRF token from server
+   * Refresh CSRF token from server.
+   * If the access token is expired (401), attempts a full token refresh first.
    */
   private async refreshCsrfToken(): Promise<void> {
     try {
@@ -156,6 +157,21 @@ export class ApiClient {
         const data = await response.json();
         if (data.csrfToken) {
           this.setCsrfToken(data.csrfToken);
+        }
+        return;
+      }
+
+      // If 401, the access token may be expired — try a full token refresh.
+      // doTokenRefresh() will call refreshCsrfToken() again after getting
+      // a new access token, but we guard against infinite recursion via
+      // the isRefreshing flag in attemptTokenRefresh().
+      if (response.status === 401 && !this.isRefreshing) {
+        const refreshed = await this.attemptTokenRefresh();
+        // attemptTokenRefresh → doTokenRefresh already calls refreshCsrfToken
+        // so csrfToken should now be set if refresh succeeded
+        if (!refreshed) {
+          // Refresh failed — session truly expired
+          this.handleLogout();
         }
       }
     } catch {
@@ -366,6 +382,15 @@ export class ApiClient {
               const refreshed = await this.attemptTokenRefresh();
               if (refreshed) {
                 // Retry the upload with refreshed cookies
+                resolve(await this.upload<T>(endpoint, formData, onProgress, true));
+                return;
+              }
+            }
+
+            // Handle 403 CSRF errors - refresh CSRF token and retry
+            if (xhr.status === 403 && responseData?.message?.includes('CSRF') && !isRetry) {
+              await this.refreshCsrfToken();
+              if (this.csrfToken) {
                 resolve(await this.upload<T>(endpoint, formData, onProgress, true));
                 return;
               }
