@@ -1,107 +1,175 @@
+"use client";
+
 export const runtime = "edge";
-/* eslint-disable @next/next/no-html-link-for-pages */
+
+import { useEffect, useState, useRef } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import Link from "next/link";
+import { useTranslations } from "next-intl";
+import Lottie, { LottieRefCurrentProps } from "lottie-react";
+import { SendDiagonal } from "iconoir-react";
+import Header from "@/components/shared/Header";
+import LoadingFullscreen from "@/components/LoadingFullscreen";
 
 /**
  * Custom 404 Not Found Page
  *
- * Returns a complete HTML document to BYPASS the root layout.
- * This is required because @cloudflare/next-on-pages compiles _not-found
- * as Node.js when the root layout is dynamic (next-intl getLocale/getMessages).
- * A standalone not-found with its own <html>/<body> avoids layout inheritance.
+ * Handles three scenarios with playful, creative messaging:
+ * 1. General 404 - Page not found
+ * 2. Transfer not found - Invalid or deleted transfer link
+ * 3. Transfer expired - Link past expiry date
  *
- * Short link redirects (/z-{code}, /downloads/{code}) are handled in middleware.
+ * Also handles client-side routing for dynamic routes in static export.
  */
+
+type NotFoundType = "general" | "transfer-not-found" | "transfer-expired";
+
 export default function NotFound() {
+  const pathname = usePathname();
+  const router = useRouter();
+  const t = useTranslations("notFound");
+  const lottieRef = useRef<LottieRefCurrentProps>(null);
+  const [notFoundType, setNotFoundType] = useState<NotFoundType>("general");
+  const [isRedirecting, setIsRedirecting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error404Animation, setError404Animation] = useState<object | null>(null);
+
+  // Dynamic import for Lottie JSON (F-4.1: reduce bundle size)
+  useEffect(() => {
+    import("@/public/lotties/error-404.json").then((m) => setError404Animation(m.default));
+  }, []);
+
+  // Show loading state briefly while page assets load
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const searchParams = window.location.search;
+    const urlParams = new URLSearchParams(searchParams);
+
+    // Check for explicit error type from query params
+    const errorType = urlParams.get("error");
+    if (errorType === "expired") {
+      setNotFoundType("transfer-expired");
+      return;
+    }
+    if (errorType === "not-found") {
+      setNotFoundType("transfer-not-found");
+      return;
+    }
+
+    // Handle /z-{code} short links - redirect to /downloads?code={code}
+    if (pathname?.startsWith("/z-")) {
+      setIsRedirecting(true);
+      const shortCode = pathname.replace("/z-", "");
+      router.replace(`/downloads?code=${shortCode}${searchParams}`);
+      return;
+    }
+
+    // Handle /downloads/{code} - redirect to /downloads?code={code}
+    if (pathname?.startsWith("/downloads/")) {
+      setIsRedirecting(true);
+      const shortCode = pathname.replace("/downloads/", "");
+      router.replace(
+        `/downloads?code=${shortCode}${searchParams ? "&" + searchParams.substring(1) : ""}`,
+      );
+      return;
+    }
+
+    // Check if this is a transfer-related URL for context-aware messaging
+    if (pathname?.includes("transfer") || pathname?.includes("download")) {
+      setNotFoundType("transfer-not-found");
+    }
+  }, [pathname, router]);
+
+  // Show loading state while page assets load
+  if (isLoading) {
+    return <LoadingFullscreen />;
+  }
+
+  // Show nothing while redirecting
+  if (isRedirecting) {
+    return null;
+  }
+
+  const getContent = () => {
+    switch (notFoundType) {
+      case "transfer-expired":
+        return {
+          title: t("transferExpiredTitle"),
+          subtitle: t("transferExpiredSubtitle"),
+          cta: t("createNew"),
+        };
+      case "transfer-not-found":
+        return {
+          title: t("transferNotFoundTitle"),
+          subtitle: t("transferNotFoundSubtitle"),
+          cta: t("startTransfer"),
+        };
+      default:
+        return {
+          title: t("generalTitle"),
+          subtitle: t("generalSubtitle"),
+          cta: t("startTransfer"),
+        };
+    }
+  };
+
+  const content = getContent();
+
   return (
-    <html lang="en">
-      <head>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>404 - Page Not Found | ZeFile</title>
-        <style
-          dangerouslySetInnerHTML={{
-            __html: `
-              * { margin: 0; padding: 0; box-sizing: border-box; }
-              body {
-                font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-                background: #fff;
-                color: #171717;
-                min-height: 100vh;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-              }
-              .container {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                padding: 1rem;
-                text-align: center;
-              }
-              .code {
-                font-size: 8rem;
-                font-weight: 700;
-                color: #5E53E0;
-                line-height: 1;
-                margin-bottom: 1rem;
-              }
-              .title {
-                font-size: 1.5rem;
-                font-weight: 700;
-                margin-bottom: 0.75rem;
-              }
-              .subtitle {
-                color: #6b7280;
-                margin-bottom: 2rem;
-                max-width: 28rem;
-                line-height: 1.6;
-              }
-              .cta {
-                display: inline-flex;
-                align-items: center;
-                gap: 0.5rem;
-                padding: 0.875rem 2rem;
-                background: #87E64B;
-                color: #171717;
-                font-weight: 500;
-                border-radius: 4px;
-                text-decoration: none;
-                transition: background 0.15s;
-              }
-              .cta:hover { background: #78d43f; }
-              .secondary {
-                margin-top: 1rem;
-              }
-              .secondary a {
-                font-size: 0.875rem;
-                color: #9ca3af;
-                text-decoration: none;
-                transition: color 0.15s;
-              }
-              .secondary a:hover { color: #5E53E0; }
-              @media (max-width: 640px) {
-                .code { font-size: 5rem; }
-              }
-            `,
-          }}
-        />
-      </head>
-      <body>
-        <div className="container">
-          <h1 className="code">404</h1>
-          <h2 className="title">Page Not Found</h2>
-          <p className="subtitle">
-            The page you&apos;re looking for doesn&apos;t exist or has been
-            moved.
-          </p>
-          <a href="/" className="cta">
-            Start Transfer
-          </a>
-          <div className="secondary">
-            <a href="/">Go to Homepage</a>
-          </div>
+    <div className="min-h-screen bg-white">
+      <Header />
+      <main
+        className="flex flex-col items-center justify-center px-4"
+        style={{ minHeight: "calc(100vh - 64px)" }}
+      >
+        {/* Lottie Animation - 4 0 4 with hot air balloon */}
+        <div className="mb-8">
+          {error404Animation && <Lottie
+            lottieRef={lottieRef}
+            animationData={error404Animation}
+            loop={true}
+            autoplay={true}
+            style={{ width: 500, height: 380 }}
+          />}
         </div>
-      </body>
-    </html>
+
+        {/* Title */}
+        <h1 className="text-2xl font-bold text-[#171717] mb-3 text-center">
+          {content.title}
+        </h1>
+
+        {/* Subtitle */}
+        <p className="text-gray-500 mb-8 text-center max-w-md leading-relaxed">
+          {content.subtitle}
+        </p>
+
+        {/* Primary CTA - Start new transfer */}
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#87E64B] text-[#171717] font-medium rounded hover:bg-[#78d43f] transition-colors"
+        >
+          <SendDiagonal className="w-5 h-5" />
+          {content.cta}
+        </Link>
+
+        {/* Secondary link */}
+        <div className="mt-4">
+          <Link
+            href="/"
+            className="text-sm text-gray-400 hover:text-[#5E53E0] transition-colors"
+          >
+            {t("goHome")}
+          </Link>
+        </div>
+      </main>
+    </div>
   );
 }
