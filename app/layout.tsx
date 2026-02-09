@@ -1,5 +1,3 @@
-export const runtime = "edge";
-
 // Polyfill localStorage for SSR (must be first import)
 import "@/lib/localStorage-polyfill";
 
