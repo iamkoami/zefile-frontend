@@ -54,6 +54,7 @@ import ReportIssueModal from "@/components/shared/ReportIssueModal";
 import TransferPreviewModal from "@/features/transfer/components/TransferPreviewModal";
 import { useDrawerStore } from "@/stores/drawer-store";
 import FloatingPollWidget from "@/components/shared/FloatingPollWidget";
+import { usePollEligibility } from "@/hooks/usePollEligibility";
 
 // Helper to extract sender email from senderId
 const getSenderEmail = (transfer: TransferDto): string | undefined => {
@@ -169,6 +170,13 @@ export default function TransferLandingPage() {
   // Payment prompt
   const [paymentReference, setPaymentReference] = useState("");
   const [paymentAmount, setPaymentAmount] = useState(0);
+
+  // Poll eligibility check — replaces FloatingPollWidget's former self-fetch
+  const { checkForPoll } = usePollEligibility();
+  useEffect(() => {
+    const timer = setTimeout(() => { checkForPoll('manual'); }, 2000);
+    return () => clearTimeout(timer);
+  }, [checkForPoll]);
 
   // Download state
   const [isDownloading, setIsDownloading] = useState(false);
@@ -703,6 +711,8 @@ export default function TransferLandingPage() {
 
       if (response.error) {
         toast.error(response.error.message || t("downloadFailed"));
+      } else {
+        checkForPoll('after_download', 3000);
       }
     } catch {
       toast.error(t("downloadFailed"));
@@ -1745,7 +1755,7 @@ export default function TransferLandingPage() {
         </main>
 
         {/* Floating Poll Widget */}
-        <FloatingPollWidget trigger="manual" />
+        <FloatingPollWidget />
       </div>
     );
   }

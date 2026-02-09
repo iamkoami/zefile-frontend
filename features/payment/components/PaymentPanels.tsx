@@ -27,6 +27,7 @@ import usePaymentStatus from "@/hooks/usePaymentStatus";
 import { useCurrencyStore } from "@/stores/currency-store";
 import { getCurrentUserEmail } from "@/utils/auth";
 import { safePaymentRedirect } from "@/utils/security";
+import { usePollEligibility } from "@/hooks/usePollEligibility";
 
 // Country data - Paystack-supported countries + International (card only)
 // Paystack coverage: GH (Ghana), KE (Kenya), CI (Côte d'Ivoire), NG (Nigeria)
@@ -2002,10 +2003,17 @@ export function PaymentSuccessPanel() {
   const flowData = payload?.paymentFlowData;
   const transaction = flowData?.transactionDetails;
 
+  const { checkForPoll } = usePollEligibility();
+
   // Hide back button on success screen - transaction is complete
   useEffect(() => {
     clearBackNavigation();
   }, [clearBackNavigation]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => { checkForPoll('after_payment'); }, 5000);
+    return () => clearTimeout(timer);
+  }, [checkForPoll]);
 
   const handleDownload = () => {
     // Trigger download and close drawer

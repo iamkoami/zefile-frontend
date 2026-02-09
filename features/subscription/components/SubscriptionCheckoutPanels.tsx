@@ -36,6 +36,7 @@ import { toast } from "@/components/shared/Toast";
 import type { MobileMoneyProvider } from "@/features/payment/components/PaymentMethodSelector";
 import type { CountryCode } from "libphonenumber-js";
 import { authApi } from "@/services/auth-api";
+import { usePollEligibility } from "@/hooks/usePollEligibility";
 
 /**
  * Mobile money provider info from API
@@ -985,10 +986,17 @@ export function SubscriptionSuccessPanel() {
 
   const checkoutData = payload?.subscriptionCheckout;
 
+  const { checkForPoll } = usePollEligibility();
+
   // Clear back navigation
   useEffect(() => {
     clearBackNavigation();
   }, [clearBackNavigation]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => { checkForPoll('after_subscription_upgrade'); }, 5000);
+    return () => clearTimeout(timer);
+  }, [checkForPoll]);
 
   const handleClose = () => {
     resetPaymentFlow();

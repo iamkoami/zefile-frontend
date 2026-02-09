@@ -19,6 +19,7 @@ import { multipartUploadService } from "@/services/multipart-upload.service";
 import { useUploadStore } from "@/stores/upload-store";
 import { useCurrentCurrency } from "@/stores/currency-store";
 import { TransferOptions } from "@/features/transfer/components/TransferOptionsPanel";
+import { usePollEligibility } from "@/hooks/usePollEligibility";
 
 // Interface for files from an existing transfer (reuse flow)
 export interface ReuseFile {
@@ -82,6 +83,9 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
 
   // Get global currency for initial value (one-way: global → local)
   const { currency: globalCurrency } = useCurrentCurrency();
+
+  // Poll eligibility - fire after_transfer trigger on completion
+  const { checkForPoll } = usePollEligibility();
 
   const [isDragging, setIsDragging] = useState(false);
   const [recipientEmails, setRecipientEmails] = useState<string[]>([]); // Changed from sendTo
@@ -426,6 +430,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
         });
 
         setPanelState("complete");
+        checkForPoll('after_transfer', 3000);
       } else {
         setFormErrors({ email: response.data?.message || "Failed to create transfer" });
       }
@@ -678,6 +683,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
       setGlobalComplete();
 
       setPanelState("complete");
+      checkForPoll('after_transfer', 3000);
     } catch (error) {
       resetGlobalUpload();
       setPanelState("form");

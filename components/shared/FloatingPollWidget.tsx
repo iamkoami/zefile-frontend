@@ -1,35 +1,29 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { Check, Clock, NavArrowDown, Xmark, NavArrowUp } from "iconoir-react";
-import { pollApi, UserPoll, PollTriggerType, SnoozeDuration } from "@/services/poll-api";
+import { pollApi, SnoozeDuration } from "@/services/poll-api";
+import { apiClient } from "@/services/api-client";
 import { usePollStore } from "@/stores/poll-store";
-import { authApi } from "@/services/auth-api";
-
-interface FloatingPollWidgetProps {
-  trigger?: PollTriggerType;
-}
 
 /**
  * FloatingPollWidget - Non-intrusive poll widget for frontend
  * Appears in bottom-right corner without blocking user actions
  * Can be minimized, dismissed, or snoozed
+ *
+ * This widget is purely reactive — it renders from poll store state.
+ * Poll fetching is handled by usePollEligibility hook in parent pages.
  */
-const FloatingPollWidget: React.FC<FloatingPollWidgetProps> = ({
-  trigger = "manual",
-}) => {
+const FloatingPollWidget: React.FC = () => {
   const t = useTranslations("poll");
   const {
     currentPoll,
-    setCurrentPoll,
+    isWidgetVisible,
     clearCurrentPoll,
     markAsResponded,
     markAsDismissed,
     markAsSnoozed,
-    hasResponded,
-    isDismissed,
-    isSnoozed,
   } = usePollStore();
 
   const [isExpanded, setIsExpanded] = useState(true);
@@ -38,42 +32,6 @@ const FloatingPollWidget: React.FC<FloatingPollWidgetProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showThankYou, setShowThankYou] = useState(false);
   const [showSnoozeMenu, setShowSnoozeMenu] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Fetch eligible poll on mount
-  useEffect(() => {
-    const fetchPoll = async () => {
-      // Only fetch if user is authenticated
-      const user = authApi.getStoredUser();
-      if (!user) {
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const response = await pollApi.getEligiblePoll(trigger);
-        if (response.data) {
-          const poll = response.data;
-          // Check if already responded, dismissed, or snoozed
-          if (
-            !hasResponded(poll.id) &&
-            !isDismissed(poll.id) &&
-            !isSnoozed(poll.id)
-          ) {
-            setCurrentPoll(poll);
-          }
-        }
-      } catch (error) {
-        console.error("Failed to fetch eligible poll:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    // Small delay to let page render first
-    const timer = setTimeout(fetchPoll, 2000);
-    return () => clearTimeout(timer);
-  }, [trigger, setCurrentPoll, hasResponded, isDismissed, isSnoozed]);
 
   const handleOptionToggle = useCallback(
     (optionId: string) => {
@@ -95,23 +53,39 @@ const FloatingPollWidget: React.FC<FloatingPollWidgetProps> = ({
   const handleSubmit = async () => {
     if (!currentPoll || selectedOptions.length === 0) return;
 
+    const pollId = currentPoll.id;
     setIsSubmitting(true);
     try {
+      // Ensure CSRF token is fresh (it's in-memory only, lost on page refresh)
+      await apiClient.initCsrfToken();
+
       const response = await pollApi.submitResponse(
-        currentPoll.id,
+        pollId,
         selectedOptions,
         otherText.trim() || undefined
       );
 
+      if (response.error) {
+        // 409 = already responded, treat as success
+        if (response.status === 409) {
+          markAsResponded(pollId);
+        } else {
+          // Auth/CSRF/other failure — dismiss stale poll
+          clearCurrentPoll();
+        }
+        return;
+      }
+
       if (response.data?.success) {
-        markAsResponded(currentPoll.id);
+        markAsResponded(pollId);
         setShowThankYou(true);
         setTimeout(() => {
           clearCurrentPoll();
         }, 2500);
       }
-    } catch (error) {
-      console.error("Failed to submit poll response:", error);
+    } catch {
+      // Network error — dismiss to avoid stuck widget
+      clearCurrentPoll();
     } finally {
       setIsSubmitting(false);
     }
@@ -120,25 +94,31 @@ const FloatingPollWidget: React.FC<FloatingPollWidgetProps> = ({
   const handleDismiss = async () => {
     if (!currentPoll) return;
 
+    const pollId = currentPoll.id;
+    // Optimistic: dismiss locally first
+    markAsDismissed(pollId);
+    clearCurrentPoll();
+    // Best effort server notification
     try {
-      await pollApi.dismissPoll(currentPoll.id);
-      markAsDismissed(currentPoll.id);
-      clearCurrentPoll();
-    } catch (error) {
-      console.error("Failed to dismiss poll:", error);
+      await pollApi.dismissPoll(pollId);
+    } catch {
+      // Already dismissed locally
     }
   };
 
   const handleSnooze = async (duration: SnoozeDuration) => {
     if (!currentPoll) return;
 
+    const pollId = currentPoll.id;
+    // Optimistic: snooze locally first
+    markAsSnoozed(pollId, duration);
+    clearCurrentPoll();
+    setShowSnoozeMenu(false);
+    // Best effort server notification
     try {
-      await pollApi.snoozePoll(currentPoll.id, duration);
-      markAsSnoozed(currentPoll.id, duration);
-      clearCurrentPoll();
-      setShowSnoozeMenu(false);
-    } catch (error) {
-      console.error("Failed to snooze poll:", error);
+      await pollApi.snoozePoll(pollId, duration);
+    } catch {
+      // Already snoozed locally
     }
   };
 
@@ -155,8 +135,8 @@ const FloatingPollWidget: React.FC<FloatingPollWidgetProps> = ({
     }
   };
 
-  // Don't show if loading or no poll
-  if (isLoading || !currentPoll) {
+  // Don't show if widget hidden or no poll
+  if (!isWidgetVisible || !currentPoll) {
     return null;
   }
 

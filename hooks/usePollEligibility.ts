@@ -1,24 +1,11 @@
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { pollApi, UserPoll, PollTriggerType } from "@/services/poll-api";
 import { usePollStore } from "@/stores/poll-store";
 import { authApi } from "@/services/auth-api";
 
-interface UsePollEligibilityOptions {
-  /** Whether to auto-check on mount (default: false) */
-  autoCheck?: boolean;
-  /** Delay before showing poll in ms (default: 0) */
-  delay?: number;
-}
-
 interface UsePollEligibilityReturn {
-  /** The current eligible poll, if any */
-  poll: UserPoll | null;
-  /** Whether a poll check is in progress */
-  isLoading: boolean;
-  /** Error message if check failed */
-  error: string | null;
-  /** Manually trigger a poll check for a specific trigger type */
-  checkForPoll: (trigger: PollTriggerType) => Promise<UserPoll | null>;
+  /** Manually trigger a poll check for a specific trigger type, with optional delay in ms */
+  checkForPoll: (trigger: PollTriggerType, delay?: number) => Promise<UserPoll | null>;
   /** Clear the current poll */
   clearPoll: () => void;
 }
@@ -35,19 +22,13 @@ interface UsePollEligibilityReturn {
  * ```tsx
  * const { checkForPoll, poll } = usePollEligibility();
  *
- * // After transfer completes
+ * // After transfer completes (3s delay to show success screen first)
  * const handleTransferComplete = async () => {
- *   await checkForPoll('after_transfer');
+ *   await checkForPoll('after_transfer', 3000);
  * };
  * ```
  */
-export function usePollEligibility(
-  _options: UsePollEligibilityOptions = {}
-): UsePollEligibilityReturn {
-  const [poll, setPoll] = useState<UserPoll | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
+export function usePollEligibility(): UsePollEligibilityReturn {
   const {
     setCurrentPoll,
     clearCurrentPoll,
@@ -57,21 +38,27 @@ export function usePollEligibility(
   } = usePollStore();
 
   const checkForPoll = useCallback(
-    async (trigger: PollTriggerType): Promise<UserPoll | null> => {
+    async (trigger: PollTriggerType, delay?: number): Promise<UserPoll | null> => {
+      // Race condition guard: skip if a poll is already visible
+      if (usePollStore.getState().currentPoll) return null;
+
       // Only check if user is authenticated
       const user = authApi.getStoredUser();
       if (!user) {
         return null;
       }
 
-      setIsLoading(true);
-      setError(null);
+      // Optional delay before fetching (e.g., let user see success screen first)
+      if (delay) {
+        await new Promise(resolve => setTimeout(resolve, delay));
+        // Re-check after delay — another trigger may have set a poll
+        if (usePollStore.getState().currentPoll) return null;
+      }
 
       try {
         const response = await pollApi.getEligiblePoll(trigger);
 
         if (response.error) {
-          setError(response.error.message || 'Failed to fetch poll');
           return null;
         }
 
@@ -87,32 +74,23 @@ export function usePollEligibility(
             return null;
           }
 
-          setPoll(eligiblePoll);
           setCurrentPoll(eligiblePoll);
           return eligiblePoll;
         }
 
         return null;
-      } catch (err) {
-        const message = err instanceof Error ? err.message : "Failed to check poll eligibility";
-        setError(message);
+      } catch {
         return null;
-      } finally {
-        setIsLoading(false);
       }
     },
     [setCurrentPoll, hasResponded, isDismissed, isSnoozed]
   );
 
   const clearPoll = useCallback(() => {
-    setPoll(null);
     clearCurrentPoll();
   }, [clearCurrentPoll]);
 
   return {
-    poll,
-    isLoading,
-    error,
     checkForPoll,
     clearPoll,
   };

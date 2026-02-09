@@ -18,6 +18,7 @@ import GlobalDragDropOverlay from "@/features/home/components/GlobalDragDropOver
 import LoadingFullscreen from "@/components/LoadingFullscreen";
 import NPSSurveyModal from "@/components/shared/NPSSurveyModal";
 import FloatingPollWidget from "@/components/shared/FloatingPollWidget";
+import { usePollEligibility } from "@/hooks/usePollEligibility";
 import { platformApi } from "@/services/platform-api";
 import surveysApi from "@/services/surveys-api";
 import { authApi } from "@/services/auth-api";
@@ -43,6 +44,13 @@ export default function Home() {
   const [reuseTransferData, setReuseTransferData] =
     useState<ReuseTransferData | null>(null);
   const [showNpsSurvey, setShowNpsSurvey] = useState(false);
+
+  // Poll eligibility check — replaces FloatingPollWidget's former self-fetch
+  const { checkForPoll } = usePollEligibility();
+  useEffect(() => {
+    const timer = setTimeout(() => { checkForPoll('manual'); }, 2000);
+    return () => clearTimeout(timer);
+  }, [checkForPoll]);
 
   // User tier state (defaults to 'free' for unauthenticated users)
   const [userTier, setUserTier] = useState<SubscriptionTier>('free');
@@ -226,7 +234,7 @@ export default function Home() {
         )}
 
         {/* Floating Poll Widget - non-intrusive, bottom-right corner */}
-        <FloatingPollWidget trigger="manual" />
+        <FloatingPollWidget />
 
         {/* Global Drag and Drop Overlay */}
         <GlobalDragDropOverlay onFilesDropped={handleAddMoreFiles} />

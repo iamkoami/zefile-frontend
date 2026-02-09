@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
@@ -19,6 +19,7 @@ import { useTranslations as useUploadTranslations } from "next-intl";
 import ConfirmationModal from "@/components/shared/ConfirmationModal";
 import { subscriptionApi, SubscriptionTier } from "@/services/subscription-api";
 import { toast } from "@/components/shared/Toast";
+import { usePollEligibility } from "@/hooks/usePollEligibility";
 
 const Header = () => {
   const t = useTranslations("header");
@@ -46,6 +47,19 @@ const Header = () => {
 
   // Track whether initial auth check has completed (prevents flash of unauthenticated UI)
   const [isAuthChecked, setIsAuthChecked] = useState(false);
+
+  // Poll eligibility - fire on_login when auth transitions from false → true
+  const { checkForPoll } = usePollEligibility();
+  const prevAuthRef = useRef<boolean | null>(null);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout | undefined;
+    if (prevAuthRef.current === false && isAuthenticated === true) {
+      timer = setTimeout(() => { checkForPoll('on_login'); }, 3000);
+    }
+    prevAuthRef.current = isAuthenticated;
+    return () => { if (timer) clearTimeout(timer); };
+  }, [isAuthenticated, checkForPoll]);
 
   // Fetch subscription tier
   const fetchSubscription = async () => {
