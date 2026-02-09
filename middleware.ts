@@ -98,6 +98,19 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(url, 302);
   }
 
+  // Handle /downloads/{code} pattern — redirect to /downloads?code={code}
+  const downloadsMatch = pathname.match(/^\/downloads\/([a-zA-Z0-9-]+)$/);
+
+  if (downloadsMatch) {
+    const shortCode = downloadsMatch[1];
+
+    const url = request.nextUrl.clone();
+    url.pathname = '/downloads';
+    url.searchParams.set('code', shortCode);
+
+    return NextResponse.redirect(url, 302);
+  }
+
   // Generate per-request nonce for CSP
   const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
   const cspHeader = buildCspHeader(nonce);
