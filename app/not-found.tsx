@@ -1,4 +1,5 @@
 export const runtime = "edge";
+/* eslint-disable @next/next/no-html-link-for-pages */
 
 /**
  * Custom 404 Not Found Page
