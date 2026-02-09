@@ -146,10 +146,14 @@ export const SUPPORTED_EXTENSIONS = {
 };
 
 /**
- * Get accept attribute value for file input
+ * Get accept attribute value for file input.
+ * Includes both MIME types and file extensions so browsers
+ * can match files whose MIME type they don't recognise (e.g. .mkv).
  */
 export const getFileInputAccept = (): string => {
-  return getAllSupportedMimeTypes().join(',');
+  const mimeTypes = getAllSupportedMimeTypes();
+  const extensions = Object.keys(SUPPORTED_EXTENSIONS).map((ext) => `.${ext}`);
+  return [...mimeTypes, ...extensions].join(',');
 };
 
 /**

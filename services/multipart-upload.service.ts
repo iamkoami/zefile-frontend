@@ -12,6 +12,29 @@
 
 import { apiClient } from './api-client';
 
+/**
+ * Fallback MIME type map for extensions the browser doesn't recognize.
+ * The browser's File.type returns "" for these, causing backend validation to fail.
+ */
+const MIME_FALLBACK: Record<string, string> = {
+  mkv: 'video/x-matroska',
+  flv: 'video/x-flv',
+  avi: 'video/x-msvideo',
+  wmv: 'video/x-ms-wmv',
+  flac: 'audio/flac',
+  m4a: 'audio/x-m4a',
+  '7z': 'application/x-7z-compressed',
+  tar: 'application/x-tar',
+  gz: 'application/gzip',
+  rar: 'application/x-rar-compressed',
+};
+
+function getFileMimeType(file: File): string {
+  if (file.type) return file.type;
+  const ext = file.name.split('.').pop()?.toLowerCase() || '';
+  return MIME_FALLBACK[ext] || 'application/octet-stream';
+}
+
 export interface MultipartUploadConfig {
   uploadId: string;
   objectKey: string;
@@ -460,7 +483,7 @@ class MultipartUploadService {
       const config = await this.initiateUpload(
         file.name,
         file.size,
-        file.type,
+        getFileMimeType(file),
         transferShortCode,
         uploadedBy,
         transferId,
@@ -485,7 +508,7 @@ class MultipartUploadService {
         objectKey,
         fileName: file.name,
         fileSize: file.size,
-        mimeType: file.type,
+        mimeType: getFileMimeType(file),
         transferShortCode,
         uploadedBy,
         transferId,
@@ -594,7 +617,7 @@ class MultipartUploadService {
           objectKey,
           fileName: file.name,
           fileSize: file.size,
-          mimeType: file.type,
+          mimeType: getFileMimeType(file),
           transferShortCode,
           uploadedBy,
           transferId,
@@ -629,7 +652,7 @@ class MultipartUploadService {
         completedParts,
         file.name,
         file.size,
-        file.type,
+        getFileMimeType(file),
         transferShortCode,
         uploadedBy,
         transferId,

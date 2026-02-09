@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useRef, useEffect, KeyboardEvent } from 'react';
-import { Xmark } from 'iconoir-react';
+import React, { useState, useRef, useEffect, useCallback, KeyboardEvent } from 'react';
+import { Xmark, Plus } from 'iconoir-react';
 import { useTranslations } from 'next-intl';
 import { contactsApi, Contact } from '@/services/contacts-api';
 import { authApi } from '@/services/auth-api';
@@ -27,9 +27,16 @@ const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
   const [suggestions, setSuggestions] = useState<Contact[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
+  const [isInputOpen, setIsInputOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Refs to always have latest values (avoids stale closures in blur handler)
+  const emailsRef = useRef(emails);
+  emailsRef.current = emails;
+  const inputValueRef = useRef(inputValue);
+  inputValueRef.current = inputValue;
 
   // Fetch suggestions when input changes
   useEffect(() => {
@@ -44,7 +51,6 @@ const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
       try {
         const response = await contactsApi.searchContacts(user.id, inputValue.trim(), 5);
         if (response.data && response.data.length > 0) {
-          // Filter out emails that are already added
           const filteredSuggestions = response.data.filter(
             (contact) => !emails.includes(contact.email.toLowerCase())
           );
@@ -62,7 +68,6 @@ const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
       }
     };
 
-    // Debounce the API call
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
     }
@@ -97,6 +102,39 @@ const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
     return emailRegex.test(email);
   };
 
+  // Core add logic — reads from refs so it always uses latest state
+  const doAddEmail = useCallback((emailToAdd: string) => {
+    const trimmed = emailToAdd.trim().toLowerCase();
+    if (!trimmed) return false;
+
+    if (!validateEmail(trimmed)) {
+      setInputError(t('invalidEmailFormat'));
+      setTimeout(() => setInputError(''), 3000);
+      return false;
+    }
+
+    const currentEmails = emailsRef.current;
+
+    if (currentEmails.includes(trimmed)) {
+      setInputValue('');
+      setShowSuggestions(false);
+      return false;
+    }
+
+    if (currentEmails.length >= maxEmails) {
+      setInputError(t('maxRecipientsReached', { max: maxEmails }));
+      setTimeout(() => setInputError(''), 3000);
+      return false;
+    }
+
+    onEmailsChange([...currentEmails, trimmed]);
+    setInputValue('');
+    setShowSuggestions(false);
+    setInputError('');
+    setIsInputOpen(false);
+    return true;
+  }, [maxEmails, onEmailsChange, t]);
+
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     // Handle suggestion navigation
     if (showSuggestions && suggestions.length > 0) {
@@ -124,11 +162,15 @@ const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
       }
     }
 
+    if (e.key === 'Escape' && inputValue === '' && emails.length > 0) {
+      setIsInputOpen(false);
+      return;
+    }
+
     if (e.key === 'Enter' || e.key === ',' || e.key === ' ') {
       e.preventDefault();
-      addEmail();
+      doAddEmail(inputValue);
     } else if (e.key === 'Backspace' && inputValue === '' && emails.length > 0) {
-      // Remove last email on backspace when input is empty
       const newEmails = emails.slice(0, -1);
       onEmailsChange(newEmails);
     }
@@ -137,7 +179,6 @@ const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
   const selectSuggestion = (contact: Contact) => {
     const email = contact.email.toLowerCase();
 
-    // Check for duplicates
     if (emails.includes(email)) {
       setInputValue('');
       setShowSuggestions(false);
@@ -145,77 +186,36 @@ const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
       return;
     }
 
-    // Check max limit
     if (emails.length >= maxEmails) {
       setInputError(t('maxRecipientsReached', { max: maxEmails }));
       setTimeout(() => setInputError(''), 3000);
       return;
     }
 
-    // Add email
     onEmailsChange([...emails, email]);
     setInputValue('');
     setShowSuggestions(false);
     setSelectedSuggestionIndex(-1);
     setInputError('');
-
-    // Keep focus on input
-    setTimeout(() => inputRef.current?.focus(), 0);
-  };
-
-  const addEmail = () => {
-    const trimmedEmail = inputValue.trim().toLowerCase();
-
-    if (!trimmedEmail) {
-      return;
-    }
-
-    // Validate email format
-    if (!validateEmail(trimmedEmail)) {
-      setInputError(t('invalidEmailFormat'));
-      setTimeout(() => setInputError(''), 3000);
-      return;
-    }
-
-    // Check for duplicates (silent - no error message)
-    if (emails.includes(trimmedEmail)) {
-      setInputValue('');
-      setShowSuggestions(false);
-      // Keep focus on input
-      setTimeout(() => inputRef.current?.focus(), 0);
-      return;
-    }
-
-    // Check max limit
-    if (emails.length >= maxEmails) {
-      setInputError(t('maxRecipientsReached', { max: maxEmails }));
-      setTimeout(() => setInputError(''), 3000);
-      return;
-    }
-
-    // Add email
-    onEmailsChange([...emails, trimmedEmail]);
-    setInputValue('');
-    setShowSuggestions(false);
-    setInputError('');
-
-    // Keep focus on input after adding email
-    setTimeout(() => inputRef.current?.focus(), 0);
+    setIsInputOpen(false);
   };
 
   const removeEmail = (emailToRemove: string) => {
     const newEmails = emails.filter(email => email !== emailToRemove);
     onEmailsChange(newEmails);
-
-    // Keep focus on input after removing email
-    setTimeout(() => inputRef.current?.focus(), 0);
   };
 
   const handleBlur = () => {
-    // Delay blur handling to allow click on suggestion
+    // Delay to allow click on suggestion to fire first
     setTimeout(() => {
-      if (inputValue.trim() && !showSuggestions) {
-        addEmail();
+      // Read LATEST values from refs — not stale closure values
+      const currentInput = inputValueRef.current;
+      const currentEmails = emailsRef.current;
+
+      if (currentInput.trim() && !showSuggestions) {
+        doAddEmail(currentInput);
+      } else if (!currentInput.trim() && currentEmails.length > 0) {
+        setIsInputOpen(false);
       }
     }, 200);
   };
@@ -224,46 +224,75 @@ const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
     setInputValue(e.target.value);
   };
 
+  const openInput = () => {
+    setIsInputOpen(true);
+    setTimeout(() => inputRef.current?.focus(), 0);
+  };
+
+  const inputVisible = emails.length === 0 || isInputOpen;
+  const atMax = emails.length >= maxEmails;
+
   return (
     <div className="w-full relative">
-      {/* Email chips - Scrollable area above input */}
+      {/* Email chips + fixed-right add button */}
       {emails.length > 0 && (
-        <div
-          className="flex flex-wrap gap-2 mb-2 overflow-y-auto"
-          style={{
-            maxHeight: emails.length > 2 ? '80px' : 'auto',
-            padding: emails.length > 2 ? '4px 0' : '0'
-          }}
-        >
-          {emails.map((email, index) => (
-            <div
-              key={index}
-              className="flex items-center gap-1 bg-[#87E64B] text-black px-2 py-1 rounded text-sm"
-            >
-              <span>{email}</span>
-              <button
-                type="button"
-                onClick={() => removeEmail(email)}
-                className="hover:bg-[#75D43A] rounded p-0.5 transition-colors"
+        <div className="relative mb-2">
+          <div
+            className="flex flex-wrap gap-2 overflow-y-auto pr-10"
+            style={{
+              maxHeight: emails.length > 2 ? '80px' : 'auto',
+              padding: emails.length > 2 ? '4px 0' : '0'
+            }}
+          >
+            {emails.map((email, index) => (
+              <div
+                key={index}
+                className="flex items-center gap-1 bg-[#F9F9FA] text-[#171717] px-2 py-1 rounded text-xs"
               >
-                <Xmark width={14} height={14} strokeWidth={2} />
-              </button>
-            </div>
-          ))}
+                <span>{email}</span>
+                <button
+                  type="button"
+                  onClick={() => removeEmail(email)}
+                  className="hover:bg-gray-200 rounded p-0.5 transition-colors"
+                >
+                  <Xmark width={12} height={12} strokeWidth={2} />
+                </button>
+              </div>
+            ))}
+          </div>
+          {!isInputOpen && !atMax && (
+            <button
+              type="button"
+              onClick={openInput}
+              className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center w-7 h-7 rounded-full bg-[#87E64B] hover:bg-[#75D43A] transition-colors"
+            >
+              <Plus width={16} height={16} strokeWidth={2} />
+            </button>
+          )}
         </div>
       )}
 
-      {/* Input field with autocomplete - Always visible at bottom */}
+      {/* Input field — always in DOM, hidden via display:none when collapsed */}
       <div className="relative">
-        <div
-          className={`ze-form-input flex items-center min-h-[50px] ${
-            error || inputError ? 'border-red-500' : ''
-          }`}
-          style={{
-            padding: '8px 12px'
-          }}
-        >
-          {emails.length < maxEmails && (
+        {atMax ? (
+          <div
+            className={`ze-form-input flex items-center min-h-[50px] ${
+              error || inputError ? 'border-red-500' : ''
+            }`}
+            style={{ padding: '8px 12px' }}
+          >
+            <span className="text-sm text-gray-500">{t('maxRecipientsReached', { max: maxEmails })}</span>
+          </div>
+        ) : (
+          <div
+            className={`ze-form-input flex items-center min-h-[50px] ${
+              error || inputError ? 'border-red-500' : ''
+            }`}
+            style={{
+              padding: '8px 12px',
+              display: inputVisible ? '' : 'none',
+            }}
+          >
             <input
               ref={inputRef}
               type="text"
@@ -281,11 +310,8 @@ const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
               style={{ border: 'none', height: 'auto', padding: '0' }}
               autoComplete="off"
             />
-          )}
-          {emails.length >= maxEmails && (
-            <span className="text-sm text-gray-500">{t('maxRecipientsReached', { max: maxEmails })}</span>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Autocomplete suggestions dropdown */}
         {showSuggestions && suggestions.length > 0 && (
