@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useState, useMemo, useEffect } from "react";
+import React, { useCallback, useState, useMemo, useEffect, useRef } from "react";
 import {
   PageEdit,
   MediaImage,
@@ -59,13 +59,67 @@ type FilePreviewType =
   | "archive"
   | "other";
 
+/** Shimmer thumbnail cell — shows animated gradient sweep while image loads, fades in on success */
+const ThumbnailCell = ({
+  url,
+  icon,
+  alt,
+  generating,
+}: {
+  url: string | null;
+  icon: React.ReactNode;
+  alt: string;
+  /** Show shimmer even when url is null (preview is being generated) */
+  generating?: boolean;
+}) => {
+  const [imgStatus, setImgStatus] = useState<"loading" | "loaded" | "error">(
+    url ? "loading" : "error",
+  );
+
+  // Reset when URL changes (e.g., auto-refresh provides thumbnail)
+  useEffect(() => {
+    setImgStatus(url ? "loading" : "error");
+  }, [url]);
+
+  // Shimmer when: image is loading OR preview is being generated (no url yet)
+  const showShimmer = imgStatus === "loading" || (generating && !url);
+
+  return (
+    <>
+      {/* Shimmer / icon placeholder — visible while loading or when no URL */}
+      {imgStatus !== "loaded" && (
+        <div
+          className={`absolute inset-0 flex items-center justify-center ${
+            showShimmer ? "animate-shimmer" : "bg-gray-200"
+          }`}
+        >
+          {icon}
+        </div>
+      )}
+      {/* Actual image — hidden until loaded */}
+      {url && (
+        <img
+          src={url}
+          alt={alt}
+          className={`w-full h-full object-cover transition-opacity duration-300 ${
+            imgStatus === "loaded" ? "opacity-100" : "opacity-0"
+          }`}
+          loading="lazy"
+          onLoad={() => setImgStatus("loaded")}
+          onError={() => setImgStatus("error")}
+        />
+      )}
+    </>
+  );
+};
+
 /**
  * TransferPreviewPanel - Shows file preview gallery for a transfer
  * Displays thumbnails for images/videos, icons for other file types
  * Supports 90vw width with full-screen preview lightbox
  */
 const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
-  transfer,
+  transfer: transferProp,
   role,
   password: verifiedPassword,
 }) => {
@@ -84,6 +138,22 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
   const [fetchedPreviews, setFetchedPreviews] = useState<
     Record<string, { url: string; isWatermarked: boolean }>
   >({});
+
+  // Live transfer state — starts with prop, auto-refreshes when previews aren't ready
+  const [liveTransfer, setLiveTransfer] = useState<TransferDto>(transferProp);
+  const refreshAttempts = useRef(0);
+  // Track which file IDs have been fetched for previews (prevents infinite loop)
+  const fetchedFileIdsRef = useRef<Set<string>>(new Set());
+
+  // Sync with prop changes
+  useEffect(() => {
+    setLiveTransfer(transferProp);
+    refreshAttempts.current = 0;
+    fetchedFileIdsRef.current.clear();
+  }, [transferProp]);
+
+  // Use liveTransfer for all rendering (falls back to prop)
+  const transfer = liveTransfer || transferProp;
 
   // Version selection state
   const [versions, setVersions] = useState<TransferVersionDto[]>([]);
@@ -137,14 +207,46 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
   }, [role, requiresPayment, transfer?.isPaid, isPublicTransfer]);
 
 
-  // Compute if user can view original files (payment-based, NOT role-based)
-  // Both sender and receiver see the same view - watermarked until paid
+  // Compute if user can view original files
+  // For paid transfers, both sender and receiver see watermarked previews
+  // For free transfers, everyone sees originals
   const canViewOriginal = useMemo(() => {
-    // Free transfer - both see original
+    // Free transfer - everyone sees original
     if (!requiresPayment) return true;
-    // Paid transfer - both see original only after payment
+    // Paid transfer - see original only after payment
     return transfer?.isPaid === true;
   }, [requiresPayment, transfer?.isPaid]);
+
+  // Auto-refresh transfer data when files have no thumbnails (preview generation still in progress)
+  // This handles the case where the user opens preview immediately after upload
+  useEffect(() => {
+    if (!transfer?.id || !transfer?.files?.length) return;
+    if (refreshAttempts.current >= 3) return;
+
+    // Check if any previewable files are missing thumbnails
+    const hasPreviewableFiles = transfer.files.some((f) => {
+      const mime = (f.mimeType || f.fileType || "").toLowerCase();
+      return mime.startsWith("image/") || mime.startsWith("video/");
+    });
+    const allMissingThumbnails = hasPreviewableFiles && transfer.files.every((f) => !f.thumbnailUrl);
+
+    if (!allMissingThumbnails) return;
+
+    const timer = setTimeout(async () => {
+      try {
+        const response = await transferApi.getTransferById(transfer.id);
+        if (response.data) {
+          refreshAttempts.current += 1;
+          fetchedFileIdsRef.current.clear(); // Allow re-fetch with updated file data
+          setLiveTransfer(response.data);
+        }
+      } catch {
+        // Silently fail — placeholders shown while waiting for preview generation
+      }
+    }, 5000); // 5s delay to allow preview generation
+
+    return () => clearTimeout(timer);
+  }, [transfer?.id, transfer?.files]);
 
   // Show loading panel if transfer data is not available
   if (!transfer || !transfer.files || transfer.files.length === 0) {
@@ -286,28 +388,27 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
   }, [currentVersionFiles]);
 
   // Fetch previews for files that need preview URLs
-  // When canViewOriginal is true, fetch original URLs for all previewable files (for thumbnails)
-  // Otherwise, only fetch for files without pre-generated thumbnails
+  // Uses fetchedFileIdsRef to track fetched files (NOT fetchedPreviews state) to avoid infinite loops
   useEffect(() => {
     const fetchMissingPreviews = async () => {
       const filesToFetch = processedFiles.filter((file) => {
         // Only fetch for previewable types (images, videos)
         if (file.fileType !== "image" && file.fileType !== "video") return false;
 
-        const existingFetch = fetchedPreviews[file.id];
+        // Skip files already fetched (ref prevents infinite re-trigger)
+        if (fetchedFileIdsRef.current.has(file.id)) return false;
 
-        // If we can view original, check if we need to re-fetch
-        // Re-fetch if: no existing fetch, OR existing fetch is watermarked but we now want original
-        if (canViewOriginal) {
-          return !existingFetch || existingFetch.isWatermarked;
-        }
+        // When canViewOriginal, fetch for all previewable files (to get original URLs)
+        if (canViewOriginal) return true;
 
         // When not authorized for original, only fetch for files without pre-generated thumbnails
-        // and that we haven't already fetched
-        return !existingFetch && !file.thumbnailUrl;
+        return !file.thumbnailUrl;
       });
 
       if (filesToFetch.length === 0) return;
+
+      // Mark as fetched BEFORE making API calls to prevent concurrent re-fetches
+      filesToFetch.forEach((f) => fetchedFileIdsRef.current.add(f.id));
 
       // Fetch previews in parallel
       const results = await Promise.allSettled(
@@ -357,7 +458,7 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
     };
 
     fetchMissingPreviews();
-  }, [processedFiles, transfer.shortCode, fetchedPreviews, canViewOriginal]);
+  }, [processedFiles, transfer.shortCode, canViewOriginal]);
 
   // Fetch version history when transfer has multiple versions
   useEffect(() => {
@@ -985,19 +1086,13 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
             onClick={() => openFilePreview(index)}
           >
             {/* Preview area */}
-            <div className="aspect-square flex items-center justify-center bg-gray-100 relative">
-              {getThumbnailUrl(file) ? (
-                <img
-                  src={getThumbnailUrl(file) || ""}
-                  alt={file.fileName}
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  {getFileIcon(file.fileType)}
-                </div>
-              )}
+            <div className="aspect-square flex items-center justify-center bg-gray-100 relative overflow-hidden">
+              <ThumbnailCell
+                url={getThumbnailUrl(file)}
+                icon={getFileIcon(file.fileType)}
+                alt={file.fileName}
+                generating={file.fileType === "image" || file.fileType === "video"}
+              />
 
               {/* Video play indicator */}
               {file.fileType === "video" && (

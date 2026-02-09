@@ -435,6 +435,29 @@
   animation: checkmark 0.6s ease-in-out 0.2s forwards;
 }
 
+/* Shimmer loading effect for thumbnail placeholders */
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    #e5e7eb 0%,
+    #f3f4f6 40%,
+    #ffffff 50%,
+    #f3f4f6 60%,
+    #e5e7eb 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
 /* OTP Input Placeholder */
 .ze-form-input::placeholder {
   color: #e1e1e1;

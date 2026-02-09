@@ -115,12 +115,13 @@ const FilePreviewView: React.FC<FilePreviewViewProps> = ({
     return isPaid === true;
   }, [role, requiresPayment, isPaid]);
 
-  // Compute if user can view original files (payment-based, NOT role-based)
-  // Both sender and receiver see the same view - watermarked until paid
+  // Compute if user can view original files
+  // For paid transfers, both sender and receiver see watermarked previews
+  // For free transfers, everyone sees originals
   const canViewOriginal = useMemo(() => {
-    // Free transfer - both see original
+    // Free transfer - everyone sees original
     if (!requiresPayment) return true;
-    // Paid transfer - both see original only after payment
+    // Paid transfer - see original only after payment
     return isPaid === true;
   }, [requiresPayment, isPaid]);
 
