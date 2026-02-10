@@ -2,14 +2,50 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 /**
- * Middleware to handle short link redirects
- *
- * Flow: /z-{code} → /downloads?code=z-{code} → (page fetches transferId) → /downloads/{transferId}/z-{code}?params
+ * Generate a random nonce for CSP using Web Crypto API (edge-compatible).
+ */
+function generateNonce(): string {
+  const array = new Uint8Array(16);
+  crypto.getRandomValues(array);
+  return btoa(String.fromCharCode(...array));
+}
+
+/**
+ * Build Content-Security-Policy header value.
+ * Uses per-request nonce + strict-dynamic for script-src.
+ */
+function buildCsp(nonce: string): string {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+  const posthogHost = process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://app.posthog.com';
+
+  const directives = [
+    `default-src 'self'`,
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
+    `style-src 'self' 'unsafe-inline'`,
+    `img-src 'self' data: blob: ${apiUrl} https://*.wasabisys.com`,
+    `media-src 'self' blob: ${apiUrl} https://*.wasabisys.com`,
+    `connect-src 'self' ${apiUrl} https://*.wasabisys.com ${posthogHost} https://eu.i.posthog.com https://us.i.posthog.com`,
+    `font-src 'self'`,
+    `frame-src https://checkout.paystack.com https://www.google.com`,
+    `worker-src 'self' blob:`,
+    `object-src 'none'`,
+    `base-uri 'self'`,
+    `form-action 'self'`,
+    `frame-ancestors 'none'`,
+  ];
+
+  return directives.join('; ');
+}
+
+/**
+ * Middleware handles:
+ * 1. Short link redirects (/z-{code} → /downloads?code=z-{code})
+ * 2. Content-Security-Policy with per-request nonce
  */
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Handle /z-{shortCode} pattern
+  // Handle /z-{shortCode} pattern — redirect to downloads page
   const shortLinkMatch = pathname.match(/^\/(z-[a-zA-Z0-9]+)$/);
 
   if (shortLinkMatch) {
@@ -30,9 +66,39 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(url, 302);
   }
 
-  return NextResponse.next();
+  // Generate per-request nonce for CSP
+  const nonce = generateNonce();
+  const csp = buildCsp(nonce);
+
+  // Pass nonce to Next.js via request header — Next.js automatically
+  // applies it as a nonce attribute on framework <script> tags.
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-nonce', nonce);
+
+  const response = NextResponse.next({
+    request: { headers: requestHeaders },
+  });
+
+  response.headers.set('Content-Security-Policy', csp);
+
+  return response;
 }
 
+/**
+ * Explicit route matcher for Cloudflare Pages compatibility.
+ * Catch-all regex breaks static 500.html generation on @cloudflare/next-on-pages.
+ * Update this list when adding new page routes.
+ */
 export const config = {
-  matcher: ['/z-:path*'],
+  matcher: [
+    '/',
+    '/about',
+    '/advertisers',
+    '/downloads/:path*',
+    '/help',
+    '/how-it-works',
+    '/payment/:path*',
+    '/pricing',
+    '/z-:path*',
+  ],
 };

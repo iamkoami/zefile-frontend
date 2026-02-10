@@ -8,7 +8,7 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
-  // Security headers (CSP is set dynamically in middleware.ts with per-request nonce)
+  // Security headers (CSP is set dynamically in middleware.ts with per-request nonce — see middleware.ts)
   async headers() {
     return [
       {
