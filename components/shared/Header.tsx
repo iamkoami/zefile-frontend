@@ -56,13 +56,21 @@ const Header = () => {
     let timer: NodeJS.Timeout | undefined;
     // Only track login transitions after initial auth check completes.
     // Without this gate, page refresh fires false→true (initial default→auth check result).
-    if (isAuthChecked && prevAuthRef.current === false && isAuthenticated === true) {
-      timer = setTimeout(() => { checkForPoll('on_login'); }, 3000);
+    if (
+      isAuthChecked &&
+      prevAuthRef.current === false &&
+      isAuthenticated === true
+    ) {
+      timer = setTimeout(() => {
+        checkForPoll("on_login");
+      }, 3000);
     }
     if (isAuthChecked) {
       prevAuthRef.current = isAuthenticated;
     }
-    return () => { if (timer) clearTimeout(timer); };
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
   }, [isAuthenticated, isAuthChecked, checkForPoll]);
 
   // Fetch subscription tier
@@ -223,7 +231,6 @@ const Header = () => {
     { label: t("helpCenter"), href: "/help" },
     { label: t("howItWorks"), href: "/how-it-works" },
     { label: t("pricing"), action: () => handleOpenDrawer("subscriptions") },
-    { label: t("advertisers"), href: "/advertisers" },
     { label: t("about"), href: "/about" },
   ];
 
@@ -241,7 +248,6 @@ const Header = () => {
   const resourcesMenuItems = [
     { label: t("about"), href: "/about" },
     { label: t("howItWorks"), href: "/how-it-works" },
-    { label: t("advertisers"), href: "/advertisers" },
     { label: t("helpCenter"), href: "/help" },
   ];
 
@@ -343,7 +349,8 @@ const Header = () => {
                 isAuthTransitioning ? "opacity-0" : "opacity-100"
               }`}
             >
-              {isAuthChecked && !isAuthenticated &&
+              {isAuthChecked &&
+                !isAuthenticated &&
                 mainMenuItems.map((item) =>
                   item.action ? (
                     <button
