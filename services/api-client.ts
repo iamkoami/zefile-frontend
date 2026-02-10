@@ -163,6 +163,11 @@ export class ApiClient {
   }
 
   private async doRefreshCsrfToken(): Promise<void> {
+    // Skip if user was never logged in — no point fetching CSRF or refreshing tokens
+    if (typeof window !== 'undefined' && !localStorage.getItem('user')) {
+      return;
+    }
+
     try {
       const response = await fetch(`${this.baseURL}/auth/csrf-token`, {
         method: 'GET',
