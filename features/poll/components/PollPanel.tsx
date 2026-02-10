@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { Check, Clock, NavArrowDown } from 'iconoir-react';
 import { pollApi, UserPoll, SnoozeDuration } from '@/services/poll-api';
+import { apiClient } from '@/services/api-client';
 import { usePollStore } from '@/stores/poll-store';
 import { useDrawerStore } from '@/stores/drawer-store';
 import LoadingPanel from '@/components/LoadingPanel';
@@ -17,7 +18,6 @@ const PollPanel: React.FC = () => {
   const { payload, closeDrawer } = useDrawerStore();
   const {
     currentPoll,
-    setCurrentPoll,
     clearCurrentPoll,
     markAsResponded,
     markAsDismissed,
@@ -70,24 +70,41 @@ const PollPanel: React.FC = () => {
   const handleSubmit = async () => {
     if (!poll || selectedOptions.length === 0) return;
 
+    const pollId = poll.id;
     setIsSubmitting(true);
     try {
+      // Ensure CSRF token is fresh (it's in-memory only, lost on page refresh)
+      await apiClient.initCsrfToken();
+
       const response = await pollApi.submitResponse(
-        poll.id,
+        pollId,
         selectedOptions,
         otherText.trim() || undefined
       );
 
+      if (response.error) {
+        // 409 = already responded, treat as success
+        if (response.status === 409) {
+          markAsResponded(pollId);
+        } else {
+          clearCurrentPoll();
+          closeDrawer();
+        }
+        return;
+      }
+
       if (response.data?.success) {
-        markAsResponded(poll.id);
+        markAsResponded(pollId);
         setShowThankYou(true);
         setTimeout(() => {
           clearCurrentPoll();
           closeDrawer();
         }, 2000);
       }
-    } catch (error) {
-      console.error('Failed to submit poll response:', error);
+    } catch {
+      // Network error — close drawer to avoid stuck panel
+      clearCurrentPoll();
+      closeDrawer();
     } finally {
       setIsSubmitting(false);
     }
@@ -96,27 +113,33 @@ const PollPanel: React.FC = () => {
   const handleDismiss = async () => {
     if (!poll) return;
 
+    const pollId = poll.id;
+    // Optimistic: dismiss locally first
+    markAsDismissed(pollId);
+    clearCurrentPoll();
+    closeDrawer();
+    // Best effort server notification
     try {
-      await pollApi.dismissPoll(poll.id);
-      markAsDismissed(poll.id);
-      clearCurrentPoll();
-      closeDrawer();
-    } catch (error) {
-      console.error('Failed to dismiss poll:', error);
+      await pollApi.dismissPoll(pollId);
+    } catch {
+      // Already dismissed locally
     }
   };
 
   const handleSnooze = async (duration: SnoozeDuration) => {
     if (!poll) return;
 
+    const pollId = poll.id;
+    // Optimistic: snooze locally first
+    markAsSnoozed(pollId, duration);
+    clearCurrentPoll();
+    setShowSnoozeMenu(false);
+    closeDrawer();
+    // Best effort server notification
     try {
-      await pollApi.snoozePoll(poll.id, duration);
-      markAsSnoozed(poll.id, duration);
-      clearCurrentPoll();
-      setShowSnoozeMenu(false);
-      closeDrawer();
-    } catch (error) {
-      console.error('Failed to snooze poll:', error);
+      await pollApi.snoozePoll(pollId, duration);
+    } catch {
+      // Already snoozed locally
     }
   };
 

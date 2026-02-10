@@ -54,12 +54,16 @@ const Header = () => {
 
   useEffect(() => {
     let timer: NodeJS.Timeout | undefined;
-    if (prevAuthRef.current === false && isAuthenticated === true) {
+    // Only track login transitions after initial auth check completes.
+    // Without this gate, page refresh fires false→true (initial default→auth check result).
+    if (isAuthChecked && prevAuthRef.current === false && isAuthenticated === true) {
       timer = setTimeout(() => { checkForPoll('on_login'); }, 3000);
     }
-    prevAuthRef.current = isAuthenticated;
+    if (isAuthChecked) {
+      prevAuthRef.current = isAuthenticated;
+    }
     return () => { if (timer) clearTimeout(timer); };
-  }, [isAuthenticated, checkForPoll]);
+  }, [isAuthenticated, isAuthChecked, checkForPoll]);
 
   // Fetch subscription tier
   const fetchSubscription = async () => {
