@@ -53,6 +53,7 @@ export class ApiClient {
   private csrfToken: string | null = null;
   private isRefreshing: boolean = false;
   private refreshPromise: Promise<boolean> | null = null;
+  private csrfRefreshPromise: Promise<void> | null = null;
 
   constructor() {
     this.baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -147,6 +148,21 @@ export class ApiClient {
    * If the access token is expired (401), attempts a full token refresh first.
    */
   private async refreshCsrfToken(): Promise<void> {
+    // Deduplicate concurrent CSRF refresh calls (e.g., multiple components
+    // firing state-changing requests simultaneously on page load)
+    if (this.csrfRefreshPromise) {
+      return this.csrfRefreshPromise;
+    }
+
+    this.csrfRefreshPromise = this.doRefreshCsrfToken();
+    try {
+      await this.csrfRefreshPromise;
+    } finally {
+      this.csrfRefreshPromise = null;
+    }
+  }
+
+  private async doRefreshCsrfToken(): Promise<void> {
     try {
       const response = await fetch(`${this.baseURL}/auth/csrf-token`, {
         method: 'GET',
@@ -207,6 +223,14 @@ export class ApiClient {
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
     const url = `${this.baseURL}${endpoint}`;
+
+    // Proactively fetch CSRF token if missing for state-changing requests.
+    // initCsrfToken() is fire-and-forget on page load, so the token may not
+    // be ready yet if the user acts quickly. Fetching here avoids a guaranteed
+    // 403 → retry round-trip on the first state-changing request.
+    if (this.isStateChangingMethod(method) && !this.csrfToken) {
+      await this.refreshCsrfToken();
+    }
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -352,6 +376,11 @@ export class ApiClient {
    */
   async upload<T = any>(endpoint: string, formData: FormData, onProgress?: (progress: number) => void, isRetry: boolean = false): Promise<ApiResponse<T>> {
     const url = `${this.baseURL}${endpoint}`;
+
+    // Proactively fetch CSRF token if missing (same rationale as request())
+    if (!this.csrfToken) {
+      await this.refreshCsrfToken();
+    }
 
     return new Promise((resolve) => {
       const xhr = new XMLHttpRequest();
