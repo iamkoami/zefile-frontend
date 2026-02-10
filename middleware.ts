@@ -24,7 +24,7 @@ function buildCsp(nonce: string): string {
     `style-src 'self' 'unsafe-inline'`,
     `img-src 'self' data: blob: ${apiUrl} https://*.wasabisys.com`,
     `media-src 'self' blob: ${apiUrl} https://*.wasabisys.com`,
-    `connect-src 'self' ${apiUrl} https://*.wasabisys.com ${posthogHost} https://eu.i.posthog.com https://us.i.posthog.com`,
+    `connect-src 'self' ${apiUrl} https://*.wasabisys.com ${posthogHost} https://eu.i.posthog.com https://us.i.posthog.com https://eu-assets.i.posthog.com https://us-assets.i.posthog.com`,
     `font-src 'self'`,
     `frame-src https://checkout.paystack.com https://www.google.com`,
     `worker-src 'self' blob:`,
