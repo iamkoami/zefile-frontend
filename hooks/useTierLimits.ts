@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { platformApi, PublicTierFeatures } from '@/services/platform-api';
+import { updateTierLimitsCache } from '@/services/subscription-api';
 
 export type SubscriptionTier = 'free' | 'starter' | 'pro';
 
@@ -35,6 +36,7 @@ export interface TierLimits {
   expiryDays: number;
   maxVersions: number;
   platformFeePercent: number;
+  manualPreviewRegen: boolean;
 }
 
 /**
@@ -103,6 +105,7 @@ export function useTierLimits(): UseTierLimitsReturn {
 
       if (response.data?.tiers) {
         setTierData(response.data.tiers);
+        updateTierLimitsCache(response.data.tiers);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load tier limits');
@@ -125,6 +128,7 @@ export function useTierLimits(): UseTierLimitsReturn {
         expiryDays: 7,
         maxVersions: 1,
         platformFeePercent: 15,
+        manualPreviewRegen: false,
       },
       starter: {
         tier: 'starter',
@@ -133,6 +137,7 @@ export function useTierLimits(): UseTierLimitsReturn {
         expiryDays: 30,
         maxVersions: 3,
         platformFeePercent: 10,
+        manualPreviewRegen: true,
       },
       pro: {
         tier: 'pro',
@@ -141,6 +146,7 @@ export function useTierLimits(): UseTierLimitsReturn {
         expiryDays: 90,
         maxVersions: 10,
         platformFeePercent: 5,
+        manualPreviewRegen: true,
       },
     };
 
@@ -158,6 +164,7 @@ export function useTierLimits(): UseTierLimitsReturn {
           expiryDays: data.expiryDays,
           maxVersions: data.maxVersions,
           platformFeePercent: data.platformFeePercent,
+          manualPreviewRegen: data.features?.manualPreviewRegen ?? defaults[tierKey].manualPreviewRegen,
         };
       }
     }

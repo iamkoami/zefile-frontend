@@ -993,6 +993,7 @@
       "passwordProtection": "Protection par mot de passe",
       "fileVersioning": "Versionnement des fichiers",
       "fileVersioning5": "Versionnement (5 versions)",
+      "fileVersioningCount": "Versionnement ({count} versions)",
       "fileVersioningUnlimited": "Versionnement illimité",
       "autoPreviewRegen": "Régénération auto des aperçus",
       "manualPreviewRegen": "Régénération manuelle des aperçus",

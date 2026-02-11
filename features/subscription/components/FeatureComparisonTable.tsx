@@ -2,7 +2,8 @@
 
 import { Check, Xmark } from 'iconoir-react';
 import { useTranslations } from 'next-intl';
-import { TIER_LIMITS, SubscriptionTier } from '@/services/subscription-api';
+import { type SubscriptionTier } from '@/services/subscription-api';
+import { useTierLimits } from '@/hooks/useTierLimits';
 
 interface FeatureComparisonTableProps {
   currentTier?: SubscriptionTier;
@@ -10,6 +11,7 @@ interface FeatureComparisonTableProps {
 
 export function FeatureComparisonTable({ currentTier }: FeatureComparisonTableProps) {
   const t = useTranslations('subscription');
+  const { tierLimits } = useTierLimits();
 
   const tiers: SubscriptionTier[] = ['free', 'starter', 'pro'];
 
@@ -23,28 +25,28 @@ export function FeatureComparisonTable({ currentTier }: FeatureComparisonTablePr
     {
       key: 'storage',
       label: t('featureStorage'),
-      getValue: (tier: SubscriptionTier) => `${TIER_LIMITS[tier].storagePerTransferGB}GB`,
+      getValue: (tier: SubscriptionTier) => `${tierLimits[tier].storagePerTransferGB}GB`,
     },
     {
       key: 'versions',
       label: t('featureVersions'),
       getValue: (tier: SubscriptionTier) =>
-        TIER_LIMITS[tier].maxVersions === -1 ? t('unlimited') : TIER_LIMITS[tier].maxVersions.toString(),
+        tierLimits[tier].maxVersions === -1 ? t('unlimited') : tierLimits[tier].maxVersions.toString(),
     },
     {
       key: 'expiry',
       label: t('featureExpiry'),
-      getValue: (tier: SubscriptionTier) => `${TIER_LIMITS[tier].expiryDays} ${t('days')}`,
+      getValue: (tier: SubscriptionTier) => `${tierLimits[tier].expiryDays} ${t('days')}`,
     },
     {
       key: 'platformFee',
       label: t('featurePlatformFee'),
-      getValue: (tier: SubscriptionTier) => `${TIER_LIMITS[tier].platformFeePercent}%`,
+      getValue: (tier: SubscriptionTier) => `${tierLimits[tier].platformFeePercent}%`,
     },
     {
       key: 'manualRegen',
       label: t('featureManualRegen'),
-      getValue: (tier: SubscriptionTier) => TIER_LIMITS[tier].manualPreviewRegen,
+      getValue: (tier: SubscriptionTier) => tierLimits[tier].manualPreviewRegen,
     },
   ];
 

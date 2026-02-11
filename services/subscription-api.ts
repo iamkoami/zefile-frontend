@@ -200,10 +200,11 @@ export interface TierLimits {
 }
 
 /**
- * Tier limits - MUST match backend subscriptions.service.ts TIER_LIMITS
+ * Hardcoded tier limit defaults — used as fallback when dynamic config is unavailable.
+ * Components should use the `useTierLimits()` hook or `getTierLimits()` instead of
+ * importing this constant directly.
  *
- * Note: Auto preview regeneration runs daily for ALL users via backend cron job.
- * Only manualPreviewRegen is tier-gated (Starter and Pro tiers).
+ * @internal Only used by `getTierLimits()` and `updateTierLimitsCache()` in this file.
  */
 export const TIER_LIMITS: Record<SubscriptionTier, TierLimits> = {
   free: {
@@ -316,10 +317,47 @@ export function getPricingForCountry(countryCode: string): RegionalPricing {
   return REGIONAL_PRICING[countryCode as SupportedCountry] || REGIONAL_PRICING.DEFAULT;
 }
 
+// Module-level cache (populated by useTierLimits hook after API fetch)
+let _dynamicTierLimits: Record<SubscriptionTier, TierLimits> | null = null;
+
+/**
+ * Called by useTierLimits hook after successful API fetch
+ * Populates module-level cache so getTierLimits() returns dynamic values
+ */
+export function updateTierLimitsCache(tiers: Array<{
+  tier: string;
+  storagePerTransferGB: number;
+  transfersPerMonth: number;
+  expiryDays: number;
+  maxVersions: number;
+  platformFeePercent: number;
+  features?: { manualPreviewRegen?: boolean };
+}>): void {
+  const cache = {} as Record<SubscriptionTier, TierLimits>;
+  for (const tier of tiers) {
+    const key = tier.tier.toLowerCase() as SubscriptionTier;
+    if (key in TIER_LIMITS) {
+      cache[key] = {
+        storagePerTransferGB: tier.storagePerTransferGB,
+        transfersPerMonth: tier.transfersPerMonth,
+        expiryDays: tier.expiryDays,
+        maxVersions: tier.maxVersions,
+        platformFeePercent: tier.platformFeePercent,
+        manualPreviewRegen: tier.features?.manualPreviewRegen ?? TIER_LIMITS[key].manualPreviewRegen,
+      };
+    }
+  }
+  _dynamicTierLimits = cache;
+}
+
 /**
  * Get tier limits for a subscription tier
+ * Returns dynamic (admin-configured) values if available, otherwise hardcoded defaults
  */
 export function getTierLimits(tier: SubscriptionTier): TierLimits {
+  if (_dynamicTierLimits && _dynamicTierLimits[tier]) {
+    return _dynamicTierLimits[tier];
+  }
   return TIER_LIMITS[tier];
 }
 

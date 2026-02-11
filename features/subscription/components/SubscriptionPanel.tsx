@@ -9,11 +9,11 @@ import { authApi } from "@/services/auth-api";
 import {
   type SubscriptionTier,
   type BillingPeriod,
-  TIER_LIMITS,
   formatSubscriptionPrice,
   getTierPriceMinorUnits,
   subscriptionApi,
 } from "@/services/subscription-api";
+import { useTierLimits } from "@/hooks/useTierLimits";
 import {
   useCurrencyStore,
   COUNTRY_CONFIG,
@@ -52,6 +52,9 @@ const SubscriptionPanel: React.FC = () => {
   const [isLoadingSubscription, setIsLoadingSubscription] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isTrialEligible, setIsTrialEligible] = useState(false);
+
+  // Dynamic tier limits from API
+  const { tierLimits, isLoading: isTierLoading } = useTierLimits();
 
   // Global currency/country selection from store
   const { countryCode, pricing, setCountryCode, hydrate } = useCurrencyStore();
@@ -111,26 +114,33 @@ const SubscriptionPanel: React.FC = () => {
     initializePanel();
   }, []);
 
-  // Build tier configurations from centralized TIER_LIMITS
+  // Build tier configurations from dynamic tier limits
   const tiers: TierConfig[] = [
     {
       id: "free",
       name: t("tiers.free.name"),
       description: t("tiers.free.description"),
       icon: <Flash className="w-6 h-6" />,
-      platformFee: `${TIER_LIMITS.free.platformFeePercent}%`,
-      storagePerTransfer: `${TIER_LIMITS.free.storagePerTransferGB} GB`,
-      transfersPerMonth: String(TIER_LIMITS.free.transfersPerMonth),
-      expiry: t("tiers.free.expiry"),
+      platformFee: `${tierLimits.free.platformFeePercent}%`,
+      storagePerTransfer: `${tierLimits.free.storagePerTransferGB} GB`,
+      transfersPerMonth: String(tierLimits.free.transfersPerMonth),
+      expiry: `${tierLimits.free.expiryDays} ${t("days")}`,
       features: [
         { text: t("features.basicUploads"), included: true },
         { text: t("features.watermarkedPreviews"), included: true },
         { text: t("features.emailNotifications"), included: true },
         { text: t("features.passwordProtection"), included: true },
-        { text: t("features.fileVersioning"), included: false },
+        {
+          text: tierLimits.free.maxVersions === -1
+            ? t("features.fileVersioningUnlimited")
+            : tierLimits.free.maxVersions > 1
+              ? t("features.fileVersioningCount", { count: tierLimits.free.maxVersions })
+              : t("features.fileVersioning"),
+          included: tierLimits.free.maxVersions > 1,
+        },
         {
           text: t("features.manualPreviewRegen"),
-          included: TIER_LIMITS.free.manualPreviewRegen,
+          included: tierLimits.free.manualPreviewRegen,
         },
         { text: t("features.prioritySupport"), included: false },
       ],
@@ -140,20 +150,25 @@ const SubscriptionPanel: React.FC = () => {
       name: t("tiers.starter.name"),
       description: t("tiers.starter.description"),
       icon: <Sparks className="w-6 h-6" />,
-      platformFee: `${TIER_LIMITS.starter.platformFeePercent}%`,
-      storagePerTransfer: `${TIER_LIMITS.starter.storagePerTransferGB} GB`,
-      transfersPerMonth: String(TIER_LIMITS.starter.transfersPerMonth),
-      expiry: t("tiers.starter.expiry"),
+      platformFee: `${tierLimits.starter.platformFeePercent}%`,
+      storagePerTransfer: `${tierLimits.starter.storagePerTransferGB} GB`,
+      transfersPerMonth: String(tierLimits.starter.transfersPerMonth),
+      expiry: `${tierLimits.starter.expiryDays} ${t("days")}`,
       highlighted: true,
       features: [
         { text: t("features.basicUploads"), included: true },
         { text: t("features.watermarkedPreviews"), included: true },
         { text: t("features.emailNotifications"), included: true },
         { text: t("features.passwordProtection"), included: true },
-        { text: t("features.fileVersioning5"), included: true },
+        {
+          text: tierLimits.starter.maxVersions === -1
+            ? t("features.fileVersioningUnlimited")
+            : t("features.fileVersioningCount", { count: tierLimits.starter.maxVersions }),
+          included: true,
+        },
         {
           text: t("features.manualPreviewRegen"),
-          included: TIER_LIMITS.starter.manualPreviewRegen,
+          included: tierLimits.starter.manualPreviewRegen,
         },
         { text: t("features.prioritySupport"), included: true },
       ],
@@ -163,19 +178,24 @@ const SubscriptionPanel: React.FC = () => {
       name: t("tiers.pro.name"),
       description: t("tiers.pro.description"),
       icon: <Crown className="w-6 h-6" />,
-      platformFee: `${TIER_LIMITS.pro.platformFeePercent}%`,
-      storagePerTransfer: `${TIER_LIMITS.pro.storagePerTransferGB} GB`,
+      platformFee: `${tierLimits.pro.platformFeePercent}%`,
+      storagePerTransfer: `${tierLimits.pro.storagePerTransferGB} GB`,
       transfersPerMonth: t("tiers.pro.unlimited"),
-      expiry: t("tiers.pro.expiry"),
+      expiry: `${tierLimits.pro.expiryDays} ${t("days")}`,
       features: [
         { text: t("features.basicUploads"), included: true },
         { text: t("features.watermarkedPreviews"), included: true },
         { text: t("features.emailNotifications"), included: true },
         { text: t("features.passwordProtection"), included: true },
-        { text: t("features.fileVersioningUnlimited"), included: true },
+        {
+          text: tierLimits.pro.maxVersions === -1
+            ? t("features.fileVersioningUnlimited")
+            : t("features.fileVersioningCount", { count: tierLimits.pro.maxVersions }),
+          included: true,
+        },
         {
           text: t("features.manualPreviewRegen"),
-          included: TIER_LIMITS.pro.manualPreviewRegen,
+          included: tierLimits.pro.manualPreviewRegen,
         },
         { text: t("features.prioritySupportChat"), included: true },
       ],
@@ -249,7 +269,7 @@ const SubscriptionPanel: React.FC = () => {
     );
   };
 
-  if (isLoading) {
+  if (isLoading || isTierLoading) {
     return <LoadingPanel fullHeight />;
   }
 

@@ -179,10 +179,27 @@ export class PlatformApi {
   }
 
   /**
+   * In-flight request deduplication for getPublicFeatures.
+   * Prevents duplicate API calls when multiple components mount useTierLimits simultaneously.
+   */
+  private _publicFeaturesPromise: Promise<ApiResponse<{ tiers: PublicTierFeatures[] }>> | null = null;
+
+  /**
    * Get public tier features for pricing page
+   * Deduplicates concurrent calls — multiple callers share the same in-flight request.
    */
   async getPublicFeatures(): Promise<ApiResponse<{ tiers: PublicTierFeatures[] }>> {
-    return apiClient.get<{ tiers: PublicTierFeatures[] }>('/public/features');
+    if (this._publicFeaturesPromise) {
+      return this._publicFeaturesPromise;
+    }
+
+    this._publicFeaturesPromise = apiClient
+      .get<{ tiers: PublicTierFeatures[] }>('/public/features')
+      .finally(() => {
+        this._publicFeaturesPromise = null;
+      });
+
+    return this._publicFeaturesPromise;
   }
 
   /**
