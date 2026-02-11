@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { platformApi, PublicTierFeatures } from '@/services/platform-api';
+import { platformApi, PublicTierFeatures, AllRegionalPricing, TierRegionalPricing } from '@/services/platform-api';
 import { updateTierLimitsCache } from '@/services/subscription-api';
 
 export type SubscriptionTier = 'free' | 'starter' | 'pro';
@@ -55,6 +55,18 @@ function getSizeLabelKey(gb: number): string {
 }
 
 /**
+ * Map frontend country codes to backend region codes
+ */
+const COUNTRY_TO_REGION: Record<string, string> = {
+  CI: 'XOF',
+  DEFAULT: 'US',
+};
+
+function toRegionCode(countryCode: string): string {
+  return COUNTRY_TO_REGION[countryCode] || countryCode;
+}
+
+/**
  * Hook return type
  */
 export interface UseTierLimitsReturn {
@@ -64,6 +76,9 @@ export interface UseTierLimitsReturn {
 
   // Raw tier data from API
   tierLimits: Record<SubscriptionTier, TierLimits>;
+
+  // Regional pricing from API (keyed by backend region: NG, GH, KE, XOF, US)
+  regionalPricing: AllRegionalPricing | null;
 
   // Computed options for dropdowns
   allValidityOptions: ValidityOption[];
@@ -77,6 +92,8 @@ export interface UseTierLimitsReturn {
   getDefaultValidity: (tier: SubscriptionTier) => string;
   getDefaultSizeLimit: (tier: SubscriptionTier) => string;
   getMaxUploadSizeBytes: (tier: SubscriptionTier) => number;
+  getTierPrice: (tier: SubscriptionTier, countryCode: string, period: 'monthly' | 'annual') => number;
+  getTierCurrency: (countryCode: string) => string;
 
   // Refresh function
   refetch: () => Promise<void>;
@@ -88,6 +105,7 @@ export interface UseTierLimitsReturn {
  */
 export function useTierLimits(): UseTierLimitsReturn {
   const [tierData, setTierData] = useState<PublicTierFeatures[]>([]);
+  const [pricingData, setPricingData] = useState<AllRegionalPricing | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -106,6 +124,9 @@ export function useTierLimits(): UseTierLimitsReturn {
       if (response.data?.tiers) {
         setTierData(response.data.tiers);
         updateTierLimitsCache(response.data.tiers);
+      }
+      if (response.data?.pricing) {
+        setPricingData(response.data.pricing);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load tier limits');
@@ -302,10 +323,36 @@ export function useTierLimits(): UseTierLimitsReturn {
     [tierLimits]
   );
 
+  // Get tier price in minor units for a country and billing period
+  const getTierPrice = useCallback(
+    (tier: SubscriptionTier, countryCode: string, period: 'monthly' | 'annual'): number => {
+      if (!pricingData) return 0;
+      const region = toRegionCode(countryCode);
+      const tierKey = tier.toUpperCase();
+      return pricingData[region]?.[tierKey]?.[period] ?? 0;
+    },
+    [pricingData]
+  );
+
+  // Get currency for a country code
+  const getTierCurrency = useCallback(
+    (countryCode: string): string => {
+      if (!pricingData) return 'XOF';
+      const region = toRegionCode(countryCode);
+      // Get currency from any tier's pricing (they all share the same currency per region)
+      const regionData = pricingData[region];
+      if (!regionData) return 'XOF';
+      const firstTier = Object.values(regionData)[0];
+      return (firstTier as TierRegionalPricing)?.currency ?? 'XOF';
+    },
+    [pricingData]
+  );
+
   return {
     isLoading,
     error,
     tierLimits,
+    regionalPricing: pricingData,
     allValidityOptions,
     allSizeLimitOptions,
     isValidityAvailable,
@@ -315,6 +362,8 @@ export function useTierLimits(): UseTierLimitsReturn {
     getDefaultValidity,
     getDefaultSizeLimit,
     getMaxUploadSizeBytes,
+    getTierPrice,
+    getTierCurrency,
     refetch: fetchTierLimits,
   };
 }

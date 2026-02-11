@@ -10,7 +10,6 @@ import {
   type SubscriptionTier,
   type BillingPeriod,
   formatSubscriptionPrice,
-  getTierPriceMinorUnits,
   subscriptionApi,
 } from "@/services/subscription-api";
 import { useTierLimits } from "@/hooks/useTierLimits";
@@ -53,11 +52,16 @@ const SubscriptionPanel: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isTrialEligible, setIsTrialEligible] = useState(false);
 
-  // Dynamic tier limits from API
-  const { tierLimits, isLoading: isTierLoading } = useTierLimits();
+  // Dynamic tier limits and pricing from API
+  const {
+    tierLimits,
+    isLoading: isTierLoading,
+    getTierPrice: getApiTierPrice,
+    getTierCurrency,
+  } = useTierLimits();
 
   // Global currency/country selection from store
-  const { countryCode, pricing, setCountryCode, hydrate } = useCurrencyStore();
+  const { countryCode, setCountryCode, hydrate } = useCurrencyStore();
   const [isCurrencyDropdownOpen, setIsCurrencyDropdownOpen] = useState(false);
 
   // FAQ accordion state
@@ -202,15 +206,12 @@ const SubscriptionPanel: React.FC = () => {
     },
   ];
 
-  // Get price for a tier based on selected country
+  // Get price for a tier based on selected country (from DB via API)
   const getTierPrice = (tier: SubscriptionTier): string => {
     if (tier === "free") return t("free");
-    const amountMinorUnits = getTierPriceMinorUnits(
-      tier,
-      billingPeriod,
-      countryCode,
-    );
-    return formatSubscriptionPrice(amountMinorUnits, pricing.currency);
+    const amountMinorUnits = getApiTierPrice(tier, countryCode, billingPeriod);
+    const currency = getTierCurrency(countryCode);
+    return formatSubscriptionPrice(amountMinorUnits, currency);
   };
 
   // Get billing period suffix
@@ -238,12 +239,9 @@ const SubscriptionPanel: React.FC = () => {
     // Skip if current plan
     if (tier === currentTier) return;
 
-    // Get amount for selected tier
-    const amountInMinorUnits = getTierPriceMinorUnits(
-      tier,
-      billingPeriod,
-      countryCode,
-    );
+    // Get amount for selected tier (from DB via API)
+    const amountInMinorUnits = getApiTierPrice(tier, countryCode, billingPeriod);
+    const currency = getTierCurrency(countryCode);
 
     // Epic 24: If user is on a paid tier, show upgrade preview with proration
     if (currentTier !== "free") {
@@ -252,7 +250,7 @@ const SubscriptionPanel: React.FC = () => {
         tier,
         billingPeriod,
         amount: amountInMinorUnits,
-        currency: pricing.currency,
+        currency,
         countryCode,
       });
       pushView("subscription-upgrade-preview");
@@ -264,7 +262,7 @@ const SubscriptionPanel: React.FC = () => {
       tier,
       billingPeriod,
       amountInMinorUnits,
-      pricing.currency,
+      currency,
       countryCode,
     );
   };

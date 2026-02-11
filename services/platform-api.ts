@@ -89,6 +89,24 @@ export interface FeatureMatrix {
   }[];
 }
 
+/**
+ * Pricing for a single tier in a region (from DB)
+ */
+export interface TierRegionalPricing {
+  monthly: number;
+  annual: number;
+  currency: string;
+}
+
+/**
+ * All regional pricing from the backend DB
+ * Keyed by region code (NG, GH, KE, XOF, US), then by tier
+ */
+export type AllRegionalPricing = Record<
+  string,
+  Record<string, TierRegionalPricing>
+>;
+
 // Legacy interface for backwards compatibility
 export interface PlatformConfig {
   maxUploadSize: number; // in bytes
@@ -182,19 +200,23 @@ export class PlatformApi {
    * In-flight request deduplication for getPublicFeatures.
    * Prevents duplicate API calls when multiple components mount useTierLimits simultaneously.
    */
-  private _publicFeaturesPromise: Promise<ApiResponse<{ tiers: PublicTierFeatures[] }>> | null = null;
+  private _publicFeaturesPromise: Promise<
+    ApiResponse<{ tiers: PublicTierFeatures[]; pricing?: AllRegionalPricing }>
+  > | null = null;
 
   /**
-   * Get public tier features for pricing page
+   * Get public tier features and regional pricing for pricing page
    * Deduplicates concurrent calls — multiple callers share the same in-flight request.
    */
-  async getPublicFeatures(): Promise<ApiResponse<{ tiers: PublicTierFeatures[] }>> {
+  async getPublicFeatures(): Promise<
+    ApiResponse<{ tiers: PublicTierFeatures[]; pricing?: AllRegionalPricing }>
+  > {
     if (this._publicFeaturesPromise) {
       return this._publicFeaturesPromise;
     }
 
     this._publicFeaturesPromise = apiClient
-      .get<{ tiers: PublicTierFeatures[] }>('/public/features')
+      .get<{ tiers: PublicTierFeatures[]; pricing?: AllRegionalPricing }>('/public/features')
       .finally(() => {
         this._publicFeaturesPromise = null;
       });
