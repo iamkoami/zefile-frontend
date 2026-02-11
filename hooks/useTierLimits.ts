@@ -328,8 +328,7 @@ export function useTierLimits(): UseTierLimitsReturn {
     (tier: SubscriptionTier, countryCode: string, period: 'monthly' | 'annual'): number => {
       if (!pricingData) return 0;
       const region = toRegionCode(countryCode);
-      const tierKey = tier.toUpperCase();
-      return pricingData[region]?.[tierKey]?.[period] ?? 0;
+      return pricingData[region]?.[tier]?.[period] ?? 0;
     },
     [pricingData]
   );
