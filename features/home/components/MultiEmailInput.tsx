@@ -318,6 +318,7 @@ const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
           <div
             ref={suggestionsRef}
             className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden"
+            style={{ color: '#171717' }}
           >
             {suggestions.map((contact, index) => (
               <button
@@ -329,9 +330,9 @@ const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
                 onClick={() => selectSuggestion(contact)}
                 onMouseEnter={() => setSelectedSuggestionIndex(index)}
               >
-                <span className="text-sm font-medium text-gray-900">{contact.email}</span>
+                <span className="text-sm font-medium" style={{ color: '#171717' }}>{contact.email}</span>
                 {contact.name && (
-                  <span className="text-xs text-gray-500">{contact.name}</span>
+                  <span className="text-xs" style={{ color: '#6b7280' }}>{contact.name}</span>
                 )}
               </button>
             ))}

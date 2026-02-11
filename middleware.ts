@@ -20,7 +20,7 @@ function buildCsp(nonce: string): string {
 
   const directives = [
     `default-src 'self'`,
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${process.env.NODE_ENV === 'development' ? " 'unsafe-eval'" : ''}`,
     `style-src 'self' 'unsafe-inline'`,
     `img-src 'self' data: blob: ${apiUrl} https://*.wasabisys.com`,
     `media-src 'self' blob: ${apiUrl} https://*.wasabisys.com`,
