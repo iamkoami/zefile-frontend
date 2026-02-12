@@ -14,7 +14,6 @@ interface FilePreview {
   size: number;
   mimeType: string;
   thumbnailUrl?: string;
-  fileUrl?: string;
 }
 
 interface TransferPreviewModalProps {
@@ -43,7 +42,7 @@ const TransferPreviewModal: React.FC<TransferPreviewModalProps> = ({
     }
     return null;
   };
-  const previewUrl = isPaid ? currentFile.fileUrl : getThumbnailProxyUrl(currentFile);
+  const previewUrl = getThumbnailProxyUrl(currentFile);
 
   const handlePrevious = () => {
     setCurrentIndex((prev) => (prev === 0 ? files.length - 1 : prev - 1));
