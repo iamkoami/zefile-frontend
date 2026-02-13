@@ -1,6 +1,6 @@
 {
   "name": "zefile-frontend",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -8,7 +8,9 @@
     "build:cloudflare": "npx @cloudflare/next-on-pages",
     "start": "next start",
     "lint": "next lint",
-    "deploy:cloudflare": "wrangler pages deploy .vercel/output/static"
+    "deploy:cloudflare": "wrangler pages deploy .vercel/output/static",
+    "preversion": "npm run lint && npm run build",
+    "postversion": "echo \"Version bumped to v$(node -p \"require('./package.json').version\"). Run: git push && git push --tags\""
   },
   "dependencies": {
     "@paystack/inline-js": "^2.22.7",

@@ -65,7 +65,7 @@ function DownloadRedirect() {
           trackingParams.set('z_exp', searchParams?.get('z_exp') ||
             Math.floor(expireAt / 1000).toString());
           trackingParams.set('z_sid', searchParams?.get('z_sid') ||
-            `${Math.floor(now / 1000)}-${Math.random().toString(36).substring(2, 14)}`);
+            `${Math.floor(now / 1000)}-${Array.from(crypto.getRandomValues(new Uint8Array(8)), b => b.toString(16).padStart(2, '0')).join('')}`);
           trackingParams.set('z_src', searchParams?.get('z_src') || 'link');
 
           // Use existing z_network if set, otherwise detect from referrer/user-agent

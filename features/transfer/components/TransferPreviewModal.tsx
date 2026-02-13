@@ -134,6 +134,7 @@ const TransferPreviewModal: React.FC<TransferPreviewModalProps> = ({
               src={previewUrl}
               className="w-full h-full"
               style={{ border: 'none', backgroundColor: '#fff' }}
+              sandbox="allow-same-origin"
             />
           )}
 

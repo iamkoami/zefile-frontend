@@ -366,7 +366,26 @@ export class StorageApi {
       };
     }
 
-    // Step 2: Redirect to signed download URL (instant download)
+    // Step 2: Validate download URL domain before redirect (defense in depth)
+    try {
+      const downloadUrl = new URL(response.data.downloadUrl);
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const cdnDomain = process.env.NEXT_PUBLIC_CDN_DOMAIN || 'cdn.zefile.io';
+      const apiHostname = apiUrl ? new URL(apiUrl).hostname : '';
+      const allowedHostnames = [apiHostname, cdnDomain].filter(Boolean);
+      if (!allowedHostnames.some(h => downloadUrl.hostname === h)) {
+        return {
+          error: { message: 'Invalid download URL domain', statusCode: 403 },
+          status: 403,
+        };
+      }
+    } catch {
+      return {
+        error: { message: 'Invalid download URL', statusCode: 400 },
+        status: 400,
+      };
+    }
+
     window.location.href = response.data.downloadUrl;
 
     return { status: 200 };

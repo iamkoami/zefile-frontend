@@ -314,7 +314,7 @@ export default function TransferLandingPage() {
       // Generate session ID if not provided
       const sessionId =
         trackingParams.z_sid ||
-        `${Date.now()}-${Math.random().toString(36).substr(2, 12)}`;
+        `${Date.now()}-${Array.from(crypto.getRandomValues(new Uint8Array(8)), b => b.toString(16).padStart(2, '0')).join('')}`;
 
       // Parse source and network from tracking params
       const source = (trackingParams.z_src as AccessSource) || "link";
