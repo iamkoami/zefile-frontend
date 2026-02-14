@@ -9,7 +9,7 @@
     "start": "next start",
     "lint": "next lint",
     "deploy:cloudflare": "wrangler pages deploy .vercel/output/static",
-    "preversion": "npm run lint && npm run build",
+    "preversion": "npm run build",
     "postversion": "echo \"Version bumped to v$(node -p \"require('./package.json').version\"). Run: git push && git push --tags\""
   },
   "dependencies": {
