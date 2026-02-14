@@ -212,7 +212,7 @@ export const TIER_LIMITS: Record<SubscriptionTier, TierLimits> = {
     transfersPerMonth: 5,
     expiryDays: 7,
     maxVersions: 1,
-    platformFeePercent: 15,
+    platformFeePercent: 10,
     manualPreviewRegen: false,
   },
   starter: {
@@ -220,7 +220,7 @@ export const TIER_LIMITS: Record<SubscriptionTier, TierLimits> = {
     transfersPerMonth: 50,
     expiryDays: 30,
     maxVersions: 3,
-    platformFeePercent: 10,
+    platformFeePercent: 7,
     manualPreviewRegen: true,
   },
   pro: {

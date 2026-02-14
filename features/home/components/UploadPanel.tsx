@@ -1045,6 +1045,8 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
 
                 {/* Info Tooltip */}
                 {showInfoTooltip && (
+                  <>
+                  <div className="fixed inset-0 z-[9]" onClick={() => setShowInfoTooltip(false)} />
                   <div className="absolute left-0 bottom-full mb-2 bg-white border border-gray-200 rounded-lg shadow-lg p-3 z-10 w-64">
                     <p className="text-xs text-gray-700">
                       {t("serviceCharge", {
@@ -1064,6 +1066,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                         )} ${getCurrencySymbol(currency)}`}
                     </p>
                   </div>
+                  </>
                 )}
               </div>
 
