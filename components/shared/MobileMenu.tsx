@@ -38,7 +38,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
   mainMenuItems,
   loggedInMenuItems,
   resourcesMenuItems,
-  onOpenAuth,
+  onOpenAuth: _onOpenAuth,
   onLogout,
   onOpenAccountSettings,
 }) => {

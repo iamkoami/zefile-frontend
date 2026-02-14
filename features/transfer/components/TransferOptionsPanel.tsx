@@ -176,33 +176,7 @@ const TransferOptionsPanel: React.FC<TransferOptionsPanelProps> = ({
             </select>
           </div>
 
-          {/* Validity Duration - tier-limited options from API */}
-          <div className="ze-form-field">
-            <select
-              id="ze-validity-duration"
-              value={options.validityDuration}
-              onChange={(e) => handleValidityDurationChange(e.target.value)}
-              className="ze-form-select"
-              disabled={tierLimitsData?.isLoading}
-            >
-              <option value="" disabled>{tierLimitsData?.isLoading ? t('loading') : t('validityDuration')}</option>
-              {validityOptions.map((option) => {
-                const isAvailable = tierLimitsData?.isValidityAvailable(option.days, userTier) ?? true;
-                const requiredTier = !isAvailable ? tierLimitsData?.getRequiredTierForValidity(option.days) : null;
-                const tierBadge = requiredTier ? ` (${t(getTierTranslationKey(requiredTier))})` : '';
-                return (
-                  <option
-                    key={option.value}
-                    value={option.value}
-                    disabled={!isAvailable}
-                    className={!isAvailable ? 'text-gray-400' : ''}
-                  >
-                    {t(option.labelKey)}{tierBadge}
-                  </option>
-                );
-              })}
-            </select>
-          </div>
+          {/* Validity Duration - moved to main upload form (UploadPanel) */}
 
           {/* Size Limit - tier-limited options from API */}
           <div className="ze-form-field">

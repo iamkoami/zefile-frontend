@@ -278,6 +278,9 @@ export default function Home() {
                 reuseTransferData={reuseTransferData}
                 onClearReuseData={handleClearReuseData}
                 transferOptions={transferOptions}
+                onTransferOptionsChange={setTransferOptions}
+                tierLimitsData={tierLimitsData}
+                userTier={userTier}
               />
 
               {/* File Preview Panel - Visible when files selected OR reuse files OR form is showing */}

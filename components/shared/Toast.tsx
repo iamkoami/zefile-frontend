@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { create } from 'zustand';
 import { Check, Xmark, WarningCircle, InfoCircle } from 'iconoir-react';
 

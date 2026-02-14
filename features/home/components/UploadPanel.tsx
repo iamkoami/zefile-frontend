@@ -19,6 +19,7 @@ import { multipartUploadService } from "@/services/multipart-upload.service";
 import { useUploadStore } from "@/stores/upload-store";
 import { useCurrentCurrency } from "@/stores/currency-store";
 import { TransferOptions } from "@/features/transfer/components/TransferOptionsPanel";
+import { getTierTranslationKey } from "@/hooks/useTierLimits";
 import { usePollEligibility } from "@/hooks/usePollEligibility";
 
 // Interface for files from an existing transfer (reuse flow)
@@ -48,6 +49,12 @@ interface UploadPanelProps {
   onClearReuseData?: () => void;
   /** Transfer options from page-level state (accessControl, validityDuration, password) */
   transferOptions?: TransferOptions;
+  /** Callback when transfer options change (for expiry selector in main form) */
+  onTransferOptionsChange?: (options: TransferOptions) => void;
+  /** Dynamic tier limits data from API */
+  tierLimitsData?: import("@/hooks/useTierLimits").UseTierLimitsReturn;
+  /** User's subscription tier */
+  userTier?: import("@/hooks/useTierLimits").SubscriptionTier;
 }
 
 export type PanelState =
@@ -68,9 +75,13 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
   reuseTransferData,
   onClearReuseData,
   transferOptions,
+  onTransferOptionsChange,
+  tierLimitsData,
+  userTier = "free",
 }) => {
   const t = useTranslations("upload");
   const tCurrency = useTranslations("currency");
+  const tOptions = useTranslations("transferOptions");
 
   // Global upload state for protection across the app
   const {
@@ -118,7 +129,9 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
   // Upload control
   const uploadStartTimeRef = useRef<number>(0);
   const abortControllerRef = useRef<AbortController | null>(null);
-  const currentUploadsRef = useRef<Array<{ uploadId: string; objectKey: string; transferId: string }>>([]);
+  const currentUploadsRef = useRef<
+    Array<{ uploadId: string; objectKey: string; transferId: string }>
+  >([]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -134,7 +147,9 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
         // Fallback to public config if user-config fails
         const publicResponse = await platformApi.getPublicConfig();
         if (publicResponse.data) {
-          setServiceChargePercentage(publicResponse.data.serviceChargePercentage);
+          setServiceChargePercentage(
+            publicResponse.data.serviceChargePercentage,
+          );
         }
       }
     };
@@ -163,7 +178,12 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
       // Only revert to initial if no pre-filled recipients and no reuse files
       setPanelState("initial");
     }
-  }, [selectedFiles.length, panelState, recipientEmails.length, reuseTransferData]);
+  }, [
+    selectedFiles.length,
+    panelState,
+    recipientEmails.length,
+    reuseTransferData,
+  ]);
 
   // Listen for add-recipient-to-transfer event from ContactsPanel
   // Pre-fills the recipient email and shows the form
@@ -181,13 +201,13 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
 
     window.addEventListener(
       "add-recipient-to-transfer",
-      handleAddRecipient as EventListener
+      handleAddRecipient as EventListener,
     );
 
     return () => {
       window.removeEventListener(
         "add-recipient-to-transfer",
-        handleAddRecipient as EventListener
+        handleAddRecipient as EventListener,
       );
     };
   }, [recipientEmails, panelState]);
@@ -243,8 +263,8 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
       const remainingSize = maxUploadSize - currentSize;
       setFileError(
         `Files exceed upload limit. You can upload up to ${formatBytes(
-          remainingSize
-        )} more.`
+          remainingSize,
+        )} more.`,
       );
       setTimeout(() => setFileError(""), 5000);
       return false;
@@ -382,7 +402,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
     }
 
     // Validate password when access control is 'password'
-    if (transferOptions?.accessControl === 'password') {
+    if (transferOptions?.accessControl === "password") {
       if (!transferOptions.password || transferOptions.password.length < 8) {
         errors.password = t("passwordMinLength", { min: 8 });
       }
@@ -400,12 +420,15 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
       const transferTitle =
         title.trim() || reuseTransferData.title || "Untitled Transfer";
 
-      const response = await transferApi.reuseTransfer(reuseTransferData.transferId, {
-        senderId: userId,
-        recipientEmails: recipientEmails,
-        title: transferTitle,
-        message: message || undefined,
-      });
+      const response = await transferApi.reuseTransfer(
+        reuseTransferData.transferId,
+        {
+          senderId: userId,
+          recipientEmails: recipientEmails,
+          title: transferTitle,
+          message: message || undefined,
+        },
+      );
 
       if (response.error) {
         setFormErrors({ email: response.error.message });
@@ -418,8 +441,11 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
         // Build transfer links
         const shortLinkDomain =
           process.env.NEXT_PUBLIC_SHORT_LINK_DOMAIN || "localhost:3000";
-        const shortCodePrefix = process.env.NEXT_PUBLIC_SHORT_CODE_PREFIX || "z-";
-        const protocol = shortLinkDomain.includes("localhost") ? "http://" : "https://";
+        const shortCodePrefix =
+          process.env.NEXT_PUBLIC_SHORT_CODE_PREFIX || "z-";
+        const protocol = shortLinkDomain.includes("localhost")
+          ? "http://"
+          : "https://";
         const transferLink = `${process.env.NEXT_PUBLIC_APP_URL}/transfer/${transfer.id}`;
         const shortLink = `${protocol}${shortLinkDomain}/${shortCodePrefix}${transfer.shortCode}`;
 
@@ -430,9 +456,11 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
         });
 
         setPanelState("complete");
-        checkForPoll('after_transfer', 3000);
+        checkForPoll("after_transfer", 3000);
       } else {
-        setFormErrors({ email: response.data?.message || "Failed to create transfer" });
+        setFormErrors({
+          email: response.data?.message || "Failed to create transfer",
+        });
       }
     } catch (error) {
       setFormErrors({ email: "Failed to create transfer. Please try again." });
@@ -540,7 +568,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
         // Include transfer options if provided
         accessControl: transferOptions?.accessControl,
         password:
-          transferOptions?.accessControl === 'password'
+          transferOptions?.accessControl === "password"
             ? transferOptions.password
             : undefined,
         expireAt: transferOptions?.validityDuration
@@ -591,39 +619,40 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                 objectKey,
                 transferId: transfer.id,
               });
-            }
+            },
           );
 
           // Update total bytes uploaded after file completes
           totalBytesUploaded += file.size;
-
         } catch (fileError: any) {
           resetGlobalUpload();
           setPanelState("form");
 
           // Handle storage limit exceeded error with upgrade prompt
-          if (fileError.code === 'STORAGE_LIMIT_EXCEEDED') {
+          if (fileError.code === "STORAGE_LIMIT_EXCEEDED") {
             const formatBytes = (bytes: number) => {
-              if (bytes === 0) return '0 B';
+              if (bytes === 0) return "0 B";
               const k = 1024;
-              const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+              const sizes = ["B", "KB", "MB", "GB", "TB"];
               const i = Math.floor(Math.log(bytes) / Math.log(k));
               return `${Math.round((bytes / Math.pow(k, i)) * 100) / 100} ${sizes[i]}`;
             };
 
-            const tierName = fileError.tier?.toUpperCase() || 'FREE';
+            const tierName = fileError.tier?.toUpperCase() || "FREE";
             const limitFormatted = formatBytes(fileError.limitBytes || 0);
             const fileSizeFormatted = formatBytes(file.size);
 
             setFormErrors({
-              email: t('storageLimitExceeded', {
+              email: t("storageLimitExceeded", {
                 fileSize: fileSizeFormatted,
                 tier: tierName,
-                limit: limitFormatted
-              })
+                limit: limitFormatted,
+              }),
             });
           } else {
-            setFormErrors({ email: `Failed to upload ${file.name}: ${fileError.message}` });
+            setFormErrors({
+              email: `Failed to upload ${file.name}: ${fileError.message}`,
+            });
           }
           return;
         }
@@ -636,7 +665,9 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
       // Also captures if this is the user's first transfer for celebration
       let isFirstTransfer = false;
       try {
-        const finalizeResponse = await transferApi.finalizeTransfer(transfer.id);
+        const finalizeResponse = await transferApi.finalizeTransfer(
+          transfer.id,
+        );
         if (finalizeResponse.data?.isFirstTransfer) {
           isFirstTransfer = true;
         }
@@ -654,21 +685,23 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
       let updatedTransfer = transfer;
       try {
         // Small delay to allow preview generation to start
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, 1000));
         const updatedResponse = await transferApi.getTransferById(transfer.id);
         if (updatedResponse.data) {
           updatedTransfer = updatedResponse.data;
         }
       } catch (fetchError) {
         // Use original transfer if fetch fails
-        console.warn('Could not fetch updated transfer:', fetchError);
+        console.warn("Could not fetch updated transfer:", fetchError);
       }
 
       // Build transfer links
       const shortLinkDomain =
         process.env.NEXT_PUBLIC_SHORT_LINK_DOMAIN || "localhost:3000";
       const shortCodePrefix = process.env.NEXT_PUBLIC_SHORT_CODE_PREFIX || "z-";
-      const protocol = shortLinkDomain.includes('localhost') ? 'http://' : 'https://';
+      const protocol = shortLinkDomain.includes("localhost")
+        ? "http://"
+        : "https://";
       const transferLink = `${process.env.NEXT_PUBLIC_APP_URL}/transfer/${transfer.id}`;
       const shortLink = `${protocol}${shortLinkDomain}/${shortCodePrefix}${transfer.shortCode}`;
 
@@ -683,7 +716,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
       setGlobalComplete();
 
       setPanelState("complete");
-      checkForPoll('after_transfer', 3000);
+      checkForPoll("after_transfer", 3000);
     } catch (error) {
       resetGlobalUpload();
       setPanelState("form");
@@ -706,13 +739,13 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
       // Abort all ongoing multipart uploads
       if (currentUploadsRef.current.length > 0) {
         await Promise.allSettled(
-          currentUploadsRef.current.map(upload =>
+          currentUploadsRef.current.map((upload) =>
             multipartUploadService.abortUpload(
               upload.uploadId,
               upload.objectKey,
-              upload.transferId
-            )
-          )
+              upload.transferId,
+            ),
+          ),
         );
 
         currentUploadsRef.current = [];
@@ -849,7 +882,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                     {selectedFilesSize >= maxUploadSize
                       ? t("uploadLimitReached")
                       : `${t("upTo")} ${formatBytes(
-                          maxUploadSize - selectedFilesSize
+                          maxUploadSize - selectedFilesSize,
                         )}`}
                   </p>
                 </div>
@@ -1008,67 +1041,59 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                 )}
               </div>
 
-              {/* Info Text */}
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700">
-                  {t("youWillReceive")}
-                </span>
-                <span className="text-sm font-medium">
-                  {receivedAmount > 0
-                    ? new Intl.NumberFormat("fr-FR", {
+              {/* Service Charge Breakdown (inline) */}
+              {price && parsePriceToNumber(price) > 0 && (
+                <div className="bg-gray-50 rounded p-3 space-y-1.5 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-500 text-xs">{t("price")}</span>
+                    <span className="text-[#171717] text-xs font-medium">
+                      {new Intl.NumberFormat("fr-FR", {
                         minimumFractionDigits: 0,
                         maximumFractionDigits: 0,
-                      }).format(receivedAmount)
-                    : price
-                    ? new Intl.NumberFormat("fr-FR", {
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 0,
-                      }).format(
-                        parsePriceToNumber(price) *
-                          (1 - serviceChargePercentage / 100)
-                      )
-                    : "0"}{" "}
-                  {getCurrencySymbol(currency)}
-                </span>
-              </div>
-              <div className="flex items-center gap-1 relative">
-                <p className="text-xs font-medium text-gray-500">
-                  {t("estimatedAmount")}
-                </p>
-                <div
-                  className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 cursor-pointer"
-                  style={{ backgroundColor: "#87E64B" }}
-                  onClick={() => setShowInfoTooltip(!showInfoTooltip)}
-                >
-                  <span className="text-white text-[8px]">i</span>
-                </div>
-
-                {/* Info Tooltip */}
-                {showInfoTooltip && (
-                  <>
-                  <div className="fixed inset-0 z-[9]" onClick={() => setShowInfoTooltip(false)} />
-                  <div className="absolute left-0 bottom-full mb-2 bg-white border border-gray-200 rounded-lg shadow-lg p-3 z-10 w-64">
-                    <p className="text-xs text-gray-700">
+                      }).format(parsePriceToNumber(price))}{" "}
+                      {getCurrencySymbol(currency)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-500 text-xs">
                       {t("serviceCharge", {
                         percentage: serviceChargePercentage,
                       })}
-                      <br />
-                      {price &&
-                        `Amount: ${new Intl.NumberFormat("fr-FR").format(
-                          parsePriceToNumber(price)
-                        )} ${getCurrencySymbol(currency)}`}
-                      <br />
-                      {price &&
-                        `Service fee: ${new Intl.NumberFormat("fr-FR").format(
-                          (parsePriceToNumber(price) *
-                            serviceChargePercentage) /
-                            100
-                        )} ${getCurrencySymbol(currency)}`}
-                    </p>
+                    </span>
+                    <span className="text-gray-500 text-xs">
+                      -
+                      {new Intl.NumberFormat("fr-FR", {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                      }).format(
+                        (parsePriceToNumber(price) * serviceChargePercentage) /
+                          100,
+                      )}{" "}
+                      {getCurrencySymbol(currency)}
+                    </span>
                   </div>
-                  </>
-                )}
-              </div>
+                  <div className="border-t border-gray-200 pt-1.5 flex items-center justify-between">
+                    <span className="text-[#171717] text-xs font-semibold">
+                      {t("youWillReceive")}
+                    </span>
+                    <span className="text-[#171717] text-xs font-semibold">
+                      {receivedAmount > 0
+                        ? new Intl.NumberFormat("fr-FR", {
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0,
+                          }).format(receivedAmount)
+                        : new Intl.NumberFormat("fr-FR", {
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0,
+                          }).format(
+                            parsePriceToNumber(price) *
+                              (1 - serviceChargePercentage / 100),
+                          )}{" "}
+                      {getCurrencySymbol(currency)}
+                    </span>
+                  </div>
+                </div>
+              )}
 
               {/* Message */}
               <div>
@@ -1081,6 +1106,57 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                   style={{ height: "60px" }}
                 />
               </div>
+
+              {/* Expiry Duration Selector */}
+              {tierLimitsData && onTransferOptionsChange && transferOptions && (
+                <div>
+                  <select
+                    value={transferOptions.validityDuration}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (!value) return;
+                      const days = parseInt(value, 10);
+                      if (isNaN(days)) return;
+                      if (tierLimitsData.isValidityAvailable(days, userTier)) {
+                        onTransferOptionsChange({
+                          ...transferOptions,
+                          validityDuration: value,
+                        });
+                      }
+                    }}
+                    className="ze-form-select"
+                    disabled={tierLimitsData.isLoading}
+                  >
+                    <option value="" disabled>
+                      {tierLimitsData.isLoading
+                        ? tOptions("loading")
+                        : tOptions("validityDuration")}
+                    </option>
+                    {(tierLimitsData.allValidityOptions ?? []).map((option) => {
+                      const isAvailable = tierLimitsData.isValidityAvailable(
+                        option.days,
+                        userTier,
+                      );
+                      const requiredTier = !isAvailable
+                        ? tierLimitsData.getRequiredTierForValidity(option.days)
+                        : null;
+                      const tierBadge = requiredTier
+                        ? ` (${tOptions(getTierTranslationKey(requiredTier))})`
+                        : "";
+                      return (
+                        <option
+                          key={option.value}
+                          value={option.value}
+                          disabled={!isAvailable}
+                        >
+                          {tOptions(option.labelKey)}
+                          {tierBadge}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+              )}
             </div>
 
             {/* Size limit warning when files exceed limit */}

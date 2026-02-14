@@ -60,7 +60,8 @@
     "requestOtpError": "Unable to send the verification code. Please try again.",
     "verifyOtpError": "Verification failed. Please check the code.",
     "phoneAuthNotImplemented": "Phone authentication is not available yet. Please use email.",
-    "captchaFailed": "Security verification failed. Please try again."
+    "captchaFailed": "Security verification failed. Please try again.",
+    "checkSpamFolder": "Didn't receive it? Check your spam folder."
   },
   "upload": {
     "addFiles": "Add files",
@@ -77,9 +78,9 @@
     "yourEmail": "Your email address",
     "title": "Title",
     "setPrice": "Set your price",
-    "youWillReceive": "You will receive",
-    "estimatedAmount": "The estimated amount you will receive after service fees",
-    "serviceCharge": "Service charge: {percentage}%",
+    "price": "Price",
+    "youWillReceive": "Your earnings",
+    "serviceCharge": "Platform fee ({percentage}%)",
     "message": "Message",
     "unsupportedFileType": "File type \"{filename}\" is not supported. Accepted types: images, videos, PDFs, audio, documents, archives.",
     "sendToRequired": "Please enter the recipient's email",
@@ -105,6 +106,7 @@
     "copyLinkOrShareTransfer": "Copy the link of your transfer or",
     "previewTransfer": "Preview transfer",
     "sendAnother": "Send another?",
+    "sendSameFiles": "Send same files to others",
     "filesFromTransfer": "{count, plural, one {# file from existing transfer} other {# files from existing transfer}}",
     "moreFiles": "more files",
     "removeFiles": "Remove files",
@@ -137,7 +139,9 @@
     "termsAgreement": "By creating an account, you agree to our",
     "termsOfService": "Terms of Service",
     "and": "and",
-    "privacyPolicy": "Privacy & Cookie Statement"
+    "privacyPolicy": "Privacy & Cookie Statement",
+    "resendOtpCountdown": "Resend in {seconds}s",
+    "checkSpamFolder": "Didn't receive it? Check your spam folder."
   },
   "multiEmail": {
     "placeholder": "Enter email addresses",
@@ -269,7 +273,10 @@
     "resendOtpIn": "You can resend in 30 seconds",
     "otpResent": "Verification code resent",
     "invalidOtp": "Invalid code. Please try again.",
-    "changeEmail": "Change email"
+    "changeEmail": "Change email",
+    "moreFiles": "more files",
+    "checkSpamFolder": "Didn't receive it? Check your spam folder.",
+    "resendOtpCountdown": "Resend in {seconds}s"
   },
   "payment": {
     "paymentRequired": "Payment required to download",
@@ -400,7 +407,10 @@
     "manualRenewalMobileInfo": "Mobile money does not support auto-renewal. You will receive email reminders before your subscription expires to manually renew.",
     "openingPaymentWindow": "Opening payment window...",
     "completePaymentInPopup": "Complete payment in popup",
-    "paymentWindowOpen": "A secure payment window has opened. Please complete your payment there."
+    "paymentWindowOpen": "A secure payment window has opened. Please complete your payment there.",
+    "iAlreadyPaid": "I already paid — check now",
+    "morePaymentOptions": "More payment options",
+    "lessPaymentOptions": "Less payment options"
   },
   "transfers": {
     "title": "Transfers",

@@ -202,6 +202,7 @@ const Header = () => {
         clearTimeout(resourcesTimeoutRef.current);
       if (userTimeoutRef.current) clearTimeout(userTimeoutRef.current);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Auto-close mobile menu on resize to desktop

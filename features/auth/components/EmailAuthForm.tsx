@@ -243,6 +243,9 @@ const EmailAuthForm: React.FC<EmailAuthFormProps> = ({ onSuccess }) => {
           <p className="text-gray-400 text-base mb-1">
             {t('otpSentTo')} {sentTo}.
           </p>
+          <p className="text-xs text-gray-400">
+            {t('checkSpamFolder')}
+          </p>
           <p className="text-gray-400 text-base">
             {resendCountdown > 0 ? (
               <>{t('resendIn')} 00:{String(resendCountdown).padStart(2, '0')}</>

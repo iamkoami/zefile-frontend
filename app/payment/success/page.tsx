@@ -53,7 +53,6 @@ export default function PaymentSuccessPage() {
     };
 
     loadPaymentDetails();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
   const getCurrencySymbol = (currency?: string): string => {

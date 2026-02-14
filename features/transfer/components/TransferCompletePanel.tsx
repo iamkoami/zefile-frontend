@@ -6,6 +6,7 @@ import { Link as LinkIcon } from "iconoir-react";
 import { TransferDto } from "@/services/transfer-api";
 import { useDrawerStore } from "@/stores/drawer-store";
 import CelebrationModal from "@/features/home/components/CelebrationModal";
+import QuickShareButtons from "./QuickShareButtons";
 
 interface TransferCompletePanelProps {
   transferLink: string;
@@ -171,6 +172,14 @@ const TransferCompletePanel: React.FC<TransferCompletePanelProps> = ({
         </div>
       </div>
 
+        {/* Quick Share Buttons */}
+        <QuickShareButtons
+          shortCode={transfer.shortCode}
+          title={transfer.title || undefined}
+          message={transfer.message || undefined}
+          className="mb-4"
+        />
+
         {/* Send Another Button */}
         <button
           onClick={handleSendAnother}
@@ -179,6 +188,15 @@ const TransferCompletePanel: React.FC<TransferCompletePanelProps> = ({
           style={{ backgroundColor: "#87E64B" }}
         >
           {t("sendAnother")}
+        </button>
+
+        {/* Send Same Files to Others */}
+        <button
+          onClick={() => openDrawerToView("transfers", "transfer-details", transfer, "sender")}
+          disabled={isTransitioning}
+          className="text-sm font-bold text-black underline cursor-pointer mt-3 disabled:opacity-50"
+        >
+          {t("sendSameFiles")}
         </button>
       </div>
     </>

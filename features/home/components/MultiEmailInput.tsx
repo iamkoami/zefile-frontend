@@ -300,6 +300,15 @@ const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
               onBlur={handleBlur}
+              onPaste={(e) => {
+                const text = e.clipboardData.getData('text');
+                if (text.includes(',') || text.includes(';') || text.includes('\n')) {
+                  e.preventDefault();
+                  const parsed = text.split(/[,;\s\n]+/).map(s => s.trim()).filter(Boolean);
+                  const remaining = maxEmails - emailsRef.current.length;
+                  parsed.slice(0, remaining).forEach(email => doAddEmail(email));
+                }
+              }}
               onFocus={() => {
                 if (suggestions.length > 0) {
                   setShowSuggestions(true);

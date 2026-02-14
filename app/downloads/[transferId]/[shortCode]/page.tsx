@@ -188,16 +188,28 @@ export default function TransferLandingPage() {
   const [showPreviewModal, setShowPreviewModal] = useState(false);
 
   // Email confirmed (for logging access)
-  const [emailConfirmed, setEmailConfirmed] = useState(false);
+  const [_emailConfirmed, setEmailConfirmed] = useState(false);
 
   // Access logging state
   const [accessLogged, setAccessLogged] = useState(false);
 
   // OTP verification
   const [otpValue, setOtpValue] = useState("");
-  const [isNewUser, setIsNewUser] = useState(false);
-  const [otpExpiresIn, setOtpExpiresIn] = useState(0);
+  const [_isNewUser, setIsNewUser] = useState(false);
+  const [_otpExpiresIn, setOtpExpiresIn] = useState(0);
   const [canResendOtp, setCanResendOtp] = useState(false);
+  const [otpResendCountdown, setOtpResendCountdown] = useState(0);
+
+  // OTP resend countdown timer
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (otpResendCountdown > 0) {
+      timer = setTimeout(() => setOtpResendCountdown(otpResendCountdown - 1), 1000);
+    } else if (otpResendCountdown === 0 && pageState === "otp") {
+      setCanResendOtp(true);
+    }
+    return () => clearTimeout(timer);
+  }, [otpResendCountdown, pageState]);
 
   // Payment status polling
   const {
@@ -296,13 +308,14 @@ export default function TransferLandingPage() {
 
   // Update page title when transfer is loaded
   useEffect(() => {
+    const originalTitle = originalTitleRef.current;
     if (transfer) {
       document.title = `${t("downloadFiles")} | ZeFile`;
     }
 
     // Cleanup: restore original title on unmount
     return () => {
-      document.title = originalTitleRef.current;
+      document.title = originalTitle;
     };
   }, [transfer, t]);
 
@@ -469,8 +482,7 @@ export default function TransferLandingPage() {
         setIsNewUser(response.data.isNewUser);
         setOtpExpiresIn(300); // Default 5 minutes
         setCanResendOtp(false);
-        // Start countdown for resend
-        setTimeout(() => setCanResendOtp(true), 30000); // 30 seconds
+        setOtpResendCountdown(30);
         setPageState("otp");
       }
     } catch {
@@ -546,7 +558,7 @@ export default function TransferLandingPage() {
       } else {
         toast.success(t("otpResent"));
         setCanResendOtp(false);
-        setTimeout(() => setCanResendOtp(true), 30000);
+        setOtpResendCountdown(30);
       }
     } catch {
       toast.error(t("error"));
@@ -1306,7 +1318,8 @@ export default function TransferLandingPage() {
                     </button>
                   )}
 
-                  {!isSuccess && (
+                  {/* Use different method — only on failure/timeout, not during active polling */}
+                  {(isFailed || isTimeout) && (
                     <button
                       onClick={() => {
                         resetPolling();
@@ -1315,6 +1328,16 @@ export default function TransferLandingPage() {
                       className="w-full px-6 py-3.5 bg-gray-100 text-[#171717] font-medium rounded hover:bg-gray-200 transition-colors text-sm"
                     >
                       {tPayment("useDifferentMethod")}
+                    </button>
+                  )}
+
+                  {/* "I already paid" — manual check during active polling */}
+                  {isPolling && paymentReference && (
+                    <button
+                      onClick={() => startPolling(paymentReference)}
+                      className="text-sm text-[#5E53E0] hover:underline mt-2"
+                    >
+                      {tPayment("iAlreadyPaid")}
                     </button>
                   )}
                 </div>
@@ -1468,11 +1491,14 @@ export default function TransferLandingPage() {
                 <h1 className="text-xl font-bold text-[#171717] text-center mb-2">
                   {t("verifyEmail")}
                 </h1>
-                <p className="text-sm text-gray-500 text-center mb-6">
+                <p className="text-sm text-gray-500 text-center mb-1">
                   {t("otpSentTo")}{" "}
                   <span className="font-medium text-[#171717]">
                     {customerEmail}
                   </span>
+                </p>
+                <p className="text-xs text-gray-400 text-center mb-6">
+                  {t("checkSpamFolder")}
                 </p>
 
                 {/* OTP Form */}
@@ -1519,7 +1545,9 @@ export default function TransferLandingPage() {
                       {t("resendOtp")}
                     </button>
                   ) : (
-                    <p className="text-sm text-gray-400">{t("resendOtpIn")}</p>
+                    <p className="text-sm text-gray-400">
+                      {t("resendOtpCountdown", { seconds: otpResendCountdown })}
+                    </p>
                   )}
                 </div>
 
@@ -1722,7 +1750,7 @@ export default function TransferLandingPage() {
                 </h2>
 
                 {/* File Info Row */}
-                <div className="flex items-center justify-between py-5 px-4 bg-gray-100 rounded mb-6">
+                <div className="flex items-center justify-between py-5 px-4 bg-gray-100 rounded mb-4">
                   <div>
                     <p className="text-sm font-medium text-[#171717]">
                       {fileCount} {fileCount === 1 ? t("file") : t("files")}
@@ -1733,6 +1761,27 @@ export default function TransferLandingPage() {
                   </p>
                 </div>
 
+                {/* File List */}
+                {transfer.files && transfer.files.length > 0 && (
+                  <div className="space-y-2 mb-6">
+                    {transfer.files.slice(0, 5).map((file, i) => (
+                      <div key={file.id || i} className="flex items-center justify-between py-2 px-3 bg-white border border-gray-100 rounded">
+                        <span className="text-sm text-[#171717] truncate flex-1 mr-2">
+                          {file.filename || file.fileName}
+                        </span>
+                        <span className="text-xs text-gray-400 flex-shrink-0">
+                          {formatSize(Number(file.fileSize || file.size || 0))}
+                        </span>
+                      </div>
+                    ))}
+                    {transfer.files.length > 5 && (
+                      <p className="text-xs text-gray-400 text-center">
+                        +{transfer.files.length - 5} {t("moreFiles")}
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 {/* Report Link */}
                 <button
                   onClick={() => setShowDisputeModal(true)}
@@ -1742,13 +1791,38 @@ export default function TransferLandingPage() {
                   {t("reportTransfer")}
                 </button>
 
-                {/* Preview Button - Goes to email confirmation */}
-                <button
-                  onClick={handlePreviewClick}
-                  className="w-full px-6 py-3.5 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors"
-                >
-                  {t("preview")}
-                </button>
+                {/* Download / Pay & Download + Preview Buttons */}
+                <div className="space-y-3">
+                  <button
+                    onClick={
+                      transfer.price && transfer.price > 0 && !transfer.isPaid
+                        ? () => setPageState("payment")
+                        : handleDownload
+                    }
+                    disabled={isDownloading}
+                    className="w-full px-6 py-3.5 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {transfer.price && transfer.price > 0 && !transfer.isPaid ? (
+                      <>
+                        <CreditCard className="w-5 h-5" />
+                        {tPayment("payAndDownload")}
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-5 h-5" />
+                        {isDownloading ? t("preparingDownload") : t("downloadAllFiles")}
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    onClick={handlePreviewClick}
+                    className="w-full px-6 py-3.5 border-2 border-gray-300 bg-white text-[#171717] font-medium rounded hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Eye className="w-5 h-5" />
+                    {t("preview")}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

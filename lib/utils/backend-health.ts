@@ -21,7 +21,7 @@ export async function isBackendHealthy(): Promise<boolean> {
 
     clearTimeout(timeoutId);
     return response.ok;
-  } catch (error) {
+  } catch {
     return false;
   }
 }

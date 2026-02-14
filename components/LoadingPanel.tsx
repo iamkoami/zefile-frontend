@@ -10,7 +10,7 @@ interface LoadingPanelProps {
   fullHeight?: boolean;
 }
 
-const LoadingPanel: React.FC<LoadingPanelProps> = ({ message, className = '', fullHeight = false }) => {
+const LoadingPanel: React.FC<LoadingPanelProps> = ({ message: _message, className = '', fullHeight = false }) => {
   const lottieRef = React.useRef<LottieRefCurrentProps>(null);
   const [animationData, setAnimationData] = useState<object | null>(null);
 

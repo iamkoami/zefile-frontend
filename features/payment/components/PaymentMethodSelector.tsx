@@ -78,6 +78,7 @@ export function PaymentMethodSelector({
   const [countryCode, setCountryCode] = useState<string>('UNKNOWN');
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
   const [failedIcons, setFailedIcons] = useState<Set<string>>(new Set());
+  const [showMoreMethods, setShowMoreMethods] = useState(false);
   const continueButtonRef = useRef<HTMLButtonElement>(null);
   const radioGroupRef = useRef<HTMLDivElement>(null);
 
@@ -269,6 +270,28 @@ export function PaymentMethodSelector({
     return `/icons/payment/${icon}.svg`;
   };
 
+  // Country-to-primary-provider mapping for simplified view
+  const PRIMARY_PROVIDER_MAP: Record<string, MobileMoneyProvider> = {
+    GH: 'mtn_momo',
+    CI: 'wave',
+    KE: 'mpesa',
+    SN: 'wave',
+    BF: 'orange_money',
+    ML: 'orange_money',
+    CM: 'mtn_momo',
+    BJ: 'mtn_momo',
+    TG: 'mtn_momo',
+  };
+
+  const primaryProviderKey = PRIMARY_PROVIDER_MAP[countryCode];
+  const primaryProviders = primaryProviderKey
+    ? mobileMoneyProviders.filter((p) => p.provider === primaryProviderKey)
+    : mobileMoneyProviders.slice(0, 1); // Fallback: show first provider
+  const secondaryProviders = mobileMoneyProviders.filter(
+    (p) => !primaryProviders.some((pp) => pp.provider === p.provider)
+  );
+  const hasMoreMethods = secondaryProviders.length > 0;
+
   if (!isOpen || !mounted) return null;
 
   const modalContent = (
@@ -328,8 +351,8 @@ export function PaymentMethodSelector({
                 role="radiogroup"
                 aria-label={t('paymentMethods')}
               >
-                {/* Mobile Money Options (shown first) */}
-                {mobileMoneyProviders.map((provider) => {
+                {/* Primary Mobile Money Provider(s) */}
+                {primaryProviders.map((provider) => {
                   const method: PaymentMethod = {
                     type: 'mobile_money',
                     provider: provider.provider,
@@ -426,6 +449,79 @@ export function PaymentMethodSelector({
                     )}
                   </div>
                 </button>
+
+                {/* More Payment Options (collapsed) */}
+                {hasMoreMethods && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setShowMoreMethods(!showMoreMethods)}
+                      className="w-full text-sm text-[#5E53E0] hover:underline text-center py-2"
+                    >
+                      {showMoreMethods ? t('lessPaymentOptions') : t('morePaymentOptions')}
+                    </button>
+
+                    {showMoreMethods && secondaryProviders.map((provider) => {
+                      const method: PaymentMethod = {
+                        type: 'mobile_money',
+                        provider: provider.provider,
+                      };
+                      const isSelected = isMethodSelected(method);
+
+                      return (
+                        <button
+                          key={provider.provider}
+                          onClick={() => handleSelectMethod(method)}
+                          onFocus={() => setFocusedIndex(mobileMoneyProviders.indexOf(provider))}
+                          className={`w-full flex items-center gap-4 p-4 rounded border-2 transition-colors focus:outline-none focus:ring-2 focus:ring-[#5E53E0] focus:ring-offset-2 ${
+                            isSelected
+                              ? 'border-[#5E53E0] bg-[#5E53E0]/5'
+                              : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                          role="radio"
+                          aria-checked={isSelected}
+                          aria-label={provider.name}
+                          tabIndex={0}
+                        >
+                          <div className="w-10 h-10 flex items-center justify-center bg-gray-100 rounded">
+                            {failedIcons.has(provider.icon) ? (
+                              <SmartphoneDevice className="w-6 h-6 text-gray-500" />
+                            ) : (
+                              <Image
+                                src={getProviderIconPath(provider.icon)}
+                                alt={provider.name}
+                                width={24}
+                                height={24}
+                                onError={() => {
+                                  setFailedIcons((prev) => new Set(prev).add(provider.icon));
+                                }}
+                              />
+                            )}
+                          </div>
+                          <div className="flex-1 text-left">
+                            <span className="font-medium text-[#171717]">
+                              {provider.name}
+                            </span>
+                            {showAutoRenewalInfo && (
+                              <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                                {t('manualRenewal')}
+                              </span>
+                            )}
+                          </div>
+                          <div
+                            className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                              isSelected ? 'border-[#5E53E0]' : 'border-gray-300'
+                            }`}
+                          >
+                            {isSelected && (
+                              <div className="w-3 h-3 rounded-full bg-[#5E53E0]" />
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </>
+                )}
               </div>
             )}
 

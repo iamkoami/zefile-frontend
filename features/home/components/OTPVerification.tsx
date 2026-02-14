@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { NavArrowLeft } from "iconoir-react";
 
@@ -21,6 +21,16 @@ const OTPVerification: React.FC<OTPVerificationProps> = ({
   const [otpCode, setOtpCode] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
   const [error, setError] = useState<string>("");
+  const [resendCountdown, setResendCountdown] = useState(30);
+
+  // Countdown timer for resend button
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (resendCountdown > 0) {
+      timer = setTimeout(() => setResendCountdown(resendCountdown - 1), 1000);
+    }
+    return () => clearTimeout(timer);
+  }, [resendCountdown]);
 
   // Format OTP for display (e.g., "123456" -> "123 456")
   const formatOTPDisplay = (value: string): string => {
@@ -75,6 +85,7 @@ const OTPVerification: React.FC<OTPVerificationProps> = ({
 
   const handleResendCode = () => {
     // TODO: Implement resend code logic
+    setResendCountdown(30);
   };
 
   const handleLearnMore = () => {
@@ -97,8 +108,11 @@ const OTPVerification: React.FC<OTPVerificationProps> = ({
       <p className="text-sm font-semibold text-black text-center mb-1">
         {email}
       </p>
-      <p className="text-sm text-gray-600 text-center mb-6">
+      <p className="text-sm text-gray-600 text-center mb-1">
         {t("instruction")}
+      </p>
+      <p className="text-xs text-gray-400 text-center mb-6">
+        {t("checkSpamFolder")}
       </p>
 
       {/* OTP Input - No border, large font like reference */}
@@ -147,13 +161,19 @@ const OTPVerification: React.FC<OTPVerificationProps> = ({
           {t("knowMore")}
         </button>
         <span className="text-gray-400">{tCommon("or")}</span>
-        <button
-          className="font-bold underline text-[#171717] hover:opacity-80 transition-opacity"
-          onClick={handleResendCode}
-          type="button"
-        >
-          {t("resendCode")}
-        </button>
+        {resendCountdown > 0 ? (
+          <span className="text-gray-400 text-sm">
+            {t("resendOtpCountdown", { seconds: resendCountdown })}
+          </span>
+        ) : (
+          <button
+            className="font-bold underline text-[#171717] hover:opacity-80 transition-opacity"
+            onClick={handleResendCode}
+            type="button"
+          >
+            {t("resendCode")}
+          </button>
+        )}
       </div>
 
       {/* Buttons */}

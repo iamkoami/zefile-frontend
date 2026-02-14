@@ -60,7 +60,8 @@
     "requestOtpError": "Impossible d'envoyer le code. Réessayez.",
     "verifyOtpError": "Échec de la vérification. Vérifiez le code.",
     "phoneAuthNotImplemented": "L'authentification par téléphone n'est pas encore disponible. Veuillez utiliser l'authentification par e-mail.",
-    "captchaFailed": "Échec de la vérification de sécurité. Veuillez réessayer."
+    "captchaFailed": "Échec de la vérification de sécurité. Veuillez réessayer.",
+    "checkSpamFolder": "Vous ne l'avez pas reçu ? Vérifiez votre dossier spam."
   },
   "upload": {
     "addFiles": "Ajouter des éléments",
@@ -78,9 +79,9 @@
     "yourEmail": "Votre adresse e-mail",
     "title": "Titre",
     "setPrice": "Fixez votre prix",
-    "youWillReceive": "Vous recevrez",
-    "estimatedAmount": "Le montant estimé que vous recevrez après les frais de service",
-    "serviceCharge": "Frais de service : {percentage}%",
+    "price": "Prix",
+    "youWillReceive": "Vos gains",
+    "serviceCharge": "Frais de plateforme ({percentage}%)",
     "message": "Message",
     "unsupportedFileType": "Le type de fichier \"{filename}\" n'est pas supporté. Types acceptés : images, vidéos, PDFs, audio, documents, archives.",
     "sendToRequired": "Veuillez saisir l'adresse e-mail du destinataire",
@@ -106,6 +107,7 @@
     "copyLinkOrShareTransfer": "Copiez le lien de votre transfert ou",
     "previewTransfer": "Prévisualisez le transfert",
     "sendAnother": "Envoyer un autre fichier ?",
+    "sendSameFiles": "Envoyer les mêmes fichiers à d'autres",
     "filesFromTransfer": "{count, plural, one {# fichier du transfert existant} other {# fichiers du transfert existant}}",
     "moreFiles": "fichiers de plus",
     "removeFiles": "Supprimer les fichiers",
@@ -138,7 +140,9 @@
     "termsAgreement": "En créant un compte, vous acceptez nos",
     "termsOfService": "Conditions d'utilisation",
     "and": "et",
-    "privacyPolicy": "Politique de confidentialité et cookies"
+    "privacyPolicy": "Politique de confidentialité et cookies",
+    "resendOtpCountdown": "Renvoyer dans {seconds}s",
+    "checkSpamFolder": "Vous ne l'avez pas reçu ? Vérifiez votre dossier spam."
   },
   "multiEmail": {
     "placeholder": "Saisissez les adresses e-mail",
@@ -270,7 +274,10 @@
     "resendOtpIn": "Vous pouvez renvoyer dans 30 secondes",
     "otpResent": "Code de vérification renvoyé",
     "invalidOtp": "Code invalide. Veuillez réessayer.",
-    "changeEmail": "Changer d'e-mail"
+    "changeEmail": "Changer d'e-mail",
+    "moreFiles": "fichiers supplémentaires",
+    "checkSpamFolder": "Vous ne l'avez pas reçu ? Vérifiez votre dossier spam.",
+    "resendOtpCountdown": "Renvoyer dans {seconds}s"
   },
   "payment": {
     "paymentRequired": "Paiement requis pour télécharger",
@@ -401,7 +408,10 @@
     "manualRenewalMobileInfo": "Le Mobile Money ne prend pas en charge le renouvellement automatique. Vous recevrez des rappels par email avant l'expiration de votre abonnement pour renouveler manuellement.",
     "openingPaymentWindow": "Ouverture de la fenêtre de paiement...",
     "completePaymentInPopup": "Complétez le paiement dans la popup",
-    "paymentWindowOpen": "Une fenêtre de paiement sécurisée s'est ouverte. Veuillez y finaliser votre paiement."
+    "paymentWindowOpen": "Une fenêtre de paiement sécurisée s'est ouverte. Veuillez y finaliser votre paiement.",
+    "iAlreadyPaid": "J'ai déjà payé — vérifier maintenant",
+    "morePaymentOptions": "Plus d'options de paiement",
+    "lessPaymentOptions": "Moins d'options de paiement"
   },
   "transfers": {
     "title": "Transferts",
