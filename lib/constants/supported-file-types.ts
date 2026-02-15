@@ -24,6 +24,7 @@ export const SUPPORTED_FILE_TYPES = {
     'video/x-flv',
     'video/webm',
     'video/x-matroska',
+    'video/matroska',
     'video/avi',
     'video/mov',
   ],
