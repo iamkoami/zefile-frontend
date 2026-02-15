@@ -118,9 +118,11 @@ export default function Home() {
     return selectedFiles.reduce((sum, file) => sum + file.size, 0);
   }, [selectedFiles]);
 
-  // Fetch platform configuration and user tier on mount
+  // Fetch platform configuration and user tier on mount (only if authenticated)
   useEffect(() => {
     const fetchConfig = async () => {
+      const user = authApi.getStoredUser();
+      if (!user) return; // Skip for unauthenticated users - defaults are fine
       try {
         // Fetch user-specific config which includes tier
         const response = await platformApi.getUserConfig();

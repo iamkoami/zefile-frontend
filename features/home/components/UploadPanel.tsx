@@ -140,18 +140,21 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
   // Uses tier-specific rate for authenticated users, default (15%) for anonymous
   useEffect(() => {
     const fetchConfig = async () => {
-      // Try user-specific config first (includes tier-based service charge)
-      const response = await platformApi.getUserConfig();
-      if (response.data) {
-        setServiceChargePercentage(response.data.serviceChargePercentage);
-      } else {
-        // Fallback to public config if user-config fails
-        const publicResponse = await platformApi.getPublicConfig();
-        if (publicResponse.data) {
-          setServiceChargePercentage(
-            publicResponse.data.serviceChargePercentage,
-          );
+      const user = authApi.getStoredUser();
+      if (user) {
+        // Try user-specific config first (includes tier-based service charge)
+        const response = await platformApi.getUserConfig();
+        if (response.data) {
+          setServiceChargePercentage(response.data.serviceChargePercentage);
+          return;
         }
+      }
+      // Fallback to public config for anonymous users or if user-config fails
+      const publicResponse = await platformApi.getPublicConfig();
+      if (publicResponse.data) {
+        setServiceChargePercentage(
+          publicResponse.data.serviceChargePercentage,
+        );
       }
     };
     fetchConfig();
