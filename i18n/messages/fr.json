@@ -481,6 +481,7 @@
     "emailRequired": "L'e-mail est requis",
     "invalidEmail": "Veuillez entrer une adresse e-mail valide",
     "saveError": "Échec de l'enregistrement du contact",
+    "saving": "Enregistrement...",
     "saveChanges": "Enregistrer",
     "contactCreated": "Contact ajouté avec succès",
     "contactUpdated": "Contact mis à jour avec succès",

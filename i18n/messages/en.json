@@ -480,6 +480,7 @@
     "emailRequired": "Email is required",
     "invalidEmail": "Please enter a valid email address",
     "saveError": "Failed to save contact",
+    "saving": "Saving...",
     "saveChanges": "Save changes",
     "contactCreated": "Contact added successfully",
     "contactUpdated": "Contact updated successfully",
