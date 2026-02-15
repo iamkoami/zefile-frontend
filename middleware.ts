@@ -28,7 +28,7 @@ function buildCsp(nonce: string): string {
     `font-src 'self'`,
     `frame-src ${apiUrl} https://checkout.paystack.com https://www.google.com`,
     `worker-src 'self' blob:`,
-    `object-src 'none'`,
+    `object-src ${apiUrl}`,
     `base-uri 'self'`,
     `form-action 'self'`,
     `frame-ancestors 'none'`,
