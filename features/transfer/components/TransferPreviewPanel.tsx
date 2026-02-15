@@ -217,20 +217,20 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
     return transfer?.isPaid === true;
   }, [requiresPayment, transfer?.isPaid]);
 
-  // Auto-refresh transfer data when files have no thumbnails (preview generation still in progress)
+  // Auto-refresh transfer data when any previewable file is missing its thumbnail
   // This handles the case where the user opens preview immediately after upload
   useEffect(() => {
     if (!transfer?.id || !transfer?.files?.length) return;
-    if (refreshAttempts.current >= 3) return;
+    if (refreshAttempts.current >= 5) return;
 
-    // Check if any previewable files are missing thumbnails
-    const hasPreviewableFiles = transfer.files.some((f) => {
+    // Check if any previewable file is still missing its thumbnail
+    const anyMissingThumbnail = transfer.files.some((f) => {
       const mime = (f.mimeType || f.fileType || "").toLowerCase();
-      return mime.startsWith("image/") || mime.startsWith("video/");
+      const isPreviewable = mime.startsWith("image/") || mime.startsWith("video/");
+      return isPreviewable && !f.thumbnailUrl;
     });
-    const allMissingThumbnails = hasPreviewableFiles && transfer.files.every((f) => !f.thumbnailUrl);
 
-    if (!allMissingThumbnails) return;
+    if (!anyMissingThumbnail) return;
 
     const timer = setTimeout(async () => {
       try {
