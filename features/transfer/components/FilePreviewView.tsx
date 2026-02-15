@@ -434,16 +434,14 @@ const FilePreviewView: React.FC<FilePreviewViewProps> = ({
           </div>
         );
       case "pdf":
-        // Display watermarked first page - as PDF (iframe) or image (fallback)
+        // Display watermarked first page - as PDF using embed (Chrome blocks PDFs in sandboxed iframes)
         if (previewMimeType === "application/pdf") {
-          // Watermarked single-page PDF - display in iframe with toolbar disabled
           return (
-            <iframe
+            <embed
               src={`${previewUrl}#toolbar=0&navpanes=0&scrollbar=0`}
-              title={file.name}
+              type="application/pdf"
               className="w-full h-full border-0 rounded-lg bg-white"
               style={{ minHeight: "80vh" }}
-              sandbox="allow-same-origin allow-scripts"
             />
           );
         }
