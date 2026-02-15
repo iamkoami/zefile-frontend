@@ -443,7 +443,7 @@ const FilePreviewView: React.FC<FilePreviewViewProps> = ({
               title={file.name}
               className="w-full h-full border-0 rounded-lg bg-white"
               style={{ minHeight: "80vh" }}
-              sandbox="allow-same-origin"
+              sandbox="allow-same-origin allow-scripts"
             />
           );
         }
