@@ -1,13 +1,15 @@
 'use client';
 
-import React, { useEffect } from 'react';
-import { Xmark } from 'iconoir-react';
+import React, { useRef } from 'react';
+import { Xmark, MediaImagePlus } from 'iconoir-react';
 import { useTranslations } from 'next-intl';
 import {
   UseTierLimitsReturn,
   SubscriptionTier,
   getTierTranslationKey,
 } from '@/hooks/useTierLimits';
+import { toast } from '@/components/shared/Toast';
+import Image from 'next/image';
 
 /**
  * Transfer options state - shared with page.tsx
@@ -18,6 +20,10 @@ export interface TransferOptions {
   password: string;
   /** Size limit in GB as string for form handling (e.g., "2", "10", "50") */
   sizeLimit: string;
+  /** Custom wallpaper file selected for upload (undefined = no wallpaper) */
+  wallpaperFile?: File;
+  /** Local blob URL for wallpaper preview */
+  wallpaperPreview?: string;
 }
 
 interface TransferOptionsPanelProps {
@@ -35,6 +41,9 @@ interface TransferOptionsPanelProps {
   tierLimitsData?: UseTierLimitsReturn;
 }
 
+const MAX_WALLPAPER_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_WALLPAPER_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
 const TransferOptionsPanel: React.FC<TransferOptionsPanelProps> = ({
   isVisible,
   hasFilesSelected = false,
@@ -45,6 +54,7 @@ const TransferOptionsPanel: React.FC<TransferOptionsPanelProps> = ({
   tierLimitsData,
 }) => {
   const t = useTranslations('transferOptions');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Handler for access control - clears password when switching away from password mode
   const handleAccessControlChange = (value: string) => {
@@ -90,8 +100,51 @@ const TransferOptionsPanel: React.FC<TransferOptionsPanelProps> = ({
     }
   };
 
+  // Handler for wallpaper file selection
+  const handleWallpaperSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Reset input so same file can be re-selected
+    e.target.value = '';
+
+    if (!ALLOWED_WALLPAPER_TYPES.includes(file.type)) {
+      toast.error(t('invalidFileType'));
+      return;
+    }
+
+    if (file.size > MAX_WALLPAPER_SIZE) {
+      toast.error(t('fileTooLarge'));
+      return;
+    }
+
+    // Revoke old preview URL if exists
+    if (options.wallpaperPreview) {
+      URL.revokeObjectURL(options.wallpaperPreview);
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+    onOptionsChange({
+      ...options,
+      wallpaperFile: file,
+      wallpaperPreview: previewUrl,
+    });
+  };
+
+  // Handler for removing wallpaper
+  const handleRemoveWallpaper = () => {
+    if (options.wallpaperPreview) {
+      URL.revokeObjectURL(options.wallpaperPreview);
+    }
+    onOptionsChange({
+      ...options,
+      wallpaperFile: undefined,
+      wallpaperPreview: undefined,
+    });
+  };
+
   // Reset to valid defaults if current selections become unavailable (e.g., tier downgrade)
-  useEffect(() => {
+  React.useEffect(() => {
     if (!tierLimitsData || tierLimitsData.isLoading) return;
 
     let needsUpdate = false;
@@ -138,6 +191,8 @@ const TransferOptionsPanel: React.FC<TransferOptionsPanelProps> = ({
   // Get options from tierLimitsData or use empty arrays while loading
   const validityOptions = tierLimitsData?.allValidityOptions ?? [];
   const sizeLimitOptions = tierLimitsData?.allSizeLimitOptions ?? [];
+
+  const isWallpaperDisabled = userTier === 'free';
 
   return (
     <div
@@ -225,6 +280,66 @@ const TransferOptionsPanel: React.FC<TransferOptionsPanelProps> = ({
               )}
             </div>
           )}
+
+          {/* Wallpaper Upload */}
+          <div className="ze-form-field">
+            <label className="text-xs font-medium text-gray-500 mb-2 block">
+              {t('wallpaperLabel')}
+              {isWallpaperDisabled && (
+                <span className="ml-1 text-[#5E53E0] text-[10px] font-semibold uppercase">
+                  ({t('starterTier')})
+                </span>
+              )}
+            </label>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={handleWallpaperSelect}
+              className="hidden"
+              disabled={isWallpaperDisabled}
+            />
+
+            {options.wallpaperPreview ? (
+              /* Selected state: preview + remove */
+              <div className="relative inline-block">
+                <div className="w-[80px] h-[80px] rounded border-2 border-[#87E64B] overflow-hidden">
+                  <Image
+                    src={options.wallpaperPreview}
+                    alt={t('wallpaperPreview')}
+                    width={80}
+                    height={80}
+                    className="object-cover w-full h-full"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleRemoveWallpaper}
+                  className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
+                  aria-label={t('removeWallpaper')}
+                >
+                  <Xmark className="w-3 h-3" />
+                </button>
+              </div>
+            ) : (
+              /* Empty state: upload area */
+              <button
+                type="button"
+                onClick={() => !isWallpaperDisabled && fileInputRef.current?.click()}
+                className={`w-full h-[60px] rounded border-2 border-dashed flex items-center justify-center gap-2 transition-colors ${
+                  isWallpaperDisabled
+                    ? 'opacity-50 cursor-not-allowed border-gray-200 bg-gray-50'
+                    : 'cursor-pointer border-gray-300 bg-gray-50 hover:border-[#5E53E0] hover:bg-gray-100'
+                }`}
+                disabled={isWallpaperDisabled}
+              >
+                <MediaImagePlus className="w-5 h-5 text-gray-400" />
+                <span className="text-xs text-gray-400">{t('uploadWallpaper')}</span>
+              </button>
+            )}
+            <p className="text-[10px] text-gray-400 mt-1">{t('wallpaperHint')}</p>
+          </div>
         </div>
       </div>
     </div>

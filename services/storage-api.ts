@@ -137,6 +137,16 @@ export class StorageApi {
   }
 
   /**
+   * Upload a custom wallpaper image for transfer download page
+   * Requires Starter or Pro tier
+   */
+  async uploadWallpaper(file: File): Promise<ApiResponse<{ wallpaperKey: string }>> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return apiClient.upload<{ wallpaperKey: string }>('/storage/wallpaper/upload', formData);
+  }
+
+  /**
    * Generate presigned download URL(s)
    */
   async getDownloadUrl(data: PresignedUrlRequestDto): Promise<ApiResponse<PresignedUrlResponseDto>> {

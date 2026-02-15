@@ -208,7 +208,14 @@
     "tierRequired": "Nécessite {tier}",
     "freeTier": "Gratuit",
     "starterTier": "Starter",
-    "proTier": "Pro"
+    "proTier": "Pro",
+    "wallpaperLabel": "Fond d'écran de la page de téléchargement",
+    "uploadWallpaper": "Télécharger une image (JPEG, PNG, max 5 Mo)",
+    "wallpaperHint": "Recommandé : 1920x1080 ou plus",
+    "wallpaperPreview": "Aperçu du fond d'écran",
+    "removeWallpaper": "Supprimer le fond d'écran",
+    "invalidFileType": "Type de fichier invalide. Seuls JPEG, PNG et WebP sont autorisés.",
+    "fileTooLarge": "Fichier trop volumineux. Maximum 5 Mo."
   },
   "fileTypes": {
     "images": "Images (JPG, PNG, GIF, WebP, BMP, TIFF, SVG)",
@@ -411,7 +418,9 @@
     "paymentWindowOpen": "Une fenêtre de paiement sécurisée s'est ouverte. Veuillez y finaliser votre paiement.",
     "iAlreadyPaid": "J'ai déjà payé — vérifier maintenant",
     "morePaymentOptions": "Plus d'options de paiement",
-    "lessPaymentOptions": "Moins d'options de paiement"
+    "lessPaymentOptions": "Moins d'options de paiement",
+    "systemUnavailable": "Paiements temporairement indisponibles",
+    "systemUnavailableDesc": "Nous effectuons une maintenance sur notre système de paiement. Vos fichiers sont en sécurité — veuillez réessayer sous peu."
   },
   "transfers": {
     "title": "Transferts",
@@ -846,6 +855,7 @@
     "platformFee": "frais de plateforme",
     "manualPreviewRegen": "Régénération manuelle des aperçus",
     "currentPlan": "Plan actuel",
+    "customWallpaper": "Fond d'écran personnalisé pour la page de téléchargement",
     "recommended": "Recommandé",
     "freeForever": "Gratuit à vie",
     "month": "mois",
@@ -977,6 +987,8 @@
     "transfersPerMonth": "Transferts par mois",
     "transferExpiry": "Expiration du transfert",
     "cancelAnytime": "Annulez à tout moment. Sans questions.",
+    "paymentsUnavailable": "Abonnements temporairement indisponibles",
+    "paymentsUnavailableDesc": "Les changements de plan sont suspendus pour maintenance. Votre plan actuel n'est pas affecté.",
     "questionsContact": "Des questions ? Contactez-nous à",
     "tiers": {
       "free": {

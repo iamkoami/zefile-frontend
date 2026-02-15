@@ -28,6 +28,7 @@ import {
   getTierPriceMinorUnits,
 } from "@/services/subscription-api";
 import { toast } from "@/components/shared/Toast";
+import { platformApi } from "@/services/platform-api";
 import type { MobileMoneyProvider } from "@/features/payment/components/PaymentMethodSelector";
 import type { CountryCode } from "libphonenumber-js";
 import { authApi } from "@/services/auth-api";
@@ -97,6 +98,18 @@ export function SubscriptionCheckoutPanel() {
   const [error, setError] = useState<string>("");
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
   const pollingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Payment block state
+  const [paymentsDisabled, setPaymentsDisabled] = useState(false);
+
+  // Fetch payment status on mount
+  useEffect(() => {
+    platformApi.getPublicConfig().then((res) => {
+      if (!res.error && res.data) {
+        setPaymentsDisabled(!res.data.paymentsEnabled);
+      }
+    });
+  }, []);
 
   // Calculate price based on selected country
   const pricing = getPricingForCountry(selectedCountry);
@@ -212,6 +225,7 @@ export function SubscriptionCheckoutPanel() {
 
   const handleContinueFromMethod = async () => {
     if (!selectedMethod || !checkoutData || !user?.email) return;
+    if (paymentsDisabled) return;
 
     setPaymentMethod(selectedMethod);
 
@@ -231,7 +245,12 @@ export function SubscriptionCheckoutPanel() {
         });
 
         if (response.error) {
-          toast.error(response.error.message || t("paymentInitFailed"));
+          if (response.status === 503) {
+            setPaymentsDisabled(true);
+            toast.error(tSub("paymentsUnavailable"));
+          } else {
+            toast.error(response.error.message || t("paymentInitFailed"));
+          }
           return;
         }
 
@@ -265,7 +284,12 @@ export function SubscriptionCheckoutPanel() {
       });
 
       if (response.error) {
-        toast.error(response.error.message || t("paymentInitFailed"));
+        if (response.status === 503) {
+          setPaymentsDisabled(true);
+          toast.error(tSub("paymentsUnavailable"));
+        } else {
+          toast.error(response.error.message || t("paymentInitFailed"));
+        }
         setIsLoading(false);
         return;
       }
@@ -366,6 +390,21 @@ export function SubscriptionCheckoutPanel() {
             </div>
           </div>
 
+          {/* Payment block notice */}
+          {paymentsDisabled && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded p-4 mb-4 flex items-start gap-3">
+              <InfoCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-yellow-800">
+                  {tSub("paymentsUnavailable")}
+                </p>
+                <p className="text-xs text-yellow-700 mt-1">
+                  {tSub("paymentsUnavailableDesc")}
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Country Selection */}
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -445,7 +484,8 @@ export function SubscriptionCheckoutPanel() {
           <div className="space-y-3">
             <button
               onClick={handleContinueFromCountry}
-              className="w-full px-5 py-3 text-sm font-medium text-[#171717] bg-[#87E64B] rounded hover:bg-[#78d43f] transition-colors"
+              disabled={paymentsDisabled}
+              className="w-full px-5 py-3 text-sm font-medium text-[#171717] bg-[#87E64B] rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {t("continue")}
             </button>

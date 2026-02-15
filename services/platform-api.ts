@@ -111,6 +111,7 @@ export type AllRegionalPricing = Record<
 export interface PlatformConfig {
   maxUploadSize: number; // in bytes
   serviceChargePercentage: number;
+  paymentsEnabled: boolean;
 }
 
 /**

@@ -563,6 +563,7 @@ export function SubscriptionPhonePanel() {
   const [isPhoneValid, setIsPhoneValid] = useState(false);
   const [phoneCountryCode, setPhoneCountryCode] = useState<CountryCode>("GH");
   const [isLoading, setIsLoading] = useState(false);
+  const [paymentsDisabled, setPaymentsDisabled] = useState(false);
 
   // Set custom back handler
   useEffect(() => {
@@ -599,7 +600,12 @@ export function SubscriptionPhonePanel() {
       });
 
       if (response.error) {
-        toast.error(response.error.message || t("paymentInitFailed"));
+        if (response.status === 503) {
+          setPaymentsDisabled(true);
+          toast.error(tSub("paymentsUnavailable"));
+        } else {
+          toast.error(response.error.message || t("paymentInitFailed"));
+        }
         setIsLoading(false);
         return;
       }
@@ -652,6 +658,13 @@ export function SubscriptionPhonePanel() {
           />
         </div>
 
+        {paymentsDisabled && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded p-3 mb-4 flex items-start gap-3">
+            <InfoCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-yellow-800">{tSub("paymentsUnavailableDesc")}</p>
+          </div>
+        )}
+
         <div className="flex gap-4">
           <button
             onClick={handleBack}
@@ -662,7 +675,7 @@ export function SubscriptionPhonePanel() {
           </button>
           <button
             onClick={handleSubmit}
-            disabled={!isPhoneValid || isLoading}
+            disabled={!isPhoneValid || isLoading || paymentsDisabled}
             className="flex-1 px-6 py-3 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? t("processing") : t("continue")}
@@ -729,7 +742,11 @@ export function SubscriptionCardPanel() {
         });
 
         if (response.error || !response.data) {
-          setInitError(response.error?.message || t("paymentInitFailed"));
+          if (response.status === 503) {
+            setInitError(tSub("paymentsUnavailableDesc"));
+          } else {
+            setInitError(response.error?.message || t("paymentInitFailed"));
+          }
           setIsInitializing(false);
           return;
         }

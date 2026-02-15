@@ -64,7 +64,19 @@ export default function Home() {
     validityDuration: '1', // Will be updated based on tier
     password: '',
     sizeLimit: '2', // Will be updated based on tier (in GB)
+    wallpaperFile: undefined,
+    wallpaperPreview: undefined,
   });
+
+  // Cleanup blob URL on unmount
+  React.useEffect(() => {
+    return () => {
+      if (transferOptions.wallpaperPreview) {
+        URL.revokeObjectURL(transferOptions.wallpaperPreview);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Handle drawer/account query params from navigation
   useEffect(() => {

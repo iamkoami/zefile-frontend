@@ -19,6 +19,7 @@ export interface CreateTransferDto {
   expireAt?: string;
   expiryDate?: string; // Legacy field
   maxDownloads?: number;
+  wallpaperKey?: string;
 }
 
 export interface CreateTransferWithFilesDto extends CreateTransferDto {
@@ -77,6 +78,7 @@ export interface TransferDto {
   isPaid?: boolean;
   // Payment requirement - true if payment is required for this transfer
   paymentRequired?: boolean;
+  wallpaperUrl?: string;
 }
 
 export interface UpdateTransferDto {

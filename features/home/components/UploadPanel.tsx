@@ -19,6 +19,7 @@ import { multipartUploadService } from "@/services/multipart-upload.service";
 import { useUploadStore } from "@/stores/upload-store";
 import { useCurrentCurrency } from "@/stores/currency-store";
 import { TransferOptions } from "@/features/transfer/components/TransferOptionsPanel";
+import { storageApi } from "@/services/storage-api";
 import { getTierTranslationKey } from "@/hooks/useTierLimits";
 import { usePollEligibility } from "@/hooks/usePollEligibility";
 
@@ -557,6 +558,19 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
       title.trim() || selectedFiles[0]?.name || "Untitled Transfer";
 
     try {
+      // Step 0: Upload wallpaper if selected (non-blocking — failure = no wallpaper)
+      let wallpaperKey: string | undefined;
+      if (transferOptions?.wallpaperFile) {
+        try {
+          const wpResponse = await storageApi.uploadWallpaper(transferOptions.wallpaperFile);
+          if (wpResponse.data?.wallpaperKey) {
+            wallpaperKey = wpResponse.data.wallpaperKey;
+          }
+        } catch (wpError) {
+          console.warn("Wallpaper upload failed, continuing without wallpaper:", wpError);
+        }
+      }
+
       // Step 1: Create transfer metadata (without files)
       const transferResponse = await transferApi.createTransfer({
         senderId: userId,
@@ -574,6 +588,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
         expireAt: transferOptions?.validityDuration
           ? calculateExpiryDate(transferOptions.validityDuration)
           : undefined,
+        wallpaperKey,
       });
 
       if (transferResponse.error) {

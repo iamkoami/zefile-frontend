@@ -207,7 +207,14 @@
     "tierRequired": "Requires {tier}",
     "freeTier": "Free",
     "starterTier": "Starter",
-    "proTier": "Pro"
+    "proTier": "Pro",
+    "wallpaperLabel": "Download page wallpaper",
+    "uploadWallpaper": "Upload image (JPEG, PNG, max 5MB)",
+    "wallpaperHint": "Recommended: 1920x1080 or larger",
+    "wallpaperPreview": "Wallpaper preview",
+    "removeWallpaper": "Remove wallpaper",
+    "invalidFileType": "Invalid file type. Only JPEG, PNG, and WebP are allowed.",
+    "fileTooLarge": "File too large. Maximum 5MB."
   },
   "fileTypes": {
     "images": "Images (JPG, PNG, GIF, WebP, BMP, TIFF, SVG)",
@@ -410,7 +417,9 @@
     "paymentWindowOpen": "A secure payment window has opened. Please complete your payment there.",
     "iAlreadyPaid": "I already paid — check now",
     "morePaymentOptions": "More payment options",
-    "lessPaymentOptions": "Less payment options"
+    "lessPaymentOptions": "Less payment options",
+    "systemUnavailable": "Payments Temporarily Unavailable",
+    "systemUnavailableDesc": "We're performing maintenance on our payment system. Your files are safe — please check back shortly."
   },
   "transfers": {
     "title": "Transfers",
@@ -845,6 +854,7 @@
     "platformFee": "platform fee",
     "manualPreviewRegen": "Manual preview regeneration",
     "currentPlan": "Current plan",
+    "customWallpaper": "Custom download page wallpaper",
     "recommended": "Recommended",
     "freeForever": "Free forever",
     "month": "month",
@@ -976,6 +986,8 @@
     "transfersPerMonth": "Transfers per month",
     "transferExpiry": "Transfer expiry",
     "cancelAnytime": "Cancel anytime. No questions asked.",
+    "paymentsUnavailable": "Subscriptions Temporarily Unavailable",
+    "paymentsUnavailableDesc": "Plan upgrades are paused for maintenance. Your current plan is unaffected.",
     "questionsContact": "Questions? Contact us at",
     "tiers": {
       "free": {

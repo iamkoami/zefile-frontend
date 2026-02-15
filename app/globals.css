@@ -182,6 +182,10 @@
     background-color: #13121d;
   }
 
+  .ze-content-panel.ze-wallpaper-mode {
+    background-color: transparent;
+  }
+
   /* Night mode text adjustments */
   .ze-time-night .ze-upload-panel,
   .ze-time-night .ze-file-preview-panel {

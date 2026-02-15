@@ -36,11 +36,13 @@ import Header from "@/components/shared/Header";
 import TimeOfDayBackground from "@/components/shared/TimeOfDayBackground";
 import HeroText from "@/components/shared/HeroText";
 import PaperPlaneAnimation from "@/components/shared/PaperPlaneAnimation";
-import { useTimeOfDay } from "@/hooks/useTimeOfDay";
+import { useTimeOfDay, type TimeOfDay } from "@/hooks/useTimeOfDay";
+
 import ToastContainer from "@/components/shared/Toast";
 import { TransferSummaryCard } from "@/components/shared/TransferSummaryCard";
 import { transferApi, TransferDto } from "@/services/transfer-api";
 import { apiClient } from "@/services/api-client";
+import { platformApi } from "@/services/platform-api";
 import { paymentApi } from "@/services/payment-api";
 import { storageApi } from "@/services/storage-api";
 import { authApi } from "@/services/auth-api";
@@ -99,6 +101,22 @@ type PageState =
   | "preview"
   | "ready"
   | "error";
+
+function ContentPanelBackground({ wallpaperUrl, timeOfDay }: { wallpaperUrl?: string; timeOfDay: TimeOfDay }) {
+  if (wallpaperUrl) {
+    return (
+      <div className="absolute inset-0 bg-cover bg-center bg-no-repeat rounded-2xl"
+           style={{ backgroundImage: `url('${wallpaperUrl}')` }} />
+    );
+  }
+  return (
+    <>
+      <TimeOfDayBackground timeOfDay={timeOfDay} />
+      <HeroText isVisible={true} timeOfDay={timeOfDay} />
+      <PaperPlaneAnimation isVisible={true} />
+    </>
+  );
+}
 
 export default function TransferLandingPage() {
   const params = useParams();
@@ -170,6 +188,10 @@ export default function TransferLandingPage() {
   // Payment prompt
   const [paymentReference, setPaymentReference] = useState("");
   const [paymentAmount, setPaymentAmount] = useState(0);
+
+  // Payment block (admin can disable all payments)
+  // null = not yet checked, true = disabled, false = enabled
+  const [paymentsDisabled, setPaymentsDisabled] = useState<boolean | null>(null);
 
   // Poll eligibility check — replaces FloatingPollWidget's former self-fetch
   const { checkForPoll } = usePollEligibility();
@@ -285,6 +307,13 @@ export default function TransferLandingPage() {
           // For password-protected transfers (accessControl === 'password'),
           // users must first verify their email, then enter the password.
           // The password flow is triggered after email verification in handleOtpVerify.
+          // Check if payments are globally disabled
+          platformApi.getPublicConfig().then((configRes) => {
+            if (!configRes.error && configRes.data) {
+              setPaymentsDisabled(!configRes.data.paymentsEnabled);
+            }
+          });
+
           // Always show download panel first (payment happens when clicking download)
           setPageState("ready");
         } else {
@@ -656,7 +685,12 @@ export default function TransferLandingPage() {
         });
 
         if (response.error) {
-          toast.error(response.error.message || tPayment("paymentInitFailed"));
+          if (response.status === 503) {
+            setPaymentsDisabled(true);
+            toast.error(tPayment("systemUnavailable"));
+          } else {
+            toast.error(response.error.message || tPayment("paymentInitFailed"));
+          }
           return;
         }
 
@@ -691,7 +725,12 @@ export default function TransferLandingPage() {
       });
 
       if (response.error) {
-        toast.error(response.error.message || tPayment("paymentInitFailed"));
+        if (response.status === 503) {
+          setPaymentsDisabled(true);
+          toast.error(tPayment("systemUnavailable"));
+        } else {
+          toast.error(response.error.message || tPayment("paymentInitFailed"));
+        }
         setIsLoading(false);
         return;
       }
@@ -812,12 +851,10 @@ export default function TransferLandingPage() {
           style={{ minHeight: "calc(100vh - 64px)", position: "relative" }}
         >
           <div
-            className={`ze-content-panel ze-time-${timeOfDay}`}
+            className={`ze-content-panel ${transfer?.wallpaperUrl ? 'ze-wallpaper-mode' : `ze-time-${timeOfDay}`}`}
             style={{ position: "relative", overflow: "hidden" }}
           >
-            <TimeOfDayBackground timeOfDay={timeOfDay} />
-            <HeroText isVisible={true} timeOfDay={timeOfDay} />
-            <PaperPlaneAnimation isVisible={true} />
+            <ContentPanelBackground wallpaperUrl={transfer?.wallpaperUrl} timeOfDay={timeOfDay} />
             <div
               className="ze-panels-container"
               style={{ position: "relative", zIndex: 10 }}
@@ -864,12 +901,10 @@ export default function TransferLandingPage() {
         <Header />
         <main style={{ minHeight: "calc(100vh - 64px)", position: "relative" }}>
           <div
-            className={`ze-content-panel ze-time-${timeOfDay}`}
+            className={`ze-content-panel ${transfer?.wallpaperUrl ? 'ze-wallpaper-mode' : `ze-time-${timeOfDay}`}`}
             style={{ position: "relative", overflow: "hidden" }}
           >
-            <TimeOfDayBackground timeOfDay={timeOfDay} />
-            <HeroText isVisible={true} timeOfDay={timeOfDay} />
-            <PaperPlaneAnimation isVisible={true} />
+            <ContentPanelBackground wallpaperUrl={transfer?.wallpaperUrl} timeOfDay={timeOfDay} />
             <div
               className="ze-panels-container"
               style={{ position: "relative", zIndex: 10 }}
@@ -935,12 +970,10 @@ export default function TransferLandingPage() {
         <Header />
         <main style={{ minHeight: "calc(100vh - 64px)", position: "relative" }}>
           <div
-            className={`ze-content-panel ze-time-${timeOfDay}`}
+            className={`ze-content-panel ${transfer?.wallpaperUrl ? 'ze-wallpaper-mode' : `ze-time-${timeOfDay}`}`}
             style={{ position: "relative", overflow: "hidden" }}
           >
-            <TimeOfDayBackground timeOfDay={timeOfDay} />
-            <HeroText isVisible={true} timeOfDay={timeOfDay} />
-            <PaperPlaneAnimation isVisible={true} />
+            <ContentPanelBackground wallpaperUrl={transfer?.wallpaperUrl} timeOfDay={timeOfDay} />
             <div
               className="ze-panels-container flex-col lg:flex-row gap-6"
               style={{ position: "relative", zIndex: 10 }}
@@ -1075,12 +1108,10 @@ export default function TransferLandingPage() {
         <Header />
         <main style={{ minHeight: "calc(100vh - 64px)", position: "relative" }}>
           <div
-            className={`ze-content-panel ze-time-${timeOfDay}`}
+            className={`ze-content-panel ${transfer?.wallpaperUrl ? 'ze-wallpaper-mode' : `ze-time-${timeOfDay}`}`}
             style={{ position: "relative", overflow: "hidden" }}
           >
-            <TimeOfDayBackground timeOfDay={timeOfDay} />
-            <HeroText isVisible={true} timeOfDay={timeOfDay} />
-            <PaperPlaneAnimation isVisible={true} />
+            <ContentPanelBackground wallpaperUrl={transfer?.wallpaperUrl} timeOfDay={timeOfDay} />
             <div
               className="ze-panels-container flex-col lg:flex-row gap-6"
               style={{ position: "relative", zIndex: 10 }}
@@ -1189,12 +1220,10 @@ export default function TransferLandingPage() {
         <Header />
         <main style={{ minHeight: "calc(100vh - 64px)", position: "relative" }}>
           <div
-            className={`ze-content-panel ze-time-${timeOfDay}`}
+            className={`ze-content-panel ${transfer?.wallpaperUrl ? 'ze-wallpaper-mode' : `ze-time-${timeOfDay}`}`}
             style={{ position: "relative", overflow: "hidden" }}
           >
-            <TimeOfDayBackground timeOfDay={timeOfDay} />
-            <HeroText isVisible={true} timeOfDay={timeOfDay} />
-            <PaperPlaneAnimation isVisible={true} />
+            <ContentPanelBackground wallpaperUrl={transfer?.wallpaperUrl} timeOfDay={timeOfDay} />
             <div
               className="ze-panels-container flex-col lg:flex-row gap-6"
               style={{ position: "relative", zIndex: 10 }}
@@ -1374,12 +1403,10 @@ export default function TransferLandingPage() {
         <Header />
         <main style={{ minHeight: "calc(100vh - 64px)", position: "relative" }}>
           <div
-            className={`ze-content-panel ze-time-${timeOfDay}`}
+            className={`ze-content-panel ${transfer?.wallpaperUrl ? 'ze-wallpaper-mode' : `ze-time-${timeOfDay}`}`}
             style={{ position: "relative", overflow: "hidden" }}
           >
-            <TimeOfDayBackground timeOfDay={timeOfDay} />
-            <HeroText isVisible={true} timeOfDay={timeOfDay} />
-            <PaperPlaneAnimation isVisible={true} />
+            <ContentPanelBackground wallpaperUrl={transfer?.wallpaperUrl} timeOfDay={timeOfDay} />
             <div
               className="ze-panels-container"
               style={{ position: "relative", zIndex: 10 }}
@@ -1471,12 +1498,10 @@ export default function TransferLandingPage() {
         <Header />
         <main style={{ minHeight: "calc(100vh - 64px)", position: "relative" }}>
           <div
-            className={`ze-content-panel ze-time-${timeOfDay}`}
+            className={`ze-content-panel ${transfer?.wallpaperUrl ? 'ze-wallpaper-mode' : `ze-time-${timeOfDay}`}`}
             style={{ position: "relative", overflow: "hidden" }}
           >
-            <TimeOfDayBackground timeOfDay={timeOfDay} />
-            <HeroText isVisible={true} timeOfDay={timeOfDay} />
-            <PaperPlaneAnimation isVisible={true} />
+            <ContentPanelBackground wallpaperUrl={transfer?.wallpaperUrl} timeOfDay={timeOfDay} />
             <div
               className="ze-panels-container"
               style={{ position: "relative", zIndex: 10 }}
@@ -1602,12 +1627,10 @@ export default function TransferLandingPage() {
 
         <main style={{ minHeight: "calc(100vh - 64px)", position: "relative" }}>
           <div
-            className={`ze-content-panel ze-time-${timeOfDay}`}
+            className={`ze-content-panel ${transfer?.wallpaperUrl ? 'ze-wallpaper-mode' : `ze-time-${timeOfDay}`}`}
             style={{ position: "relative", overflow: "hidden" }}
           >
-            <TimeOfDayBackground timeOfDay={timeOfDay} />
-            <HeroText isVisible={true} timeOfDay={timeOfDay} />
-            <PaperPlaneAnimation isVisible={true} />
+            <ContentPanelBackground wallpaperUrl={transfer?.wallpaperUrl} timeOfDay={timeOfDay} />
             <div
               className="ze-panels-container"
               style={{ position: "relative", zIndex: 10 }}
@@ -1708,12 +1731,10 @@ export default function TransferLandingPage() {
 
         <main style={{ minHeight: "calc(100vh - 64px)", position: "relative" }}>
           <div
-            className={`ze-content-panel ze-time-${timeOfDay}`}
+            className={`ze-content-panel ${transfer?.wallpaperUrl ? 'ze-wallpaper-mode' : `ze-time-${timeOfDay}`}`}
             style={{ position: "relative", overflow: "hidden" }}
           >
-            <TimeOfDayBackground timeOfDay={timeOfDay} />
-            <HeroText isVisible={true} timeOfDay={timeOfDay} />
-            <PaperPlaneAnimation isVisible={true} />
+            <ContentPanelBackground wallpaperUrl={transfer?.wallpaperUrl} timeOfDay={timeOfDay} />
             <div
               className="ze-panels-container"
               style={{ position: "relative", zIndex: 10 }}
@@ -1791,6 +1812,21 @@ export default function TransferLandingPage() {
                   {t("reportTransfer")}
                 </button>
 
+                {/* Payment unavailable warning */}
+                {paymentsDisabled && transfer.price && transfer.price > 0 && !transfer.isPaid && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded p-4 mb-4 flex items-start gap-3">
+                    <WarningCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-semibold text-yellow-800">
+                        {tPayment("systemUnavailable")}
+                      </p>
+                      <p className="text-xs text-yellow-700 mt-1">
+                        {tPayment("systemUnavailableDesc")}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 {/* Download / Pay & Download + Preview Buttons */}
                 <div className="space-y-3">
                   <button
@@ -1799,8 +1835,8 @@ export default function TransferLandingPage() {
                         ? () => setPageState("payment")
                         : handleDownload
                     }
-                    disabled={isDownloading}
-                    className="w-full px-6 py-3.5 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                    disabled={isDownloading || (paymentsDisabled !== false && !!transfer.price && transfer.price > 0 && !transfer.isPaid)}
+                    className="w-full px-6 py-3.5 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     {transfer.price && transfer.price > 0 && !transfer.isPaid ? (
                       <>
