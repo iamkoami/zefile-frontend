@@ -26,7 +26,7 @@ const LoadingFullscreen: React.FC<LoadingFullscreenProps> = ({ message }) => {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center"
+      className="fixed inset-0 z-[9999] flex flex-col items-center justify-center"
       style={{ backgroundColor: "#FFFFFF" }}
     >
       {animationData ? (
