@@ -5,6 +5,23 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-02-17
+
+### Added
+- Privacy and terms pages
+- Dynamic sitemap generation (`app/sitemap.ts`)
+- OG image for social sharing
+- SoftwareApplication JSON-LD structured data
+- Google/Yandex verification meta tags support
+
+### Changed
+- Rewrite all UI translations (EN + FR) with ZeFile brand voice
+- Update SEO meta tags and layout across all pages
+- Adjust HeroText font sizes for consistency
+
+### Fixed
+- Loading screen z-index now covers chat widget during page load
+
 ## [1.1.0] - 2026-02-17
 
 ### Added
