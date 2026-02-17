@@ -5,6 +5,23 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-02-17
+
+### Added
+- AI support chat widget with context-aware conversation starters, escalation to human agents, and satisfaction rating
+- Support API service (`support-api.ts`) and chat store (`chat-store.ts`) for conversation state management
+- Country flag SVGs (CI, GH, KE, NG, SN, ZA) in small/medium/large sizes for currency switcher
+- `react-flagpack` dependency for flag rendering
+- Support chat translations (en/fr)
+- Transfer context injection into chat widget on download page
+
+### Changed
+- Moved poll widget and chat button to bottom-right with coordination: poll auto-hides when chat opens, reappears 2s after chat closes
+- Updated LoadingFullscreen and LoadingPanel with improved animations
+- Updated KYC, payment, and subscription panels with currency flag integration
+- Improved multipart upload chunk handling in `multipart-upload.service.ts`
+- Updated currency switcher with flag icon display
+
 ## [1.0.2] - 2026-02-14
 
 ### Changed
