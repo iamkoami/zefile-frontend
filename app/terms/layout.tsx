@@ -6,12 +6,12 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://zefile.io';
 
 const seoContent = {
   en: {
-    title: 'How ZeFile Works - Send Files with Payment Guarantee',
-    description: 'Learn how to use ZeFile in 3 simple steps: Upload files, set your price, share the link. Your recipients pay before downloading. Secure and simple file transfer.',
+    title: 'Terms of Service - ZeFile',
+    description: 'Read ZeFile\'s Terms of Service. Understand your rights and responsibilities when using our secure file transfer platform, including file sharing, payments, and account policies.',
   },
   fr: {
-    title: 'Comment fonctionne ZeFile - Envoyez des fichiers avec garantie de paiement',
-    description: 'Découvrez comment utiliser ZeFile en 3 étapes simples : Téléversez vos fichiers, fixez votre prix, partagez le lien. Vos destinataires paient avant de télécharger.',
+    title: 'Conditions d\'utilisation - ZeFile',
+    description: 'Lisez les conditions d\'utilisation de ZeFile. Comprenez vos droits et responsabilités lors de l\'utilisation de notre plateforme de transfert de fichiers sécurisée.',
   },
 };
 
@@ -25,7 +25,7 @@ export async function generateMetadata(): Promise<Metadata> {
     openGraph: {
       title: content.title,
       description: content.description,
-      url: `${SITE_URL}/how-it-works`,
+      url: `${SITE_URL}/terms`,
       type: 'website',
     },
     twitter: {
@@ -33,12 +33,12 @@ export async function generateMetadata(): Promise<Metadata> {
       description: content.description,
     },
     alternates: {
-      canonical: `${SITE_URL}/how-it-works`,
+      canonical: `${SITE_URL}/terms`,
     },
   };
 }
 
-export default function HowItWorksLayout({
+export default function TermsLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -47,7 +47,7 @@ export default function HowItWorksLayout({
     <>
       <BreadcrumbJsonLd items={[
         { name: 'Home', url: SITE_URL },
-        { name: 'How It Works', url: `${SITE_URL}/how-it-works` },
+        { name: 'Terms of Service', url: `${SITE_URL}/terms` },
       ]} />
       {children}
     </>

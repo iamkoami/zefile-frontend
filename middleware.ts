@@ -99,6 +99,8 @@ export const config = {
     '/how-it-works',
     '/payment/:path*',
     '/pricing',
+    '/privacy',
+    '/terms',
     '/z-:path*',
   ],
 };

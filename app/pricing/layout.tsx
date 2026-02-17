@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { getLocale } from "next-intl/server";
-import { FAQJsonLd, PricingJsonLd } from "@/components/seo/JsonLd";
+import { BreadcrumbJsonLd, FAQJsonLd, PricingJsonLd } from "@/components/seo/JsonLd";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://zefile.io';
 
@@ -100,6 +100,10 @@ export default async function PricingLayout({
 
   return (
     <>
+      <BreadcrumbJsonLd items={[
+        { name: 'Home', url: SITE_URL },
+        { name: 'Pricing', url: `${SITE_URL}/pricing` },
+      ]} />
       <FAQJsonLd faqs={content.faqs} />
       <PricingJsonLd tiers={pricingTiers} />
       {children}

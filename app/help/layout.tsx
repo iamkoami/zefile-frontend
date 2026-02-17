@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getLocale } from "next-intl/server";
+import { BreadcrumbJsonLd } from "@/components/seo/JsonLd";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://zefile.io';
 
@@ -42,5 +43,13 @@ export default function HelpLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return children;
+  return (
+    <>
+      <BreadcrumbJsonLd items={[
+        { name: 'Home', url: SITE_URL },
+        { name: 'Help Center', url: `${SITE_URL}/help` },
+      ]} />
+      {children}
+    </>
+  );
 }

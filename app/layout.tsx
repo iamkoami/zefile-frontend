@@ -8,7 +8,7 @@ import localFont from "next/font/local";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import PostHogProvider from "@/components/providers/PostHogProvider";
-import { OrganizationJsonLd, WebSiteJsonLd } from "@/components/seo/JsonLd";
+import { OrganizationJsonLd, WebSiteJsonLd, SoftwareApplicationJsonLd } from "@/components/seo/JsonLd";
 import GlobalSideDrawer from "@/components/providers/GlobalSideDrawer";
 import ToastContainer from "@/components/shared/Toast";
 import ChatWidget from "@/components/shared/ChatWidget";
@@ -149,10 +149,6 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     alternates: {
       canonical: SITE_URL,
-      languages: {
-        'en': `${SITE_URL}/en`,
-        'fr': `${SITE_URL}/fr`,
-      },
     },
     icons: {
       icon: [
@@ -163,9 +159,8 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     manifest: '/manifest.json',
     verification: {
-      // Add your verification codes here when ready
-      // google: 'your-google-verification-code',
-      // yandex: 'your-yandex-verification-code',
+      google: process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION || undefined,
+      yandex: process.env.NEXT_PUBLIC_YANDEX_VERIFICATION || undefined,
     },
     category: 'technology',
   };
@@ -184,6 +179,7 @@ export default async function RootLayout({
       <head>
         <OrganizationJsonLd />
         <WebSiteJsonLd />
+        <SoftwareApplicationJsonLd />
       </head>
       <body
         className={`${metropolis.variable} ${geistSans.variable} ${geistMono.variable} antialiased font-sans`}

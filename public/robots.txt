@@ -11,20 +11,18 @@ Allow: /
 Allow: /$
 Allow: /about
 Allow: /about/
-Allow: /features
-Allow: /features/
 Allow: /pricing
 Allow: /pricing/
-Allow: /contact
-Allow: /contact/
 Allow: /help
 Allow: /help/
+Allow: /how-it-works
+Allow: /how-it-works/
+Allow: /advertisers
+Allow: /advertisers/
 Allow: /privacy
 Allow: /privacy/
 Allow: /terms
 Allow: /terms/
-Allow: /blog
-Allow: /blog/
 
 # ============================================
 # DISALLOW: Download pages (privacy protection)

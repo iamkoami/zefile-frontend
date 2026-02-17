@@ -53,7 +53,7 @@ const HeroText: React.FC<HeroTextProps> = ({
     >
       {/* Title */}
       <h1
-        className={`text-4xl xl:text-5xl font-bold leading-tight mb-4 ${colors.title}`}
+        className={`text-4xl xl:text-4xl font-bold leading-tight mb-4 ${colors.title}`}
         style={{
           transition: "color 1.5s ease-in-out",
         }}
@@ -63,7 +63,7 @@ const HeroText: React.FC<HeroTextProps> = ({
 
       {/* Subtitle */}
       <p
-        className={`text-lg xl:text-xl leading-relaxed ${colors.subtitle}`}
+        className={`text-lg xl:text-lg leading-relaxed ${colors.subtitle}`}
         style={{
           transition: "color 1.5s ease-in-out",
         }}
