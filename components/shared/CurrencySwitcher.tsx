@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { NavArrowDown } from "iconoir-react";
+import Flag from "react-flagpack";
+import { NavArrowDown, Globe } from "iconoir-react";
 import {
   useCurrencyStore,
   COUNTRY_CONFIG,
@@ -67,7 +68,11 @@ const CurrencySwitcher: React.FC<CurrencySwitcherProps> = ({
         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
         className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded transition-colors text-gray-600 hover:bg-gray-100"
       >
-        <span className="text-base">{COUNTRY_CONFIG[countryCode]?.flag}</span>
+        {COUNTRY_CONFIG[countryCode]?.flagCode ? (
+          <Flag code={COUNTRY_CONFIG[countryCode].flagCode!} size="s" hasBorder={false} />
+        ) : (
+          <Globe className="w-4 h-4 text-gray-500" />
+        )}
         <span>{pricing.currency}</span>
         <NavArrowDown
           className={`w-3.5 h-3.5 transition-transform ${isDropdownOpen ? "rotate-180" : ""}`}
@@ -88,7 +93,11 @@ const CurrencySwitcher: React.FC<CurrencySwitcherProps> = ({
                   isSelected ? "bg-gray-50 font-medium text-[#5E53E0]" : "text-gray-700"
                 }`}
               >
-                <span className="text-lg">{config.flag}</span>
+                {config.flagCode ? (
+                  <Flag code={config.flagCode} size="s" hasBorder={false} />
+                ) : (
+                  <Globe className="w-5 h-5 text-gray-500" />
+                )}
                 <span>{config.name}</span>
               </button>
             );

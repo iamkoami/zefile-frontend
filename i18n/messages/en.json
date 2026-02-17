@@ -1887,5 +1887,53 @@
     "serviceUnavailable": "The server is temporarily unavailable. Please try again later.",
     "timeout": "Request timeout. Please try again.",
     "connectionFailed": "Unable to connect to the server. Please check your connection and try again."
+  },
+  "support": {
+    "title": "Support",
+    "subtitle": "How can we help?",
+    "greeting": "Hi there!",
+    "greetingWithName": "Hi {name}!",
+    "placeholder": "Type a message...",
+    "send": "Send",
+    "typing": "Zefi is typing...",
+    "needHelp": "Need help?",
+    "chatWithUs": "Chat with us",
+    "newConversation": "Start a new conversation",
+    "resolve": "Mark as resolved",
+    "escalate": "Chat with our team",
+    "resolved": "This conversation has been resolved",
+    "resolvedThanks": "Thanks for chatting with us!",
+    "rateExperience": "How was your experience?",
+    "ratedThanks": "Thanks for your feedback!",
+    "error": "Something went wrong. Please try again.",
+    "rateLimit": "You're sending messages too quickly. Please wait a moment.",
+    "enterEmail": "So we can follow up with you, what's your email?",
+    "emailPlaceholder": "your@email.com",
+    "invalidEmail": "Please enter a valid email address",
+    "continue": "Continue",
+    "justNow": "Just now",
+    "minutesAgo": "{count}m ago",
+    "hoursAgo": "{count}h ago",
+    "starter": {
+      "download": "I need help downloading",
+      "payment": "Payment or payout question",
+      "access": "Password or access issue",
+      "other": "Something else",
+      "expired": "My download link expired",
+      "expiredMessage": "My download link has expired. Can you help?",
+      "password": "I'm having trouble with the password",
+      "passwordMessage": "I'm trying to download but the password isn't working."
+    },
+    "leave": {
+      "title": "You have an active conversation",
+      "continueChat": "Continue chatting",
+      "closeAndNew": "Close and start new"
+    },
+    "escalation": {
+      "connecting": "Connecting you with a team member...",
+      "waiting": "Our team has been notified. We'll get back to you shortly.",
+      "waitingEmail": "We'll email you at {email} when we reply.",
+      "connected": "A team member has joined the conversation"
+    }
   }
 }

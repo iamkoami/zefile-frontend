@@ -57,6 +57,7 @@ import TransferPreviewModal from "@/features/transfer/components/TransferPreview
 import { useDrawerStore } from "@/stores/drawer-store";
 import FloatingPollWidget from "@/components/shared/FloatingPollWidget";
 import { usePollEligibility } from "@/hooks/usePollEligibility";
+import { useChatStore } from "@/stores/chat-store";
 
 // Helper to extract sender email from senderId
 const getSenderEmail = (transfer: TransferDto): string | undefined => {
@@ -199,6 +200,23 @@ export default function TransferLandingPage() {
     const timer = setTimeout(() => { checkForPoll('manual'); }, 2000);
     return () => clearTimeout(timer);
   }, [checkForPoll]);
+
+  // Inject transfer context into ChatWidget store for context-aware support
+  useEffect(() => {
+    if (transfer) {
+      useChatStore.getState().setContext({
+        pageType: 'download',
+        shortCode,
+        transferId,
+        transferStatus: transfer.status,
+        hasPassword: !!transfer.hasPassword,
+        isExpired: transfer.status === 'expired',
+      });
+    }
+    return () => {
+      useChatStore.getState().setContext(undefined);
+    };
+  }, [transfer, shortCode, transferId]);
 
   // Download state
   const [isDownloading, setIsDownloading] = useState(false);

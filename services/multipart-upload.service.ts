@@ -78,7 +78,7 @@ class MultipartUploadService {
 
   /**
    * Pause all ongoing uploads
-   * Uploads will pause before starting the next chunk
+   * Current in-flight chunks finish, but no new chunks start
    */
   public pause(): void {
     this.isPaused = true;
@@ -263,6 +263,30 @@ class MultipartUploadService {
     }
 
     return response.data.presignedUrl;
+  }
+
+  /**
+   * Get presigned URLs for multiple parts in a single request
+   */
+  async getBatchPresignedUrls(
+    uploadId: string,
+    objectKey: string,
+    partNumbers: number[]
+  ): Promise<Map<number, string>> {
+    const response = await apiClient.post<{ urls: Array<{ presignedUrl: string; partNumber: number }> }>(
+      '/storage/multipart/presigned-urls',
+      { uploadId, objectKey, partNumbers },
+    );
+
+    if (response.error) {
+      throw new Error(response.error.message || 'Failed to get batch presigned URLs');
+    }
+
+    const urlMap = new Map<number, string>();
+    for (const item of response.data!.urls) {
+      urlMap.set(item.partNumber, item.presignedUrl);
+    }
+    return urlMap;
   }
 
   /**
@@ -558,17 +582,14 @@ class MultipartUploadService {
       });
     };
 
-    // Step 2: Upload chunks in parallel (4 concurrent)
-    const uploadChunkTask = async (partNumber: number): Promise<CompletedPart> => {
+    // Step 2: Upload chunks in parallel (6 concurrent)
+    const uploadChunkTask = async (partNumber: number, presignedUrl: string): Promise<CompletedPart> => {
       // Check if paused before starting this chunk
       await this.waitIfPaused();
 
       const start = (partNumber - 1) * chunkSize;
       const end = Math.min(start + chunkSize, file.size);
       const chunk = file.slice(start, end);
-
-      // Get presigned URL for this part
-      const presignedUrl = await this.getPresignedUrl(uploadId, objectKey, partNumber);
 
       // Upload chunk with progress tracking and automatic retry
       const etag = await this.uploadChunkWithRetry(presignedUrl, chunk, partNumber, (loaded) => {
@@ -592,16 +613,24 @@ class MultipartUploadService {
       // Check if paused before starting new batch
       await this.waitIfPaused();
 
-      // Create batch of chunks to upload (up to CONCURRENT_UPLOADS at a time)
-      const batch = [];
+      // Collect part numbers for this batch (skip completed)
+      const batchPartNumbers: number[] = [];
       for (let j = 0; j < CONCURRENT_UPLOADS && (i + j) < totalParts; j++) {
         const partNumber = i + j + 1;
-
-        // Skip already completed parts
         if (!completedPartNumbers.has(partNumber)) {
-          batch.push(uploadChunkTask(partNumber));
+          batchPartNumbers.push(partNumber);
         }
       }
+
+      if (batchPartNumbers.length === 0) continue;
+
+      // Fetch all presigned URLs for this batch in one request
+      const presignedUrlMap = await this.getBatchPresignedUrls(uploadId, objectKey, batchPartNumbers);
+
+      // Start all chunk uploads in parallel
+      const batch = batchPartNumbers.map(partNumber =>
+        uploadChunkTask(partNumber, presignedUrlMap.get(partNumber)!)
+      );
 
       // Wait for all chunks in this batch to complete
       if (batch.length > 0) {

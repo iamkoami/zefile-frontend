@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslations } from 'next-intl';
+import Flag from 'react-flagpack';
 import { Upload, Check, NavArrowDown, Trash } from 'iconoir-react';
 import {
   kycApi,
@@ -19,14 +20,14 @@ interface KYCUploadPanelProps {
   className?: string;
 }
 
-// Supported countries for KYC with flag emojis
+// Supported countries for KYC
 const COUNTRIES = [
-  { code: 'CI', name: 'Côte d\'Ivoire', nameFr: 'Côte d\'Ivoire', flag: '🇨🇮' },
-  { code: 'GH', name: 'Ghana', nameFr: 'Ghana', flag: '🇬🇭' },
-  { code: 'KE', name: 'Kenya', nameFr: 'Kenya', flag: '🇰🇪' },
-  { code: 'NG', name: 'Nigeria', nameFr: 'Nigeria', flag: '🇳🇬' },
-  { code: 'SN', name: 'Senegal', nameFr: 'Sénégal', flag: '🇸🇳' },
-  { code: 'ZA', name: 'South Africa', nameFr: 'Afrique du Sud', flag: '🇿🇦' },
+  { code: 'CI', name: 'Côte d\'Ivoire', nameFr: 'Côte d\'Ivoire', flagCode: 'CI' },
+  { code: 'GH', name: 'Ghana', nameFr: 'Ghana', flagCode: 'GH' },
+  { code: 'KE', name: 'Kenya', nameFr: 'Kenya', flagCode: 'KE' },
+  { code: 'NG', name: 'Nigeria', nameFr: 'Nigeria', flagCode: 'NG' },
+  { code: 'SN', name: 'Senegal', nameFr: 'Sénégal', flagCode: 'SN' },
+  { code: 'ZA', name: 'South Africa', nameFr: 'Afrique du Sud', flagCode: 'ZA' },
 ];
 
 // Document types for KYC
@@ -384,7 +385,7 @@ export function KYCUploadPanel({
               <span className={`flex items-center gap-2 ${selectedCountry ? 'text-[#171717]' : 'text-gray-400'}`}>
                 {selectedCountry ? (
                   <>
-                    <span className="text-lg">{COUNTRIES.find(c => c.code === selectedCountry)?.flag}</span>
+                    <Flag code={COUNTRIES.find(c => c.code === selectedCountry)?.flagCode || selectedCountry} size="s" hasBorder={false} />
                     {COUNTRIES.find(c => c.code === selectedCountry)?.name}
                   </>
                 ) : (
@@ -412,7 +413,7 @@ export function KYCUploadPanel({
                       country.code === selectedCountry ? 'bg-gray-50 font-medium' : ''
                     }`}
                   >
-                    <span className="text-lg">{country.flag}</span>
+                    <Flag code={country.flagCode} size="s" hasBorder={false} />
                     {country.name}
                   </button>
                 ))}

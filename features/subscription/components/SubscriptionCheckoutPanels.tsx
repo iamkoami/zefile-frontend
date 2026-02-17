@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import React from "react";
+import Flag from "react-flagpack";
 import {
   CreditCard,
   SmartphoneDevice,
@@ -13,6 +14,7 @@ import {
   Lock,
   Clock,
   Xmark,
+  Globe,
 } from "iconoir-react";
 import Image from "next/image";
 import LoadingPanel from "@/components/LoadingPanel";
@@ -149,10 +151,11 @@ export function SubscriptionCountryPanel() {
               aria-haspopup="listbox"
             >
               <span className="flex items-center gap-2">
-                <span className="text-lg">
-                  {COUNTRY_CONFIG[selectedCountry]?.flag ||
-                    COUNTRY_CONFIG.DEFAULT.flag}
-                </span>
+                {(COUNTRY_CONFIG[selectedCountry]?.flagCode || COUNTRY_CONFIG.DEFAULT.flagCode) ? (
+                  <Flag code={(COUNTRY_CONFIG[selectedCountry]?.flagCode || COUNTRY_CONFIG.DEFAULT.flagCode)!} size="s" hasBorder={false} />
+                ) : (
+                  <Globe className="w-5 h-5 text-gray-500" />
+                )}
                 {COUNTRY_CONFIG[selectedCountry]?.name ||
                   COUNTRY_CONFIG.DEFAULT.name}
               </span>
@@ -184,7 +187,11 @@ export function SubscriptionCountryPanel() {
                       role="option"
                       aria-selected={selectedCountry === code}
                     >
-                      <span className="text-lg">{COUNTRY_CONFIG[code]?.flag}</span>
+                      {COUNTRY_CONFIG[code]?.flagCode ? (
+                        <Flag code={COUNTRY_CONFIG[code].flagCode!} size="s" hasBorder={false} />
+                      ) : (
+                        <Globe className="w-5 h-5 text-gray-500" />
+                      )}
                       {COUNTRY_CONFIG[code]?.name}
                     </button>
                   ))}

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
+import Flag from "react-flagpack";
 import {
   CreditCard,
   Bank,
@@ -405,7 +406,7 @@ const PayoutMethodsPanel: React.FC = () => {
               onClick={() => handleCountrySelect(country.code)}
               className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:border-[#5E53E0] hover:bg-[#5E53E0]/5 transition-colors text-left"
             >
-              <span className="text-2xl">{getCountryFlag(country.code)}</span>
+              <Flag code={country.code} size="m" hasBorder={false} />
               <div className="flex-1">
                 <p className="font-medium text-[#171717]">{country.name}</p>
                 <div className="flex items-center gap-2 mt-1">
@@ -747,22 +748,6 @@ const PayoutMethodsPanel: React.FC = () => {
   return null;
 };
 
-// Helper: Get country flag emoji
-function getCountryFlag(countryCode: string): string {
-  const flags: Record<string, string> = {
-    NG: "🇳🇬",
-    GH: "🇬🇭",
-    KE: "🇰🇪",
-    ZA: "🇿🇦",
-    TZ: "🇹🇿",
-    UG: "🇺🇬",
-    RW: "🇷🇼",
-    CI: "🇨🇮",
-    SN: "🇸🇳",
-    CM: "🇨🇲",
-  };
-  return flags[countryCode] || "🌍";
-}
 
 // Provider icon component - uses SVG icons from /public/icons/payment/
 const ProviderIcon: React.FC<{

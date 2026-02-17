@@ -11,6 +11,8 @@ import PostHogProvider from "@/components/providers/PostHogProvider";
 import { OrganizationJsonLd, WebSiteJsonLd } from "@/components/seo/JsonLd";
 import GlobalSideDrawer from "@/components/providers/GlobalSideDrawer";
 import ToastContainer from "@/components/shared/Toast";
+import ChatWidget from "@/components/shared/ChatWidget";
+import "react-flagpack/dist/style.css";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -194,6 +196,7 @@ export default async function RootLayout({
               <ToastContainer />
               {children}
               <GlobalSideDrawer />
+              <ChatWidget />
             </PostHogProvider>
           </Suspense>
         </NextIntlClientProvider>

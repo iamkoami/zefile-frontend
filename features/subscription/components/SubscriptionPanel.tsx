@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Check, Sparks, Flash, Crown, NavArrowDown } from "iconoir-react";
+import Flag from "react-flagpack";
+import { Check, Sparks, Flash, Crown, NavArrowDown, Globe } from "iconoir-react";
 import LoadingPanel from "@/components/LoadingPanel";
 import { useTranslations } from "next-intl";
 import { useDrawerStore } from "@/stores/drawer-store";
@@ -314,9 +315,11 @@ const SubscriptionPanel: React.FC = () => {
             onClick={() => setIsCurrencyDropdownOpen(!isCurrencyDropdownOpen)}
             className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-[#171717] hover:border-gray-300 transition-all"
           >
-            <span className="text-lg">
-              {COUNTRY_CONFIG[countryCode]?.flag || COUNTRY_CONFIG.DEFAULT.flag}
-            </span>
+            {COUNTRY_CONFIG[countryCode]?.flagCode ? (
+              <Flag code={COUNTRY_CONFIG[countryCode].flagCode!} size="s" hasBorder={false} />
+            ) : (
+              <Globe className="w-5 h-5 text-gray-500" />
+            )}
             <span>
               {COUNTRY_CONFIG[countryCode]?.name || COUNTRY_CONFIG.DEFAULT.name}
             </span>
@@ -341,9 +344,11 @@ const SubscriptionPanel: React.FC = () => {
                       code === countryCode ? "bg-gray-50 font-medium" : ""
                     }`}
                   >
-                    <span className="text-lg">
-                      {COUNTRY_CONFIG[code]?.flag}
-                    </span>
+                    {COUNTRY_CONFIG[code]?.flagCode ? (
+                      <Flag code={COUNTRY_CONFIG[code].flagCode!} size="s" hasBorder={false} />
+                    ) : (
+                      <Globe className="w-5 h-5 text-gray-500" />
+                    )}
                     {COUNTRY_CONFIG[code]?.name}
                   </button>
                 ))}

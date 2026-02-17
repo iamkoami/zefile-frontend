@@ -105,7 +105,7 @@ const UploadProgressPanel: React.FC<UploadProgressPanelProps> = ({
             <span
               className="font-bold transition-all duration-100"
               style={{
-                fontSize: "140px",
+                fontSize: "130px",
                 lineHeight: "0.9",
                 background:
                   "linear-gradient(180deg, rgba(135, 230, 75, 0.5) 0%, #87E64B 100%)",

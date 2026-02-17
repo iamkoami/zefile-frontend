@@ -15,13 +15,15 @@ import {
 } from '@/services/subscription-api';
 import { initializeExchangeRates } from '@/lib/currency';
 
-// Country display names and flags
-export const COUNTRY_CONFIG: Record<string, { name: string; nameFr: string; flag: string }> = {
-  NG: { name: 'Nigeria (NGN)', nameFr: 'Nigeria (NGN)', flag: '🇳🇬' },
-  GH: { name: 'Ghana (GHS)', nameFr: 'Ghana (GHS)', flag: '🇬🇭' },
-  KE: { name: 'Kenya (KES)', nameFr: 'Kenya (KES)', flag: '🇰🇪' },
-  CI: { name: "Côte d'Ivoire (XOF)", nameFr: "Côte d'Ivoire (XOF)", flag: '🇨🇮' },
-  DEFAULT: { name: 'International (USD)', nameFr: 'International (USD)', flag: '🌍' },
+// Country display names and ISO codes for flags (rendered via react-flagpack)
+// `flagCode` is an ISO 3166-1 alpha-2 code used by <Flag code={...} />
+// DEFAULT has no flag code — components render a globe emoji fallback
+export const COUNTRY_CONFIG: Record<string, { name: string; nameFr: string; flagCode: string | null }> = {
+  NG: { name: 'Nigeria (NGN)', nameFr: 'Nigeria (NGN)', flagCode: 'NG' },
+  GH: { name: 'Ghana (GHS)', nameFr: 'Ghana (GHS)', flagCode: 'GH' },
+  KE: { name: 'Kenya (KES)', nameFr: 'Kenya (KES)', flagCode: 'KE' },
+  CI: { name: "Côte d'Ivoire (XOF)", nameFr: "Côte d'Ivoire (XOF)", flagCode: 'CI' },
+  DEFAULT: { name: 'International (USD)', nameFr: 'International (USD)', flagCode: null },
 };
 
 // All available country codes (including DEFAULT)

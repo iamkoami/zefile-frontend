@@ -1888,5 +1888,53 @@
     "serviceUnavailable": "Le serveur est temporairement indisponible. Veuillez réessayer plus tard.",
     "timeout": "Délai d'attente dépassé. Veuillez réessayer.",
     "connectionFailed": "Impossible de se connecter au serveur. Veuillez vérifier votre connexion et réessayer."
+  },
+  "support": {
+    "title": "Support",
+    "subtitle": "Comment pouvons-nous vous aider ?",
+    "greeting": "Salut !",
+    "greetingWithName": "Salut {name} !",
+    "placeholder": "Tapez un message...",
+    "send": "Envoyer",
+    "typing": "Zefi est en train d'écrire...",
+    "needHelp": "Besoin d'aide ?",
+    "chatWithUs": "Discutez avec nous",
+    "newConversation": "Démarrer une nouvelle conversation",
+    "resolve": "Marquer comme résolu",
+    "escalate": "Discuter avec notre équipe",
+    "resolved": "Cette conversation a été résolue",
+    "resolvedThanks": "Merci d'avoir discuté avec nous !",
+    "rateExperience": "Comment était votre expérience ?",
+    "ratedThanks": "Merci pour votre retour !",
+    "error": "Un problème est survenu. Veuillez réessayer.",
+    "rateLimit": "Vous envoyez des messages trop rapidement. Veuillez patienter.",
+    "enterEmail": "Pour pouvoir vous recontacter, quel est votre email ?",
+    "emailPlaceholder": "votre@email.com",
+    "invalidEmail": "Veuillez entrer une adresse email valide",
+    "continue": "Continuer",
+    "justNow": "À l'instant",
+    "minutesAgo": "il y a {count}min",
+    "hoursAgo": "il y a {count}h",
+    "starter": {
+      "download": "J'ai besoin d'aide pour télécharger",
+      "payment": "Question sur le paiement ou versement",
+      "access": "Problème de mot de passe ou d'accès",
+      "other": "Autre chose",
+      "expired": "Mon lien de téléchargement a expiré",
+      "expiredMessage": "Mon lien de téléchargement a expiré. Pouvez-vous m'aider ?",
+      "password": "J'ai un problème avec le mot de passe",
+      "passwordMessage": "J'essaie de télécharger mais le mot de passe ne fonctionne pas."
+    },
+    "leave": {
+      "title": "Vous avez une conversation en cours",
+      "continueChat": "Continuer la discussion",
+      "closeAndNew": "Fermer et en démarrer une nouvelle"
+    },
+    "escalation": {
+      "connecting": "Mise en relation avec un membre de l'équipe...",
+      "waiting": "Notre équipe a été notifiée. Nous vous répondrons sous peu.",
+      "waitingEmail": "Nous vous enverrons un email à {email} dès notre réponse.",
+      "connected": "Un membre de l'équipe a rejoint la conversation"
+    }
   }
 }

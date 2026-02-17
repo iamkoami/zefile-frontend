@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { Check, Clock, NavArrowDown, Xmark, NavArrowUp } from "iconoir-react";
 import { pollApi, SnoozeDuration } from "@/services/poll-api";
 import { apiClient } from "@/services/api-client";
 import { usePollStore } from "@/stores/poll-store";
+import { useChatStore } from "@/stores/chat-store";
 
 /**
  * FloatingPollWidget - Non-intrusive poll widget for frontend
@@ -25,6 +26,19 @@ const FloatingPollWidget: React.FC = () => {
     markAsDismissed,
     markAsSnoozed,
   } = usePollStore();
+
+  // Hide poll when chat widget is open, reappear with 2s delay after chat closes
+  const isChatOpen = useChatStore((s) => s.isOpen);
+  const [isChatDeferring, setIsChatDeferring] = useState(false);
+
+  useEffect(() => {
+    if (isChatOpen) {
+      setIsChatDeferring(true);
+    } else if (isChatDeferring) {
+      const timer = setTimeout(() => setIsChatDeferring(false), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [isChatOpen, isChatDeferring]);
 
   const [isExpanded, setIsExpanded] = useState(true);
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
@@ -91,6 +105,12 @@ const FloatingPollWidget: React.FC = () => {
     }
   };
 
+  const handleClose = () => {
+    if (!currentPoll) return;
+    // X button = snooze for 8h (gentle close, poll comes back)
+    handleSnooze("8h");
+  };
+
   const handleDismiss = async () => {
     if (!currentPoll) return;
 
@@ -135,15 +155,15 @@ const FloatingPollWidget: React.FC = () => {
     }
   };
 
-  // Don't show if widget hidden or no poll
-  if (!isWidgetVisible || !currentPoll) {
+  // Don't show if widget hidden, no poll, or chat is open
+  if (!isWidgetVisible || !currentPoll || isChatOpen || isChatDeferring) {
     return null;
   }
 
   // Thank you screen
   if (showThankYou) {
     return (
-      <div className="fixed bottom-6 right-6 z-[100] animate-in slide-in-from-bottom-4 duration-300">
+      <div className="fixed bottom-6 right-[92px] z-[120] animate-in slide-in-from-bottom-4 duration-300">
         <div className="bg-white rounded-xl shadow-2xl border border-gray-200 p-6 w-80 text-center">
           <div className="w-12 h-12 bg-[#87E64B] rounded-full flex items-center justify-center mx-auto mb-3">
             <Check className="w-6 h-6 text-white" strokeWidth={3} />
@@ -160,7 +180,7 @@ const FloatingPollWidget: React.FC = () => {
   // Minimized state - just show a small floating button
   if (!isExpanded) {
     return (
-      <div className="fixed bottom-6 right-6 z-[100]">
+      <div className="fixed bottom-6 right-[92px] z-[120]">
         <button
           onClick={() => setIsExpanded(true)}
           className="bg-[#5E53E0] text-white rounded-full p-4 shadow-lg hover:bg-[#4f46c7] transition-all hover:scale-105"
@@ -173,7 +193,7 @@ const FloatingPollWidget: React.FC = () => {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-[100] animate-in slide-in-from-bottom-4 duration-300">
+    <div className="fixed bottom-6 right-[92px] z-[120] animate-in slide-in-from-bottom-4 duration-300">
       <div className="bg-white rounded-xl shadow-2xl border border-gray-200 w-96 max-h-[80vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-start justify-between p-4 border-b border-gray-100 bg-gray-50">
@@ -197,7 +217,7 @@ const FloatingPollWidget: React.FC = () => {
               <NavArrowDown className="w-4 h-4" />
             </button>
             <button
-              onClick={handleDismiss}
+              onClick={handleClose}
               className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
               title={t("dismiss")}
             >
@@ -287,31 +307,40 @@ const FloatingPollWidget: React.FC = () => {
             {isSubmitting ? t("submitting") : t("submit")}
           </button>
 
-          {/* Snooze option */}
-          <div className="flex items-center justify-center mt-3 relative">
+          {/* Snooze & dismiss options */}
+          <div className="flex items-center justify-between mt-3">
             <button
-              onClick={() => setShowSnoozeMenu(!showSnoozeMenu)}
-              className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+              onClick={handleDismiss}
+              className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
             >
-              <Clock className="w-3.5 h-3.5" />
-              <span>{t("remindLater")}</span>
-              <NavArrowDown className="w-3 h-3" />
+              {t("dontAskAgain")}
             </button>
 
-            {/* Snooze dropdown */}
-            {showSnoozeMenu && (
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[120px] z-10">
-                {(["8h", "1d", "1w"] as SnoozeDuration[]).map((duration) => (
-                  <button
-                    key={duration}
-                    onClick={() => handleSnooze(duration)}
-                    className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                  >
-                    {getSnoozeLabel(duration)}
-                  </button>
-                ))}
-              </div>
-            )}
+            <div className="relative">
+              <button
+                onClick={() => setShowSnoozeMenu(!showSnoozeMenu)}
+                className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                <Clock className="w-3.5 h-3.5" />
+                <span>{t("remindLater")}</span>
+                <NavArrowDown className="w-3 h-3" />
+              </button>
+
+              {/* Snooze dropdown */}
+              {showSnoozeMenu && (
+                <div className="absolute bottom-full right-0 mb-2 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[120px] z-10">
+                  {(["8h", "1d", "1w"] as SnoozeDuration[]).map((duration) => (
+                    <button
+                      key={duration}
+                      onClick={() => handleSnooze(duration)}
+                      className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      {getSnoozeLabel(duration)}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

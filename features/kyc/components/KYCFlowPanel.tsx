@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
+import Flag from "react-flagpack";
 import {
   ShieldCheck,
   Check,
@@ -35,17 +36,17 @@ const COUNTRIES: {
   code: IdentityCountry;
   name: string;
   nameFr: string;
-  flag: string;
+  flagCode: string;
   hasBvn: boolean;
 }[] = [
-  { code: "NG", name: "Nigeria", nameFr: "Nigeria", flag: "🇳🇬", hasBvn: true },
-  { code: "GH", name: "Ghana", nameFr: "Ghana", flag: "🇬🇭", hasBvn: false },
-  { code: "KE", name: "Kenya", nameFr: "Kenya", flag: "🇰🇪", hasBvn: false },
+  { code: "NG", name: "Nigeria", nameFr: "Nigeria", flagCode: "NG", hasBvn: true },
+  { code: "GH", name: "Ghana", nameFr: "Ghana", flagCode: "GH", hasBvn: false },
+  { code: "KE", name: "Kenya", nameFr: "Kenya", flagCode: "KE", hasBvn: false },
   {
     code: "CI",
     name: "Côte d'Ivoire",
     nameFr: "Côte d'Ivoire",
-    flag: "🇨🇮",
+    flagCode: "CI",
     hasBvn: false,
   },
 ];
@@ -289,9 +290,7 @@ export function KYCFlowPanel({
             >
               {selectedCountry ? (
                 <>
-                  <span className="text-2xl">
-                    {COUNTRIES.find((c) => c.code === selectedCountry)?.flag}
-                  </span>
+                  <Flag code={COUNTRIES.find((c) => c.code === selectedCountry)?.flagCode || selectedCountry} size="m" hasBorder={false} />
                   <span>
                     {COUNTRIES.find((c) => c.code === selectedCountry)?.name}
                   </span>
@@ -318,7 +317,7 @@ export function KYCFlowPanel({
                       : ""
                   }`}
                 >
-                  <span className="text-2xl">{country.flag}</span>
+                  <Flag code={country.flagCode} size="m" hasBorder={false} />
                   <span className="flex-1">{country.name}</span>
                   {country.hasBvn && (
                     <span className="text-xs text-[#5E53E0] bg-[#5E53E0]/10 px-2 py-0.5 rounded">

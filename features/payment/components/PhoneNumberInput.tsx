@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
+import Flag from 'react-flagpack';
 import { NavArrowDown, Phone, WarningCircle } from 'iconoir-react';
 import {
   parsePhoneNumber,
@@ -17,7 +18,7 @@ interface CountryConfig {
   code: CountryCode;
   name: string;
   dialCode: string;
-  flag: string;
+  flagCode: string;
 }
 
 /**
@@ -25,10 +26,10 @@ interface CountryConfig {
  * Includes all Paystack-covered countries (GH, KE, CI, NG)
  */
 const SUPPORTED_COUNTRIES: CountryConfig[] = [
-  { code: 'GH', name: 'Ghana', dialCode: '+233', flag: '🇬🇭' },
-  { code: 'KE', name: 'Kenya', dialCode: '+254', flag: '🇰🇪' },
-  { code: 'CI', name: "Côte d'Ivoire", dialCode: '+225', flag: '🇨🇮' },
-  { code: 'NG', name: 'Nigeria', dialCode: '+234', flag: '🇳🇬' },
+  { code: 'GH', name: 'Ghana', dialCode: '+233', flagCode: 'GH' },
+  { code: 'KE', name: 'Kenya', dialCode: '+254', flagCode: 'KE' },
+  { code: 'CI', name: "Côte d'Ivoire", dialCode: '+225', flagCode: 'CI' },
+  { code: 'NG', name: 'Nigeria', dialCode: '+234', flagCode: 'NG' },
 ];
 
 /**
@@ -219,7 +220,7 @@ export function PhoneNumberInput({
           {hideCountrySelector ? (
             // Static display when country is controlled externally
             <div className="flex items-center gap-2 px-3 py-3 border border-r-0 border-gray-300 rounded-l bg-gray-100 min-w-[110px]">
-              <span className="text-xl">{selectedCountry.flag}</span>
+              <Flag code={selectedCountry.flagCode} size="s" hasBorder={false} />
               <span className="text-sm font-medium text-gray-700">{selectedCountry.dialCode}</span>
             </div>
           ) : (
@@ -229,7 +230,7 @@ export function PhoneNumberInput({
               disabled={disabled}
               className="flex items-center gap-2 px-3 py-3 border border-r-0 border-gray-300 rounded-l bg-gray-50 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed min-w-[110px]"
             >
-              <span className="text-xl">{selectedCountry.flag}</span>
+              <Flag code={selectedCountry.flagCode} size="s" hasBorder={false} />
               <span className="text-sm font-medium text-gray-700">{selectedCountry.dialCode}</span>
               <NavArrowDown className="w-4 h-4 text-gray-500" />
             </button>
@@ -247,7 +248,7 @@ export function PhoneNumberInput({
                     country.code === selectedCountry.code ? 'bg-gray-50' : ''
                   }`}
                 >
-                  <span className="text-xl">{country.flag}</span>
+                  <Flag code={country.flagCode} size="s" hasBorder={false} />
                   <span className="flex-1 text-sm text-gray-700">{country.name}</span>
                   <span className="text-sm text-gray-500">{country.dialCode}</span>
                 </button>

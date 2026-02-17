@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
+import Flag from "react-flagpack";
 import {
   CreditCard,
   SmartphoneDevice,
@@ -13,6 +14,7 @@ import {
   Clock,
   Bank,
   Hashtag,
+  Globe,
 } from "iconoir-react";
 import LoadingPanel from "@/components/LoadingPanel";
 import { useTranslations } from "next-intl";
@@ -37,7 +39,7 @@ const PAYSTACK_COUNTRIES = [
   {
     code: "GH",
     name: "Ghana",
-    flag: "🇬🇭",
+    flagCode: "GH" as string | null,
     phoneCode: "+233",
     hasMobileMoney: true,
     hasBankTransfer: false,
@@ -47,7 +49,7 @@ const PAYSTACK_COUNTRIES = [
   {
     code: "KE",
     name: "Kenya",
-    flag: "🇰🇪",
+    flagCode: "KE" as string | null,
     phoneCode: "+254",
     hasMobileMoney: true,
     hasBankTransfer: false,
@@ -57,7 +59,7 @@ const PAYSTACK_COUNTRIES = [
   {
     code: "CI",
     name: "Côte d'Ivoire",
-    flag: "🇨🇮",
+    flagCode: "CI" as string | null,
     phoneCode: "+225",
     hasMobileMoney: true,
     hasBankTransfer: false,
@@ -67,7 +69,7 @@ const PAYSTACK_COUNTRIES = [
   {
     code: "NG",
     name: "Nigeria",
-    flag: "🇳🇬",
+    flagCode: "NG" as string | null,
     phoneCode: "+234",
     hasMobileMoney: false,
     hasBankTransfer: true,
@@ -77,7 +79,7 @@ const PAYSTACK_COUNTRIES = [
   {
     code: "INTL",
     name: "International",
-    flag: "🌍",
+    flagCode: null as string | null,
     phoneCode: "",
     hasMobileMoney: false,
     hasBankTransfer: false,
@@ -562,7 +564,11 @@ export function PaymentMethodPanel() {
               className="w-full flex items-center justify-between px-4 py-3 border border-gray-200 rounded-lg text-[#171717] bg-white hover:bg-gray-50 transition-colors"
             >
               <div className="flex items-center gap-2">
-                <span className="text-lg">{selectedCountry.flag}</span>
+                {selectedCountry.flagCode ? (
+                  <Flag code={selectedCountry.flagCode} size="s" hasBorder={false} />
+                ) : (
+                  <Globe className="w-5 h-5 text-gray-500" />
+                )}
                 <span className="text-sm font-medium">
                   {selectedCountry.name}
                 </span>
@@ -626,7 +632,11 @@ export function PaymentMethodPanel() {
                           : "text-gray-700"
                       }`}
                     >
-                      <span className="text-lg">{country.flag}</span>
+                      {country.flagCode ? (
+                        <Flag code={country.flagCode} size="s" hasBorder={false} />
+                      ) : (
+                        <Globe className="w-5 h-5 text-gray-500" />
+                      )}
                       <span className="flex-1">{country.name}</span>
                       {!country.hasMobileMoney && !country.hasBankTransfer && (
                         <span className="text-xs text-gray-400">
