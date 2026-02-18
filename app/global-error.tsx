@@ -1,12 +1,23 @@
 'use client';
 
+import { useEffect } from 'react';
+
 export default function GlobalError({
-  error: _error,
+  error,
   reset,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  useEffect(() => {
+    // Global error boundary fires before providers mount.
+    // Dynamic import to ensure Sentry module is loaded.
+    import('@/lib/sentry').then(({ initSentry, captureException }) => {
+      initSentry();
+      captureException(error, { digest: error.digest, boundary: 'global-error' });
+    });
+  }, [error]);
+
   return (
     <html>
       <body>

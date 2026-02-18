@@ -7,6 +7,7 @@
  * Authentication is cookie-only (HttpOnly, Secure, SameSite).
  * No tokens are stored in localStorage to prevent XSS-based token theft.
  */
+import { captureException as sentryCaptureException } from '@/lib/sentry';
 
 export interface ApiResponse<T = any> {
   data?: T;
@@ -295,6 +296,14 @@ export class ApiClient {
           }
         }
 
+        // Report 5xx server errors to Sentry
+        if (response.status >= 500) {
+          sentryCaptureException(
+            new Error(`API ${response.status}: ${method} ${endpoint}`),
+            { status: response.status, endpoint, method, responseMessage: responseData?.message }
+          );
+        }
+
         return {
           error: {
             message: responseData?.message || 'An error occurred',
@@ -329,6 +338,9 @@ export class ApiClient {
       const isConnectionError = error.message?.includes('fetch') ||
                                error.message?.includes('Failed to fetch') ||
                                !error.message;
+
+      // Report network errors to Sentry (indicates real connectivity issues)
+      sentryCaptureException(error, { endpoint, method, errorType: 'network' });
 
       return {
         error: {

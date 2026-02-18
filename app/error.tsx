@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { RefreshDouble } from "iconoir-react";
 import Header from "@/components/shared/Header";
+import { captureException } from "@/lib/sentry";
 
 /**
  * Custom Error Page (500/505)
@@ -22,7 +23,7 @@ export default function Error({
   const t = useTranslations("serverError");
 
   useEffect(() => {
-    console.error("Application error:", error);
+    captureException(error, { digest: error.digest, boundary: 'route-error' });
   }, [error]);
 
   return (

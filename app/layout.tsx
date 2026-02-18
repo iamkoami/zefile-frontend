@@ -8,6 +8,7 @@ import localFont from "next/font/local";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import PostHogProvider from "@/components/providers/PostHogProvider";
+import SentryProvider from "@/components/providers/SentryProvider";
 import { OrganizationJsonLd, WebSiteJsonLd, SoftwareApplicationJsonLd } from "@/components/seo/JsonLd";
 import GlobalSideDrawer from "@/components/providers/GlobalSideDrawer";
 import ToastContainer from "@/components/shared/Toast";
@@ -188,12 +189,14 @@ export default async function RootLayout({
       >
         <NextIntlClientProvider messages={messages} locale={locale}>
           <Suspense fallback={null}>
-            <PostHogProvider>
-              <ToastContainer />
-              {children}
-              <GlobalSideDrawer />
-              <ChatWidget />
-            </PostHogProvider>
+            <SentryProvider>
+              <PostHogProvider>
+                <ToastContainer />
+                {children}
+                <GlobalSideDrawer />
+                <ChatWidget />
+              </PostHogProvider>
+            </SentryProvider>
           </Suspense>
         </NextIntlClientProvider>
       </body>
