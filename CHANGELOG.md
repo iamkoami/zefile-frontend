@@ -5,6 +5,35 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-02-18
+
+### Added
+- Custom Domain settings panel in Account page (STARTER/PRO tiers)
+- `useCustomBranding` hook: reads branding cookie, applies white-label styling to download page
+- `BrandedHeader` component for custom-domain download pages
+- `custom-domain-api.ts` service for domain CRUD, branding, logo/favicon uploads
+- Custom domain URL display in TransferDetailsPanel and TransfersPanel
+- `buildCustomDomainUrl()` utility in clipboard utils
+- i18n keys for custom domain panel (EN + FR)
+
+### Changed
+- Download page supports white-label rendering when accessed via custom domain
+- AccountPanel sidebar includes Custom Domain section
+- Drawer store supports `custom-domain` view
+- Updated OG image
+
+### Fixed
+- CSS injection prevention: hex color validation on branding cookie values
+- URL injection prevention: domain allowlist for logo/favicon URLs from cookie
+- Company name sanitization (HTML tag stripping)
+- Favicon cleanup on unmount (restores original favicon)
+- Domain input validation with real-time error feedback
+- SVG removed from logo uploads (XSS prevention)
+- File upload input positioning (label wrapper pattern)
+- ARIA attributes on toggle switches and icon buttons
+- `ConfirmationModal` props (`isOpen`, `type` instead of `variant`)
+- `toast.error()` calls now use `response.error.message` (type safety)
+
 ## [1.2.0] - 2026-02-17
 
 ### Added
