@@ -5,6 +5,27 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-02-18
+
+### Added
+- Custom branding, custom domain, custom wallpaper features in subscription tier system
+- Dynamic tier feature display in SubscriptionPanel, PlanCard, and FeatureComparisonTable
+- Jobs page (`/jobs`) with EN/FR translations
+- Press page (`/press`) with EN/FR translations
+- `/jobs` and `/press` routes in middleware matcher
+
+### Changed
+- DrawerFooter links now close the SideDrawer before navigating
+- PostHogProvider uses `window.location.search` instead of `useSearchParams()` hook
+- Home page uses `URLSearchParams` in mount effect instead of `useSearchParams()`
+- Static pages (terms, privacy, about, help, how-it-works, advertisers) no longer use fake loading pattern
+- JSON-LD script tags include `suppressHydrationWarning` for PostHog compatibility
+
+### Fixed
+- Hydration mismatch caused by PostHog injecting scripts before React hydration
+- `useParams` typed destructuring in download page to avoid proxy enumeration warning
+- PostHog `disable_external_dependency_loading` prevents DOM mutation before hydration
+
 ## [1.3.0] - 2026-02-18
 
 ### Added
