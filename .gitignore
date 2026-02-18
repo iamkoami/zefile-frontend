@@ -48,7 +48,7 @@ next-env.d.ts
 # documentation
 /docs/
 src/docs/
-.md
+.md*
 
 # SEO audit output
 /screenshots/
