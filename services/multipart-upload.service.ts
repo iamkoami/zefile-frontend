@@ -74,6 +74,7 @@ export interface UploadState {
 class MultipartUploadService {
   private readonly STORAGE_KEY_PREFIX = 'zefile_upload_';
   private isPaused: boolean = false;
+  private isCancelled: boolean = false;
   private pauseResolvers: Array<() => void> = [];
 
   /**
@@ -95,6 +96,27 @@ class MultipartUploadService {
   }
 
   /**
+   * Mark upload as cancelled — checked after pause resolves
+   */
+  public cancel(): void {
+    this.isCancelled = true;
+  }
+
+  /**
+   * Check if the upload was cancelled
+   */
+  public isUploadCancelled(): boolean {
+    return this.isCancelled;
+  }
+
+  /**
+   * Reset cancel flag (call before starting a new upload)
+   */
+  public resetCancel(): void {
+    this.isCancelled = false;
+  }
+
+  /**
    * Check if uploads are currently paused
    */
   public isUploadPaused(): boolean {
@@ -103,8 +125,9 @@ class MultipartUploadService {
 
   /**
    * Wait if paused - returns a promise that resolves when resumed
+   * Public so UploadPanel can gate finalization on pause state
    */
-  private async waitIfPaused(): Promise<void> {
+  public async waitIfPaused(): Promise<void> {
     if (!this.isPaused) return;
 
     return new Promise<void>((resolve) => {

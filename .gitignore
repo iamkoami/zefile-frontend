@@ -48,8 +48,11 @@ next-env.d.ts
 # documentation
 /docs/
 src/docs/
-.md*
+.md
+ACTION-PLAN.md
+FULL-AUDIT-REPORT.md
 
 # SEO audit output
 /screenshots/
 trace.json*
+

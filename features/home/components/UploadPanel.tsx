@@ -87,6 +87,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
   // Global upload state for protection across the app
   const {
     setUploading: setGlobalUploading,
+    setResumed: setGlobalResumed,
     setPaused: setGlobalPaused,
     setProgress: setGlobalProgress,
     setComplete: setGlobalComplete,
@@ -550,6 +551,9 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
     setEstimatedTimeRemaining(0);
     uploadStartTimeRef.current = Date.now();
 
+    // Reset cancel state for new upload
+    multipartUploadService.resetCancel();
+
     // Update global upload state for protection
     setGlobalUploading(selectedFiles.length, total);
 
@@ -617,6 +621,9 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
             userId,
             transfer.id,
             (fileProgress) => {
+              // Freeze progress display while paused (cancel confirmation showing)
+              if (multipartUploadService.isUploadPaused()) return;
+
               // Calculate overall progress across all files
               const currentFileBytes = fileProgress.bytesUploaded;
               const overallBytesUploaded = fileStartBytes + currentFileBytes;
@@ -642,6 +649,17 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
 
           // Update total bytes uploaded after file completes
           totalBytesUploaded += file.size;
+
+          // Between files: flush pending events, wait if paused, bail if cancelled
+          await new Promise((r) => setTimeout(r, 0));
+          if (multipartUploadService.isUploadPaused()) {
+            await multipartUploadService.waitIfPaused();
+          }
+          if (multipartUploadService.isUploadCancelled()) {
+            resetGlobalUpload();
+            resetForm();
+            return;
+          }
         } catch (fileError: any) {
           resetGlobalUpload();
           setPanelState("form");
@@ -678,6 +696,29 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
 
       // Clear tracked uploads (all completed successfully)
       currentUploadsRef.current = [];
+
+      // Yield to the macrotask queue so any pending Cancel click events
+      // are processed BEFORE we check pause/cancel state.
+      // (microtask yields like `await Promise.resolve()` run before
+      //  macrotask events like click handlers, so they'd miss the click)
+      await new Promise((r) => setTimeout(r, 0));
+
+      // If user opened cancel confirmation while chunks were in-flight,
+      // the upload loop finished but we must wait for their decision
+      // before sending emails / finalizing.
+      if (multipartUploadService.isUploadPaused()) {
+        await multipartUploadService.waitIfPaused();
+      }
+
+      // User confirmed cancel while we were waiting — abort without finalizing
+      if (multipartUploadService.isUploadCancelled()) {
+        // Files are already on S3 but transfer was never finalized,
+        // so no emails are sent. The unfinalised transfer will be
+        // cleaned up by the backend's scheduled garbage collection.
+        resetGlobalUpload();
+        resetForm();
+        return;
+      }
 
       // Step 3: Finalize transfer - this sends email notifications
       // Also captures if this is the user's first transfer for celebration
@@ -750,7 +791,9 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
   };
 
   const handleConfirmCancel = async () => {
-    // Resume first to unblock any waiting chunks before aborting
+    // Mark as cancelled so startFileUpload skips finalization
+    multipartUploadService.cancel();
+    // Resume to unblock any waiting chunks/finalization gate
     multipartUploadService.resume();
 
     try {
@@ -787,8 +830,8 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
   const handleContinueUpload = () => {
     // Resume paused uploads
     multipartUploadService.resume();
-    // Re-set to uploading state in global store
-    setGlobalUploading(selectedFiles.length, totalSize);
+    // Resume uploading state without resetting progress
+    setGlobalResumed();
     setPanelState("uploading");
   };
 

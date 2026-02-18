@@ -19,6 +19,7 @@ interface UploadState {
 
   // Actions
   setUploading: (fileCount: number, totalSize: number) => void;
+  setResumed: () => void;
   setPaused: () => void;
   setProgress: (progress: number, uploadedSize: number) => void;
   setComplete: () => void;
@@ -51,6 +52,8 @@ export const useUploadStore = create<UploadState>((set, get) => ({
     progress: 0,
     uploadedSize: 0,
   }),
+
+  setResumed: () => set({ status: 'uploading' }),
 
   setPaused: () => set({ status: 'paused' }),
 
