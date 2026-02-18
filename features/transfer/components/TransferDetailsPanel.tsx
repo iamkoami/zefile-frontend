@@ -18,7 +18,7 @@ import ReportIssueButton from "@/components/shared/ReportIssueButton";
 import { useTranslations, useLocale } from "next-intl";
 import { TransferDto, transferApi } from "@/services/transfer-api";
 import { useDrawerStore, TransferRole } from "@/stores/drawer-store";
-import { copyTransferLink, buildDisplayUrl } from "@/utils/clipboard";
+import { copyTransferLink, buildDisplayUrl, copyToClipboard } from "@/utils/clipboard";
 import { toast } from "@/components/shared/Toast";
 import ConfirmationModal from "@/components/shared/ConfirmationModal";
 import VersionUploadModal from "./VersionUploadModal";
@@ -301,8 +301,22 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
     return t("untitled");
   }, [currentTransfer?.title, currentVersionFiles, t]);
 
-  // Get short URL - backend stores shortCode WITHOUT prefix, buildDisplayUrl adds it
+  // Get short URL - prefer custom domain URL when available
+  const hasCustomDomain = !!currentTransfer?.customDomainUrl;
   const shortUrl = useMemo(
+    () => {
+      if (!currentTransfer?.shortCode) return "";
+      if (currentTransfer.customDomainUrl) {
+        // Extract domain from full URL: https://files.acme.com/z-ABC -> files.acme.com/z-ABC
+        return currentTransfer.customDomainUrl.replace(/^https?:\/\//, "");
+      }
+      return buildDisplayUrl(currentTransfer.shortCode);
+    },
+    [currentTransfer?.shortCode, currentTransfer?.customDomainUrl],
+  );
+
+  // Standard fallback URL (shown as secondary when custom domain is active)
+  const standardUrl = useMemo(
     () =>
       currentTransfer?.shortCode
         ? buildDisplayUrl(currentTransfer.shortCode)
@@ -310,19 +324,27 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
     [currentTransfer?.shortCode],
   );
 
-  // Handle copy link
+  // Handle copy link - copies custom domain URL when available
   const handleCopyLink = useCallback(async () => {
     if (!currentTransfer?.shortCode) return;
-    const success = await copyTransferLink(
-      currentTransfer.shortCode,
-      t("linkCopied"),
-      t("linkCopyFailed"),
-    );
+    let success: boolean;
+    if (currentTransfer.customDomainUrl) {
+      success = await copyToClipboard(currentTransfer.customDomainUrl, {
+        successMessage: t("linkCopied"),
+        errorMessage: t("linkCopyFailed"),
+      });
+    } else {
+      success = await copyTransferLink(
+        currentTransfer.shortCode,
+        t("linkCopied"),
+        t("linkCopyFailed"),
+      );
+    }
     if (success) {
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
     }
-  }, [currentTransfer?.shortCode, t]);
+  }, [currentTransfer?.shortCode, currentTransfer?.customDomainUrl, t]);
 
   // Handle preview click - pass transfer with filtered files for current version
   const handlePreview = useCallback(() => {
@@ -928,6 +950,11 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
                 )}
               </button>
             </div>
+            {hasCustomDomain && standardUrl && (
+              <p className="text-xs text-gray-400 mt-1">
+                {t("alsoAvailableAt", { url: standardUrl })}
+              </p>
+            )}
           </div>
 
           {/* Action buttons */}

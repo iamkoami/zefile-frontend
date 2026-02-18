@@ -22,6 +22,7 @@ export type AccountMenuItem =
   | 'transactions'   // Transaction history (Story 1-7)
   | 'payouts'        // Payout status (Story 1-8)
   | 'verification'   // Identity verification
+  | 'custom-domain'  // Custom domain management (Epic 42)
   | 'help';          // Help center
 
 // Nested views within the drawer (stack-based navigation)

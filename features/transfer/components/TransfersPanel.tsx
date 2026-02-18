@@ -15,7 +15,7 @@ import { paymentApi } from "@/services/payment-api";
 import { authApi } from "@/services/auth-api";
 import { useDrawerStore, TransferRole } from "@/stores/drawer-store";
 import { useTransferSelectionStore } from "@/stores/transfer-selection-store";
-import { copyTransferLink } from "@/utils/clipboard";
+import { copyTransferLink, copyToClipboard } from "@/utils/clipboard";
 import { toast } from "@/components/shared/Toast";
 import SearchInput from "@/components/shared/SearchInput";
 import Tabs, { Tab } from "@/components/shared/Tabs";
@@ -406,11 +406,18 @@ const TransfersPanel: React.FC = () => {
         toast.error(t("noLinkAvailable"));
         return;
       }
-      await copyTransferLink(
-        transfer.shortCode,
-        t("linkCopied"),
-        t("linkCopyFailed")
-      );
+      if (transfer.customDomainUrl) {
+        await copyToClipboard(transfer.customDomainUrl, {
+          successMessage: t("linkCopied"),
+          errorMessage: t("linkCopyFailed"),
+        });
+      } else {
+        await copyTransferLink(
+          transfer.shortCode,
+          t("linkCopied"),
+          t("linkCopyFailed")
+        );
+      }
     },
     [t]
   );

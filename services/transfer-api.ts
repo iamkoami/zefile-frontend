@@ -79,6 +79,8 @@ export interface TransferDto {
   // Payment requirement - true if payment is required for this transfer
   paymentRequired?: boolean;
   wallpaperUrl?: string;
+  // Custom domain URL when sender has an active custom domain
+  customDomainUrl?: string;
 }
 
 export interface UpdateTransferDto {

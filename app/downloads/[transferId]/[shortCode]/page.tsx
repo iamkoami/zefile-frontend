@@ -29,14 +29,17 @@ import {
   MessageAlert,
 } from "iconoir-react";
 import Link from "next/link";
+import Image from "next/image";
 import Lottie from "lottie-react";
 import LoadingFullscreen from "@/components/LoadingFullscreen";
 import LoadingPanel from "@/components/LoadingPanel";
 import Header from "@/components/shared/Header";
+import BrandedHeader from "@/components/shared/BrandedHeader";
 import TimeOfDayBackground from "@/components/shared/TimeOfDayBackground";
 import HeroText from "@/components/shared/HeroText";
 import PaperPlaneAnimation from "@/components/shared/PaperPlaneAnimation";
 import { useTimeOfDay, type TimeOfDay } from "@/hooks/useTimeOfDay";
+import { useCustomBranding } from "@/hooks/useCustomBranding";
 
 import ToastContainer from "@/components/shared/Toast";
 import { TransferSummaryCard } from "@/components/shared/TransferSummaryCard";
@@ -127,6 +130,12 @@ export default function TransferLandingPage() {
   const tPayment = useTranslations("payment");
   const tNotFound = useTranslations("notFound");
   const { timeOfDay } = useTimeOfDay();
+  const { isCustomDomain, branding } = useCustomBranding();
+
+  // Render branded or standard header
+  const pageHeader = isCustomDomain && branding
+    ? <BrandedHeader branding={branding} />
+    : <Header />;
 
   // Extract params from URL
   const transferId = params.transferId as string;
@@ -864,7 +873,7 @@ export default function TransferLandingPage() {
 
     return (
       <div className="min-h-screen bg-white">
-        <Header />
+        {pageHeader}
         <main
           style={{ minHeight: "calc(100vh - 64px)", position: "relative" }}
         >
@@ -914,9 +923,12 @@ export default function TransferLandingPage() {
   // Password protection state
   if (pageState === "password") {
     return (
-      <div className="min-h-screen bg-white">
+      <div
+        className="min-h-screen bg-white"
+        style={isCustomDomain && branding?.backgroundColor ? { backgroundColor: branding.backgroundColor } : undefined}
+      >
         <ToastContainer />
-        <Header />
+        {pageHeader}
         <main style={{ minHeight: "calc(100vh - 64px)", position: "relative" }}>
           <div
             className={`ze-content-panel ${transfer?.wallpaperUrl ? 'ze-wallpaper-mode' : `ze-time-${timeOfDay}`}`}
@@ -968,6 +980,10 @@ export default function TransferLandingPage() {
                     type="submit"
                     disabled={isLoading || !password.trim()}
                     className="w-full px-6 py-3.5 bg-[#87E64B] text-[#171717] font-medium rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={isCustomDomain && branding?.primaryColor ? {
+                      backgroundColor: branding.primaryColor,
+                      color: branding.buttonTextColor || branding.textColor || "#171717",
+                    } : undefined}
                   >
                     {t("unlockTransfer")}
                   </button>
@@ -985,7 +1001,7 @@ export default function TransferLandingPage() {
     return (
       <div className="min-h-screen bg-white">
         <ToastContainer />
-        <Header />
+        {pageHeader}
         <main style={{ minHeight: "calc(100vh - 64px)", position: "relative" }}>
           <div
             className={`ze-content-panel ${transfer?.wallpaperUrl ? 'ze-wallpaper-mode' : `ze-time-${timeOfDay}`}`}
@@ -1123,7 +1139,7 @@ export default function TransferLandingPage() {
     return (
       <div className="min-h-screen bg-white">
         <ToastContainer />
-        <Header />
+        {pageHeader}
         <main style={{ minHeight: "calc(100vh - 64px)", position: "relative" }}>
           <div
             className={`ze-content-panel ${transfer?.wallpaperUrl ? 'ze-wallpaper-mode' : `ze-time-${timeOfDay}`}`}
@@ -1235,7 +1251,7 @@ export default function TransferLandingPage() {
     return (
       <div className="min-h-screen bg-white">
         <ToastContainer />
-        <Header />
+        {pageHeader}
         <main style={{ minHeight: "calc(100vh - 64px)", position: "relative" }}>
           <div
             className={`ze-content-panel ${transfer?.wallpaperUrl ? 'ze-wallpaper-mode' : `ze-time-${timeOfDay}`}`}
@@ -1418,7 +1434,7 @@ export default function TransferLandingPage() {
     return (
       <div className="min-h-screen bg-white">
         <ToastContainer />
-        <Header />
+        {pageHeader}
         <main style={{ minHeight: "calc(100vh - 64px)", position: "relative" }}>
           <div
             className={`ze-content-panel ${transfer?.wallpaperUrl ? 'ze-wallpaper-mode' : `ze-time-${timeOfDay}`}`}
@@ -1513,7 +1529,7 @@ export default function TransferLandingPage() {
     return (
       <div className="min-h-screen bg-white">
         <ToastContainer />
-        <Header />
+        {pageHeader}
         <main style={{ minHeight: "calc(100vh - 64px)", position: "relative" }}>
           <div
             className={`ze-content-panel ${transfer?.wallpaperUrl ? 'ze-wallpaper-mode' : `ze-time-${timeOfDay}`}`}
@@ -1625,7 +1641,7 @@ export default function TransferLandingPage() {
     return (
       <div className="min-h-screen bg-white">
         <ToastContainer />
-        <Header />
+        {pageHeader}
 
         {/* Preview Modal */}
         <TransferPreviewModal
@@ -1733,9 +1749,12 @@ export default function TransferLandingPage() {
   // Ready to download state (free transfer or paid)
   if (pageState === "ready" && transfer) {
     return (
-      <div className="min-h-screen bg-white">
+      <div
+        className="min-h-screen bg-white"
+        style={isCustomDomain && branding?.backgroundColor ? { backgroundColor: branding.backgroundColor } : undefined}
+      >
         <ToastContainer />
-        <Header />
+        {pageHeader}
 
         {/* Report Issue Modal */}
         {showDisputeModal && (
@@ -1855,6 +1874,10 @@ export default function TransferLandingPage() {
                     }
                     disabled={isDownloading || (paymentsDisabled !== false && !!transfer.price && transfer.price > 0 && !transfer.isPaid)}
                     className="w-full px-6 py-3.5 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    style={isCustomDomain && branding?.primaryColor ? {
+                      backgroundColor: branding.primaryColor,
+                      color: branding.buttonTextColor || branding.textColor || "#171717",
+                    } : undefined}
                   >
                     {transfer.price && transfer.price > 0 && !transfer.isPaid ? (
                       <>
@@ -1882,8 +1905,23 @@ export default function TransferLandingPage() {
           </div>
         </main>
 
+        {/* Powered by ZeFile footer for custom domains */}
+        {isCustomDomain && branding?.showPoweredByZefile && (
+          <footer className="py-4 text-center">
+            <a
+              href="https://zefile.io"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-500 transition-colors"
+            >
+              Powered by
+              <Image src="/zefile-logo.svg" alt="ZeFile" width={50} height={14} className="h-3.5 w-auto opacity-60" />
+            </a>
+          </footer>
+        )}
+
         {/* Floating Poll Widget */}
-        <FloatingPollWidget />
+        {!isCustomDomain && <FloatingPollWidget />}
       </div>
     );
   }

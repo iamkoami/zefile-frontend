@@ -9,6 +9,7 @@ import {
   ShieldCheck,
   InfoCircle,
   RefreshDouble,
+  Globe,
 } from "iconoir-react";
 import { useDrawerStore, AccountMenuItem } from "@/stores/drawer-store";
 import TransactionsPanel from "./TransactionsPanel";
@@ -16,6 +17,7 @@ import PayoutsPanel from "./PayoutsPanel";
 import SubscriptionSettingsPanel from "./SubscriptionSettingsPanel";
 import AccountSettingsContent from "./AccountSettingsContent";
 import { KYCFlowPanel } from "@/features/kyc/components/KYCFlowPanel";
+import CustomDomainPanel from "./CustomDomainPanel";
 
 interface MenuItem {
   id: AccountMenuItem;
@@ -58,6 +60,11 @@ const AccountPanel: React.FC = () => {
       icon: <ShieldCheck className="w-5 h-5" />,
       labelKey: "verification",
     },
+    {
+      id: "custom-domain",
+      icon: <Globe className="w-5 h-5" />,
+      labelKey: "customDomain",
+    },
     { id: "help", icon: <InfoCircle className="w-5 h-5" />, labelKey: "help" },
   ];
 
@@ -73,6 +80,8 @@ const AccountPanel: React.FC = () => {
         return <PayoutsPanel />;
       case "verification":
         return <VerificationContent />;
+      case "custom-domain":
+        return <CustomDomainPanel />;
       case "help":
         return <HelpContent />;
       default:

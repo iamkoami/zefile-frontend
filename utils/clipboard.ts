@@ -127,6 +127,24 @@ export async function copyTransferLink(
 }
 
 /**
+ * Build a custom domain URL from shortCode and custom domain
+ * Example: buildCustomDomainUrl("aBc12XyZ45", "files.acme.com") -> "https://files.acme.com/z-aBc12XyZ45"
+ */
+export function buildCustomDomainUrl(shortCode: string, customDomain: string): string {
+  const prefix = getShortCodePrefix();
+  return `https://${customDomain}/${prefix}${shortCode}`;
+}
+
+/**
+ * Build display URL for custom domain (no protocol)
+ * Example: buildCustomDomainDisplayUrl("aBc12XyZ45", "files.acme.com") -> "files.acme.com/z-aBc12XyZ45"
+ */
+export function buildCustomDomainDisplayUrl(shortCode: string, customDomain: string): string {
+  const prefix = getShortCodePrefix();
+  return `${customDomain}/${prefix}${shortCode}`;
+}
+
+/**
  * Network types for share tracking
  */
 export type ShareNetwork = 'whatsapp' | 'facebook' | 'twitter' | 'linkedin' | 'telegram' | 'email';
