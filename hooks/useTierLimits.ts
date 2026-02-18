@@ -37,6 +37,9 @@ export interface TierLimits {
   maxVersions: number;
   platformFeePercent: number;
   manualPreviewRegen: boolean;
+  customBranding: boolean;
+  customDomain: boolean;
+  customWallpaper: boolean;
 }
 
 /**
@@ -150,6 +153,9 @@ export function useTierLimits(): UseTierLimitsReturn {
         maxVersions: 1,
         platformFeePercent: 10,
         manualPreviewRegen: false,
+        customBranding: false,
+        customDomain: false,
+        customWallpaper: false,
       },
       starter: {
         tier: 'starter',
@@ -159,6 +165,9 @@ export function useTierLimits(): UseTierLimitsReturn {
         maxVersions: 3,
         platformFeePercent: 7,
         manualPreviewRegen: true,
+        customBranding: true,
+        customDomain: false,
+        customWallpaper: true,
       },
       pro: {
         tier: 'pro',
@@ -168,6 +177,9 @@ export function useTierLimits(): UseTierLimitsReturn {
         maxVersions: 10,
         platformFeePercent: 5,
         manualPreviewRegen: true,
+        customBranding: true,
+        customDomain: true,
+        customWallpaper: true,
       },
     };
 
@@ -186,6 +198,9 @@ export function useTierLimits(): UseTierLimitsReturn {
           maxVersions: data.maxVersions,
           platformFeePercent: data.platformFeePercent,
           manualPreviewRegen: data.features?.manualPreviewRegen ?? defaults[tierKey].manualPreviewRegen,
+          customBranding: data.features?.customBranding ?? defaults[tierKey].customBranding,
+          customDomain: data.features?.customDomain ?? defaults[tierKey].customDomain,
+          customWallpaper: data.features?.customWallpaper ?? defaults[tierKey].customWallpaper,
         };
       }
     }

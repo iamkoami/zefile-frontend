@@ -82,6 +82,7 @@ export function PlanCard({
           { key: 'fee', value: `${limits.platformFeePercent}% ${t('platformFee')}` },
           { key: 'manualRegen', value: t('manualPreviewRegen') },
           { key: 'wallpaper', value: t('customWallpaper') },
+          { key: 'branding', value: t('customBranding') },
         ],
       };
     }
@@ -96,6 +97,8 @@ export function PlanCard({
         { key: 'fee', value: `${limits.platformFeePercent}% ${t('platformFee')}` },
         { key: 'manualRegen', value: t('manualPreviewRegen') },
         { key: 'wallpaper', value: t('customWallpaper') },
+        { key: 'branding', value: t('customBranding') },
+        { key: 'customDomain', value: t('customDomain') },
         { key: 'unlimited', value: t('unlimitedTransfers') },
       ],
     };

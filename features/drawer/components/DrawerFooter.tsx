@@ -12,6 +12,7 @@ import {
   Youtube,
 } from "iconoir-react";
 import { useLocale, useTranslations } from "next-intl";
+import { useDrawerStore } from "@/stores/drawer-store";
 
 /**
  * DrawerFooter - Footer component for the SideDrawer
@@ -20,6 +21,7 @@ import { useLocale, useTranslations } from "next-intl";
 const DrawerFooter: React.FC = () => {
   const t = useTranslations("footer");
   const currentLocale = useLocale();
+  const closeDrawer = useDrawerStore((s) => s.closeDrawer);
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
 
   const changeLanguage = (newLocale: string) => {
@@ -86,6 +88,7 @@ const DrawerFooter: React.FC = () => {
             <React.Fragment key={link.href}>
               <Link
                 href={link.href}
+                onClick={closeDrawer}
                 className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
               >
                 {link.label}

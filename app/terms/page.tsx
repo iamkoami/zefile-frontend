@@ -2,23 +2,12 @@
 
 export const runtime = "edge";
 
-import { useState, useEffect } from "react";
 import Header from "@/components/shared/Header";
 import Footer from "@/components/shared/Footer";
-import LoadingFullscreen from "@/components/LoadingFullscreen";
 import { useTranslations } from "next-intl";
 
 export default function TermsPage() {
   const t = useTranslations("pages.terms");
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    setIsLoading(false);
-  }, []);
-
-  if (isLoading) {
-    return <LoadingFullscreen />;
-  }
 
   const sections = [
     { title: t("acceptanceTitle"), content: t("acceptanceContent") },

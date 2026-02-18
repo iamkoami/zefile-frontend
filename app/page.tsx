@@ -3,7 +3,7 @@
 export const runtime = "edge";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Header } from "@/components/shared";
 import UploadPanel, {
   PanelState,
@@ -30,7 +30,6 @@ import { useTierLimits, SubscriptionTier } from "@/hooks/useTierLimits";
 import { TransferOptions } from "@/features/transfer/components/TransferOptionsPanel";
 
 export default function Home() {
-  const searchParams = useSearchParams();
   const router = useRouter();
   const { openDrawer, openAccountView } = useDrawerStore();
   const { timeOfDay } = useTimeOfDay();
@@ -78,10 +77,11 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Handle drawer/account query params from navigation
+  // Handle drawer/account query params from navigation (read once on mount)
   useEffect(() => {
-    const drawerParam = searchParams.get("drawer");
-    const accountParam = searchParams.get("account");
+    const params = new URLSearchParams(window.location.search);
+    const drawerParam = params.get("drawer");
+    const accountParam = params.get("account");
 
     if (drawerParam) {
       const validDrawers = [
@@ -111,7 +111,8 @@ export default function Home() {
       // Clean up URL
       router.replace("/", { scroll: false });
     }
-  }, [searchParams, openDrawer, openAccountView, router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Calculate total size of selected files using useMemo
   const selectedFilesSize = useMemo(() => {

@@ -2,23 +2,12 @@
 
 export const runtime = "edge";
 
-import { useState, useEffect } from "react";
 import Header from "@/components/shared/Header";
 import Footer from "@/components/shared/Footer";
-import LoadingFullscreen from "@/components/LoadingFullscreen";
 import { useTranslations } from "next-intl";
 
 export default function AdvertisersPage() {
   const t = useTranslations("pages.advertisers");
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    setIsLoading(false);
-  }, []);
-
-  if (isLoading) {
-    return <LoadingFullscreen />;
-  }
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F5F5F0]">

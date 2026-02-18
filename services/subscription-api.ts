@@ -197,6 +197,9 @@ export interface TierLimits {
   maxVersions: number; // -1 for unlimited
   platformFeePercent: number;
   manualPreviewRegen: boolean;
+  customBranding: boolean;
+  customDomain: boolean;
+  customWallpaper: boolean;
 }
 
 /**
@@ -214,6 +217,9 @@ export const TIER_LIMITS: Record<SubscriptionTier, TierLimits> = {
     maxVersions: 1,
     platformFeePercent: 10,
     manualPreviewRegen: false,
+    customBranding: false,
+    customDomain: false,
+    customWallpaper: false,
   },
   starter: {
     storagePerTransferGB: 10,
@@ -222,6 +228,9 @@ export const TIER_LIMITS: Record<SubscriptionTier, TierLimits> = {
     maxVersions: 3,
     platformFeePercent: 7,
     manualPreviewRegen: true,
+    customBranding: true,
+    customDomain: false,
+    customWallpaper: true,
   },
   pro: {
     storagePerTransferGB: 50,
@@ -230,6 +239,9 @@ export const TIER_LIMITS: Record<SubscriptionTier, TierLimits> = {
     maxVersions: 10,
     platformFeePercent: 5,
     manualPreviewRegen: true,
+    customBranding: true,
+    customDomain: true,
+    customWallpaper: true,
   },
 };
 
@@ -331,7 +343,12 @@ export function updateTierLimitsCache(tiers: Array<{
   expiryDays: number;
   maxVersions: number;
   platformFeePercent: number;
-  features?: { manualPreviewRegen?: boolean };
+  features?: {
+    manualPreviewRegen?: boolean;
+    customBranding?: boolean;
+    customDomain?: boolean;
+    customWallpaper?: boolean;
+  };
 }>): void {
   const cache = {} as Record<SubscriptionTier, TierLimits>;
   for (const tier of tiers) {
@@ -344,6 +361,9 @@ export function updateTierLimitsCache(tiers: Array<{
         maxVersions: tier.maxVersions,
         platformFeePercent: tier.platformFeePercent,
         manualPreviewRegen: tier.features?.manualPreviewRegen ?? TIER_LIMITS[key].manualPreviewRegen,
+        customBranding: tier.features?.customBranding ?? TIER_LIMITS[key].customBranding,
+        customDomain: tier.features?.customDomain ?? TIER_LIMITS[key].customDomain,
+        customWallpaper: tier.features?.customWallpaper ?? TIER_LIMITS[key].customWallpaper,
       };
     }
   }

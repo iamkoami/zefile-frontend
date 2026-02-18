@@ -548,6 +548,14 @@
       "subtitle": "Making file sharing simple, secure, and fair.",
       "comingSoon": "Content coming soon..."
     },
+    "jobs": {
+      "title": "Jobs",
+      "comingSoon": "We're not hiring just yet, but stay tuned — big things are coming."
+    },
+    "press": {
+      "title": "Press",
+      "comingSoon": "Our press kit is on the way. Check back soon for news and resources."
+    },
     "terms": {
       "title": "Terms of Service",
       "lastUpdated": "Last updated: February 17, 2026",
@@ -907,6 +915,8 @@
     "manualPreviewRegen": "Manual preview regeneration",
     "currentPlan": "Current plan",
     "customWallpaper": "Custom download page wallpaper",
+    "customBranding": "Custom branding (logo & colors)",
+    "customDomain": "Custom download domain",
     "recommended": "Recommended",
     "freeForever": "Free forever",
     "month": "month",
@@ -925,11 +935,17 @@
     "faqA2": "We accept credit/debit cards and mobile money payments in supported regions.",
     "faqQ3": "What happens to my files if I downgrade?",
     "faqA3": "Your existing files remain accessible. New uploads will be subject to the limits of your new plan.",
+    "feature": "Feature",
+    "current": "Current",
+    "days": "days",
     "featureStorage": "Storage per transfer",
     "featureExpiry": "Transfer expiry",
     "featureVersions": "File versions",
     "featureFee": "Platform fee",
     "featureManualRegen": "Manual preview regeneration",
+    "featureCustomBranding": "Custom branding",
+    "featureCustomDomain": "Custom domain",
+    "featurePlatformFee": "Platform fee",
     "free": "Free",
     "perMonth": "/month",
     "perYear": "/year",
@@ -1078,7 +1094,8 @@
       "50Transfers": "50 transfers/month",
       "emailSupport": "Email support",
       "basicAnalytics": "Basic analytics",
-      "customBranding": "Custom branding"
+      "customBranding": "Custom branding (logo & colors)",
+      "customDomain": "Custom download domain"
     },
     "upgradeToTier": "Upgrade to {tier}",
     "billedAnnually": "Billed annually",
@@ -1909,7 +1926,7 @@
     "startTransfer": "Start a transfer",
     "goHome": "Back to home"
   },
-  "adminNotifications": {
+  "adminPaymentNotifications": {
     "title": "Notification Settings",
     "enableNotifications": "Enable Payment Notifications",
     "enableDescription": "Receive email notifications for Paystack transactions",

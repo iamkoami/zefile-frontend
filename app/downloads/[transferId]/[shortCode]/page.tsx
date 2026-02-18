@@ -123,7 +123,7 @@ function ContentPanelBackground({ wallpaperUrl, timeOfDay }: { wallpaperUrl?: st
 }
 
 export default function TransferLandingPage() {
-  const params = useParams();
+  const { transferId, shortCode } = useParams<{ transferId: string; shortCode: string }>();
   const router = useRouter();
   const searchParams = useSearchParams();
   const t = useTranslations("transferLanding");
@@ -136,10 +136,6 @@ export default function TransferLandingPage() {
   const pageHeader = isCustomDomain && branding
     ? <BrandedHeader branding={branding} />
     : <Header />;
-
-  // Extract params from URL
-  const transferId = params.transferId as string;
-  const shortCode = params.shortCode as string;
 
   // Parse tracking params from URL query string (memoized to prevent useEffect re-runs)
   const trackingParams: TrackingParams = useMemo(

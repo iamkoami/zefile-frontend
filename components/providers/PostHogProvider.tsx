@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { initPostHog, isPostHogInitialized } from '@/lib/posthog';
 import posthog from 'posthog-js';
 
@@ -11,7 +11,6 @@ import posthog from 'posthog-js';
  */
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
 
   // Initialize PostHog on mount
   useEffect(() => {
@@ -21,12 +20,12 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
   // Track page views on route changes
   useEffect(() => {
     if (isPostHogInitialized() && pathname) {
-      const url = pathname + (searchParams?.toString() ? `?${searchParams.toString()}` : '');
+      const url = pathname + (window.location.search || '');
       posthog.capture('$pageview', {
         $current_url: url,
       });
     }
-  }, [pathname, searchParams]);
+  }, [pathname]);
 
   return <>{children}</>;
 }

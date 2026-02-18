@@ -72,6 +72,8 @@ export interface PublicTierFeatures {
   features: {
     manualPreviewRegen: boolean;
     customBranding: boolean;
+    customDomain: boolean;
+    customWallpaper: boolean;
     prioritySupport: boolean;
     advancedAnalytics: boolean;
   };

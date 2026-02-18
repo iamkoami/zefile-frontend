@@ -66,6 +66,7 @@ export function initPostHog(): void {
         persistence: 'localStorage',
         autocapture: false, // We'll track events manually for more control
         disable_session_recording: true, // Enable if needed for debugging
+        disable_external_dependency_loading: true, // Prevent script injection that causes hydration mismatch
       });
       _posthogInitialized = true;
     } catch (error) {

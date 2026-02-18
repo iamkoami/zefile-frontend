@@ -549,6 +549,14 @@
       "subtitle": "Rendre le partage de fichiers simple, sécurisé et équitable.",
       "comingSoon": "Contenu à venir..."
     },
+    "jobs": {
+      "title": "Emplois",
+      "comingSoon": "On ne recrute pas encore, mais restez dans le coin — de belles choses arrivent."
+    },
+    "press": {
+      "title": "Presse",
+      "comingSoon": "Notre dossier de presse est en préparation. Revenez bientôt pour les actualités et ressources."
+    },
     "terms": {
       "title": "Conditions d'utilisation",
       "lastUpdated": "Dernière mise à jour : 17 février 2026",
@@ -908,6 +916,8 @@
     "manualPreviewRegen": "Régénération manuelle des aperçus",
     "currentPlan": "Plan actuel",
     "customWallpaper": "Fond d'écran personnalisé pour la page de téléchargement",
+    "customBranding": "Personnalisation de marque (logo et couleurs)",
+    "customDomain": "Domaine de téléchargement personnalisé",
     "recommended": "Recommandé",
     "freeForever": "Gratuit à vie",
     "month": "mois",
@@ -926,6 +936,9 @@
     "faqA2": "Nous acceptons les cartes de crédit/débit et les paiements par mobile money dans les régions supportées.",
     "faqQ3": "Que se passe-t-il pour mes fichiers si je rétrograde ?",
     "faqA3": "Vos fichiers existants restent accessibles. Les nouveaux téléchargements seront soumis aux limites de votre nouveau plan.",
+    "feature": "Fonctionnalité",
+    "current": "Actuel",
+    "days": "jours",
     "featureStorage": "Stockage par transfert",
     "featureExpiry": "Expiration du transfert",
     "featureVersions": "Versions de fichiers",
@@ -962,7 +975,10 @@
     "trialEndsIn": "Votre essai gratuit se termine dans {days} jours. Prêt à passer au niveau supérieur ?",
     "freeTrial": "Essai gratuit",
     "endsToday": "Se termine aujourd'hui",
-    "daysLeft": "{days} jours restants"
+    "daysLeft": "{days} jours restants",
+    "featureCustomBranding": "Personnalisation de marque",
+    "featureCustomDomain": "Domaine personnalisé",
+    "featurePlatformFee": "Frais de plateforme"
   },
   "billing": {
     "currentPlan": "Plan actuel",
@@ -1079,7 +1095,8 @@
       "50Transfers": "50 transferts/mois",
       "emailSupport": "Support par email",
       "basicAnalytics": "Analytiques de base",
-      "customBranding": "Personnalisation de marque"
+      "customBranding": "Personnalisation de marque (logo et couleurs)",
+      "customDomain": "Domaine de téléchargement personnalisé"
     },
     "upgradeToTier": "Passer à {tier}",
     "billedAnnually": "Facturation annuelle",
@@ -1568,34 +1585,28 @@
     "errorFileTooLarge": "La taille du fichier dépasse 5 Mo"
   },
   "adminNotifications": {
-    "title": "Notifications",
-    "unreadOf": "{unread} non lues sur {total} au total",
-    "markAllRead": "Tout marquer comme lu",
-    "filters": "Filtres",
-    "allPriorities": "Toutes les priorités",
-    "all": "Tout",
-    "unread": "Non lues",
-    "read": "Lues",
-    "clearFilters": "Effacer les filtres",
-    "noNotifications": "Aucune notification",
-    "allCaughtUp": "Vous êtes à jour !",
-    "pageOf": "Page {page} sur {totalPages}",
-    "priority": {
-      "urgent": "Urgent",
-      "high": "Haute",
-      "medium": "Moyenne",
-      "low": "Basse"
-    },
-    "types": {
-      "KYC_SUBMITTED": "KYC soumis",
-      "KYC_REQUIRES_REVIEW": "KYC à vérifier",
-      "DISPUTE_CREATED": "Nouveau litige",
-      "DISPUTE_ESCALATED": "Litige escaladé",
-      "PAYMENT_FAILED": "Paiement échoué",
-      "SUSPICIOUS_ACTIVITY": "Activité suspecte",
-      "CONFIG_CHANGE_PENDING": "Changement de config en attente",
-      "SYSTEM_ALERT": "Alerte système"
-    }
+    "title": "Paramètres de notification",
+    "enableNotifications": "Activer les notifications de paiement",
+    "enableDescription": "Recevoir des notifications par e-mail pour les transactions Paystack",
+    "notificationEmails": "Adresses e-mail de notification",
+    "emailsDescription": "Ajoutez les adresses e-mail qui recevront les notifications de transaction de Paystack",
+    "noEmails": "Aucun e-mail de notification configuré",
+    "emailPlaceholder": "Entrez l'adresse e-mail",
+    "addEmail": "Ajouter",
+    "invalidEmail": "Veuillez entrer une adresse e-mail valide",
+    "emailExists": "Cet e-mail est déjà ajouté",
+    "saveChanges": "Enregistrer",
+    "saving": "Enregistrement...",
+    "settingsSaved": "Paramètres de notification enregistrés avec succès",
+    "notificationsTitle": "Notifications de paiement",
+    "notifications": "notifications",
+    "filterAll": "Tous les types",
+    "typePaymentReceived": "Paiement reçu",
+    "typePaymentFailed": "Paiement échoué",
+    "typeRefundRequested": "Remboursement demandé",
+    "typeWithdrawalRequested": "Retrait demandé",
+    "searchPlaceholder": "Rechercher par référence ou e-mail...",
+    "noNotifications": "Aucune notification trouvée"
   },
   "payoutMethods": {
     "title": "Méthodes de paiement",
@@ -1909,30 +1920,6 @@
     "tryAgain": "Réessayer",
     "startTransfer": "Lancer un transfert",
     "goHome": "Retour à l'accueil"
-  },
-  "adminNotifications": {
-    "title": "Paramètres de notification",
-    "enableNotifications": "Activer les notifications de paiement",
-    "enableDescription": "Recevoir des notifications par e-mail pour les transactions Paystack",
-    "notificationEmails": "Adresses e-mail de notification",
-    "emailsDescription": "Ajoutez les adresses e-mail qui recevront les notifications de transaction de Paystack",
-    "noEmails": "Aucun e-mail de notification configuré",
-    "emailPlaceholder": "Entrez l'adresse e-mail",
-    "addEmail": "Ajouter",
-    "invalidEmail": "Veuillez entrer une adresse e-mail valide",
-    "emailExists": "Cet e-mail est déjà ajouté",
-    "saveChanges": "Enregistrer",
-    "saving": "Enregistrement...",
-    "settingsSaved": "Paramètres de notification enregistrés avec succès",
-    "notificationsTitle": "Notifications de paiement",
-    "notifications": "notifications",
-    "filterAll": "Tous les types",
-    "typePaymentReceived": "Paiement reçu",
-    "typePaymentFailed": "Paiement échoué",
-    "typeRefundRequested": "Remboursement demandé",
-    "typeWithdrawalRequested": "Retrait demandé",
-    "searchPlaceholder": "Rechercher par référence ou e-mail...",
-    "noNotifications": "Aucune notification trouvée"
   },
   "errors": {
     "tooManyRequests": "Doucement — trop de requêtes. Attendez un instant.",

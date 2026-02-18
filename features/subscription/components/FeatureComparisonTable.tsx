@@ -48,6 +48,16 @@ export function FeatureComparisonTable({ currentTier }: FeatureComparisonTablePr
       label: t('featureManualRegen'),
       getValue: (tier: SubscriptionTier) => tierLimits[tier].manualPreviewRegen,
     },
+    {
+      key: 'customBranding',
+      label: t('featureCustomBranding'),
+      getValue: (tier: SubscriptionTier) => tierLimits[tier].customBranding,
+    },
+    {
+      key: 'customDomain',
+      label: t('featureCustomDomain'),
+      getValue: (tier: SubscriptionTier) => tierLimits[tier].customDomain,
+    },
   ];
 
   const renderValue = (value: string | number | boolean) => {
