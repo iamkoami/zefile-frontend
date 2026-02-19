@@ -5,6 +5,23 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-02-19
+
+### Added
+
+- Blog list page (`/blog`) with responsive 2-column grid, pagination, skeleton loading, and error retry
+- Blog post page (`/blog/[slug]`) with cover image, prose-styled HTML content, and alternate locale link
+- Blog API service (`services/blog-api.ts`) for public blog endpoints
+- ArticleJsonLd and BreadcrumbJsonLd structured data components for SEO
+- Dynamic sitemap integration for published blog posts by locale
+- Blog translations (EN/FR) for all UI text
+- `/blog` and `/blog/*` routes in middleware matcher
+
+### Changed
+
+- JsonLd ArticleJsonLd image uses ImageObject format with dimensions for rich results
+- Existing page layouts updated with hreflang alternate links
+
 ## [1.4.0] - 2026-02-18
 
 ### Added
