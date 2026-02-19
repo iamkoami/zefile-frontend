@@ -5,6 +5,25 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-02-19
+
+### Added
+
+- Real content for About, How It Works, Help Center, and Advertisers pages (EN/FR)
+- Security headers in middleware (HSTS, X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy)
+- WebApplicationJsonLd with AggregateOffer and @id graph linking
+- Footer on pricing and blog pages
+
+### Changed
+
+- Rewrote JSON-LD schema: SoftwareApplication → WebApplication, removed deprecated HowTo and conflicting Product schemas
+- Fixed title duplication across 6 layouts (removed "ZeFile" from sub-page titles to avoid double with template)
+- Fixed robots.txt broken regex patterns with simple prefix-based rules
+- Fixed `_headers` removing x-robots-tag: noindex from OG images and favicons
+- Sitemap uses static lastModified dates instead of dynamic `new Date()`
+- Removed noindex from about, how-it-works, help, advertisers pages
+- Disabled X-Powered-By header in next.config.ts
+
 ## [1.5.0] - 2026-02-19
 
 ### Added
