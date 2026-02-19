@@ -6,11 +6,11 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://zefile.io';
 
 const seoContent = {
   en: {
-    title: 'Privacy Policy - ZeFile',
+    title: 'Privacy Policy',
     description: 'Read ZeFile\'s Privacy Policy. Learn how we collect, use, and protect your data when you use our secure file transfer platform. GDPR compliant.',
   },
   fr: {
-    title: 'Politique de confidentialité - ZeFile',
+    title: 'Politique de confidentialité',
     description: 'Lisez la politique de confidentialité de ZeFile. Découvrez comment nous collectons, utilisons et protégeons vos données. Conforme au RGPD.',
   },
 };

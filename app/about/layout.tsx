@@ -6,11 +6,11 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://zefile.io';
 
 const seoContent = {
   en: {
-    title: 'About ZeFile - Secure File Delivery Platform',
+    title: 'About Us - Secure File Delivery Platform',
     description: 'Learn about ZeFile, the secure file transfer platform that protects creators and freelancers. Get paid before your files are downloaded. Our mission and story.',
   },
   fr: {
-    title: 'À propos de ZeFile - Plateforme de livraison de fichiers sécurisée',
+    title: 'À propos - Plateforme de livraison de fichiers sécurisée',
     description: 'Découvrez ZeFile, la plateforme de transfert de fichiers sécurisée qui protège les créateurs et freelances. Soyez payé avant que vos fichiers soient téléchargés.',
   },
 };

@@ -8,6 +8,8 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
+  // Remove X-Powered-By header (security hardening)
+  poweredByHeader: false,
   // Security headers (CSP is set dynamically in middleware.ts with per-request nonce — see middleware.ts)
   async headers() {
     return [

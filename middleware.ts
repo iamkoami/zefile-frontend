@@ -28,7 +28,7 @@ function buildCsp(nonce: string): string {
     `font-src 'self'`,
     `frame-src ${apiUrl} https://checkout.paystack.com https://www.google.com`,
     `worker-src 'self' blob:`,
-    `object-src ${apiUrl}`,
+    `object-src 'none'`,
     `base-uri 'self'`,
     `form-action 'self'`,
     `frame-ancestors 'none'`,
@@ -79,7 +79,19 @@ export function middleware(request: NextRequest) {
     request: { headers: requestHeaders },
   });
 
+  // Content-Security-Policy (dynamic, with per-request nonce)
   response.headers.set('Content-Security-Policy', csp);
+
+  // Security headers (must be set here — middleware overrides next.config.ts headers)
+  response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('X-Frame-Options', 'DENY');
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  response.headers.set('X-XSS-Protection', '1; mode=block');
+
+  // Remove server technology fingerprint
+  response.headers.delete('X-Powered-By');
 
   return response;
 }

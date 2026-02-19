@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { getLocale } from "next-intl/server";
-import { BreadcrumbJsonLd, FAQJsonLd, PricingJsonLd } from "@/components/seo/JsonLd";
+import { BreadcrumbJsonLd, FAQJsonLd } from "@/components/seo/JsonLd";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://zefile.io';
 
@@ -43,29 +43,6 @@ const seoContent = {
   },
 };
 
-const pricingTiers = [
-  {
-    name: 'Free',
-    description: 'Basic file transfer with 2GB limit',
-    price: 0,
-    currency: 'EUR',
-    features: ['2GB file transfers', 'Email notifications', '14-day expiry'],
-  },
-  {
-    name: 'Starter',
-    description: 'Professional file transfer with 10GB limit',
-    price: 4.99,
-    currency: 'EUR',
-    features: ['10GB file transfers', 'Custom branding', '30-day expiry', 'Priority support'],
-  },
-  {
-    name: 'Pro',
-    description: 'Enterprise file transfer with 50GB limit',
-    price: 9.99,
-    currency: 'EUR',
-    features: ['50GB file transfers', 'Custom domain', '90-day expiry', 'API access', 'Dedicated support'],
-  },
-];
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
@@ -110,7 +87,6 @@ export default async function PricingLayout({
         { name: 'Pricing', url: `${SITE_URL}/pricing` },
       ]} />
       <FAQJsonLd faqs={content.faqs} />
-      <PricingJsonLd tiers={pricingTiers} />
       {children}
     </>
   );

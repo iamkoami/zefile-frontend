@@ -6,11 +6,11 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://zefile.io';
 
 const seoContent = {
   en: {
-    title: 'Help Center - ZeFile Support & FAQ',
+    title: 'Help Center - Support & FAQ',
     description: 'Get help with ZeFile. Find answers to frequently asked questions about file transfers, payments, account settings, and troubleshooting. Contact our support team.',
   },
   fr: {
-    title: 'Centre d\'aide - Support et FAQ ZeFile',
+    title: 'Centre d\'aide - Support et FAQ',
     description: 'Obtenez de l\'aide avec ZeFile. Trouvez des réponses aux questions fréquentes sur les transferts de fichiers, paiements, paramètres de compte. Contactez notre équipe.',
   },
 };

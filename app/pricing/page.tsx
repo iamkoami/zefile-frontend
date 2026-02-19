@@ -5,6 +5,7 @@ export const runtime = 'edge';
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import Footer from '@/components/shared/Footer';
 import LoadingFullscreen from '@/components/LoadingFullscreen';
 import { safePaymentRedirect } from '@/utils/security';
 import { toast } from '@/components/shared/Toast';
@@ -172,6 +173,8 @@ export default function PricingPage() {
         countryCode={countryCode}
         onConfirm={handleConfirmUpgrade}
       />
+
+      <Footer />
     </div>
   );
 }

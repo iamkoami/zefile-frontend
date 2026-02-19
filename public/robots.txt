@@ -13,6 +13,8 @@ Allow: /about
 Allow: /about/
 Allow: /pricing
 Allow: /pricing/
+Allow: /blog
+Allow: /blog/
 Allow: /help
 Allow: /help/
 Allow: /how-it-works
@@ -28,10 +30,8 @@ Allow: /terms/
 # DISALLOW: Download pages (privacy protection)
 # ============================================
 
-# Block short code patterns (8 alphanumeric characters)
-# Assuming SHORT_CODE_LENGTH=8 (configurable in backend)
-Disallow: /[a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]
-Disallow: /[a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]/
+# Block all short-code download links (z- prefix)
+Disallow: /z-
 
 # Block all download-related paths
 Disallow: /download/
@@ -81,14 +81,14 @@ User-agent: Googlebot
 Disallow: /download/
 Disallow: /transfer/
 Disallow: /dashboard/
-Disallow: /[a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]
+Disallow: /z-
 
 # Bing
 User-agent: Bingbot
 Disallow: /download/
 Disallow: /transfer/
 Disallow: /dashboard/
-Disallow: /[a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]
+Disallow: /z-
 
 # Block AI crawlers from downloading transfer files
 User-agent: GPTBot
@@ -98,10 +98,4 @@ User-agent: ChatGPT-User
 Disallow: /
 
 User-agent: CCBot
-Disallow: /
-
-User-agent: anthropic-ai
-Disallow: /
-
-User-agent: Claude-Web
 Disallow: /

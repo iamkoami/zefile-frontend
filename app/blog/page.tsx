@@ -165,7 +165,6 @@ export default function BlogListPage() {
             </div>
           ) : posts.length === 0 ? (
             <div className="text-center py-20">
-              <div className="text-6xl mb-4">&#128221;</div>
               <p className="text-gray-500 text-lg">{t("noPostsYet")}</p>
             </div>
           ) : (

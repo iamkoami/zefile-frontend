@@ -18,6 +18,7 @@ const Footer: React.FC = () => {
     ],
     resources: [
       { label: t("helpCenter"), href: "/help" },
+      { label: t("blog"), href: "/blog" },
       { label: t("advertisers"), href: "/advertisers" },
     ],
     company: [

@@ -250,6 +250,7 @@ const Header = () => {
     { label: t("about"), href: "/about" },
     { label: t("howItWorks"), href: "/how-it-works" },
     { label: t("helpCenter"), href: "/help" },
+    { label: t("blog"), href: "/blog" },
   ];
 
   const handleResourcesMouseEnter = () => {

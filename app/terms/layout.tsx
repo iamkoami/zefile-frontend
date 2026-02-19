@@ -6,11 +6,11 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://zefile.io';
 
 const seoContent = {
   en: {
-    title: 'Terms of Service - ZeFile',
+    title: 'Terms of Service',
     description: 'Read ZeFile\'s Terms of Service. Understand your rights and responsibilities when using our secure file transfer platform, including file sharing, payments, and account policies.',
   },
   fr: {
-    title: 'Conditions d\'utilisation - ZeFile',
+    title: 'Conditions d\'utilisation',
     description: 'Lisez les conditions d\'utilisation de ZeFile. Comprenez vos droits et responsabilités lors de l\'utilisation de notre plateforme de transfert de fichiers sécurisée.',
   },
 };

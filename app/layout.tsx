@@ -9,7 +9,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import PostHogProvider from "@/components/providers/PostHogProvider";
 import SentryProvider from "@/components/providers/SentryProvider";
-import { OrganizationJsonLd, WebSiteJsonLd, SoftwareApplicationJsonLd } from "@/components/seo/JsonLd";
+import { OrganizationJsonLd, WebSiteJsonLd, WebApplicationJsonLd } from "@/components/seo/JsonLd";
 import GlobalSideDrawer from "@/components/providers/GlobalSideDrawer";
 import ToastContainer from "@/components/shared/Toast";
 import ChatWidget from "@/components/shared/ChatWidget";
@@ -185,7 +185,7 @@ export default async function RootLayout({
       <head>
         <OrganizationJsonLd />
         <WebSiteJsonLd />
-        <SoftwareApplicationJsonLd />
+        <WebApplicationJsonLd />
       </head>
       <body
         className={`${metropolis.variable} ${geistSans.variable} ${geistMono.variable} antialiased font-sans`}

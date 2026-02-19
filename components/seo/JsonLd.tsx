@@ -1,15 +1,19 @@
 /**
  * JSON-LD Structured Data Components for SEO
  * Provides rich snippets in search results
+ *
+ * Schema graph uses @id linking:
+ *   Organization (#org) ← WebSite (#website) ← WebApplication (#app)
  */
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://zefile.io";
 
-// Organization Schema - appears on all pages
+// Organization Schema - appears on all pages via root layout
 export function OrganizationJsonLd() {
   const schema = {
     "@context": "https://schema.org",
     "@type": "Organization",
+    "@id": `${SITE_URL}/#org`,
     name: "ZeFile",
     url: SITE_URL,
     logo: `${SITE_URL}/zefile-logo.png`,
@@ -40,22 +44,46 @@ export function OrganizationJsonLd() {
   );
 }
 
-// Software Application Schema - for homepage
-export function SoftwareApplicationJsonLd() {
+// WebSite Schema - homepage only
+export function WebSiteJsonLd() {
   const schema = {
     "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
+    "@type": "WebSite",
+    "@id": `${SITE_URL}/#website`,
     name: "ZeFile",
+    url: SITE_URL,
+    description: "Secure file transfer platform with payment protection",
+    inLanguage: ["en", "fr"],
+    publisher: { "@id": `${SITE_URL}/#org` },
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      suppressHydrationWarning
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+    />
+  );
+}
+
+// WebApplication Schema - homepage only (replaces SoftwareApplication)
+export function WebApplicationJsonLd() {
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "@id": `${SITE_URL}/#app`,
+    name: "ZeFile",
+    url: SITE_URL,
     applicationCategory: "BusinessApplication",
-    operatingSystem: "Web Browser",
+    browserRequirements: "Requires a modern web browser",
     description:
       "Secure file transfer platform with payment protection. Send large files and get paid before recipients can download.",
-    url: SITE_URL,
     offers: {
-      "@type": "Offer",
-      price: "0",
+      "@type": "AggregateOffer",
+      lowPrice: "0",
+      highPrice: "9.99",
       priceCurrency: "EUR",
-      description: "Free plan with 2GB file transfers",
+      offerCount: 3,
     },
     featureList: [
       "Secure file transfer up to 2GB (free)",
@@ -65,6 +93,8 @@ export function SoftwareApplicationJsonLd() {
       "Email notifications",
       "File preview with watermarks",
     ],
+    provider: { "@id": `${SITE_URL}/#org` },
+    isPartOf: { "@id": `${SITE_URL}/#website` },
   };
 
   return (
@@ -76,27 +106,7 @@ export function SoftwareApplicationJsonLd() {
   );
 }
 
-// WebSite Schema with SearchAction - for homepage
-export function WebSiteJsonLd() {
-  const schema = {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    name: "ZeFile",
-    url: SITE_URL,
-    description: "Secure file transfer platform with payment protection",
-    inLanguage: ["en", "fr"],
-  };
-
-  return (
-    <script
-      type="application/ld+json"
-      suppressHydrationWarning
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
-    />
-  );
-}
-
-// FAQ Schema - for pricing and help pages
+// FAQ Schema - for pricing page
 interface FAQItem {
   question: string;
   answer: string;
@@ -152,48 +162,6 @@ export function BreadcrumbJsonLd({ items }: { items: BreadcrumbItem[] }) {
   );
 }
 
-// Product/Service Schema - for pricing page
-interface PricingTier {
-  name: string;
-  description: string;
-  price: number;
-  currency: string;
-  features: string[];
-}
-
-export function PricingJsonLd({ tiers }: { tiers: PricingTier[] }) {
-  const schema = {
-    "@context": "https://schema.org",
-    "@type": "Product",
-    name: "ZeFile Subscription Plans",
-    description:
-      "Secure file transfer subscription plans with payment protection",
-    brand: {
-      "@type": "Brand",
-      name: "ZeFile",
-    },
-    offers: tiers.map((tier) => ({
-      "@type": "Offer",
-      name: tier.name,
-      description: tier.description,
-      price: tier.price,
-      priceCurrency: tier.currency,
-      availability: "https://schema.org/InStock",
-      priceValidUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split("T")[0],
-    })),
-  };
-
-  return (
-    <script
-      type="application/ld+json"
-      suppressHydrationWarning
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
-    />
-  );
-}
-
 // Article Schema - for blog posts
 interface ArticleJsonLdProps {
   headline: string;
@@ -221,58 +189,12 @@ export function ArticleJsonLd({
     datePublished,
     dateModified,
     author: { "@type": "Organization", name: author },
-    publisher: {
-      "@type": "Organization",
-      name: "ZeFile",
-      logo: {
-        "@type": "ImageObject",
-        url: `${SITE_URL}/zefile-logo.png`,
-      },
-    },
+    publisher: { "@id": `${SITE_URL}/#org` },
     ...(image && {
       image: { "@type": "ImageObject", url: image, width: 1200, height: 630 },
     }),
     description,
     mainEntityOfPage: { "@type": "WebPage", "@id": url },
-  };
-
-  return (
-    <script
-      type="application/ld+json"
-      suppressHydrationWarning
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
-    />
-  );
-}
-
-// HowTo Schema - for how-it-works page
-interface HowToStep {
-  name: string;
-  text: string;
-  image?: string;
-}
-
-export function HowToJsonLd({
-  name,
-  description,
-  steps,
-}: {
-  name: string;
-  description: string;
-  steps: HowToStep[];
-}) {
-  const schema = {
-    "@context": "https://schema.org",
-    "@type": "HowTo",
-    name,
-    description,
-    step: steps.map((step, index) => ({
-      "@type": "HowToStep",
-      position: index + 1,
-      name: step.name,
-      text: step.text,
-      ...(step.image && { image: step.image }),
-    })),
   };
 
   return (
