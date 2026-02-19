@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
@@ -87,31 +87,34 @@ const Header = () => {
     }
   };
 
+  // Phase 1: Set auth state from localStorage BEFORE browser paint.
+  // useLayoutEffect fires synchronously after DOM update but before paint,
+  // so the user never sees a blank header.
+  useLayoutEffect(() => {
+    const authenticated = authApi.isAuthenticated();
+    const userData = authApi.getStoredUser();
+    setIsAuthenticated(authenticated);
+    setUser(userData);
+    setIsAuthChecked(true);
+  }, []);
+
   useEffect(() => {
-    const checkAuth = async () => {
-      let authenticated = authApi.isAuthenticated();
-      let userData = authApi.getStoredUser();
+    // Phase 2: Verify auth state with server (async).
+    // verifyAuth() calls GET /auth/me — if 401, api-client automatically attempts
+    // token refresh and retries. No need for a manual refresh fallback here
+    // (double-refresh can trigger replay detection and revoke ALL tokens).
+    const verifyAndSync = async () => {
+      const userData = authApi.getStoredUser();
+      let authenticated = !!userData;
 
-      // Phase 1: Set auth state immediately from localStorage (sync).
-      // This prevents a blank header while waiting for the server round-trip.
-      setIsAuthenticated(authenticated);
-      setUser(userData);
-      setIsAuthChecked(true);
-
-      // Phase 2: Verify with server via cookie (async).
-      // verifyAuth() calls GET /auth/me — if 401, api-client automatically attempts
-      // token refresh and retries. No need for a manual refresh fallback here
-      // (double-refresh can trigger replay detection and revoke ALL tokens).
       if (userData) {
         try {
           const verified = await authApi.verifyAuth();
           if (verified) {
             authenticated = true;
-            userData = authApi.getStoredUser();
           } else {
             // api-client already tried token refresh internally — session is truly expired
             authenticated = false;
-            userData = null;
           }
         } catch {
           // Server unreachable - use cached user data as hint
@@ -119,7 +122,7 @@ const Header = () => {
 
         // Update state if server verification changed anything
         setIsAuthenticated(authenticated);
-        setUser(userData);
+        setUser(authenticated ? authApi.getStoredUser() : null);
       }
 
       // Fetch subscription and CSRF token when authenticated
@@ -130,6 +133,8 @@ const Header = () => {
         setSubscriptionTier("free");
       }
     };
+
+    const checkAuth = verifyAndSync;
 
     // Handle custom auth state change event (e.g., from OTP verification during upload)
     const handleAuthStateChange = (
