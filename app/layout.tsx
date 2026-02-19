@@ -150,6 +150,11 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     alternates: {
       canonical: SITE_URL,
+      languages: {
+        'en': SITE_URL,
+        'fr': SITE_URL,
+        'x-default': SITE_URL,
+      },
     },
     icons: {
       icon: [

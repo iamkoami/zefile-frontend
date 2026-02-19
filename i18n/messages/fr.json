@@ -528,6 +528,17 @@
     "privacy": "Politique de confidentialité",
     "allRightsReserved": "Tous droits réservés."
   },
+  "blog": {
+    "title": "Blog",
+    "subtitle": "Conseils, comparaisons et guides pour les professionnels créatifs",
+    "readMore": "Lire la suite",
+    "readingTime": "{minutes} min de lecture",
+    "publishedOn": "Publié le {date}",
+    "backToBlog": "Retour au blog",
+    "noPostsYet": "Pas encore d'articles. Revenez bientôt !",
+    "availableIn": "Également disponible en {language}",
+    "tags": "Tags"
+  },
   "pages": {
     "help": {
       "title": "Centre d'aide",

@@ -94,6 +94,8 @@ export const config = {
     '/',
     '/about',
     '/advertisers',
+    '/blog',
+    '/blog/:path*',
     '/downloads/:path*',
     '/help',
     '/how-it-works',

@@ -6,12 +6,12 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://zefile.io';
 
 const seoContent = {
   en: {
-    title: 'About ZeFile - Secure File Delivery Platform',
-    description: 'Learn about ZeFile, the secure file transfer platform that protects creators and freelancers. Get paid before your files are downloaded. Our mission and story.',
+    title: 'Blog - ZeFile',
+    description: 'Tips, comparisons, and guides for creative professionals. Learn about secure file transfer, getting paid for your work, and growing your creative business.',
   },
   fr: {
-    title: 'À propos de ZeFile - Plateforme de livraison de fichiers sécurisée',
-    description: 'Découvrez ZeFile, la plateforme de transfert de fichiers sécurisée qui protège les créateurs et freelances. Soyez payé avant que vos fichiers soient téléchargés.',
+    title: 'Blog - ZeFile',
+    description: 'Conseils, comparaisons et guides pour les professionnels créatifs. Découvrez le transfert de fichiers sécurisé, la monétisation de votre travail et le développement de votre activité.',
   },
 };
 
@@ -25,7 +25,7 @@ export async function generateMetadata(): Promise<Metadata> {
     openGraph: {
       title: content.title,
       description: content.description,
-      url: `${SITE_URL}/about`,
+      url: `${SITE_URL}/blog`,
       type: 'website',
     },
     twitter: {
@@ -33,17 +33,17 @@ export async function generateMetadata(): Promise<Metadata> {
       description: content.description,
     },
     alternates: {
-      canonical: `${SITE_URL}/about`,
+      canonical: `${SITE_URL}/blog`,
       languages: {
-        'en': `${SITE_URL}/about`,
-        'fr': `${SITE_URL}/about`,
-        'x-default': `${SITE_URL}/about`,
+        'en': `${SITE_URL}/blog`,
+        'fr': `${SITE_URL}/blog`,
+        'x-default': `${SITE_URL}/blog`,
       },
     },
   };
 }
 
-export default function AboutLayout({
+export default function BlogLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -52,7 +52,7 @@ export default function AboutLayout({
     <>
       <BreadcrumbJsonLd items={[
         { name: 'Home', url: SITE_URL },
-        { name: 'About', url: `${SITE_URL}/about` },
+        { name: 'Blog', url: `${SITE_URL}/blog` },
       ]} />
       {children}
     </>

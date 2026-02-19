@@ -24,6 +24,9 @@ export {
   type CertificateVerificationDto,
 } from './storage-api';
 
+// Blog
+export { blogApi, type BlogPostDto, type BlogListResponseDto, type SitemapSlugDto } from './blog-api';
+
 // Transfers
 export {
   transferApi,

@@ -527,6 +527,17 @@
     "privacy": "Privacy Policy",
     "allRightsReserved": "All rights reserved."
   },
+  "blog": {
+    "title": "Blog",
+    "subtitle": "Tips, comparisons, and guides for creative professionals",
+    "readMore": "Read more",
+    "readingTime": "{minutes} min read",
+    "publishedOn": "Published {date}",
+    "backToBlog": "Back to Blog",
+    "noPostsYet": "No posts yet. Check back soon!",
+    "availableIn": "Also available in {language}",
+    "tags": "Tags"
+  },
   "pages": {
     "help": {
       "title": "Help Center",

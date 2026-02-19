@@ -194,6 +194,57 @@ export function PricingJsonLd({ tiers }: { tiers: PricingTier[] }) {
   );
 }
 
+// Article Schema - for blog posts
+interface ArticleJsonLdProps {
+  headline: string;
+  datePublished: string;
+  dateModified: string;
+  author: string;
+  image?: string;
+  description: string;
+  url: string;
+}
+
+export function ArticleJsonLd({
+  headline,
+  datePublished,
+  dateModified,
+  author,
+  image,
+  description,
+  url,
+}: ArticleJsonLdProps) {
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline,
+    datePublished,
+    dateModified,
+    author: { "@type": "Organization", name: author },
+    publisher: {
+      "@type": "Organization",
+      name: "ZeFile",
+      logo: {
+        "@type": "ImageObject",
+        url: `${SITE_URL}/zefile-logo.png`,
+      },
+    },
+    ...(image && {
+      image: { "@type": "ImageObject", url: image, width: 1200, height: 630 },
+    }),
+    description,
+    mainEntityOfPage: { "@type": "WebPage", "@id": url },
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      suppressHydrationWarning
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+    />
+  );
+}
+
 // HowTo Schema - for how-it-works page
 interface HowToStep {
   name: string;
