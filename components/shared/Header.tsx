@@ -92,7 +92,13 @@ const Header = () => {
       let authenticated = authApi.isAuthenticated();
       let userData = authApi.getStoredUser();
 
-      // If user data exists (hint of previous login), verify with server via cookie.
+      // Phase 1: Set auth state immediately from localStorage (sync).
+      // This prevents a blank header while waiting for the server round-trip.
+      setIsAuthenticated(authenticated);
+      setUser(userData);
+      setIsAuthChecked(true);
+
+      // Phase 2: Verify with server via cookie (async).
       // verifyAuth() calls GET /auth/me — if 401, api-client automatically attempts
       // token refresh and retries. No need for a manual refresh fallback here
       // (double-refresh can trigger replay detection and revoke ALL tokens).
@@ -110,10 +116,11 @@ const Header = () => {
         } catch {
           // Server unreachable - use cached user data as hint
         }
-      }
 
-      setIsAuthenticated(authenticated);
-      setUser(userData);
+        // Update state if server verification changed anything
+        setIsAuthenticated(authenticated);
+        setUser(userData);
+      }
 
       // Fetch subscription and CSRF token when authenticated
       if (authenticated) {
@@ -169,7 +176,7 @@ const Header = () => {
       fetchSubscription();
     };
 
-    checkAuth().then(() => setIsAuthChecked(true));
+    checkAuth();
     window.addEventListener("storage", checkAuth);
     window.addEventListener(
       "auth-state-change",

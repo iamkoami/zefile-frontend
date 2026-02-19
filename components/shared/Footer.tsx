@@ -23,7 +23,7 @@ const Footer: React.FC = () => {
     ],
     company: [
       { label: t("about"), href: "/about" },
-      { label: t("contact"), href: "mailto:support@zefile.io" },
+      { label: t("contact"), href: "mailto:hello@zefile.io" },
     ],
     legal: [
       { label: t("terms"), href: "/terms" },

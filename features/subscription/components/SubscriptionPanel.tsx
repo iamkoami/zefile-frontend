@@ -567,10 +567,10 @@ const SubscriptionPanel: React.FC = () => {
         <p className="mt-1">
           {t("questionsContact")}{" "}
           <a
-            href="mailto:support@zefile.io"
+            href="mailto:hello@zefile.io"
             className="text-[#5E53E0] hover:underline"
           >
-            support@zefile.io
+            hello@zefile.io
           </a>
         </p>
       </div>

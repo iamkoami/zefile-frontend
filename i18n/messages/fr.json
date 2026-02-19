@@ -545,6 +545,8 @@
     "help": {
       "title": "Centre d'aide",
       "subtitle": "Une question ? On a les réponses.",
+      "searchPlaceholder": "Recherchez la réponse à votre question",
+      "noResults": "Aucun résultat trouvé. Essayez une autre recherche.",
       "gettingStartedTitle": "Pour commencer",
       "faq1Q": "Comment envoyer des fichiers ?",
       "faq1A": "Rendez-vous sur la page d'accueil, glissez-déposez vos fichiers (ou cliquez pour les parcourir), ajoutez les e-mails des destinataires, fixez un prix si vous le souhaitez, puis appuyez sur Envoyer. Vos destinataires recevront un lien de téléchargement sécurisé par e-mail.",
@@ -573,7 +575,7 @@
       "faq11A": "Oui. Vous pouvez annuler ou supprimer n'importe quel transfert depuis votre tableau de bord. Les fichiers seront supprimés de nos serveurs.",
       "contactTitle": "Encore besoin d'aide ?",
       "contactContent": "Contactez notre équipe support à",
-      "contactEmail": "support@zefile.io"
+      "contactEmail": "hello@zefile.io"
     },
     "howItWorks": {
       "title": "Comment ça marche",
@@ -665,7 +667,7 @@
       "changesTitle": "Modifications des conditions",
       "changesContent": "ZeFile se réserve le droit de modifier ces conditions d'utilisation à tout moment. Nous informerons les utilisateurs des changements importants par e-mail ou par notification dans l'application. Votre utilisation continue du Service après la publication des modifications constitue votre acceptation des conditions révisées.",
       "contactTitle": "Nous contacter",
-      "contactContent": "Si vous avez des questions sur ces conditions d'utilisation, veuillez nous contacter à support@zefile.io."
+      "contactContent": "Si vous avez des questions sur ces conditions d'utilisation, veuillez nous contacter à hello@zefile.io."
     },
     "privacy": {
       "title": "Politique de confidentialité",
@@ -681,7 +683,7 @@
       "cookiesTitle": "Cookies et suivi",
       "cookiesContent": "Nous utilisons des cookies essentiels pour l'authentification et la sécurité (jetons de session, protection CSRF). Nous utilisons des cookies d'analyse pour comprendre comment les utilisateurs interagissent avec le Service. Vous pouvez contrôler les préférences de cookies dans les paramètres de votre navigateur. Le Service nécessite des cookies essentiels pour fonctionner correctement.",
       "rightsTitle": "Vos droits",
-      "rightsContent": "En vertu du RGPD et des lois applicables sur la protection des données, vous avez le droit de :\n- Accéder à vos données personnelles\n- Corriger les données inexactes\n- Demander la suppression de vos données\n- Exporter vos données dans un format portable\n- Retirer votre consentement au traitement des données\n- Vous opposer au traitement de vos données\n\nVous pouvez exercer ces droits via les paramètres de votre compte ou en nous contactant à support@zefile.io.",
+      "rightsContent": "En vertu du RGPD et des lois applicables sur la protection des données, vous avez le droit de :\n- Accéder à vos données personnelles\n- Corriger les données inexactes\n- Demander la suppression de vos données\n- Exporter vos données dans un format portable\n- Retirer votre consentement au traitement des données\n- Vous opposer au traitement de vos données\n\nVous pouvez exercer ces droits via les paramètres de votre compte ou en nous contactant à hello@zefile.io.",
       "securityTitle": "Sécurité des données",
       "securityContent": "Nous mettons en œuvre des mesures de sécurité conformes aux standards de l'industrie pour protéger vos données, notamment le chiffrement en transit (TLS/HTTPS), l'authentification sécurisée, la limitation de débit, la protection CSRF et les en-têtes de politique de sécurité du contenu. Nous révisons et mettons régulièrement à jour nos pratiques de sécurité.",
       "childrenTitle": "Confidentialité des enfants",
@@ -689,7 +691,7 @@
       "changesTitle": "Modifications de cette politique",
       "changesContent": "Nous pouvons mettre à jour cette politique de confidentialité de temps à autre. Nous vous informerons des changements importants par e-mail ou par notification dans l'application. Nous vous encourageons à consulter régulièrement cette politique.",
       "contactTitle": "Nous contacter",
-      "contactContent": "Si vous avez des questions sur cette politique de confidentialité ou vos données personnelles, veuillez nous contacter à support@zefile.io."
+      "contactContent": "Si vous avez des questions sur cette politique de confidentialité ou vos données personnelles, veuillez nous contacter à hello@zefile.io."
     }
   },
   "transferItem": {

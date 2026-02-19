@@ -544,6 +544,8 @@
     "help": {
       "title": "Help Center",
       "subtitle": "Got a question? We've got answers.",
+      "searchPlaceholder": "Search for an answer to your question",
+      "noResults": "No results found. Try a different search.",
       "gettingStartedTitle": "Getting Started",
       "faq1Q": "How do I send files?",
       "faq1A": "Go to the homepage, drag and drop your files (or click to browse), add recipient emails, set a price if you want, and hit Send. Your recipients will get a secure download link by email.",
@@ -572,7 +574,7 @@
       "faq11A": "Yes. You can cancel or delete any transfer from your dashboard. The files will be removed from our servers.",
       "contactTitle": "Still need help?",
       "contactContent": "Reach out to our support team at",
-      "contactEmail": "support@zefile.io"
+      "contactEmail": "hello@zefile.io"
     },
     "howItWorks": {
       "title": "How It Works",
@@ -664,7 +666,7 @@
       "changesTitle": "Changes to Terms",
       "changesContent": "ZeFile reserves the right to modify these Terms of Service at any time. We will notify users of significant changes via email or an in-app notification. Your continued use of the Service after changes are posted constitutes your acceptance of the revised terms.",
       "contactTitle": "Contact Us",
-      "contactContent": "If you have questions about these Terms of Service, please contact us at support@zefile.io."
+      "contactContent": "If you have questions about these Terms of Service, please contact us at hello@zefile.io."
     },
     "privacy": {
       "title": "Privacy Policy",
@@ -680,7 +682,7 @@
       "cookiesTitle": "Cookies and Tracking",
       "cookiesContent": "We use essential cookies for authentication and security (session tokens, CSRF protection). We use analytics cookies to understand how users interact with the Service. You can control cookie preferences in your browser settings. The Service requires essential cookies to function properly.",
       "rightsTitle": "Your Rights",
-      "rightsContent": "Under GDPR and applicable data protection laws, you have the right to:\n- Access your personal data\n- Correct inaccurate data\n- Request deletion of your data\n- Export your data in a portable format\n- Withdraw consent for data processing\n- Object to processing of your data\n\nYou can exercise these rights through your account settings or by contacting us at support@zefile.io.",
+      "rightsContent": "Under GDPR and applicable data protection laws, you have the right to:\n- Access your personal data\n- Correct inaccurate data\n- Request deletion of your data\n- Export your data in a portable format\n- Withdraw consent for data processing\n- Object to processing of your data\n\nYou can exercise these rights through your account settings or by contacting us at hello@zefile.io.",
       "securityTitle": "Data Security",
       "securityContent": "We implement industry-standard security measures to protect your data, including encryption in transit (TLS/HTTPS), secure authentication, rate limiting, CSRF protection, and Content Security Policy headers. We regularly review and update our security practices.",
       "childrenTitle": "Children's Privacy",
@@ -688,7 +690,7 @@
       "changesTitle": "Changes to This Policy",
       "changesContent": "We may update this Privacy Policy from time to time. We will notify you of significant changes via email or an in-app notification. We encourage you to review this policy periodically.",
       "contactTitle": "Contact Us",
-      "contactContent": "If you have questions about this Privacy Policy or your personal data, please contact us at support@zefile.io."
+      "contactContent": "If you have questions about this Privacy Policy or your personal data, please contact us at hello@zefile.io."
     }
   },
   "transferItem": {
