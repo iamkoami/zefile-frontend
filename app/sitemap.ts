@@ -64,9 +64,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Fetch published blog post slugs
   let blogUrls: MetadataRoute.Sitemap = [];
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
     const response = await fetch(`${API_URL}/blog/sitemap`, {
       next: { revalidate: 3600 },
+      signal: controller.signal,
     });
+    clearTimeout(timeout);
     if (response.ok) {
       const posts: Array<{ slug: string; locale: string; updatedAt: string | null }> =
         await response.json();
