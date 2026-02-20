@@ -107,6 +107,7 @@ export const config = {
     '/about',
     '/advertisers',
     '/blog',
+    '/contact-us',
     '/blog/:path*',
     '/downloads/:path*',
     '/help',

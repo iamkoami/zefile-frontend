@@ -1,9 +1,20 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
+import { apiClient } from "@/services/api-client";
+import {
+  Mail,
+  Tiktok,
+  Instagram,
+  Threads,
+  Facebook,
+  Linkedin,
+  Youtube,
+  X,
+} from "iconoir-react";
 
 const Footer: React.FC = () => {
   const t = useTranslations("footer");
@@ -11,129 +22,195 @@ const Footer: React.FC = () => {
 
   const currentYear = new Date().getFullYear();
 
-  const footerLinks = {
-    product: [
-      { label: t("howItWorks"), href: "/how-it-works" },
-      { label: t("pricing"), href: "/pricing" },
-    ],
-    resources: [
-      { label: t("helpCenter"), href: "/help" },
-      { label: t("blog"), href: "/blog" },
-      { label: t("advertisers"), href: "/advertisers" },
-    ],
-    company: [
-      { label: t("about"), href: "/about" },
-      { label: t("contact"), href: "mailto:hello@zefile.io" },
-    ],
-    legal: [
-      { label: t("terms"), href: "/terms" },
-      { label: t("privacy"), href: "/privacy" },
-    ],
+  const [email, setEmail] = useState("");
+  const [hasSignedUp, setHasSignedUp] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [emailError, setEmailError] = useState(false);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("zefile_newsletter_signup");
+    if (stored) setHasSignedUp(true);
+  }, []);
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleNewsletterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = email.trim();
+    if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      setEmailError(true);
+      return;
+    }
+    setEmailError(false);
+    setIsSubmitting(true);
+
+    try {
+      const response = await apiClient.post("/newsletter/subscribe", {
+        email: trimmed,
+      });
+      if (!response.error) {
+        localStorage.setItem("zefile_newsletter_signup", trimmed);
+        setHasSignedUp(true);
+        setShowSuccess(true);
+      }
+    } catch {
+      // Silent fail — still mark as signed up to avoid frustration
+      localStorage.setItem("zefile_newsletter_signup", trimmed);
+      setHasSignedUp(true);
+      setShowSuccess(true);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  const socialLinks = [
+    { icon: Tiktok, href: "https://tiktok.com/@zefilehq", label: "TikTok" },
+    {
+      icon: Instagram,
+      href: "https://instagram.com/zefilehq",
+      label: "Instagram",
+    },
+    { icon: Threads, href: "https://threads.net/@zefilehq", label: "Threads" },
+    { icon: Facebook, href: "https://facebook.com/zefilehq", label: "Facebook" },
+    {
+      icon: Linkedin,
+      href: "https://linkedin.com/company/zefilehq",
+      label: "LinkedIn",
+    },
+    { icon: Youtube, href: "https://youtube.com/@zefilehq", label: "YouTube" },
+    { icon: X, href: "https://x.com/zefilehq", label: "X" },
+  ];
+
+  const navLinks = [
+    { label: t("howItWorks"), href: "/how-it-works" },
+    { label: t("pricing"), href: "/pricing" },
+    { label: t("helpCenter"), href: "/help" },
+    { label: t("blog"), href: "/blog" },
+    { label: t("about"), href: "/about" },
+    { label: t("contact"), href: "/contact-us" },
+  ];
 
   return (
     <footer className="bg-[#171717] text-white">
-      <div className="max-w-7xl mx-auto px-6 py-12">
-        {/* Main Footer Content */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
-          {/* Logo & Description */}
-          <div className="col-span-2 md:col-span-1">
-            <Link href="/" className="inline-block mb-4">
-              <Image
-                src="/zefile-logo-white.svg"
-                alt={tCommon("appName")}
-                width={100}
-                height={28}
-              />
-            </Link>
-            <p className="text-sm text-gray-400 mt-3">{t("description")}</p>
-          </div>
+      <div className="max-w-7xl mx-auto mt-10 px-6 py-16">
+        {/* Newsletter Section */}
+        <div className="text-center pb-12">
+          <h2 className="text-2xl md:text-3xl font-semibold tracking-wide mb-3">
+            {t("newsletterHeadline")}
+          </h2>
+          <p className="text-sm font-medium text-gray-400 mb-10 max-w-lg mx-auto">
+            {t("newsletterSubtext")}
+          </p>
 
-          {/* Product Links */}
-          <div>
-            <h4 className="text-sm font-semibold mb-4">{t("product")}</h4>
-            <ul className="space-y-3">
-              {footerLinks.product.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-gray-400 hover:text-white transition-colors"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
+          {hasSignedUp ? (
+            <p className="text-sm text-[#87E64B]">
+              {showSuccess
+                ? t("newsletterSuccess")
+                : t("newsletterAlreadySignedUp")}
+            </p>
+          ) : (
+            <form
+              onSubmit={handleNewsletterSubmit}
+              className="flex flex-col sm:flex-row items-center justify-center gap-3 max-w-md mx-auto"
+            >
+              <div className="flex-1 w-full">
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setEmailError(false);
+                  }}
+                  placeholder={t("newsletterPlaceholder")}
+                  className={`w-full bg-transparent border-b ${
+                    emailError
+                      ? "border-red-400"
+                      : "border-gray-600 focus:border-white"
+                  } pb-2 text-white placeholder-gray-500 outline-none transition-colors text-sm`}
+                  aria-label={t("newsletterPlaceholder")}
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="text-sm font-semibold text-[#171717] bg-[#87E64B] hover:bg-[#78d43f] px-6 py-2 rounded transition-colors uppercase tracking-wider whitespace-nowrap disabled:opacity-60"
+              >
+                {isSubmitting ? "..." : t("newsletterButton")}
+              </button>
+            </form>
+          )}
+        </div>
 
-          {/* Resources Links */}
-          <div>
-            <h4 className="text-sm font-semibold mb-4">{t("resources")}</h4>
-            <ul className="space-y-3">
-              {footerLinks.resources.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-gray-400 hover:text-white transition-colors"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
+        {/* Contact & Social Row */}
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6 mt-8 py-8">
+          {/* Logo */}
+          <Link href="/" className="inline-block">
+            <Image
+              src="/zefile-logo-white.svg"
+              alt={tCommon("appName")}
+              width={100}
+              height={28}
+            />
+          </Link>
 
-          {/* Company Links */}
-          <div>
-            <h4 className="text-sm font-semibold mb-4">{t("company")}</h4>
-            <ul className="space-y-3">
-              {footerLinks.company.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-gray-400 hover:text-white transition-colors"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
+          {/* Email */}
+          <a
+            href="mailto:hello@zefile.io"
+            className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors"
+          >
+            <Mail width={16} height={16} />
+            <span>{t("email")}</span>
+          </a>
 
-          {/* Legal Links */}
-          <div>
-            <h4 className="text-sm font-semibold mb-4">{t("legal")}</h4>
-            <ul className="space-y-3">
-              {footerLinks.legal.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-gray-400 hover:text-white transition-colors"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+          {/* Social Icons */}
+          <div className="flex items-center gap-4">
+            {socialLinks.map((social) => (
+              <a
+                key={social.label}
+                href={social.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-400 hover:text-white transition-colors"
+                aria-label={social.label}
+              >
+                <social.icon width={20} height={20} />
+              </a>
+            ))}
           </div>
         </div>
 
-        {/* Bottom Bar */}
-        <div className="mt-12 pt-8 border-t border-gray-800">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-sm text-gray-400">
-              © {currentYear} ZeFile. {t("allRightsReserved")}
+        {/* Navigation Links */}
+        <nav className="py-8">
+          <ul className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
+            {navLinks.map((link) => (
+              <li key={link.href}>
+                <Link
+                  href={link.href}
+                  className="text-sm text-gray-400 hover:text-white transition-colors"
+                >
+                  {link.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        {/* Copyright Bar */}
+        <div className="border-t border-gray-800 pt-10 mt-6">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <p className="text-xs text-gray-500">
+              &copy; {currentYear} ZeFile. {t("allRightsReserved")}
             </p>
             <div className="flex items-center gap-6">
               <Link
                 href="/terms"
-                className="text-sm text-gray-400 hover:text-white transition-colors"
+                className="text-xs text-gray-500 hover:text-white transition-colors"
               >
                 {t("terms")}
               </Link>
               <Link
                 href="/privacy"
-                className="text-sm text-gray-400 hover:text-white transition-colors"
+                className="text-xs text-gray-500 hover:text-white transition-colors"
               >
                 {t("privacy")}
               </Link>

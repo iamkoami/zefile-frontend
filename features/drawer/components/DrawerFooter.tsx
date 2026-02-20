@@ -7,9 +7,11 @@ import {
   NavArrowDown,
   Tiktok,
   Instagram,
+  Threads,
   Facebook,
   Linkedin,
   Youtube,
+  X,
 } from "iconoir-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useDrawerStore } from "@/stores/drawer-store";
@@ -39,11 +41,13 @@ const DrawerFooter: React.FC = () => {
   ];
 
   const socialLinks = [
-    { icon: Tiktok, href: "https://tiktok.com/@zefile", label: "TikTok" },
-    { icon: Instagram, href: "https://instagram.com/zefile", label: "Instagram" },
-    { icon: Facebook, href: "https://facebook.com/zefile", label: "Facebook" },
-    { icon: Linkedin, href: "https://linkedin.com/company/zefile", label: "LinkedIn" },
-    { icon: Youtube, href: "https://youtube.com/@zefile", label: "YouTube" },
+    { icon: Tiktok, href: "https://tiktok.com/@zefilehq", label: "TikTok" },
+    { icon: Instagram, href: "https://instagram.com/zefilehq", label: "Instagram" },
+    { icon: Threads, href: "https://threads.net/@zefilehq", label: "Threads" },
+    { icon: Facebook, href: "https://facebook.com/zefilehq", label: "Facebook" },
+    { icon: Linkedin, href: "https://linkedin.com/company/zefilehq", label: "LinkedIn" },
+    { icon: Youtube, href: "https://youtube.com/@zefilehq", label: "YouTube" },
+    { icon: X, href: "https://x.com/zefilehq", label: "X" },
   ];
 
   return (

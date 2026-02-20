@@ -52,6 +52,11 @@ const Header = () => {
   const { checkForPoll } = usePollEligibility();
   const prevAuthRef = useRef<boolean | null>(null);
 
+  // Track whether the initial server verification has completed.
+  // During initial verification, skip the fade animation to avoid flickering
+  // when useLayoutEffect's stale-localStorage auth gets invalidated by the server.
+  const initialVerifyDoneRef = useRef(false);
+
   useEffect(() => {
     let timer: NodeJS.Timeout | undefined;
     // Only track login transitions after initial auth check completes.
@@ -132,6 +137,10 @@ const Header = () => {
       } else {
         setSubscriptionTier("free");
       }
+
+      // Mark initial verification as done — subsequent auth-state-change
+      // events (from login/logout) will now use the fade animation.
+      initialVerifyDoneRef.current = true;
     };
 
     const checkAuth = verifyAndSync;
@@ -144,8 +153,6 @@ const Header = () => {
         reason?: string;
       }>,
     ) => {
-      setIsAuthTransitioning(true);
-
       // Handle session expiration - show toast notification
       if (
         !event.detail.isAuthenticated &&
@@ -153,6 +160,23 @@ const Header = () => {
       ) {
         toast.error(t("sessionExpired"));
       }
+
+      // During initial verification (page load), skip the fade animation.
+      // verifyAndSync already handles the state update directly.
+      // Animating here would cause visible flickering.
+      if (!initialVerifyDoneRef.current) {
+        setIsAuthenticated(event.detail.isAuthenticated);
+        setUser(event.detail.user || null);
+        if (event.detail.isAuthenticated) {
+          fetchSubscription();
+        } else {
+          setSubscriptionTier("free");
+        }
+        return;
+      }
+
+      // After initial verification, animate auth transitions (login/logout)
+      setIsAuthTransitioning(true);
 
       // Short delay to allow fade-out before updating state
       setTimeout(() => {
@@ -263,6 +287,7 @@ const Header = () => {
     { label: t("howItWorks"), href: "/how-it-works" },
     { label: t("helpCenter"), href: "/help" },
     { label: t("blog"), href: "/blog" },
+    { label: t("contact"), href: "/contact-us" },
   ];
 
   const handleResourcesMouseEnter = () => {
@@ -363,8 +388,7 @@ const Header = () => {
                 isAuthTransitioning ? "opacity-0" : "opacity-100"
               }`}
             >
-              {isAuthChecked &&
-                !isAuthenticated &&
+              {(!isAuthChecked || !isAuthenticated) &&
                 mainMenuItems.map((item) =>
                   item.action ? (
                     <button
@@ -452,7 +476,7 @@ const Header = () => {
             />
 
             {/* Connect Menu - Desktop only */}
-            {isAuthChecked && !isAuthenticated && (
+            {(!isAuthChecked || !isAuthenticated) && (
               <div
                 id="ze-connect-menu"
                 className={`ze-connect-menu hidden lg:flex items-center space-x-1 transition-opacity duration-300 ease-in-out ${
@@ -482,7 +506,7 @@ const Header = () => {
             )}
 
             {/* Mobile signup button */}
-            {isAuthChecked && !isAuthenticated && (
+            {(!isAuthChecked || !isAuthenticated) && (
               <button
                 onClick={() => {
                   setAuthMode("signup");
