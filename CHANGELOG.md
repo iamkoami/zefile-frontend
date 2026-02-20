@@ -5,6 +5,21 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2026-02-20
+
+### Added
+
+- Contact Us page (`/contact-us`) with form submission (name, email, message, category checkboxes)
+- Chat widget integration on contact page (opens AI support chat)
+- Threads and X (Twitter) social media links across Footer, DrawerFooter, contact page, and JSON-LD
+- `/contact-us` route added to middleware matcher
+
+### Changed
+
+- Social media handles unified to @zefilehq across all locations
+- EN/FR translations: removed robotic copy ("successfully", "Veuillez"), fixed French accents, humanized wording per voice guide
+- Updated OG image
+
 ## [1.6.2] - 2026-02-19
 
 ### Fixed
