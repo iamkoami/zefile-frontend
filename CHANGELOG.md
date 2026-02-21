@@ -5,6 +5,25 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0] - 2026-02-21
+
+### Added
+
+- Shared `PageHero` component for consistent page headers across static pages
+- About page: scroll-reveal animations, capabilities slideshow, trust carousel, brand cross decorations
+
+### Changed
+
+- About page hero title: "Get paid before they download" (more active, specific)
+- About page Africa section: "Built where it matters" with tighter, non-repetitive body copy
+- About page trust pill: "No passwords needed" instead of jargon "Passwordless auth"
+- About page value title: "Getting you paid comes first" for clarity
+- About page CTA button: "Send your first file" (more personal)
+- Replaced all double-hyphen (--) with proper em dashes in EN translations
+- Refreshed copy across blog, contact, help, how-it-works, jobs, press, privacy, and terms pages
+- Updated SEO metadata for About page
+- All copy changes applied to both EN and FR translations
+
 ## [1.7.0] - 2026-02-20
 
 ### Added
