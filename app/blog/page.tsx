@@ -8,6 +8,7 @@ import Image from "next/image";
 import { useTranslations, useLocale } from "next-intl";
 import Header from "@/components/shared/Header";
 import Footer from "@/components/shared/Footer";
+import PageHero from "@/components/shared/PageHero";
 import { blogApi, type BlogPostDto } from "@/services/blog-api";
 
 const POSTS_PER_PAGE = 10;
@@ -117,15 +118,7 @@ export default function BlogListPage() {
       <Header />
 
       <main className="flex-1">
-        {/* Hero */}
-        <div className="max-w-5xl mx-auto px-6 pt-16 pb-10">
-          <h1 className="text-4xl font-bold text-[#171717] mb-3">
-            {t("title")}
-          </h1>
-          <p className="text-lg text-gray-600 max-w-2xl">
-            {t("subtitle")}
-          </p>
-        </div>
+        <PageHero title={t("title")} subtitle={t("subtitle")} />
 
         {/* Post Grid */}
         <div className="max-w-5xl mx-auto px-6 pb-16">

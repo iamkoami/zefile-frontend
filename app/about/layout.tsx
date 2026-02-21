@@ -6,12 +6,12 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://zefile.io';
 
 const seoContent = {
   en: {
-    title: 'About Us - Secure File Delivery Platform',
-    description: 'Learn about ZeFile, the secure file transfer platform that protects creators and freelancers. Get paid before your files are downloaded. Our mission and story.',
+    title: 'About ZeFile - Secure File Delivery for Creatives',
+    description: 'ZeFile is a secure file delivery platform made in Africa for creatives worldwide. Upload files, set a price, get paid before download. Built with security, Mobile Money support, and creator-first values.',
   },
   fr: {
-    title: 'À propos - Plateforme de livraison de fichiers sécurisée',
-    description: 'Découvrez ZeFile, la plateforme de transfert de fichiers sécurisée qui protège les créateurs et freelances. Soyez payé avant que vos fichiers soient téléchargés.',
+    title: '\u00c0 propos de ZeFile - Livraison de fichiers s\u00e9curis\u00e9e pour les cr\u00e9atifs',
+    description: 'ZeFile est une plateforme de livraison de fichiers s\u00e9curis\u00e9e, con\u00e7ue en Afrique pour les cr\u00e9atifs du monde entier. T\u00e9l\u00e9versez vos fichiers, fixez un prix, soyez pay\u00e9 avant le t\u00e9l\u00e9chargement.',
   },
 };
 

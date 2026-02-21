@@ -5,6 +5,7 @@ export const runtime = "edge";
 import { useState, useMemo } from "react";
 import Header from "@/components/shared/Header";
 import Footer from "@/components/shared/Footer";
+import PageHero from "@/components/shared/PageHero";
 import { useTranslations } from "next-intl";
 
 function AccordionItem({ question, answer }: { question: string; answer: string }) {
@@ -101,14 +102,9 @@ export default function HelpCenterPage() {
       <Header />
 
       <main className="flex-1">
-        <div className="max-w-5xl mx-auto px-6 py-16">
-          <h1 className="text-5xl md:text-6xl font-bold text-[#171717] text-center mb-3">
-            {t("title")}
-          </h1>
-          <p className="text-lg text-gray-600 text-center mb-10">
-            {t("subtitle")}
-          </p>
+        <PageHero title={t("title")} subtitle={t("subtitle")} />
 
+        <div className="max-w-5xl mx-auto px-6 py-16">
           {/* Search */}
           <div className="max-w-2xl mx-auto mb-14">
             <div className="relative">

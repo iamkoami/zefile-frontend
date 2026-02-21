@@ -4,6 +4,7 @@ export const runtime = "edge";
 
 import Header from "@/components/shared/Header";
 import Footer from "@/components/shared/Footer";
+import PageHero from "@/components/shared/PageHero";
 import { useTranslations } from "next-intl";
 
 export default function TermsPage() {
@@ -28,14 +29,9 @@ export default function TermsPage() {
       <Header />
 
       <main className="flex-1">
-        <div className="max-w-4xl mx-auto px-6 py-16">
-          <h1 className="text-4xl font-bold text-[#171717] mb-4">
-            {t("title")}
-          </h1>
-          <p className="text-sm text-gray-500 mb-8">
-            {t("lastUpdated")}
-          </p>
+        <PageHero title={t("title")} subtitle={t("lastUpdated")} />
 
+        <div className="max-w-4xl mx-auto px-6 py-16">
           <div className="space-y-8">
             {sections.map((section, index) => (
               <section key={index} className="bg-white rounded-2xl border border-gray-200 p-8">

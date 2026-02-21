@@ -5,6 +5,7 @@ export const runtime = "edge";
 import React, { useState } from "react";
 import Header from "@/components/shared/Header";
 import Footer from "@/components/shared/Footer";
+import PageHero from "@/components/shared/PageHero";
 import { useTranslations } from "next-intl";
 import { apiClient } from "@/services/api-client";
 import { useChatStore } from "@/stores/chat-store";
@@ -114,18 +115,13 @@ export default function ContactPage() {
       <Header />
 
       <main className="flex-1">
+        <PageHero title={t("title")} subtitle={t("subtitle")} />
+
         <div className="max-w-7xl mx-auto px-6 py-12 lg:py-20">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 bg-white rounded-2xl overflow-hidden">
             {/* Left Column -- Contact Info */}
             <div className="p-8 lg:p-12 flex flex-col justify-between">
               <div>
-                <h1 className="text-3xl lg:text-4xl font-bold text-[#171717] mb-2">
-                  {t("title")}
-                </h1>
-                <p className="text-gray-500 font-medium mb-10 lg:mb-14">
-                  {t("subtitle")}
-                </p>
-
                 <div className="space-y-10">
                   {contactChannels.map((channel, index) => (
                     <div key={index} className="flex gap-6">

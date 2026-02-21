@@ -5,6 +5,7 @@ export const runtime = "edge";
 import Link from "next/link";
 import Header from "@/components/shared/Header";
 import Footer from "@/components/shared/Footer";
+import PageHero from "@/components/shared/PageHero";
 import { useTranslations } from "next-intl";
 
 export default function HowItWorksPage() {
@@ -30,14 +31,9 @@ export default function HowItWorksPage() {
       <Header />
 
       <main className="flex-1">
-        <div className="max-w-4xl mx-auto px-6 py-16">
-          <h1 className="text-4xl font-bold text-[#171717] mb-4">
-            {t("title")}
-          </h1>
-          <p className="text-lg text-gray-600 mb-12">
-            {t("subtitle")}
-          </p>
+        <PageHero title={t("title")} subtitle={t("subtitle")} />
 
+        <div className="max-w-4xl mx-auto px-6 py-16">
           {/* Steps */}
           <div className="space-y-6 mb-16">
             {steps.map((step, index) => (

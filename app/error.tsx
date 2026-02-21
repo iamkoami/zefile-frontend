@@ -62,7 +62,7 @@ export default function Error({
         {/* Primary CTA - Try Again */}
         <button
           onClick={() => reset()}
-          className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#87E64B] text-[#171717] font-medium rounded hover:bg-[#78d43f] transition-colors"
+          className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors"
         >
           <RefreshDouble className="w-5 h-5" />
           {t("tryAgain")}
