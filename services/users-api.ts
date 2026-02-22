@@ -56,6 +56,34 @@ export interface UpdateDataConsentDto {
   consent: boolean;
 }
 
+// Legal Consent Types
+export interface LegalConsentStatus {
+  termsAccepted: boolean;
+  termsVersion: string | null;
+  termsAcceptedAt: string | null;
+  privacyAccepted: boolean;
+  privacyVersion: string | null;
+  privacyAcceptedAt: string | null;
+  cookieConsentAnalytics: boolean;
+  cookieConsentAt: string | null;
+  marketingConsent: boolean;
+  marketingConsentAt: string | null;
+  needsReAcceptance: boolean;
+  currentTermsVersion: string;
+  currentPrivacyVersion: string;
+}
+
+export interface AcceptLegalTermsDto {
+  termsAccepted: boolean;
+  privacyAccepted: boolean;
+  cookieConsentAnalytics?: boolean;
+  marketingConsent?: boolean;
+}
+
+export interface UpdateCookieConsentDto {
+  analytics: boolean;
+}
+
 // Logout All Devices Types
 export interface LogoutAllDevicesResponse {
   count: number;
@@ -108,6 +136,27 @@ export class UsersApi {
    */
   async updateDataConsent(consent: boolean): Promise<ApiResponse<DataConsentResponse>> {
     return apiClient.patch<DataConsentResponse>('/users/me/data-consent', { consent });
+  }
+
+  /**
+   * Get legal consent status (terms, privacy, cookies, marketing)
+   */
+  async getLegalConsent(): Promise<ApiResponse<LegalConsentStatus>> {
+    return apiClient.get<LegalConsentStatus>('/users/me/legal-consent');
+  }
+
+  /**
+   * Accept legal terms and privacy policy
+   */
+  async acceptLegalTerms(data: AcceptLegalTermsDto): Promise<ApiResponse<{ message: string }>> {
+    return apiClient.post<{ message: string }>('/users/me/legal-consent', data);
+  }
+
+  /**
+   * Update cookie consent preference
+   */
+  async updateCookieConsent(data: UpdateCookieConsentDto): Promise<ApiResponse<{ message: string }>> {
+    return apiClient.patch<{ message: string }>('/users/me/cookie-consent', data);
   }
 
   /**

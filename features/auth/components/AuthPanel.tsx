@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Xmark } from "iconoir-react";
 import EmailAuthForm from "./EmailAuthForm";
@@ -23,6 +24,7 @@ const AuthPanel: React.FC<AuthPanelProps> = ({
   const [activeTab, setActiveTab] = useState<"email" | "phone">(defaultTab);
   const [shouldRender, setShouldRender] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -119,13 +121,69 @@ const AuthPanel: React.FC<AuthPanelProps> = ({
 
           {/* Tab Content - full width with symmetric padding */}
           <div className="ze-auth-form-container flex-1 flex flex-col justify-center px-20 md:px-28 lg:px-36">
-            {activeTab === "email" && <EmailAuthForm onSuccess={onClose} />}
-            {activeTab === "phone" && <PhoneAuthForm onSuccess={onClose} />}
+            {activeTab === "email" && (
+              <EmailAuthForm
+                onSuccess={onClose}
+                termsAccepted={mode === "signup" ? termsAccepted : undefined}
+              />
+            )}
+            {activeTab === "phone" && (
+              <PhoneAuthForm
+                onSuccess={onClose}
+                termsAccepted={mode === "signup" ? termsAccepted : undefined}
+              />
+            )}
 
-            {/* Privacy Notice (signup only) */}
-            {mode === "signup" && (
-              <p className="text-sm text-gray-500 mt-16 max-w-xl">
-                {t("privacyNotice")}
+            {/* Terms & Privacy Checkbox (signup) / Passive notice (login) */}
+            {mode === "signup" ? (
+              <label className="flex items-start gap-3 mt-10 max-w-xl cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={termsAccepted}
+                  onChange={(e) => setTermsAccepted(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 rounded border-gray-300 text-[#87E64B] focus:ring-[#87E64B] accent-[#87E64B] flex-shrink-0"
+                />
+                <span className="text-sm text-gray-500">
+                  {t("termsAgreement")}{" "}
+                  <Link
+                    href="/terms"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[#171717] font-medium underline hover:opacity-80 transition-opacity"
+                  >
+                    {t("termsOfService")}
+                  </Link>{" "}
+                  {t("and")}{" "}
+                  <Link
+                    href="/privacy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[#171717] font-medium underline hover:opacity-80 transition-opacity"
+                  >
+                    {t("privacyPolicy")}
+                  </Link>
+                </span>
+              </label>
+            ) : (
+              <p className="text-sm text-gray-500 mt-10 max-w-xl">
+                {t("termsAgreement")}{" "}
+                <Link
+                  href="/terms"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#171717] font-medium underline hover:opacity-80 transition-opacity"
+                >
+                  {t("termsOfService")}
+                </Link>{" "}
+                {t("and")}{" "}
+                <Link
+                  href="/privacy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#171717] font-medium underline hover:opacity-80 transition-opacity"
+                >
+                  {t("privacyPolicy")}
+                </Link>
               </p>
             )}
           </div>

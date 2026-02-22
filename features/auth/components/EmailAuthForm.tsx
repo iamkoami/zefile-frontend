@@ -5,13 +5,16 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { authApi } from '@/services/auth-api';
 import { useCaptcha, CAPTCHA_ACTIONS } from '@/hooks/useCaptcha';
+import { usersApi } from '@/services/users-api';
+import { getAnalyticsConsent } from '@/components/shared/CookieConsentBanner';
 import LoadingFullscreen from '@/components/LoadingFullscreen';
 
 interface EmailAuthFormProps {
   onSuccess: () => void;
+  termsAccepted?: boolean;
 }
 
-const EmailAuthForm: React.FC<EmailAuthFormProps> = ({ onSuccess }) => {
+const EmailAuthForm: React.FC<EmailAuthFormProps> = ({ onSuccess, termsAccepted }) => {
   const router = useRouter();
   const t = useTranslations('auth');
   const tErrors = useTranslations('errors');
@@ -101,14 +104,14 @@ const EmailAuthForm: React.FC<EmailAuthFormProps> = ({ onSuccess }) => {
     }
   };
 
-  // Auto-submit when all 6 digits are entered
+  // Auto-submit when all 6 digits are entered (only if terms accepted or no checkbox required)
   useEffect(() => {
     const otpCode = otp.join('');
-    if (otpCode.length === 6 && step === 'otp' && !loading) {
+    if (otpCode.length === 6 && step === 'otp' && !loading && termsAccepted !== false) {
       handleOtpSubmit();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [otp]);
+  }, [otp, termsAccepted]);
 
   const handleOtpSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -131,6 +134,15 @@ const EmailAuthForm: React.FC<EmailAuthFormProps> = ({ onSuccess }) => {
         setOtp(['', '', '', '', '', '']);
         inputRefs.current[0]?.focus();
       } else {
+        // Record legal consent if terms were accepted during auth
+        if (termsAccepted) {
+          usersApi.acceptLegalTerms({
+            termsAccepted: true,
+            privacyAccepted: true,
+            cookieConsentAnalytics: getAnalyticsConsent(),
+          }).catch(() => {});
+        }
+
         // Soft navigation - no page reload needed
         setIsLoggingIn(true);
         onSuccess();

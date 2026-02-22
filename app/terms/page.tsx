@@ -16,11 +16,13 @@ export default function TermsPage() {
     { title: t("accountsTitle"), content: t("accountsContent") },
     { title: t("fileTransfersTitle"), content: t("fileTransfersContent") },
     { title: t("paymentsTitle"), content: t("paymentsContent") },
+    { title: t("subscriptionTitle"), content: t("subscriptionContent") },
     { title: t("intellectualPropertyTitle"), content: t("intellectualPropertyContent") },
     { title: t("prohibitedUseTitle"), content: t("prohibitedUseContent") },
     { title: t("limitationTitle"), content: t("limitationContent") },
     { title: t("terminationTitle"), content: t("terminationContent") },
     { title: t("changesTitle"), content: t("changesContent") },
+    { title: t("governingLawTitle"), content: t("governingLawContent") },
     { title: t("contactTitle"), content: t("contactContent") },
   ];
 

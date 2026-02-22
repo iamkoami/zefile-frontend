@@ -51,13 +51,31 @@ export enum AnalyticsEventType {
 }
 
 /**
- * Initialize PostHog
+ * Check if analytics cookies have been consented to
+ */
+function hasAnalyticsConsent(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    const stored = localStorage.getItem('zefile_cookie_consent');
+    if (!stored) return false;
+    const consent = JSON.parse(stored);
+    return consent.analytics === true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Initialize PostHog (only if analytics cookies are consented)
  */
 export function initPostHog(): void {
   const apiKey = process.env.NEXT_PUBLIC_POSTHOG_KEY;
   const host = process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://app.posthog.com';
 
   if (typeof window !== 'undefined' && apiKey && !_posthogInitialized) {
+    // RGPD: Only initialize if user has consented to analytics cookies
+    if (!hasAnalyticsConsent()) return;
+
     try {
       posthog.init(apiKey, {
         api_host: host,
@@ -71,6 +89,20 @@ export function initPostHog(): void {
       _posthogInitialized = true;
     } catch (error) {
       console.error('Failed to initialize PostHog:', error);
+    }
+  }
+}
+
+/**
+ * Disable PostHog tracking (when consent is withdrawn)
+ */
+export function disablePostHog(): void {
+  if (_posthogInitialized) {
+    try {
+      posthog.opt_out_capturing();
+      _posthogInitialized = false;
+    } catch (error) {
+      console.error('Failed to disable PostHog:', error);
     }
   }
 }

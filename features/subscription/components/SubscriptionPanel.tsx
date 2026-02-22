@@ -535,26 +535,37 @@ const SubscriptionPanel: React.FC = () => {
             return (
               <div
                 key={num}
-                className="border border-gray-200 rounded-lg overflow-hidden"
+                className="rounded-2xl bg-[#F5F5F4] transition-colors duration-300"
               >
                 <button
                   onClick={() => setExpandedFaq(isExpanded ? null : num)}
-                  className="w-full flex items-center justify-between px-4 py-3 text-left bg-white hover:bg-gray-50 transition-colors"
+                  className="w-full flex items-center justify-between px-5 py-4 text-left"
                 >
-                  <span className="font-medium text-[#171717]">
+                  <span className="text-[15px] font-semibold text-[#171717] pr-4">
                     {t(`faqQ${num}`)}
                   </span>
-                  <NavArrowDown
-                    className={`w-5 h-5 text-gray-500 transition-transform ${
+                  <div
+                    className={`w-6 h-6 rounded-full shrink-0 flex items-center justify-center transition-all duration-300 ${
                       isExpanded ? "rotate-180" : ""
                     }`}
-                  />
-                </button>
-                {isExpanded && (
-                  <div className="px-4 py-3 bg-gray-50 border-t border-gray-200">
-                    <p className="text-sm text-gray-600">{t(`faqA${num}`)}</p>
+                  >
+                    <NavArrowDown className="w-3.5 h-3.5 text-gray-400" />
                   </div>
-                )}
+                </button>
+                <div
+                  className="grid transition-all duration-400 ease-in-out"
+                  style={{ gridTemplateRows: isExpanded ? "1fr" : "0fr" }}
+                >
+                  <div className="overflow-hidden">
+                    <div className="px-5 pb-5">
+                      <div className="border-t border-black/[0.06] pt-3">
+                        <p className="text-sm text-gray-500 leading-relaxed">
+                          {t(`faqA${num}`)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             );
           })}

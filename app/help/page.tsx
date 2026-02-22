@@ -2,40 +2,51 @@
 
 export const runtime = "edge";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Header from "@/components/shared/Header";
 import Footer from "@/components/shared/Footer";
 import PageHero from "@/components/shared/PageHero";
+import LoadingFullscreen from "@/components/LoadingFullscreen";
 import { useTranslations } from "next-intl";
 
 function AccordionItem({ question, answer }: { question: string; answer: string }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="border-b border-gray-200">
+    <div className="rounded-2xl bg-[#F5F5F4] transition-colors duration-300">
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center justify-between w-full py-4 text-left group"
+        className="flex items-center justify-between w-full px-5 py-4 text-left"
+        aria-expanded={open}
       >
-        <span className="text-[15px] text-[#171717] group-hover:text-[#5E53E0] transition-colors pr-4">
+        <span className="text-[15px] font-semibold text-[#171717] pr-4">
           {question}
         </span>
-        <svg
-          className={`w-4 h-4 text-gray-400 shrink-0 transition-transform duration-200 ${open ? "rotate-90" : ""}`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
+        <div
+          className={`w-6 h-6 rounded-full shrink-0 flex items-center justify-center transition-all duration-300 ${
+            open ? "rotate-180" : ""
+          }`}
         >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-        </svg>
+          <svg
+            className="w-3.5 h-3.5 text-gray-400"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.5}
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
       </button>
       <div
-        className="grid transition-all duration-300 ease-in-out"
+        className="grid transition-all duration-400 ease-in-out"
         style={{ gridTemplateRows: open ? "1fr" : "0fr" }}
       >
         <div className="overflow-hidden">
-          <div className="pb-4 pr-8">
-            <p className="text-sm text-gray-600 leading-relaxed">{answer}</p>
+          <div className="px-5 pb-5">
+            <div className="border-t border-black/[0.06] pt-3">
+              <p className="text-sm text-gray-500 leading-relaxed">{answer}</p>
+            </div>
           </div>
         </div>
       </div>
@@ -43,8 +54,59 @@ function AccordionItem({ question, answer }: { question: string; answer: string 
   );
 }
 
+function BrandCross({
+  size = 80,
+  color = "#87E64B",
+  opacity = 0.15,
+  rotate = 0,
+  className = "",
+}: {
+  size?: number;
+  color?: string;
+  opacity?: number;
+  rotate?: number;
+  className?: string;
+}) {
+  const bar = size * 0.3;
+  const r = size * 0.08;
+  return (
+    <div
+      className={`pointer-events-none select-none ${className}`}
+      style={{ width: size, height: size, transform: `rotate(${rotate}deg)` }}
+    >
+      <div
+        style={{
+          position: "absolute",
+          top: "50%",
+          left: 0,
+          width: "100%",
+          height: bar,
+          marginTop: -(bar / 2),
+          backgroundColor: color,
+          opacity,
+          borderRadius: r,
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          left: "50%",
+          top: 0,
+          height: "100%",
+          width: bar,
+          marginLeft: -(bar / 2),
+          backgroundColor: color,
+          opacity,
+          borderRadius: r,
+        }}
+      />
+    </div>
+  );
+}
+
 export default function HelpCenterPage() {
   const t = useTranslations("pages.help");
+  const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
 
   const sections = useMemo(
@@ -97,14 +159,51 @@ export default function HelpCenterPage() {
       .filter((s) => s.faqs.length > 0);
   }, [search, sections]);
 
+  useEffect(() => {
+    setIsLoading(false);
+  }, []);
+
+  if (isLoading) {
+    return <LoadingFullscreen />;
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-[#F5F5F0]">
       <Header />
 
-      <main className="flex-1">
+      <main className="flex-1 overflow-x-clip">
         <PageHero title={t("title")} subtitle={t("subtitle")} />
 
-        <div className="max-w-5xl mx-auto px-6 py-16">
+        <div className="max-w-5xl mx-auto px-6 py-16 relative">
+          <BrandCross
+            size={120}
+            color="#87E64B"
+            opacity={0.07}
+            rotate={15}
+            className="absolute top-4 right-0 hidden md:block"
+          />
+          <BrandCross
+            size={70}
+            color="#5E53E0"
+            opacity={0.08}
+            rotate={-12}
+            className="absolute top-[30%] left-0 hidden lg:block"
+          />
+          <BrandCross
+            size={50}
+            color="#87E64B"
+            opacity={0.09}
+            rotate={25}
+            className="absolute bottom-[25%] right-2 hidden md:block"
+          />
+          <BrandCross
+            size={90}
+            color="#5E53E0"
+            opacity={0.06}
+            rotate={-20}
+            className="absolute bottom-[8%] left-[6%] hidden lg:block"
+          />
+
           {/* Search */}
           <div className="max-w-2xl mx-auto mb-14">
             <div className="relative">
@@ -126,7 +225,7 @@ export default function HelpCenterPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={t("searchPlaceholder")}
-                className="w-full pl-12 pr-4 py-4 bg-white rounded-xl border border-gray-200 text-[15px] text-[#171717] placeholder-gray-400 focus:outline-none focus:border-[#5E53E0] focus:ring-1 focus:ring-[#5E53E0] transition-colors"
+                className="w-full pl-12 pr-4 py-4 bg-white rounded-lg border border-gray-200 text-[15px] text-[#171717] placeholder-gray-400 focus:outline-none focus:border-[#5E53E0] focus:ring-1 focus:ring-[#5E53E0] transition-colors"
               />
             </div>
           </div>
@@ -135,10 +234,10 @@ export default function HelpCenterPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-12">
             {filtered.map((section, sIdx) => (
               <div key={sIdx}>
-                <h2 className="text-lg font-bold text-[#171717] mb-2">
+                <h2 className="text-lg font-bold text-[#171717] mb-4">
                   {section.title}
                 </h2>
-                <div>
+                <div className="space-y-2">
                   {section.faqs.map((faq, fIdx) => (
                     <AccordionItem key={fIdx} question={faq.q} answer={faq.a} />
                   ))}

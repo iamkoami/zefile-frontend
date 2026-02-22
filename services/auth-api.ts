@@ -36,6 +36,7 @@ export interface AuthResponseDto {
     lastName?: string;
     accountType: 'sender' | 'recipient' | 'both';
     state: string;
+    needsLegalConsent: boolean;
   };
 }
 

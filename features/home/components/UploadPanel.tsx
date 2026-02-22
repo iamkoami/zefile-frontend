@@ -14,6 +14,8 @@ import TransferCompletePanel from "@/features/transfer/components/TransferComple
 import MultiEmailInput from "./MultiEmailInput";
 import { transferApi, TransferDto } from "@/services/transfer-api";
 import { authApi } from "@/services/auth-api";
+import { apiClient } from "@/services/api-client";
+import { getAnalyticsConsent } from "@/components/shared/CookieConsentBanner";
 import { platformApi } from "@/services/platform-api";
 import { multipartUploadService } from "@/services/multipart-upload.service";
 import { useUploadStore } from "@/stores/upload-store";
@@ -517,7 +519,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
     }
   };
 
-  const handleOTPVerify = async (code: string) => {
+  const handleOTPVerify = async (code: string, termsAccepted: boolean) => {
     try {
       // Verify OTP to authenticate user and get senderId
       const authResponse = await authApi.verifyOTP({
@@ -527,6 +529,17 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
 
       if (authResponse.error) {
         throw new Error(authResponse.error.message);
+      }
+
+      // Save legal consent if terms were accepted (fire-and-forget)
+      if (termsAccepted) {
+        apiClient.post("/users/me/legal-consent", {
+          termsAccepted: true,
+          privacyAccepted: true,
+          cookieConsentAnalytics: getAnalyticsConsent(),
+        }).catch(() => {
+          // Non-blocking: consent will be prompted again on next login if this fails
+        });
       }
 
       // Now proceed with file upload or reuse transfer

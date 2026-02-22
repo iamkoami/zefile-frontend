@@ -17,6 +17,7 @@ import { useUploadStore } from "@/stores/upload-store";
 import { useTransferSelectionStore } from "@/stores/transfer-selection-store";
 import { useTranslations as useUploadTranslations } from "next-intl";
 import ConfirmationModal from "@/components/shared/ConfirmationModal";
+import LegalConsentModal from "@/components/shared/LegalConsentModal";
 import { subscriptionApi, SubscriptionTier } from "@/services/subscription-api";
 import { toast } from "@/components/shared/Toast";
 import { usePollEligibility } from "@/hooks/usePollEligibility";
@@ -35,6 +36,7 @@ const Header = () => {
   const [user, setUser] = useState<any>(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [showLogoutConfirmation, setShowLogoutConfirmation] = useState(false);
+  const [showLegalConsent, setShowLegalConsent] = useState(false);
   const [subscriptionTier, setSubscriptionTier] =
     useState<SubscriptionTier>("free");
   const resourcesTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
@@ -134,6 +136,12 @@ const Header = () => {
       if (authenticated) {
         apiClient.initCsrfToken();
         fetchSubscription();
+
+        // Check if user needs to re-accept legal terms
+        const storedUser = authApi.getStoredUser();
+        if (storedUser?.needsLegalConsent) {
+          setShowLegalConsent(true);
+        }
       } else {
         setSubscriptionTier("free");
       }
@@ -169,6 +177,9 @@ const Header = () => {
         setUser(event.detail.user || null);
         if (event.detail.isAuthenticated) {
           fetchSubscription();
+          if (event.detail.user?.needsLegalConsent) {
+            setShowLegalConsent(true);
+          }
         } else {
           setSubscriptionTier("free");
         }
@@ -185,6 +196,9 @@ const Header = () => {
         // Fetch subscription after auth state change
         if (event.detail.isAuthenticated) {
           fetchSubscription();
+          if (event.detail.user?.needsLegalConsent) {
+            setShowLegalConsent(true);
+          }
         } else {
           setSubscriptionTier("free");
         }
@@ -687,6 +701,12 @@ const Header = () => {
         cancelLabel={tUpload("no")}
         onConfirm={performLogout}
         onCancel={handleCancelLogout}
+      />
+
+      {/* Legal consent modal for existing users who need re-acceptance */}
+      <LegalConsentModal
+        isOpen={showLegalConsent}
+        onAccepted={() => setShowLegalConsent(false)}
       />
     </>
   );

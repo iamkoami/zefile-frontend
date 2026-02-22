@@ -2,19 +2,35 @@
 
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { initPostHog, isPostHogInitialized } from '@/lib/posthog';
+import { initPostHog, disablePostHog, isPostHogInitialized } from '@/lib/posthog';
 import posthog from 'posthog-js';
 
 /**
  * PostHog Provider Component
- * Initializes PostHog and tracks page views
+ * Initializes PostHog only when analytics cookies are consented (RGPD)
+ * Listens for cookie consent changes to enable/disable tracking
  */
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
-  // Initialize PostHog on mount
+  // Initialize PostHog on mount (will skip if no analytics consent)
   useEffect(() => {
     initPostHog();
+  }, []);
+
+  // Listen for cookie consent changes
+  useEffect(() => {
+    const handleConsentChange = (event: Event) => {
+      const detail = (event as CustomEvent).detail;
+      if (detail?.analytics) {
+        initPostHog();
+      } else {
+        disablePostHog();
+      }
+    };
+
+    window.addEventListener('cookie-consent-changed', handleConsentChange);
+    return () => window.removeEventListener('cookie-consent-changed', handleConsentChange);
   }, []);
 
   // Track page views on route changes

@@ -5,9 +5,10 @@ import { useTranslations } from 'next-intl';
 
 interface PhoneAuthFormProps {
   onSuccess: () => void;
+  termsAccepted?: boolean;
 }
 
-const PhoneAuthForm: React.FC<PhoneAuthFormProps> = ({ onSuccess }) => {
+const PhoneAuthForm: React.FC<PhoneAuthFormProps> = ({ onSuccess, termsAccepted }) => {
   const t = useTranslations('auth');
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
   const [phone, setPhone] = useState('');
@@ -76,14 +77,14 @@ const PhoneAuthForm: React.FC<PhoneAuthFormProps> = ({ onSuccess }) => {
     }
   };
 
-  // Auto-submit when all 6 digits are entered
+  // Auto-submit when all 6 digits are entered (only if terms accepted or no checkbox required)
   useEffect(() => {
     const otpCode = otp.join('');
-    if (otpCode.length === 6 && step === 'otp' && !loading) {
+    if (otpCode.length === 6 && step === 'otp' && !loading && termsAccepted !== false) {
       handleOtpSubmit();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [otp]);
+  }, [otp, termsAccepted]);
 
   const handleOtpSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();

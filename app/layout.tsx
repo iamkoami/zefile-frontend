@@ -13,6 +13,7 @@ import { OrganizationJsonLd, WebSiteJsonLd, WebApplicationJsonLd } from "@/compo
 import GlobalSideDrawer from "@/components/providers/GlobalSideDrawer";
 import ToastContainer from "@/components/shared/Toast";
 import ChatWidget from "@/components/shared/ChatWidget";
+import CookieConsentBanner from "@/components/shared/CookieConsentBanner";
 import "react-flagpack/dist/style.css";
 import "./globals.css";
 
@@ -200,6 +201,7 @@ export default async function RootLayout({
                 {children}
                 <GlobalSideDrawer />
                 <ChatWidget />
+                <CookieConsentBanner />
               </PostHogProvider>
             </SentryProvider>
           </Suspense>

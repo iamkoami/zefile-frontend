@@ -7,13 +7,16 @@ import { NavArrowLeft } from "iconoir-react";
 interface OTPVerificationProps {
   email: string;
   onBack: () => void;
-  onVerify: (code: string) => void;
+  onVerify: (code: string, termsAccepted: boolean) => void;
+  /** If true, the terms checkbox is shown and required */
+  requireTermsAcceptance?: boolean;
 }
 
 const OTPVerification: React.FC<OTPVerificationProps> = ({
   email,
   onBack,
   onVerify,
+  requireTermsAcceptance = true,
 }) => {
   const otpLength = parseInt(process.env.NEXT_PUBLIC_OTP_LENGTH || "6", 10);
   const t = useTranslations("otp");
@@ -22,6 +25,7 @@ const OTPVerification: React.FC<OTPVerificationProps> = ({
   const [isVerifying, setIsVerifying] = useState(false);
   const [error, setError] = useState<string>("");
   const [resendCountdown, setResendCountdown] = useState(30);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   // Countdown timer for resend button
   useEffect(() => {
@@ -73,7 +77,7 @@ const OTPVerification: React.FC<OTPVerificationProps> = ({
     setIsVerifying(true);
     setError("");
     try {
-      await onVerify(otpCode);
+      await onVerify(otpCode, termsAccepted);
     } catch (err: any) {
       // Parse and translate error message from API
       const translatedError = getTranslatedError(err.message || "");
@@ -92,7 +96,8 @@ const OTPVerification: React.FC<OTPVerificationProps> = ({
     // TODO: Implement learn more logic
   };
 
-  const isButtonDisabled = otpCode.length !== otpLength || isVerifying;
+  const needsTerms = requireTermsAcceptance;
+  const isButtonDisabled = otpCode.length !== otpLength || isVerifying || (needsTerms && !termsAccepted);
 
   return (
     <div className="flex flex-col items-center justify-center">
@@ -198,28 +203,58 @@ const OTPVerification: React.FC<OTPVerificationProps> = ({
       </div>
 
       {/* Terms & Privacy Agreement */}
-      <div className="w-full mt-3 text-xs text-center text-gray-600">
-        <p>
-          {t("termsAgreement")}{" "}
-          <a
-            href="/terms-of-service"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[#171717] font-medium underline hover:opacity-80 transition-opacity"
-          >
-            {t("termsOfService")}
-          </a>{" "}
-          {t("and")}{" "}
-          <a
-            href="/privacy-policy"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[#171717] font-medium underline hover:opacity-80 transition-opacity"
-          >
-            {t("privacyPolicy")}
-          </a>
-          .
-        </p>
+      <div className="w-full mt-3">
+        {needsTerms ? (
+          <label className="flex items-start gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={termsAccepted}
+              onChange={(e) => setTermsAccepted(e.target.checked)}
+              className="mt-0.5 w-4 h-4 rounded border-gray-300 text-[#87E64B] focus:ring-[#87E64B] accent-[#87E64B]"
+            />
+            <span className="text-xs text-gray-600">
+              {t("termsAgreement")}{" "}
+              <a
+                href="/terms"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#171717] font-medium underline hover:opacity-80 transition-opacity"
+              >
+                {t("termsOfService")}
+              </a>{" "}
+              {t("and")}{" "}
+              <a
+                href="/privacy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#171717] font-medium underline hover:opacity-80 transition-opacity"
+              >
+                {t("privacyPolicy")}
+              </a>
+            </span>
+          </label>
+        ) : (
+          <p className="text-xs text-center text-gray-600">
+            {t("termsAgreement")}{" "}
+            <a
+              href="/terms"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#171717] font-medium underline hover:opacity-80 transition-opacity"
+            >
+              {t("termsOfService")}
+            </a>{" "}
+            {t("and")}{" "}
+            <a
+              href="/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#171717] font-medium underline hover:opacity-80 transition-opacity"
+            >
+              {t("privacyPolicy")}
+            </a>
+          </p>
+        )}
       </div>
     </div>
   );

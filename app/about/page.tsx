@@ -117,138 +117,164 @@ function ImageZone({
 }
 
 /* ------------------------------------------------------------------ */
-/*  Capabilities — cards overlaying central image                      */
+/*  Capabilities — dark fan cards (5 cards)                             */
 /* ------------------------------------------------------------------ */
-
-const CARD_ICON_STYLES = [
-  { bg: "bg-[#87E64B]/20", text: "text-[#171717]" },
-  { bg: "bg-[#5E53E0]/15", text: "text-[#5E53E0]" },
-  { bg: "bg-[#87E64B]/20", text: "text-[#171717]" },
-  { bg: "bg-[#5E53E0]/15", text: "text-[#5E53E0]" },
-  { bg: "bg-[#87E64B]/20", text: "text-[#171717]" },
-];
-
-/* Desktop positions: slight vertical stagger for masonry feel */
-const CARD_POSITIONS = [
-  "top-[6%] left-1/2 -translate-x-1/2",
-  "top-[30%] left-[3%]",
-  "top-[60%] left-[7%]",
-  "top-[36%] right-[1%]",
-  "top-[70%] right-[5%]",
-];
-
-function CapabilityCard({
-  icon,
+function CapCardInner({
+  number,
   title,
   content,
-  index,
 }: {
-  icon: ReactNode;
+  number: number;
   title: string;
   content: string;
-  index: number;
 }) {
-  const style = CARD_ICON_STYLES[index];
   return (
-    <div
-      className="bg-white/80 backdrop-blur-sm rounded-2xl px-5 py-4 border border-gray-100/50 w-[380px] flex items-start gap-4"
-      style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.02)" }}
-    >
-      <div
-        className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center ${style.bg} ${style.text}`}
-      >
-        {icon}
+    <div className="bg-[#171717] border border-[#87E64B]/20 rounded-2xl p-6 md:p-8 text-white h-full flex flex-col">
+      <div className="flex items-start gap-1 mb-4">
+        <span className="text-[#87E64B] text-3xl md:text-4xl font-bold leading-none">
+          {String(number).padStart(2, "0")}
+        </span>
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 14 14"
+          fill="none"
+          className="mt-0.5"
+        >
+          <path
+            d="M7 0L8.8 4.6L14 5.2L10.2 8.6L11.2 14L7 11.4L2.8 14L3.8 8.6L0 5.2L5.2 4.6L7 0Z"
+            fill="#87E64B"
+          />
+        </svg>
       </div>
-      <div className="min-w-0">
-        <h3 className="font-bold text-[#171717] text-[15px] mb-0.5">{title}</h3>
-        <p className="text-gray-400 text-sm leading-relaxed">{content}</p>
-      </div>
+      <h3 className="text-lg md:text-xl font-bold mb-2">{title}</h3>
+      <p className="text-white/60 text-sm md:text-base leading-relaxed flex-1">
+        {content}
+      </p>
     </div>
   );
 }
 
-function CapabilitiesSlideshow({
+function CapabilitiesFanCards({
   title,
   capabilities,
 }: {
   title: string | ReactNode;
   capabilities: {
-    icon: ReactNode;
-    titleKey: string;
-    contentKey: string;
     title: string;
     content: string;
   }[];
 }) {
+  const [hovered, setHovered] = useState<number | null>(null);
+
+  /* Top row: 3 cards, fanned */
+  const topRest = [
+    "rotate(-4deg)",
+    "rotate(0deg) translateY(-10px)",
+    "rotate(4deg)",
+  ];
+  const getTopHover = (i: number) => {
+    if (hovered === null) return topRest[i];
+    if (hovered === i) return "rotate(0deg) translateY(-20px)";
+    if (i === 0) return "rotate(-6deg) translateX(-12px)";
+    if (i === 2) return "rotate(6deg) translateX(12px)";
+    return "rotate(0deg) translateY(-10px)";
+  };
+
+  /* Bottom row: 2 cards, fanned */
+  const botRest = ["rotate(-3deg)", "rotate(3deg)"];
+  const getBotHover = (ri: number) => {
+    const gi = ri + 3; // global index
+    if (hovered === null) return botRest[ri];
+    if (hovered === gi) return "rotate(0deg) translateY(-20px)";
+    if (ri === 0) return "rotate(-5deg) translateX(-12px)";
+    return "rotate(5deg) translateX(12px)";
+  };
+
   return (
-    <section className="max-w-6xl mx-auto px-6 pt-36 ">
+    <section className="max-w-5xl mx-auto px-6 pt-20 md:pt-32 pb-8">
       <Reveal>
-        <h2 className="text-3xl md:text-5xl font-bold text-[#171717] mb-12 md:mb-16 text-center">
+        <h2 className="text-3xl md:text-5xl font-bold text-[#171717] mb-24 md:mb-24 text-center">
           {title}
         </h2>
       </Reveal>
 
-      {/* Mobile / Tablet layout */}
-      <div className="lg:hidden">
-        <Reveal>
-          <div className="relative overflow-hidden">
-            <div className="relative flex justify-center pt-8 pb-0">
-              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[340px] h-[170px] bg-[#87E64B] rounded-t-full pointer-events-none" />
-              <div className="relative w-[280px] z-10">
-                <ImageZone
-                  alt="ZeFile capabilities"
-                  aspect="aspect-[3/4]"
-                  className="rounded-2xl"
-                />
-              </div>
-            </div>
-          </div>
-        </Reveal>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8">
-          {capabilities.map((cap, i) => (
-            <Reveal key={i} delay={(i + 1) * 100}>
-              <CapabilityCard
-                icon={cap.icon}
+      {/* Desktop: 2 rows of fanned cards */}
+      <div className="hidden md:block" onMouseLeave={() => setHovered(null)}>
+        {/* Row 1: 3 cards */}
+        <div className="flex justify-center items-stretch mb-6">
+          {capabilities.slice(0, 3).map((cap, i) => (
+            <div
+              key={i}
+              className="cursor-pointer"
+              style={{
+                width: "34%",
+                flexShrink: 0,
+                marginLeft: i === 0 ? 0 : "-2%",
+                transform: getTopHover(i),
+                transformOrigin: "bottom center",
+                transition:
+                  "transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.3s ease",
+                zIndex: hovered === i ? 10 : i === 1 ? 5 : 1,
+                filter:
+                  hovered !== null && hovered !== i
+                    ? "brightness(0.92)"
+                    : "none",
+              }}
+              onMouseEnter={() => setHovered(i)}
+            >
+              <CapCardInner
+                number={i + 1}
                 title={cap.title}
                 content={cap.content}
-                index={i}
               />
-            </Reveal>
+            </div>
+          ))}
+        </div>
+
+        {/* Row 2: 2 cards */}
+        <div className="flex justify-center items-stretch">
+          {capabilities.slice(3, 5).map((cap, ri) => (
+            <div
+              key={ri}
+              className="cursor-pointer"
+              style={{
+                width: "34%",
+                flexShrink: 0,
+                marginLeft: ri === 0 ? 0 : "-2%",
+                transform: getBotHover(ri),
+                transformOrigin: "bottom center",
+                transition:
+                  "transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.3s ease",
+                zIndex: hovered === ri + 3 ? 10 : 1,
+                filter:
+                  hovered !== null && hovered !== ri + 3
+                    ? "brightness(0.92)"
+                    : "none",
+              }}
+              onMouseEnter={() => setHovered(ri + 3)}
+            >
+              <CapCardInner
+                number={ri + 4}
+                title={cap.title}
+                content={cap.content}
+              />
+            </div>
           ))}
         </div>
       </div>
 
-      {/* Desktop layout — large image with cards overlaying */}
-      <div className="hidden lg:block">
-        <Reveal>
-          <div className="relative overflow-hidden" style={{ minHeight: 700 }}>
-            {/* Large central image */}
-            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[500px] z-[1]">
-              <ImageZone
-                alt="ZeFile capabilities"
-                aspect="aspect-[3/4]"
-                className="rounded-t-2xl rounded-b-none"
-              />
-            </div>
-
-            {/* Green half-circle behind image bottom */}
-            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[640px] h-[320px] bg-[#87E64B] rounded-t-full pointer-events-none" />
-
-            {/* Floating cards */}
-            {capabilities.map((cap, i) => (
-              <div key={i} className={`absolute z-[2] ${CARD_POSITIONS[i]}`}>
-                <Reveal delay={(i + 1) * 120}>
-                  <CapabilityCard
-                    icon={cap.icon}
-                    title={cap.title}
-                    content={cap.content}
-                    index={i}
-                  />
-                </Reveal>
-              </div>
-            ))}
-          </div>
-        </Reveal>
+      {/* Mobile: stacked */}
+      <div className="md:hidden space-y-5">
+        {capabilities.map((cap, i) => (
+          <Reveal key={i}>
+            <CapCardInner
+              number={i + 1}
+              title={cap.title}
+              content={cap.content}
+            />
+          </Reveal>
+        ))}
       </div>
     </section>
   );
@@ -315,10 +341,10 @@ function BrandCross({
 /*  Color palettes                                                      */
 /* ------------------------------------------------------------------ */
 const VALUE_COLORS = [
-  "bg-[#E8FFD1]",
-  "bg-[#EDE8FF]",
-  "bg-[#FFF8D6]",
-  "bg-[#E0FFF5]",
+  "bg-[#F4F5F7]",
+  "bg-[#F4F5F7]",
+  "bg-[#F4F5F7]",
+  "bg-[#F4F5F7]",
 ];
 
 /* ------------------------------------------------------------------ */
@@ -378,18 +404,20 @@ function TrustCarousel({ items }: { items: { pill: string; desc: string }[] }) {
         {items.map((item, i) => (
           <div
             key={i}
-            className={`bg-white/10 backdrop-blur-sm rounded-2xl p-6 shrink-0 flex flex-col transition-opacity duration-300 ${
+            className={`bg-white rounded-2xl p-6 shrink-0 flex flex-col transition-opacity duration-300 border border-gray-100 ${
               i === active ? "opacity-100" : "opacity-70"
             }`}
             style={{ width: TRUST_CARD_WIDTH }}
           >
-            <h3 className="text-white font-bold text-base mb-2">{item.pill}</h3>
-            <p className="text-white/70 text-sm leading-relaxed mb-4">
+            <h3 className="text-[#171717] font-bold text-base mb-2">
+              {item.pill}
+            </h3>
+            <p className="text-gray-400 text-sm leading-relaxed mb-4">
               {item.desc}
             </p>
-            <div className="mt-auto rounded-xl bg-white/[0.06] aspect-[16/10] flex items-center justify-center">
-              <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
-                <div className="w-5 h-5 rounded-full bg-[#87E64B]/20" />
+            <div className="mt-auto rounded-xl bg-[#F3F0FF] aspect-[16/10] flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full bg-[#5E53E0]/10 flex items-center justify-center">
+                <div className="w-5 h-5 rounded-full bg-[#5E53E0]/20" />
               </div>
             </div>
           </div>
@@ -404,8 +432,8 @@ function TrustCarousel({ items }: { items: { pill: string; desc: string }[] }) {
             onClick={() => handleDot(i)}
             className={`rounded-full transition-all duration-300 ${
               i === active
-                ? "w-6 h-2.5 bg-white"
-                : "w-2.5 h-2.5 bg-white/30 hover:bg-white/50"
+                ? "w-6 h-2.5 bg-[#5E53E0]"
+                : "w-2.5 h-2.5 bg-[#5E53E0]/20 hover:bg-[#5E53E0]/40"
             }`}
             aria-label={`Go to slide ${i + 1}`}
           />
@@ -480,7 +508,7 @@ export default function AboutPage() {
 
       <main className="flex-1">
         {/* ── 1. Hero + decorative crosses ─────────────────────── */}
-        <div className="relative overflow-hidden">
+        <div className="relative overflow-x-clip">
           <PageHero
             title={t.rich("title", {
               highlight: (chunks) => (
@@ -546,13 +574,13 @@ export default function AboutPage() {
         {/* ── 3. Origin Story — dark card + interior shapes ────── */}
         <Reveal>
           <section className="max-w-7xl mx-auto px-6 mt-10 mb-10">
-            <div className="bg-[#171717] text-white rounded-3xl overflow-hidden relative">
+            <div className="bg-[#FDFAF4] text-white rounded-3xl overflow-hidden relative">
               <div className="absolute top-8 right-8 w-40 h-28 rounded-3xl bg-[#87E64B]/[0.08] rotate-12 pointer-events-none" />
               <div className="absolute bottom-10 left-12 w-20 h-20 rounded-full bg-[#5E53E0]/10 pointer-events-none" />
 
               <div className="grid grid-cols-1 lg:grid-cols-2 relative z-10">
                 <div className="p-10 md:p-16 flex flex-col justify-center">
-                  <h2 className="text-3xl md:text-5xl font-bold mb-2">
+                  <h2 className="text-3xl md:text-5xl text-[#171717] font-bold mb-2">
                     {t.rich("storyTitle", {
                       highlight: (chunks) => (
                         <span className="ze-highlight-green">{chunks}</span>
@@ -563,13 +591,13 @@ export default function AboutPage() {
                     {t("storyTagline")}
                   </p>
                   <div className="space-y-5">
-                    <p className="text-gray-400 font-medium text-base leading-relaxed">
+                    <p className="text-[#171717] font-medium text-base leading-relaxed">
                       {t("storyP1")}
                     </p>
-                    <p className="text-gray-400 font-medium text-base leading-relaxed">
+                    <p className="text-[#171717] font-medium text-base leading-relaxed">
                       {t("storyP2")}
                     </p>
-                    <p className="text-gray-400 font-medium text-base leading-relaxed">
+                    <p className="text-[#171717] font-medium text-base leading-relaxed">
                       {t("storyP3")}
                     </p>
                   </div>
@@ -586,36 +614,35 @@ export default function AboutPage() {
           </section>
         </Reveal>
 
-        {/* ── 4. Capabilities — interactive slideshow ──────────── */}
-        <CapabilitiesSlideshow
+        {/* ── 4. Capabilities — dark fan cards ────────────────── */}
+        <CapabilitiesFanCards
           title={t.rich("capabilitiesTitle", {
             highlight: (chunks) => (
               <span className="ze-highlight-purple">{chunks}</span>
             ),
           })}
           capabilities={capabilities.map((cap) => ({
-            ...cap,
             title: t(cap.titleKey),
             content: t(cap.contentKey),
           }))}
         />
 
         {/* Section separator: Capabilities → Security */}
-        <div className="relative max-w-6xl mx-auto">
+        <div className="relative max-w-6xl mx-auto h-16 z-20">
           <BrandCross
             size={100}
             color="#5E53E0"
             opacity={0.12}
             rotate={15}
-            className="absolute -top-12 right-[15%] hidden md:block"
+            className="absolute top-0 right-[15%] hidden md:block"
           />
         </div>
 
-        {/* ── 5. Security — bold purple + trust cards ──────────── */}
-        <section className="bg-[#5E53E0] relative overflow-hidden">
+        {/* ── 5. Security — trust cards ──────────────────────── */}
+        <section className="bg-gradient-to-b from-white via-[#FDFAF4] to-white relative overflow-x-clip">
           <BrandCross
             size={200}
-            color="#ffffff"
+            color="#5E53E0"
             opacity={0.06}
             rotate={15}
             className="absolute -top-12 -right-12 hidden md:block"
@@ -629,7 +656,7 @@ export default function AboutPage() {
           />
           <BrandCross
             size={60}
-            color="#ffffff"
+            color="#5E53E0"
             opacity={0.08}
             rotate={25}
             className="absolute top-1/3 right-[8%] hidden lg:block"
@@ -638,14 +665,14 @@ export default function AboutPage() {
           <div className="max-w-6xl mx-auto px-6 py-32 md:py-40 relative z-10">
             <Reveal>
               <div className="text-center mb-12">
-                <h2 className="text-3xl md:text-5xl font-bold text-white mb-3">
+                <h2 className="text-3xl md:text-5xl font-bold text-[#171717] mb-3">
                   {t.rich("trustTitle", {
                     highlight: (chunks) => (
-                      <span className="ze-highlight-white">{chunks}</span>
+                      <span className="ze-highlight-purple">{chunks}</span>
                     ),
                   })}
                 </h2>
-                <p className="text-white/70 text-base max-w-xl mx-auto leading-relaxed">
+                <p className="text-gray-500 text-base max-w-xl mx-auto leading-relaxed">
                   {t("trustIntro")}
                 </p>
               </div>
@@ -656,7 +683,7 @@ export default function AboutPage() {
         </section>
 
         {/* ── 6. Made in Africa — green gradient + shapes ──────── */}
-        <section className="pt-10 relative overflow-hidden bg-gradient-to-br from-[#87E64B]/10 via-white to-[#87E64B]/5">
+        <section className="pt-10 relative overflow-x-clip bg-gradient-to-br from-[#87E64B]/10 via-white to-[#87E64B]/5">
           <BrandCross
             size={80}
             color="#87E64B"
