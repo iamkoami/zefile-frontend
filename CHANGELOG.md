@@ -5,6 +5,35 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.0] - 2026-02-22
+
+### Added
+
+- Cookie consent banner with analytics opt-in/opt-out
+- Legal consent modal for terms and privacy acceptance on auth flows
+- EU Representative section placeholder in privacy policy
+- Marketing consent toggle in Data & Privacy account settings
+- Analytics cookie consent toggle in Data & Privacy account settings
+- Legal terms acceptance status display in account settings
+- PostHog consent-aware initialization (respects cookie preferences)
+- New `usersApi` methods: `getLegalConsent`, `acceptLegalTerms`, `updateCookieConsent`
+
+### Changed
+
+- Legal entity updated to "Infobulle, registered in Togo" across terms and privacy
+- Governing law changed from French law / Paris courts to Togolese Republic / Lome courts
+- Removed CNIL-specific references (complaint authority, 13-month cookie rule attribution)
+- Tax law retention reference changed from "French tax law" to "applicable tax and commercial law"
+- International data transfers section reframed for non-EU entity operating with EU providers
+- Complaint section now references generic local data protection authority with EDPB link
+- About page redesigned with dark fan capability cards
+- How It Works page fully redesigned with expanded content
+- Help page layout improvements
+- Footer redesigned
+- Auth panels updated with legal consent checkboxes
+- OTP verification flow updated with consent integration
+- Subscription panel updated
+
 ## [1.8.0] - 2026-02-21
 
 ### Added
