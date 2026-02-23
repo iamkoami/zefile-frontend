@@ -46,8 +46,8 @@ type SortDirection = "asc" | "desc";
 interface TransferPreviewPanelProps {
   transfer: TransferDto;
   role?: "sender" | "receiver";
-  /** Verified password for password-protected transfers (passed from landing page after verification) */
-  password?: string;
+  /** Session token for password-protected transfers (from verify-password endpoint) */
+  sessionToken?: string;
 }
 
 type FilePreviewType =
@@ -121,7 +121,7 @@ const ThumbnailCell = ({
 const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
   transfer: transferProp,
   role,
-  password: verifiedPassword,
+  sessionToken,
 }) => {
   const t = useTranslations("transferPreview");
   const locale = useLocale();
@@ -417,8 +417,7 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
             const response = await storageApi.getFilePreviewUrl(
               transfer.shortCode,
               file.id,
-              verifiedPassword,
-              { requestOriginal: canViewOriginal },
+              { sessionToken, requestOriginal: canViewOriginal },
             );
             if (response.data?.url) {
               return {
@@ -900,7 +899,7 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
         transferId={transfer.id}
         role={role === "sender" ? "sender" : "recipient"}
         userEmail={senderEmail || undefined}
-        password={verifiedPassword}
+        sessionToken={sessionToken}
         allFiles={allFilesForNav}
         currentIndex={selectedFileIndex}
         onNavigate={handleFileNavigate}

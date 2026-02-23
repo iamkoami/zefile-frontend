@@ -71,6 +71,60 @@ export interface UploadState {
   versionId?: string; // For version uploads
 }
 
+// --- Upload state encryption (AES-GCM) ---
+// Key stored in sessionStorage to survive page refreshes within the same tab.
+const SESSION_KEY_NAME = '__zefile_upload_key__';
+const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+async function getOrCreateEncryptionKey(): Promise<CryptoKey | null> {
+  if (typeof window === 'undefined' || !window.crypto?.subtle) return null;
+
+  try {
+    const stored = sessionStorage.getItem(SESSION_KEY_NAME);
+    if (stored) {
+      const raw = Uint8Array.from(atob(stored), c => c.charCodeAt(0));
+      return crypto.subtle.importKey('raw', raw, 'AES-GCM', true, ['encrypt', 'decrypt']);
+    }
+
+    const key = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']);
+    const exported = await crypto.subtle.exportKey('raw', key);
+    sessionStorage.setItem(SESSION_KEY_NAME, btoa(String.fromCharCode(...new Uint8Array(exported))));
+    return key;
+  } catch {
+    return null;
+  }
+}
+
+async function encryptState(data: string): Promise<string | null> {
+  const key = await getOrCreateEncryptionKey();
+  if (!key) return null;
+  try {
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const encoded = new TextEncoder().encode(data);
+    const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, encoded);
+    const combined = new Uint8Array(iv.length + encrypted.byteLength);
+    combined.set(iv);
+    combined.set(new Uint8Array(encrypted), iv.length);
+    return btoa(String.fromCharCode(...combined));
+  } catch {
+    return null;
+  }
+}
+
+async function decryptState(ciphertext: string): Promise<string | null> {
+  const key = await getOrCreateEncryptionKey();
+  if (!key) return null;
+  try {
+    const combined = Uint8Array.from(atob(ciphertext), c => c.charCodeAt(0));
+    const iv = combined.slice(0, 12);
+    const data = combined.slice(12);
+    const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, data);
+    return new TextDecoder().decode(decrypted);
+  } catch {
+    return null;
+  }
+}
+
 class MultipartUploadService {
   private readonly STORAGE_KEY_PREFIX = 'zefile_upload_';
   private isPaused: boolean = false;
@@ -155,34 +209,76 @@ class MultipartUploadService {
   }
 
   /**
-   * Save upload state to localStorage for resume capability
+   * Save upload state to localStorage (encrypted with AES-GCM).
+   * Falls back to plaintext if Web Crypto is unavailable.
    */
   private saveUploadState(state: UploadState): void {
     if (!this.isLocalStorageAvailable()) return;
 
-    try {
-      const key = `${this.STORAGE_KEY_PREFIX}${state.uploadId}`;
-      localStorage.setItem(key, JSON.stringify(state));
-    } catch (error) {
-      // Silently fail - state save is best-effort for resume capability
-    }
+    const key = `${this.STORAGE_KEY_PREFIX}${state.uploadId}`;
+    const json = JSON.stringify(state);
+
+    encryptState(json).then((encrypted) => {
+      try {
+        localStorage.setItem(key, encrypted || json);
+      } catch {
+        // Silently fail - state save is best-effort for resume capability
+      }
+    }).catch(() => {
+      try { localStorage.setItem(key, json); } catch { /* best-effort */ }
+    });
   }
 
   /**
-   * Load upload state from localStorage
+   * Load upload state from localStorage (decrypts AES-GCM).
+   * Falls back to plaintext parsing if decryption fails (e.g., key rotated).
    */
   private loadUploadState(uploadId: string): UploadState | null {
-    if (!this.isLocalStorageAvailable()) return null;
+    // Synchronous wrapper — encryption is async, so we return null here
+    // and use loadUploadStateAsync for the actual upload flow
+    return this.loadUploadStateSync(uploadId);
+  }
 
+  private loadUploadStateSync(uploadId: string): UploadState | null {
+    if (!this.isLocalStorageAvailable()) return null;
     try {
       const key = `${this.STORAGE_KEY_PREFIX}${uploadId}`;
       const stored = localStorage.getItem(key);
-      if (stored) {
+      if (!stored) return null;
+      // Try parsing as plaintext JSON first (backwards compat)
+      try {
         const state = JSON.parse(stored) as UploadState;
-        return state;
+        if (state.uploadId) return state;
+      } catch {
+        // Not plaintext — will need async decryption
       }
-    } catch (error) {
-      // Silently fail - corrupted state can be ignored
+    } catch {
+      // Silently fail
+    }
+    return null;
+  }
+
+  async loadUploadStateAsync(uploadId: string): Promise<UploadState | null> {
+    if (!this.isLocalStorageAvailable()) return null;
+    try {
+      const key = `${this.STORAGE_KEY_PREFIX}${uploadId}`;
+      const stored = localStorage.getItem(key);
+      if (!stored) return null;
+
+      // Try plaintext first (backwards compat)
+      try {
+        const state = JSON.parse(stored) as UploadState;
+        if (state.uploadId) return state;
+      } catch {
+        // Not plaintext JSON — try decryption
+      }
+
+      const decrypted = await decryptState(stored);
+      if (decrypted) {
+        return JSON.parse(decrypted) as UploadState;
+      }
+    } catch {
+      // Corrupted state — ignore
     }
     return null;
   }
@@ -196,30 +292,48 @@ class MultipartUploadService {
     try {
       const key = `${this.STORAGE_KEY_PREFIX}${uploadId}`;
       localStorage.removeItem(key);
-    } catch (error) {
+    } catch {
       // Silently fail - state clear is best-effort
     }
   }
 
   /**
-   * Get all incomplete uploads from localStorage
+   * Get all incomplete uploads from localStorage.
+   * Also cleans up stale entries older than 24 hours.
    */
   public getIncompleteUploads(): UploadState[] {
     if (!this.isLocalStorageAvailable()) return [];
 
     const incompleteUploads: UploadState[] = [];
+    const now = Date.now();
+    const keysToRemove: string[] = [];
+
     try {
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (key && key.startsWith(this.STORAGE_KEY_PREFIX)) {
           const stored = localStorage.getItem(key);
           if (stored) {
-            const state = JSON.parse(stored) as UploadState;
-            incompleteUploads.push(state);
+            try {
+              const state = JSON.parse(stored) as UploadState;
+              // Clean up stale entries (older than 24h)
+              if (state.startTime && now - state.startTime > STALE_THRESHOLD_MS) {
+                keysToRemove.push(key);
+              } else {
+                incompleteUploads.push(state);
+              }
+            } catch {
+              // Encrypted or corrupted — can't parse synchronously, skip
+              // Could be cleaned up by async methods
+            }
           }
         }
       }
-    } catch (error) {
+      // Remove stale entries
+      for (const key of keysToRemove) {
+        localStorage.removeItem(key);
+      }
+    } catch {
       // Silently fail - return empty array
     }
     return incompleteUploads;

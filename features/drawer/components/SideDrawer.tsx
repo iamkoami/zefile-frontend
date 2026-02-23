@@ -101,7 +101,7 @@ const SideDrawer: React.FC = () => {
     currentContentView,
     selectedTransfer,
     transferRole,
-    transferPassword,
+    passwordSessionToken,
     popView,
     canGoBack,
     onBeforeBack,
@@ -442,7 +442,7 @@ const SideDrawer: React.FC = () => {
               direction={animationDirection}
             >
               {selectedTransfer && (
-                <TransferPreviewPanel transfer={selectedTransfer} role={transferRole || undefined} password={transferPassword || undefined} />
+                <TransferPreviewPanel transfer={selectedTransfer} role={transferRole || undefined} sessionToken={passwordSessionToken || undefined} />
               )}
             </AnimatedView>
 

@@ -28,9 +28,11 @@ export function OrganizationJsonLd() {
       "https://tiktok.com/@zefilehq",
       "https://youtube.com/@zefilehq",
     ],
+    email: "support@zefile.io",
     contactPoint: {
       "@type": "ContactPoint",
       contactType: "customer support",
+      email: "support@zefile.io",
       url: `${SITE_URL}/help`,
       availableLanguage: ["English", "French"],
     },

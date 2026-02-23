@@ -6,7 +6,7 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://zefile.io';
 
 const seoContent = {
   en: {
-    title: 'How It Works - Upload, Share, Get Paid | ZeFile',
+    title: 'How It Works - Upload, Share, Get Paid',
     description: 'Upload your files, set a price, share a link. Recipients preview watermarked files and pay before downloading. Secure file transfer with payment protection.',
     faqs: [
       { question: 'Is ZeFile free to use?', answer: 'Yes! The free plan lets you send up to 2 GB per transfer. Starter and Pro plans unlock higher limits and lower platform fees.' },
@@ -20,17 +20,17 @@ const seoContent = {
     ],
   },
   fr: {
-    title: 'Comment ca marche - Envoyez, partagez, soyez paye | ZeFile',
-    description: 'Envoyez vos fichiers, fixez un prix, partagez un lien. Vos destinataires previsualisent les fichiers filigranes et paient avant de telecharger. Transfert securise avec protection de paiement.',
+    title: 'Comment \u00e7a marche - Envoyez, partagez, soyez pay\u00e9',
+    description: 'Envoyez vos fichiers, fixez un prix, partagez un lien. Vos destinataires pr\u00e9visualisent les fichiers filigran\u00e9s et paient avant de t\u00e9l\u00e9charger. Transfert s\u00e9curis\u00e9 avec protection de paiement.',
     faqs: [
-      { question: 'ZeFile est-il gratuit ?', answer: 'Oui ! Le plan gratuit vous permet d\'envoyer jusqu\'a 2 Go par transfert. Les plans Starter et Pro offrent des limites plus elevees et des frais reduits.' },
-      { question: 'Quels types de fichiers puis-je envoyer ?', answer: 'A peu pres tout -- images, videos, audio, documents, archives. Nous generons automatiquement des apercus filigranes pour la plupart des types de fichiers.' },
-      { question: 'Comment fonctionne la protection de paiement ?', answer: 'Les destinataires peuvent previsualiser vos fichiers avec des filigranes, mais les originaux restent verrouilles. Le telechargement ne se deverrouille qu\'apres confirmation du paiement.' },
-      { question: 'Quels moyens de paiement sont acceptes ?', answer: 'Visa, Mastercard, Mobile Money (MTN, Airtel, Orange) et virements bancaires. Nous utilisons Paystack pour un traitement securise.' },
-      { question: 'Quelle taille maximale pour mes fichiers ?', answer: 'Jusqu\'a 2 Go sur le plan gratuit, 10 Go sur Starter et 50 Go sur Pro. Les fichiers sont envoyes par morceaux pour une fiabilite maximale.' },
-      { question: 'Les destinataires ont-ils besoin d\'un compte ZeFile ?', answer: 'Non. Ils ont juste besoin du lien et de leur e-mail. Nous verifions l\'acces avec un code unique -- pas de compte necessaire.' },
-      { question: 'Que se passe-t-il quand un transfert expire ?', answer: 'Apres la date d\'expiration, le lien de telechargement cesse de fonctionner. Vous pouvez definir l\'expiration de 1 a 14 jours.' },
-      { question: 'Mes donnees sont-elles securisees ?', answer: 'Les fichiers sont chiffres en transit, stockes sur une infrastructure cloud securisee et distribues via notre CDN. Nous n\'accedons jamais a vos fichiers.' },
+      { question: 'ZeFile est-il gratuit ?', answer: 'Oui ! Le plan gratuit vous permet d\'envoyer jusqu\'\u00e0 2 Go par transfert. Les plans Starter et Pro offrent des limites plus \u00e9lev\u00e9es et des frais r\u00e9duits.' },
+      { question: 'Quels types de fichiers puis-je envoyer ?', answer: '\u00c0 peu pr\u00e8s tout -- images, vid\u00e9os, audio, documents, archives. Nous g\u00e9n\u00e9rons automatiquement des aper\u00e7us filigran\u00e9s pour la plupart des types de fichiers.' },
+      { question: 'Comment fonctionne la protection de paiement ?', answer: 'Les destinataires peuvent pr\u00e9visualiser vos fichiers avec des filigranes, mais les originaux restent verrouill\u00e9s. Le t\u00e9l\u00e9chargement ne se d\u00e9verrouille qu\'apr\u00e8s confirmation du paiement.' },
+      { question: 'Quels moyens de paiement sont accept\u00e9s ?', answer: 'Visa, Mastercard, Mobile Money (MTN, Airtel, Orange) et virements bancaires. Nous utilisons Paystack pour un traitement s\u00e9curis\u00e9.' },
+      { question: 'Quelle taille maximale pour mes fichiers ?', answer: 'Jusqu\'\u00e0 2 Go sur le plan gratuit, 10 Go sur Starter et 50 Go sur Pro. Les fichiers sont envoy\u00e9s par morceaux pour une fiabilit\u00e9 maximale.' },
+      { question: 'Les destinataires ont-ils besoin d\'un compte ZeFile ?', answer: 'Non. Ils ont juste besoin du lien et de leur e-mail. Nous v\u00e9rifions l\'acc\u00e8s avec un code unique -- pas de compte n\u00e9cessaire.' },
+      { question: 'Que se passe-t-il quand un transfert expire ?', answer: 'Apr\u00e8s la date d\'expiration, le lien de t\u00e9l\u00e9chargement cesse de fonctionner. Vous pouvez d\u00e9finir l\'expiration de 1 \u00e0 14 jours.' },
+      { question: 'Mes donn\u00e9es sont-elles s\u00e9curis\u00e9es ?', answer: 'Les fichiers sont chiffr\u00e9s en transit, stock\u00e9s sur une infrastructure cloud s\u00e9curis\u00e9e et distribu\u00e9s via notre CDN. Nous n\'acc\u00e9dons jamais \u00e0 vos fichiers.' },
     ],
   },
 };
@@ -54,11 +54,6 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     alternates: {
       canonical: `${SITE_URL}/how-it-works`,
-      languages: {
-        'en': `${SITE_URL}/how-it-works`,
-        'fr': `${SITE_URL}/how-it-works`,
-        'x-default': `${SITE_URL}/how-it-works`,
-      },
     },
   };
 }

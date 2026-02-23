@@ -727,7 +727,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ context: contextProp }) => {
     <>
       {/* Chat panel */}
       {isOpen && (
-        <div className="fixed bottom-20 right-6 z-[110] w-96 max-h-[80vh] bg-white rounded-lg shadow-2xl border border-gray-200 flex flex-col animate-in slide-in-from-bottom-4 duration-300">
+        <div className="fixed bottom-20 right-6 z-[9100] w-96 max-h-[80vh] bg-white rounded-lg shadow-2xl border border-gray-200 flex flex-col animate-in slide-in-from-bottom-4 duration-300">
           <ChatHeader
             onClose={closeChat}
             onBack={
@@ -826,7 +826,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ context: contextProp }) => {
       {/* Floating button */}
       <button
         onClick={handleOpenChat}
-        className="fixed bottom-6 right-6 z-[110] w-14 h-14 rounded-full bg-[#87E64B] text-[#171717] shadow-lg hover:bg-[#78d43f] transition-all hover:scale-105 flex items-center justify-center"
+        className="fixed bottom-6 right-6 z-[9100] w-14 h-14 rounded-full bg-[#87E64B] text-[#171717] shadow-lg hover:bg-[#78d43f] transition-all hover:scale-105 flex items-center justify-center"
         title={t("needHelp")}
       >
         {isOpen ? (

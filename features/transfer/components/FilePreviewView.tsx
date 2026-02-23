@@ -46,7 +46,7 @@ interface FilePreviewViewProps {
   transferId: string;
   role?: 'sender' | 'recipient';
   userEmail?: string;
-  password?: string;
+  sessionToken?: string;
   /** All files in the transfer for navigation */
   allFiles?: FileData[];
   /** Current file index in allFiles */
@@ -70,7 +70,7 @@ const FilePreviewView: React.FC<FilePreviewViewProps> = ({
   transferId,
   role = 'recipient',
   userEmail,
-  password,
+  sessionToken,
   allFiles,
   currentIndex,
   onNavigate,
@@ -284,8 +284,7 @@ const FilePreviewView: React.FC<FilePreviewViewProps> = ({
         const response = await storageApi.getFilePreviewUrl(
           shortCode,
           file.id,
-          password,
-          { requestOriginal: canViewOriginal },
+          { sessionToken, requestOriginal: canViewOriginal },
         );
 
         if (response.error) {
@@ -326,7 +325,7 @@ const FilePreviewView: React.FC<FilePreviewViewProps> = ({
   }, [
     file.id,
     shortCode,
-    password,
+    sessionToken,
     canPreview,
     canViewOriginal,
     t,
@@ -343,7 +342,7 @@ const FilePreviewView: React.FC<FilePreviewViewProps> = ({
       const response = await storageApi.getFilePreviewUrl(
         shortCode,
         file.id,
-        password,
+        { sessionToken },
       );
 
       if (response.error) {
@@ -366,7 +365,7 @@ const FilePreviewView: React.FC<FilePreviewViewProps> = ({
     } finally {
       setIsDownloading(false);
     }
-  }, [shortCode, file.id, file.name, password, t]);
+  }, [shortCode, file.id, file.name, sessionToken, t]);
 
   // Render preview content based on file type
   const renderPreview = () => {

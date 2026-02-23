@@ -385,7 +385,7 @@ const Header = () => {
             <Link href="/" className="flex items-center">
               <Image
                 src="/zefile-logo.svg"
-                alt={tCommon("appName")}
+                alt={tCommon("logoAlt")}
                 width={120}
                 height={33}
                 priority

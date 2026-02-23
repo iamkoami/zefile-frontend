@@ -1,8 +1,5 @@
-import axios from 'axios';
 import { apiClient, ApiResponse } from './api-client';
 import { TransferDto } from './transfer-api';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 // Transaction types
 export interface Transaction {
@@ -264,33 +261,29 @@ export const paymentApi = {
   /**
    * Initialize a payment transaction
    */
-  async initializePayment(data: InitializePaymentRequest): Promise<InitializePaymentResponse> {
-    const response = await axios.post(`${API_URL}/payments/initialize`, data);
-    return response.data;
+  async initializePayment(data: InitializePaymentRequest): Promise<ApiResponse<InitializePaymentResponse>> {
+    return apiClient.post<InitializePaymentResponse>('/payments/initialize', data);
   },
 
   /**
    * Verify a payment transaction
    */
-  async verifyPayment(data: VerifyPaymentRequest): Promise<VerifyPaymentResponse> {
-    const response = await axios.post(`${API_URL}/payments/verify`, data);
-    return response.data;
+  async verifyPayment(data: VerifyPaymentRequest): Promise<ApiResponse<VerifyPaymentResponse>> {
+    return apiClient.post<VerifyPaymentResponse>('/payments/verify', data);
   },
 
   /**
    * Get payment status by reference
    */
-  async getPaymentStatus(reference: string): Promise<PaymentStatusResponse> {
-    const response = await axios.get(`${API_URL}/payments/status/${reference}`);
-    return response.data;
+  async getPaymentStatus(reference: string): Promise<ApiResponse<PaymentStatusResponse>> {
+    return apiClient.get<PaymentStatusResponse>(`/payments/status/${reference}`);
   },
 
   /**
    * Get Paystack public key
    */
-  async getPublicKey(): Promise<PublicKeyResponse> {
-    const response = await axios.get(`${API_URL}/payments/public-key`);
-    return response.data;
+  async getPublicKey(): Promise<ApiResponse<PublicKeyResponse>> {
+    return apiClient.get<PublicKeyResponse>('/payments/public-key');
   },
 
   /**

@@ -163,7 +163,7 @@ const FloatingPollWidget: React.FC = () => {
   // Thank you screen
   if (showThankYou) {
     return (
-      <div className="fixed bottom-6 right-[92px] z-[120] animate-in slide-in-from-bottom-4 duration-300">
+      <div className="fixed bottom-6 right-[92px] z-[9100] animate-in slide-in-from-bottom-4 duration-300">
         <div className="bg-white rounded-xl shadow-2xl border border-gray-200 p-6 w-80 text-center">
           <div className="w-12 h-12 bg-[#87E64B] rounded-full flex items-center justify-center mx-auto mb-3">
             <Check className="w-6 h-6 text-white" strokeWidth={3} />
@@ -180,7 +180,7 @@ const FloatingPollWidget: React.FC = () => {
   // Minimized state - just show a small floating button
   if (!isExpanded) {
     return (
-      <div className="fixed bottom-6 right-[92px] z-[120]">
+      <div className="fixed bottom-6 right-[92px] z-[9100]">
         <button
           onClick={() => setIsExpanded(true)}
           className="bg-[#5E53E0] text-white rounded-full p-4 shadow-lg hover:bg-[#4f46c7] transition-all hover:scale-105"
@@ -193,7 +193,7 @@ const FloatingPollWidget: React.FC = () => {
   }
 
   return (
-    <div className="fixed bottom-6 right-[92px] z-[120] animate-in slide-in-from-bottom-4 duration-300">
+    <div className="fixed bottom-6 right-[92px] z-[9100] animate-in slide-in-from-bottom-4 duration-300">
       <div className="bg-white rounded-xl shadow-2xl border border-gray-200 w-96 max-h-[80vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-start justify-between p-4 border-b border-gray-100 bg-gray-50">

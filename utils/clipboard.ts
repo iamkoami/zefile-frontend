@@ -232,7 +232,7 @@ export function openShareDialog(
     window.open(
       shareLink,
       'share',
-      `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no,scrollbars=yes`
+      `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no,scrollbars=yes,noopener,noreferrer`
     );
   }
 }

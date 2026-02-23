@@ -18,13 +18,26 @@ function buildCsp(nonce: string): string {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
   const posthogHost = process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://app.posthog.com';
 
+  // Deduplicate PostHog domains (posthogHost may overlap with hardcoded ingest endpoints)
+  const posthogDomains = [...new Set([
+    posthogHost,
+    'https://eu.i.posthog.com',
+    'https://us.i.posthog.com',
+    'https://eu-assets.i.posthog.com',
+    'https://us-assets.i.posthog.com',
+  ].filter(Boolean))].join(' ');
+
   const directives = [
     `default-src 'self'`,
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${process.env.NODE_ENV === 'development' ? " 'unsafe-eval'" : ''}`,
+    // style-src 'unsafe-inline' is required: Next.js injects inline <style> tags for
+    // styled-jsx and framework styles, and TailwindCSS generates inline style attributes.
+    // CSP Level 2 hashes/nonces for styles are not supported by Next.js's build pipeline.
+    // Investigated in Epic 46-11: no viable alternative without breaking the UI.
     `style-src 'self' 'unsafe-inline'`,
-    `img-src 'self' data: blob: ${apiUrl} https://*.wasabisys.com`,
-    `media-src 'self' blob: ${apiUrl} https://*.wasabisys.com`,
-    `connect-src 'self' ${apiUrl} https://*.wasabisys.com ${posthogHost} https://eu.i.posthog.com https://us.i.posthog.com https://eu-assets.i.posthog.com https://us-assets.i.posthog.com https://*.ingest.us.sentry.io https://*.ingest.de.sentry.io`,
+    `img-src 'self' data: blob: ${apiUrl} https://s3.eu-central-1.wasabisys.com`,
+    `media-src 'self' blob: ${apiUrl} https://s3.eu-central-1.wasabisys.com`,
+    `connect-src 'self' ${apiUrl} https://s3.eu-central-1.wasabisys.com ${posthogDomains} https://*.ingest.us.sentry.io https://*.ingest.de.sentry.io`,
     `font-src 'self'`,
     `frame-src ${apiUrl} https://checkout.paystack.com https://www.google.com`,
     `worker-src 'self' blob:`,
@@ -32,6 +45,7 @@ function buildCsp(nonce: string): string {
     `base-uri 'self'`,
     `form-action 'self'`,
     `frame-ancestors 'none'`,
+    `upgrade-insecure-requests`,
   ];
 
   return directives.join('; ');
@@ -90,6 +104,10 @@ export function middleware(request: NextRequest) {
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   response.headers.set('X-XSS-Protection', '1; mode=block');
 
+  // Cache-control for HTML pages — prevent stale content from heuristic caching
+  // (Cloudflare Pages _headers only applies to static files, not dynamic routes)
+  response.headers.set('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
+
   // Remove server technology fingerprint
   response.headers.delete('X-Powered-By');
 
@@ -97,27 +115,12 @@ export function middleware(request: NextRequest) {
 }
 
 /**
- * Explicit route matcher for Cloudflare Pages compatibility.
- * Catch-all regex breaks static 500.html generation on @cloudflare/next-on-pages.
- * Update this list when adding new page routes.
+ * Route matcher — covers all page routes including 404/not-found.
+ * Next.js automatically excludes _next/static, _next/image, and public/ files.
+ * Note: complex negative-lookahead regex (e.g. /((?!_next|...).*)) breaks
+ * @cloudflare/next-on-pages static 500.html generation — simple segment
+ * patterns like /:path* are safe.
  */
 export const config = {
-  matcher: [
-    '/',
-    '/about',
-    '/advertisers',
-    '/blog',
-    '/contact-us',
-    '/blog/:path*',
-    '/downloads/:path*',
-    '/help',
-    '/how-it-works',
-    '/jobs',
-    '/payment/:path*',
-    '/press',
-    '/pricing',
-    '/privacy',
-    '/terms',
-    '/z-:path*',
-  ],
+  matcher: ['/:path*'],
 };

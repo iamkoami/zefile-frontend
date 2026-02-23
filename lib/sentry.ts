@@ -79,15 +79,14 @@ export function captureException(
  */
 export function setSentryUser(user: {
   id: string;
-  email?: string;
   subscriptionTier?: string;
 }): void {
   if (!isSentryInitialized()) return;
 
   try {
+    // Only non-PII fields — email excluded for privacy
     Sentry.setUser({
       id: user.id,
-      email: user.email,
       subscription_tier: user.subscriptionTier,
     });
   } catch (e) {

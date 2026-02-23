@@ -23,6 +23,7 @@
     "axios": "^1.13.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "dompurify": "^3.3.1",
     "iconoir-react": "^7.11.0",
     "libphonenumber-js": "^1.12.35",
     "lightningcss": "^1.28.3",
@@ -44,6 +45,7 @@
     "@cloudflare/next-on-pages": "^1",
     "@eslint/eslintrc": "^3",
     "@swc/helpers": "^0.5.18",
+    "@types/dompurify": "^3.0.5",
     "eslint": "^9",
     "eslint-config-next": "15.3.4",
     "vercel": "^39"

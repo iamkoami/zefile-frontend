@@ -165,6 +165,8 @@ export default function TransferLandingPage() {
   // Password form
   const [password, setPassword] = useState("");
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  // Session token received after successful password verification (replaces plaintext password for subsequent requests)
+  const [passwordSessionToken, setPasswordSessionToken] = useState<string | null>(null);
 
   // Payment form
   const [customerName, setCustomerName] = useState("");
@@ -475,9 +477,12 @@ export default function TransferLandingPage() {
       const response = await storageApi.verifyTransferPassword(shortCode, password);
 
       if (!response.error && response.data?.success) {
-        // Password verified - go to ready state and open preview drawer with verified password
+        // Password verified - store session token and open preview drawer
+        const token = response.data.sessionToken;
+        setPasswordSessionToken(token);
+        setPassword(""); // Clear plaintext password from memory
         setPageState("ready");
-        openDrawerToView("transfers", "transfer-preview", transfer, "receiver", password);
+        openDrawerToView("transfers", "transfer-preview", transfer, "receiver", token);
       } else {
         setError(t("incorrectPassword"));
         setPassword(""); // Clear password on error per AC3
@@ -778,9 +783,10 @@ export default function TransferLandingPage() {
     try {
       const response = await storageApi.streamZipDownload(
         transfer.shortCode,
-        password || undefined,
-        undefined, // versionId
-        customerEmail || undefined, // email for payment verification
+        {
+          sessionToken: passwordSessionToken || undefined,
+          email: customerEmail || undefined,
+        },
       );
 
       if (response.error) {

@@ -193,7 +193,7 @@ const Footer: React.FC = () => {
             <Link href="/" className="inline-block">
               <Image
                 src="/zefile-logo-white.svg"
-                alt={tCommon("appName")}
+                alt={tCommon("logoAlt")}
                 width={100}
                 height={28}
               />

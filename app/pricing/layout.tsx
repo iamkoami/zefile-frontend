@@ -11,7 +11,7 @@ const seoContent = {
     faqs: [
       {
         question: 'How much does ZeFile cost?',
-        answer: 'ZeFile offers a free plan with 2GB file transfers. Paid plans start at €4.99/month for Starter (10GB) and €9.99/month for Pro (50GB) with additional features like custom branding and priority support.',
+        answer: 'ZeFile offers a free plan with 2GB file transfers. Paid plans start at \u20ac4.99/month for Starter (10GB) and \u20ac9.99/month for Pro (50GB) with additional features like custom branding and priority support.',
       },
       {
         question: 'Can I change my plan at any time?',
@@ -24,25 +24,24 @@ const seoContent = {
     ],
   },
   fr: {
-    title: 'Tarifs - Choisissez votre forfait idéal',
-    description: 'Comparez les forfaits ZeFile : Gratuit, Starter et Pro. Transferts de fichiers sécurisés avec protection du paiement. Le forfait gratuit inclut 2 Go. Sans carte bancaire.',
+    title: 'Tarifs - Choisissez votre forfait id\u00e9al',
+    description: 'Comparez les forfaits ZeFile : Gratuit, Starter et Pro. Transferts de fichiers s\u00e9curis\u00e9s avec protection du paiement. Le forfait gratuit inclut 2 Go. Sans carte bancaire.',
     faqs: [
       {
-        question: 'Combien coûte ZeFile ?',
-        answer: 'ZeFile propose un forfait gratuit avec des transferts de 2 Go. Les forfaits payants commencent à 4,99 €/mois pour Starter (10 Go) et 9,99 €/mois pour Pro (50 Go) avec des fonctionnalités supplémentaires.',
+        question: 'Combien co\u00fbte ZeFile ?',
+        answer: 'ZeFile propose un forfait gratuit avec des transferts de 2 Go. Les forfaits payants commencent \u00e0 4,99 \u20ac/mois pour Starter (10 Go) et 9,99 \u20ac/mois pour Pro (50 Go) avec des fonctionnalit\u00e9s suppl\u00e9mentaires.',
       },
       {
-        question: 'Puis-je changer de forfait à tout moment ?',
-        answer: 'Oui, vous pouvez passer à un forfait supérieur ou inférieur à tout moment. Lors d\'une mise à niveau, vous serez facturé de la différence au prorata. Lors d\'un passage à un forfait inférieur, le nouveau tarif s\'applique à votre prochain cycle de facturation.',
+        question: 'Puis-je changer de forfait \u00e0 tout moment ?',
+        answer: 'Oui, vous pouvez passer \u00e0 un forfait sup\u00e9rieur ou inf\u00e9rieur \u00e0 tout moment. Lors d\'une mise \u00e0 niveau, vous serez factur\u00e9 de la diff\u00e9rence au prorata. Lors d\'un passage \u00e0 un forfait inf\u00e9rieur, le nouveau tarif s\'applique \u00e0 votre prochain cycle de facturation.',
       },
       {
         question: 'Quels moyens de paiement acceptez-vous ?',
-        answer: 'Nous acceptons toutes les principales cartes de crédit (Visa, Mastercard, American Express) et le Mobile Money (MTN, Orange, Moov) pour les utilisateurs des pays africains supportés.',
+        answer: 'Nous acceptons toutes les principales cartes de cr\u00e9dit (Visa, Mastercard, American Express) et le Mobile Money (MTN, Orange, Moov) pour les utilisateurs des pays africains support\u00e9s.',
       },
     ],
   },
 };
-
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
@@ -63,11 +62,6 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     alternates: {
       canonical: `${SITE_URL}/pricing`,
-      languages: {
-        'en': `${SITE_URL}/pricing`,
-        'fr': `${SITE_URL}/pricing`,
-        'x-default': `${SITE_URL}/pricing`,
-      },
     },
   };
 }

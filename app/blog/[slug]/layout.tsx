@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getLocale } from "next-intl/server";
+import { BreadcrumbJsonLd } from "@/components/seo/JsonLd";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://zefile.io";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
@@ -58,11 +59,6 @@ export async function generateMetadata({
       },
       alternates: {
         canonical: url,
-        languages: {
-          en: `${SITE_URL}/blog/${post.slug}`,
-          fr: `${SITE_URL}/blog/${post.slug}`,
-          "x-default": `${SITE_URL}/blog/${post.slug}`,
-        },
       },
     };
   } catch {
@@ -75,5 +71,13 @@ export default function BlogPostLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return children;
+  return (
+    <>
+      <BreadcrumbJsonLd items={[
+        { name: 'Home', url: SITE_URL },
+        { name: 'Blog', url: `${SITE_URL}/blog` },
+      ]} />
+      {children}
+    </>
+  );
 }

@@ -61,8 +61,10 @@
 
       if (shortCode) {
         // Redirect to downloads page with code parameter
-        const targetUrl = '/downloads?code=' + encodeURIComponent(shortCode) +
-                         (search ? search.substring(1) : '');
+        // Build URL safely using URLSearchParams to prevent query injection
+        var params = new URLSearchParams(search);
+        params.set('code', shortCode);
+        var targetUrl = '/downloads?' + params.toString();
         window.location.replace(targetUrl);
       } else {
         // No valid code, redirect to homepage

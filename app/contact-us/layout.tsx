@@ -11,7 +11,7 @@ const seoContent = {
   },
   fr: {
     title: 'Contactez-nous - ZeFile',
-    description: 'Une question ou besoin d\'aide ? Contactez l\'equipe ZeFile. Nous sommes la pour vous aider avec vos transferts de fichiers, paiements, partenariats et plus.',
+    description: 'Une question ou besoin d\'aide ? Contactez l\'\u00e9quipe ZeFile. Nous sommes l\u00e0 pour vous aider avec vos transferts de fichiers, paiements, partenariats et plus.',
   },
 };
 
@@ -34,11 +34,6 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     alternates: {
       canonical: `${SITE_URL}/contact-us`,
-      languages: {
-        'en': `${SITE_URL}/contact-us`,
-        'fr': `${SITE_URL}/contact-us`,
-        'x-default': `${SITE_URL}/contact-us`,
-      },
     },
   };
 }

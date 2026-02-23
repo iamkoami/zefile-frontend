@@ -24,7 +24,6 @@ export function SentryProvider({ children }: { children: React.ReactNode }) {
       if (event.detail.isAuthenticated && event.detail.user) {
         setSentryUser({
           id: event.detail.user.id,
-          email: event.detail.user.email,
           subscriptionTier: event.detail.user.subscriptionTier,
         });
       } else {
@@ -45,7 +44,6 @@ export function SentryProvider({ children }: { children: React.ReactNode }) {
         if (user?.id) {
           setSentryUser({
             id: user.id,
-            email: user.email,
             subscriptionTier: user.subscriptionTier,
           });
         }

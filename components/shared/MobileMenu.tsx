@@ -155,7 +155,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
         <Link href="/" onClick={onClose} className="flex items-center">
           <Image
             src="/zefile-logo.svg"
-            alt={tCommon("appName")}
+            alt={tCommon("logoAlt")}
             width={120}
             height={33}
           />

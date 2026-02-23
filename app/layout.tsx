@@ -66,12 +66,12 @@ const metropolis = localFont({
       style: "normal",
     },
     {
-      path: "../public/fonts/metropolis/Metropolis-ExtraBold.woff",
+      path: "../public/fonts/metropolis/Metropolis-ExtraBold.woff2",
       weight: "800",
       style: "normal",
     },
     {
-      path: "../public/fonts/metropolis/Metropolis-Black.woff",
+      path: "../public/fonts/metropolis/Metropolis-Black.woff2",
       weight: "900",
       style: "normal",
     },
@@ -114,8 +114,6 @@ export async function generateMetadata(): Promise<Metadata> {
     creator: 'ZeFile',
     publisher: 'ZeFile',
     robots: {
-      index: true,
-      follow: true,
       googleBot: {
         index: true,
         follow: true,
@@ -127,7 +125,6 @@ export async function generateMetadata(): Promise<Metadata> {
     openGraph: {
       type: 'website',
       locale: locale === 'fr' ? 'fr_FR' : 'en_US',
-      alternateLocale: locale === 'fr' ? 'en_US' : 'fr_FR',
       url: SITE_URL,
       siteName: 'ZeFile',
       title: content.title,
@@ -151,11 +148,6 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     alternates: {
       canonical: SITE_URL,
-      languages: {
-        'en': SITE_URL,
-        'fr': SITE_URL,
-        'x-default': SITE_URL,
-      },
     },
     icons: {
       icon: [
@@ -184,6 +176,8 @@ export default async function RootLayout({
   return (
     <html lang={locale}>
       <head>
+        <link rel="preconnect" href={process.env.NEXT_PUBLIC_API_URL || ''} />
+        <link rel="preconnect" href="https://eu.i.posthog.com" />
         <OrganizationJsonLd />
         <WebSiteJsonLd />
         <WebApplicationJsonLd />

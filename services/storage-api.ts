@@ -39,6 +39,7 @@ export interface PresignedUrlRequestDto {
   shortCode: string;
   fileIds?: string[];
   password?: string;
+  sessionToken?: string;
   expiresIn?: number;
   versionId?: string;
 }
@@ -57,6 +58,7 @@ export interface PresignedUrlResponseDto {
 export interface ZipDownloadRequestDto {
   shortCode: string;
   password?: string;
+  sessionToken?: string;
   versionId?: string;
 }
 
@@ -355,11 +357,11 @@ export class StorageApi {
    * @param versionId - Optional version ID to download specific version (default: current version)
    * @param email - Optional email for payment verification on paid transfers
    */
-  async streamZipDownload(shortCode: string, password?: string, versionId?: string, email?: string): Promise<ApiResponse<void>> {
+  async streamZipDownload(shortCode: string, options?: { password?: string; sessionToken?: string; versionId?: string; email?: string }): Promise<ApiResponse<void>> {
     // Step 1: Get signed download URL
     const response = await apiClient.post<{ downloadUrl: string; expiresIn: number }>(
       '/storage/download/zip/token',
-      { shortCode, password, versionId, email }
+      { shortCode, password: options?.password, sessionToken: options?.sessionToken, versionId: options?.versionId, email: options?.email }
     );
 
     if (response.error) {
@@ -431,8 +433,7 @@ export class StorageApi {
   async getFilePreviewUrl(
     shortCode: string,
     fileId: string,
-    password?: string,
-    options?: { requestOriginal?: boolean }
+    options?: { password?: string; sessionToken?: string; requestOriginal?: boolean }
   ): Promise<ApiResponse<{
     url: string;
     filename: string;
@@ -452,7 +453,7 @@ export class StorageApi {
       previewType?: 'thumbnail' | 'previewClip' | 'waveform' | 'original';
     }>(
       '/storage/preview/url',
-      { shortCode, fileId, password, requestOriginal: options?.requestOriginal }
+      { shortCode, fileId, password: options?.password, sessionToken: options?.sessionToken, requestOriginal: options?.requestOriginal }
     );
   }
 
@@ -488,8 +489,8 @@ export class StorageApi {
   async verifyTransferPassword(
     shortCode: string,
     password: string
-  ): Promise<ApiResponse<{ success: boolean }>> {
-    return apiClient.post<{ success: boolean }>('/storage/verify-password', {
+  ): Promise<ApiResponse<{ success: boolean; sessionToken: string; expiresIn: number }>> {
+    return apiClient.post<{ success: boolean; sessionToken: string; expiresIn: number }>('/storage/verify-password', {
       shortCode,
       password,
     });

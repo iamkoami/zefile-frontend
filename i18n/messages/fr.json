@@ -1,9 +1,10 @@
 {
   "common": {
     "appName": "ZeFile",
+    "logoAlt": "ZeFile - Plateforme de transfert de fichiers s\u00e9curis\u00e9",
     "or": "ou",
     "and": "et",
-    "verifiedSeller": "Vendeur vérifié"
+    "verifiedSeller": "Vendeur v\u00e9rifi\u00e9"
   },
   "hero": {
     "title": "Partagez vos fichiers. Soyez payé. Gardez le contrôle.",
@@ -13,7 +14,6 @@
     "pricing": "Tarifs",
     "helpCenter": "Centre d'aide",
     "howItWorks": "Comment ça marche",
-    "advertisers": "Annonceurs",
     "about": "À propos",
     "blog": "Blog",
     "login": "Se connecter",
@@ -80,7 +80,7 @@
     "accepting": "Acceptation..."
   },
   "cookieConsent": {
-    "bannerText": "Nous utilisons des cookies essentiels pour le fonctionnement du site, et des cookies analytiques optionnels pour ameliorer ZeFile.",
+    "bannerText": "Cookies essentiels pour le site et analytiques optionnels pour ameliorer ZeFile.",
     "acceptAll": "Tout accepter",
     "essentialOnly": "Tout refuser",
     "customize": "Parametres des cookies",
@@ -94,6 +94,10 @@
     "analyticsProvider": "Fournisseur : PostHog",
     "savePreferences": "Enregistrer les preferences",
     "back": "Retour"
+  },
+  "legalLayout": {
+    "tableOfContents": "Sommaire",
+    "contents": "Sommaire"
   },
   "upload": {
     "addFiles": "Ajouter des éléments",
@@ -554,7 +558,6 @@
     "pricing": "Tarifs",
     "helpCenter": "Centre d'aide",
     "blog": "Blog",
-    "advertisers": "Annonceurs",
     "about": "À propos",
     "contact": "Nous contacter",
     "terms": "Conditions d'utilisation",
@@ -578,7 +581,8 @@
     "backToBlog": "Retour au blog",
     "noPostsYet": "Pas encore d'articles. Revenez bientôt !",
     "availableIn": "Également disponible en {language}",
-    "tags": "Tags"
+    "tags": "Tags",
+    "linkCopied": "Lien copie !"
   },
   "pages": {
     "help": {
@@ -713,24 +717,6 @@
       "ctaSubtext": "D\u00e9posez vos fichiers, fixez un prix, partagez un lien. Votre premier transfert est gratuit.",
       "ctaButton": "Envoyez votre premier fichier",
       "ctaSecondaryLabel": "Voir les tarifs"
-    },
-    "advertisers": {
-      "title": "Annoncez sur ZeFile",
-      "subtitle": "Touchez les professionnels créatifs là où ils travaillent.",
-      "introContent": "ZeFile est utilisé quotidiennement par des designers, photographes, vidéastes, développeurs et autres professionnels créatifs pour livrer des fichiers et collecter des paiements. Si votre produit ou service s'adresse à cette audience, parlons-en.",
-      "whyTitle": "Pourquoi annoncer chez nous",
-      "why1Title": "Audience ciblée",
-      "why1Content": "Nos utilisateurs sont des professionnels créatifs et freelances actifs — pas des visiteurs occasionnels. Ils viennent sur ZeFile pour travailler.",
-      "why2Title": "Fort engagement",
-      "why2Content": "Les utilisateurs interagissent avec ZeFile pendant les envois et téléchargements de fichiers — des moments de forte attention.",
-      "why3Title": "Plateforme en croissance",
-      "why3Content": "ZeFile se développe en Afrique de l'Ouest et au-delà, avec des utilisateurs dans plusieurs pays francophones et anglophones.",
-      "formatsTitle": "Formats publicitaires",
-      "formatsContent": "Nous proposons des placements de bannières sur la page de téléchargement, des sections sponsorisées dans les notifications par e-mail et des partenariats sur mesure. Toutes les publicités sont clairement identifiées et non intrusives.",
-      "contactTitle": "Nous contacter",
-      "contactContent": "Intéressé ? Envoyez-nous un e-mail à",
-      "contactEmail": "ads@zefile.io",
-      "contactSuffix": "et nous vous enverrons notre kit média et nos tarifs actuels."
     },
     "about": {
       "title": "Soyez pay\u00e9 avant le <highlight>t\u00e9l\u00e9chargement</highlight>.",
