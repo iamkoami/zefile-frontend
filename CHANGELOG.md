@@ -5,6 +5,38 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.0] - 2026-02-23
+
+### Added
+
+- Blog table of contents navigation and social share buttons (LinkedIn, Facebook, WhatsApp, Email, Copy Link)
+- AES-GCM encryption for multipart upload state in sessionStorage
+- Session token authentication for password-protected transfers (replaces plain password passing)
+- `/jobs` and `/press` pages with layout components
+- `LegalPageLayout`, `TableOfContents`, and `MobileTocButton` shared components
+- DOMPurify integration for XSS protection on HTML content
+- `security.txt` at `/.well-known/security.txt`
+- Dynamic `robots.ts` (replaces static `robots.txt`)
+- Cache control headers for HTML pages in middleware
+- Metropolis Black and ExtraBold font weights
+
+### Changed
+
+- Migrated `payment-api` from raw axios to centralized `apiClient` wrapper
+- Refactored `streamZipDownload()` and `getFilePreviewUrl()` to accept options objects
+- Renamed `transferPassword` to `passwordSessionToken` throughout drawer store
+- Tightened CSP: specific Wasabi region URLs instead of wildcards, deduplicated PostHog domains
+- Added `upgrade-insecure-requests` CSP directive
+- Middleware route matcher changed to catch-all for broader coverage
+- Blog pagination reduced from 10 to 5 posts per page
+- Blog post cards use side-by-side image/content layout
+
+### Removed
+
+- `/advertisers` page and all related translations
+- `public/OG-IMAGE-README.md`
+- `<SentryProvider>` wrapper (simplified Sentry integration)
+
 ## [1.9.0] - 2026-02-22
 
 ### Added
