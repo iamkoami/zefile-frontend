@@ -60,7 +60,7 @@ const pricingTiers = {
 const seoContent = {
   en: {
     title: 'Pricing Plans - Choose Your Perfect Plan',
-    description: 'Compare ZeFile subscription plans: Free, Starter, and Pro. Get secure file transfers with payment protection. Free plan includes 2GB transfers. No credit card required.',
+    description: 'Compare ZeFile plans: Free, Starter, and Pro. Secure file transfers with payment protection. Free plan includes 2GB. No credit card required.',
     faqs: [
       {
         question: 'How much does ZeFile cost?',
