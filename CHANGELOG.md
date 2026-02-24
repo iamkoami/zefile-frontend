@@ -5,6 +5,24 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.13.0] - 2026-02-24
+
+### Added
+
+- PageHero component on pricing page with gradient background and slide-up animation
+- Modern CSS Grid feature comparison table with highlighted Pro column
+- BrandCross decorative shapes and gradient section on pricing page
+- Green highlight text on pricing section headings (plan, features, Questions)
+- Highlight text on SubscriptionPanel drawer header
+- Hreflang language alternates on all page layouts
+
+### Changed
+
+- Pricing page background from warm gray to white
+- Tier cards container widened from max-w-5xl to max-w-6xl
+- FAQ section restyled to match how-it-works page (warm gray bg, larger padding, SVG chevron)
+- HeroText proof stats text colors adjusted for better contrast
+
 ## [1.12.1] - 2026-02-24
 
 ### Fixed
