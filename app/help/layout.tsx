@@ -11,7 +11,7 @@ const seoContent = {
   },
   fr: {
     title: 'Centre d\'aide - Support et FAQ',
-    description: 'Obtenez de l\'aide avec ZeFile. Trouvez des réponses aux questions fréquentes sur les transferts de fichiers, paiements, paramètres de compte. Contactez notre équipe.',
+    description: 'Obtenez de l\'aide avec ZeFile. R\u00e9ponses aux questions fr\u00e9quentes sur les transferts, paiements et param\u00e8tres de compte. Contactez notre \u00e9quipe.',
   },
 };
 

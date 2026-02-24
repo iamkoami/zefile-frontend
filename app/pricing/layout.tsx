@@ -90,7 +90,7 @@ const seoContent = {
   },
   fr: {
     title: 'Tarifs - Choisissez votre forfait id\u00e9al',
-    description: 'Comparez les forfaits ZeFile : Gratuit, Starter et Pro. Transferts de fichiers s\u00e9curis\u00e9s avec protection du paiement. Le forfait gratuit inclut 2 Go. Sans carte bancaire.',
+    description: 'Comparez les forfaits ZeFile : Gratuit, Starter et Pro. Transferts s\u00e9curis\u00e9s avec protection du paiement. Forfait gratuit 2 Go. Sans carte bancaire.',
     faqs: [
       {
         question: 'Combien co\u00fbte ZeFile ?',

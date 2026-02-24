@@ -11,7 +11,7 @@ const seoContent = {
   },
   fr: {
     title: 'Blog - ZeFile',
-    description: 'Conseils, comparaisons et guides pour les professionnels créatifs. Découvrez le transfert de fichiers sécurisé, la monétisation de votre travail et le développement de votre activité.',
+    description: 'Conseils, comparaisons et guides pour les cr\u00e9atifs. Transfert de fichiers s\u00e9curis\u00e9, mon\u00e9tisation de votre travail et croissance de votre activit\u00e9.',
   },
 };
 

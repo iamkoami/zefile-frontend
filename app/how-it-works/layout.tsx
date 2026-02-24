@@ -21,7 +21,7 @@ const seoContent = {
   },
   fr: {
     title: 'Comment \u00e7a marche - Envoyez, partagez, soyez pay\u00e9',
-    description: 'Envoyez vos fichiers, fixez un prix, partagez un lien. Vos destinataires pr\u00e9visualisent les fichiers filigran\u00e9s et paient avant de t\u00e9l\u00e9charger. Transfert s\u00e9curis\u00e9 avec protection de paiement.',
+    description: 'Envoyez vos fichiers, fixez un prix, partagez un lien. Vos destinataires pr\u00e9visualisent avec filigrane et paient avant de t\u00e9l\u00e9charger.',
     faqs: [
       { question: 'ZeFile est-il gratuit ?', answer: 'Oui ! Le plan gratuit vous permet d\'envoyer jusqu\'\u00e0 2 Go par transfert. Les plans Starter et Pro offrent des limites plus \u00e9lev\u00e9es et des frais r\u00e9duits.' },
       { question: 'Quels types de fichiers puis-je envoyer ?', answer: '\u00c0 peu pr\u00e8s tout -- images, vid\u00e9os, audio, documents, archives. Nous g\u00e9n\u00e9rons automatiquement des aper\u00e7us filigran\u00e9s pour la plupart des types de fichiers.' },
