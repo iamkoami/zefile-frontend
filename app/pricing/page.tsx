@@ -21,6 +21,7 @@ import {
   getStoredCountryCode,
   subscriptionApi,
 } from '@/services/subscription-api';
+import { trackPricingViewed } from '@/lib/posthog';
 
 export default function PricingPage() {
   const t = useTranslations('subscription');
@@ -50,6 +51,7 @@ export default function PricingPage() {
       }
 
       setIsLoading(false);
+      trackPricingViewed();
     };
 
     initPage();

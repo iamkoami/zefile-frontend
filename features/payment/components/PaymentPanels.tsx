@@ -30,6 +30,7 @@ import { useCurrencyStore } from "@/stores/currency-store";
 import { getCurrentUserEmail } from "@/utils/auth";
 import { safePaymentRedirect } from "@/utils/security";
 import { usePollEligibility } from "@/hooks/usePollEligibility";
+import { trackPaymentMethodSelected, trackPaymentSubmitted } from "@/lib/posthog";
 
 // Country data - Paystack-supported countries + International (card only)
 // Paystack coverage: GH (Ghana), KE (Kenya), CI (Côte d'Ivoire), NG (Nigeria)
@@ -375,6 +376,8 @@ export function PaymentMethodPanel() {
     // Update flow data with email
     setPaymentFlowData({ senderEmail: customerEmail });
 
+    trackPaymentMethodSelected(selectedMethodType === "mobile_money" ? "mobile_money" : "card");
+
     if (selectedMethodType === "mobile_money") {
       // Validate phone number for mobile money
       if (!isPhoneValid || !selectedProvider) {
@@ -403,6 +406,7 @@ export function PaymentMethodPanel() {
         }
 
         if (response.data) {
+          trackPaymentSubmitted({ method: "mobile_money", amount: response.data.pricingAmountMinorUnits, currency: transfer.currency });
           // Store payment data and go to prompt step
           setPaymentFlowData({
             senderEmail: customerEmail,
@@ -421,6 +425,7 @@ export function PaymentMethodPanel() {
       }
     } else if (selectedMethodType === "card") {
       // Card payments use Paystack popup (Epic 19, Story 19.5)
+      trackPaymentSubmitted({ method: "card", currency: transfer.currency });
       setPaymentMethod({ type: "card" });
       setPaymentFlowData({
         senderEmail: customerEmail,
@@ -461,6 +466,7 @@ export function PaymentMethodPanel() {
         }
 
         if (response.data?.authorizationUrl) {
+          trackPaymentSubmitted({ method: selectedMethodType, currency: transfer.currency });
           try {
             safePaymentRedirect(response.data.authorizationUrl);
           } catch {

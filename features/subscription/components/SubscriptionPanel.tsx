@@ -19,6 +19,7 @@ import {
   COUNTRY_CONFIG,
   ALL_COUNTRY_CODES,
 } from "@/stores/currency-store";
+import { trackPlanSelected } from "@/lib/posthog";
 
 // Feature list for each tier
 interface TierFeature {
@@ -238,6 +239,8 @@ const SubscriptionPanel: React.FC = () => {
 
   // Handle upgrade click
   const handleUpgrade = (tier: SubscriptionTier) => {
+    trackPlanSelected(tier, billingPeriod);
+
     // Free tier: open auth panel to create free account
     if (tier === "free") {
       if (!isAuthenticated) {

@@ -11,6 +11,7 @@
  */
 
 import { apiClient } from './api-client';
+import { trackFileUploaded, trackUploadFailed } from '@/lib/posthog';
 
 /**
  * Fallback MIME type map for extensions the browser doesn't recognize.
@@ -830,6 +831,7 @@ class MultipartUploadService {
         throw new Error(result?.message || 'Backend did not confirm upload completion');
       }
     } catch (completeError: any) {
+      trackUploadFailed({ fileName: file.name, errorMessage: completeError.message, stage: 'finalization' });
 
       // Try to abort the upload to clean up S3
       try {
@@ -853,6 +855,8 @@ class MultipartUploadService {
       uploadSpeed: file.size / ((Date.now() - startTime) / 1000),
       estimatedTimeRemaining: 0,
     });
+
+    trackFileUploaded({ fileName: file.name, fileSize: file.size, mimeType: getFileMimeType(file) });
 
     return result;
   }

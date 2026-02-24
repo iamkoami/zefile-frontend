@@ -26,6 +26,7 @@ import { getTierTranslationKey } from "@/hooks/useTierLimits";
 import { usePollEligibility } from "@/hooks/usePollEligibility";
 import { toast } from "@/components/shared/Toast";
 import Image from "next/image";
+import { trackFilesSelected, trackTransferStarted } from "@/lib/posthog";
 
 // Interface for files from an existing transfer (reuse flow)
 export interface ReuseFile {
@@ -467,6 +468,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
 
     setFileError("");
     onFilesChange([...selectedFiles, ...files]);
+    trackFilesSelected(files.length, files.reduce((sum, f) => sum + f.size, 0));
     setPanelState("form");
   };
 
@@ -490,6 +492,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
 
       setFileError("");
       onFilesChange(files);
+      trackFilesSelected(files.length, files.reduce((sum, f) => sum + f.size, 0));
       setPanelState("form");
     }
   };
@@ -625,6 +628,8 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
     if (!validateForm()) {
       return;
     }
+
+    trackTransferStarted(selectedFiles.length);
 
     try {
       // Calculate charge info before processing

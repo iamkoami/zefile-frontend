@@ -45,6 +45,10 @@ export enum AnalyticsEventType {
   CHURN_SURVEY_SUBMITTED = 'churn_survey_submitted',
   CHURN_SURVEY_SKIPPED = 'churn_survey_skipped',
 
+  // Upload events
+  FILE_UPLOADED = 'file_uploaded',
+  UPLOAD_FAILED = 'upload_failed',
+
   // Feature usage
   CONTACT_ADDED = 'contact_added',
   VERSION_CREATED = 'version_created',
@@ -388,6 +392,51 @@ export function trackChurnSurveySubmitted(
 export function trackChurnSurveySkipped(previousTier: string): void {
   trackEvent(AnalyticsEventType.CHURN_SURVEY_SKIPPED, {
     previous_tier: previousTier,
+  });
+}
+
+/**
+ * Track individual file uploaded
+ */
+export function trackFileUploaded(properties: {
+  fileName: string;
+  fileSize: number;
+  mimeType: string;
+}): void {
+  trackEvent(AnalyticsEventType.FILE_UPLOADED, {
+    file_name: properties.fileName,
+    file_size: properties.fileSize,
+    mime_type: properties.mimeType,
+  });
+}
+
+/**
+ * Track upload failure (client-side)
+ */
+export function trackUploadFailed(properties: {
+  fileName?: string;
+  errorMessage: string;
+  stage?: 'chunk' | 'finalization' | 'abort';
+}): void {
+  trackEvent(AnalyticsEventType.UPLOAD_FAILED, {
+    file_name: properties.fileName,
+    error_message: properties.errorMessage,
+    stage: properties.stage,
+  });
+}
+
+/**
+ * Track payment submitted (form submit)
+ */
+export function trackPaymentSubmitted(properties: {
+  method: string;
+  amount?: number;
+  currency?: string;
+}): void {
+  trackEvent(AnalyticsEventType.PAYMENT_SUBMITTED, {
+    method: properties.method,
+    amount: properties.amount,
+    currency: properties.currency,
   });
 }
 
