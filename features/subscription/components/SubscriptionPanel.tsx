@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, type ReactNode } from "react";
 import Flag from "react-flagpack";
 import { Check, Sparks, Flash, Crown, NavArrowDown, Globe } from "iconoir-react";
 import LoadingPanel from "@/components/LoadingPanel";
@@ -288,7 +288,13 @@ const SubscriptionPanel: React.FC = () => {
     <div className="subscription-panel">
       {/* Header */}
       <div className="mt-8 mb-16">
-        <h1 className="text-4xl font-bold text-[#171717] mb-2">{t("title")}</h1>
+        <h1 className="text-4xl font-bold text-[#171717] mb-2">
+          {t.rich("title", {
+            highlight: (chunks: ReactNode) => (
+              <span className="ze-highlight-green">{chunks}</span>
+            ),
+          })}
+        </h1>
         <p className="text-gray-600">{t("subtitle")}</p>
       </div>
 

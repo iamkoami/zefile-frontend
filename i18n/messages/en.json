@@ -585,7 +585,7 @@
     "cookieSettings": "Cookie settings"
   },
   "blog": {
-    "title": "Blog",
+    "title": "<highlight>Blog</highlight>",
     "subtitle": "Tips, comparisons, and guides for creative professionals",
     "readMore": "Read more",
     "readingTime": "{minutes} min read",
@@ -601,7 +601,7 @@
   },
   "pages": {
     "help": {
-      "title": "Help Center",
+      "title": "Help <highlight>Center</highlight>",
       "subtitle": "Got a question? We've got answers.",
       "searchPlaceholder": "Search for an answer to your question",
       "noResults": "No results found. Try a different search.",
@@ -848,7 +848,7 @@
       "contactContent": "If you have questions about these Terms of Service, please contact us at hello@zefile.io."
     },
     "contact": {
-      "title": "Get in touch",
+      "title": "Get in <highlight>touch</highlight>",
       "subtitle": "We'd love to hear from you. Here's how you can reach us.",
       "chatTitle": "Chat with us",
       "chatDesc": "Get quick answers from our support team.",
@@ -1240,8 +1240,8 @@
     "everythingInFree": "Everything in Free, plus:",
     "everythingInStarter": "Everything in Starter, plus:",
     "unlimitedTransfers": "Unlimited transfers",
-    "compareFeatures": "Compare all features",
-    "faqTitle": "Frequently asked questions",
+    "compareFeatures": "Compare all <highlight>features</highlight>",
+    "faqTitle": "Frequently Asked <highlight>Questions</highlight>",
     "faqQ1": "Can I cancel my subscription anytime?",
     "faqA1": "Yes, you can cancel your subscription at any time. Your plan will remain active until the end of the billing period.",
     "faqQ2": "What payment methods do you accept?",
@@ -1349,7 +1349,7 @@
     "manage": "Manage"
   },
   "subscriptions": {
-    "title": "Choose your plan",
+    "title": "Choose your <highlight>plan</highlight>",
     "subtitle": "More storage, lower fees, and premium features",
     "monthly": "Monthly",
     "annual": "Annual",

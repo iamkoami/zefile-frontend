@@ -2,7 +2,7 @@
 
 export const runtime = "edge";
 
-import React, { useState } from "react";
+import React, { useState, type ReactNode } from "react";
 import Header from "@/components/shared/Header";
 import Footer from "@/components/shared/Footer";
 import PageHero from "@/components/shared/PageHero";
@@ -34,6 +34,9 @@ type Category =
 export default function ContactPage() {
   const t = useTranslations("pages.contact");
   const { openChat } = useChatStore();
+  const highlight = (chunks: ReactNode) => (
+    <span className="ze-highlight-green">{chunks}</span>
+  );
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -115,7 +118,7 @@ export default function ContactPage() {
       <Header />
 
       <main className="flex-1">
-        <PageHero title={t("title")} subtitle={t("subtitle")} />
+        <PageHero title={t.rich("title", { highlight })} subtitle={t("subtitle")} />
 
         <div className="max-w-7xl mx-auto px-6 py-12 lg:py-20">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 bg-white rounded-2xl overflow-hidden">

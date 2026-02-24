@@ -586,7 +586,7 @@
     "cookieSettings": "Gestion des cookies"
   },
   "blog": {
-    "title": "Blog",
+    "title": "<highlight>Blog</highlight>",
     "subtitle": "Conseils, comparaisons et guides pour les professionnels créatifs",
     "readMore": "Lire la suite",
     "readingTime": "{minutes} min de lecture",
@@ -602,7 +602,7 @@
   },
   "pages": {
     "help": {
-      "title": "Centre d'aide",
+      "title": "Centre d'<highlight>aide</highlight>",
       "subtitle": "Une question ? On a les réponses.",
       "searchPlaceholder": "Recherchez la réponse à votre question",
       "noResults": "Aucun résultat trouvé. Essayez une autre recherche.",
@@ -849,7 +849,7 @@
       "contactContent": "Si vous avez des questions sur ces conditions d'utilisation, veuillez nous contacter a hello@zefile.io."
     },
     "contact": {
-      "title": "Parlons-en",
+      "title": "Parlons-<highlight>en</highlight>",
       "subtitle": "On serait ravis d'échanger avec vous. Voici comment nous joindre.",
       "chatTitle": "Discutez avec nous",
       "chatDesc": "Obtenez des réponses rapides de notre équipe.",
@@ -1241,8 +1241,8 @@
     "everythingInFree": "Tout dans Gratuit, plus :",
     "everythingInStarter": "Tout dans Starter, plus :",
     "unlimitedTransfers": "Transferts illimités",
-    "compareFeatures": "Comparer toutes les fonctionnalités",
-    "faqTitle": "Questions fréquentes",
+    "compareFeatures": "Comparer toutes les <highlight>fonctionnalités</highlight>",
+    "faqTitle": "Questions <highlight>Fréquentes</highlight>",
     "faqQ1": "Puis-je annuler mon abonnement à tout moment ?",
     "faqA1": "Oui, vous pouvez annuler votre abonnement à tout moment. Votre plan restera actif jusqu'à la fin de la période de facturation.",
     "faqQ2": "Quels modes de paiement acceptez-vous ?",
@@ -1350,7 +1350,7 @@
     "manage": "Gérer"
   },
   "subscriptions": {
-    "title": "Choisissez votre plan",
+    "title": "Choisissez votre <highlight>plan</highlight>",
     "subtitle": "Plus de stockage, moins de frais, des fonctionnalités premium",
     "monthly": "Mensuel",
     "annual": "Annuel",

@@ -148,6 +148,11 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     alternates: {
       canonical: SITE_URL,
+      languages: {
+        'en': SITE_URL,
+        'fr': SITE_URL,
+        'x-default': SITE_URL,
+      },
     },
     icons: {
       icon: [
@@ -160,6 +165,11 @@ export async function generateMetadata(): Promise<Metadata> {
     verification: {
       google: process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION || undefined,
       yandex: process.env.NEXT_PUBLIC_YANDEX_VERIFICATION || undefined,
+      other: {
+        ...(process.env.NEXT_PUBLIC_BING_VERIFICATION
+          ? { 'msvalidate.01': process.env.NEXT_PUBLIC_BING_VERIFICATION }
+          : {}),
+      },
     },
     category: 'technology',
   };

@@ -2,7 +2,7 @@
 
 export const runtime = "edge";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, type ReactNode } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import Header from "@/components/shared/Header";
 import Footer from "@/components/shared/Footer";
@@ -16,6 +16,9 @@ const POSTS_PER_PAGE = 5;
 export default function BlogListPage() {
   const t = useTranslations("blog");
   const locale = useLocale();
+  const highlight = (chunks: ReactNode) => (
+    <span className="ze-highlight-green">{chunks}</span>
+  );
 
   const [posts, setPosts] = useState<BlogPostDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -89,7 +92,7 @@ export default function BlogListPage() {
       <Header />
 
       <main className="flex-1">
-        <PageHero title={t("title")} subtitle={t("subtitle")} />
+        <PageHero title={t.rich("title", { highlight })} subtitle={t("subtitle")} />
 
         {/* Posts */}
         <div className="max-w-5xl mx-auto px-6 py-24">

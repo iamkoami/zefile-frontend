@@ -79,18 +79,16 @@ const HeroText: React.FC<HeroTextProps> = ({
 
       {/* Social proof micro-bar */}
       {showProofStats && (
-        <div
-          className="flex items-center gap-3 mt-5 animate-[fadeIn_1s_ease-in-out_2s_both]"
-        >
-          <span className="text-xs font-medium text-gray-400">
+        <div className="flex items-center gap-3 mt-5 animate-[fadeIn_1s_ease-in-out_2s_both]">
+          <span className="text-xs font-medium text-gray-500">
             {t("proofStat1")}
           </span>
-          <span className="text-xs font-medium text-gray-500">|</span>
-          <span className="text-xs font-medium text-gray-400">
+          <span className="text-xs font-medium text-gray-600">|</span>
+          <span className="text-xs font-medium text-gray-500">
             {t("proofStat2")}
           </span>
-          <span className="text-xs font-medium text-gray-500">|</span>
-          <span className="text-xs font-medium text-gray-400">
+          <span className="text-xs font-medium text-gray-600">|</span>
+          <span className="text-xs font-medium text-gray-500">
             {t("proofStat3")}
           </span>
         </div>

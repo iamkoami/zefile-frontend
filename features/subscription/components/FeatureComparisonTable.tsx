@@ -1,6 +1,7 @@
 'use client';
 
-import { Check, Xmark } from 'iconoir-react';
+import { Fragment } from 'react';
+import { Check } from 'iconoir-react';
 import { useTranslations } from 'next-intl';
 import { type SubscriptionTier } from '@/services/subscription-api';
 import { useTierLimits } from '@/hooks/useTierLimits';
@@ -60,58 +61,92 @@ export function FeatureComparisonTable({ currentTier }: FeatureComparisonTablePr
     },
   ];
 
-  const renderValue = (value: string | number | boolean) => {
+  const renderValue = (value: string | number | boolean, isPro: boolean) => {
     if (typeof value === 'boolean') {
       return value ? (
-        <Check className="mx-auto h-5 w-5 text-[#87E64B]" />
+        <div className="mx-auto flex h-6 w-6 items-center justify-center rounded-full bg-[#87E64B]/20">
+          <Check className="h-3.5 w-3.5 text-[#87E64B]" />
+        </div>
       ) : (
-        <Xmark className="mx-auto h-5 w-5 text-gray-300" />
+        <span className="text-gray-300 text-sm">--</span>
       );
     }
-    return <span className="text-[#171717]">{value}</span>;
+    return (
+      <span className={`text-sm font-semibold ${isPro ? 'text-[#5E53E0]' : 'text-[#171717]'}`}>
+        {value}
+      </span>
+    );
   };
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[600px]">
-        <thead>
-          <tr className="border-b border-gray-200">
-            <th className="py-4 text-left text-sm font-semibold text-gray-600">
-              {t('feature')}
-            </th>
-            {tiers.map((tier) => (
-              <th
-                key={tier}
-                className={`py-4 text-center text-sm font-semibold ${
-                  tier === currentTier ? 'text-[#87E64B]' : 'text-[#171717]'
-                }`}
-              >
-                {tierNames[tier]}
-                {tier === currentTier && (
-                  <span className="ml-2 rounded bg-[#87E64B] px-2 py-0.5 text-xs text-[#171717]">
-                    {t('current')}
-                  </span>
-                )}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {features.map((feature, index) => (
-            <tr
-              key={feature.key}
-              className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}
+      <div className="grid grid-cols-[1.5fr_1fr_1fr_1fr] min-w-[640px]">
+        {/* Header Row */}
+        <div className="px-6 py-5 text-sm font-medium text-gray-500 border-b border-gray-200">
+          {t('feature')}
+        </div>
+        {tiers.map((tier) => {
+          const isPro = tier === 'pro';
+          const isCurrent = tier === currentTier;
+
+          return (
+            <div
+              key={tier}
+              className={`px-6 py-5 text-center text-sm font-semibold border-b ${
+                isPro
+                  ? 'bg-[#5E53E0] text-white border-[#5E53E0]'
+                  : 'text-[#171717] border-gray-200'
+              }`}
             >
-              <td className="py-4 text-sm text-gray-600">{feature.label}</td>
-              {tiers.map((tier) => (
-                <td key={tier} className="py-4 text-center text-sm">
-                  {renderValue(feature.getValue(tier))}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+              {tierNames[tier]}
+              {isCurrent && (
+                <span
+                  className={`ml-2 inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${
+                    isPro
+                      ? 'bg-white/20 text-white'
+                      : 'bg-[#87E64B] text-[#171717]'
+                  }`}
+                >
+                  {t('current')}
+                </span>
+              )}
+            </div>
+          );
+        })}
+
+        {/* Feature Rows */}
+        {features.map((feature, index) => {
+          const isLast = index === features.length - 1;
+          const borderClass = isLast ? '' : 'border-b border-gray-100';
+
+          return (
+            <Fragment key={feature.key}>
+              {/* Feature label */}
+              <div
+                className={`px-6 py-5 text-sm font-medium text-gray-600 flex items-center sticky left-0 bg-white z-10 ${borderClass}`}
+              >
+                {feature.label}
+              </div>
+
+              {/* Tier values */}
+              {tiers.map((tier) => {
+                const isPro = tier === 'pro';
+
+                return (
+                  <div
+                    key={`${feature.key}-${tier}`}
+                    className={`px-6 py-5 flex items-center justify-center ${borderClass} ${
+                      isPro ? 'bg-[#5E53E0]/[0.04]' : ''
+                    }`}
+                  >
+                    {renderValue(feature.getValue(tier), isPro)}
+                  </div>
+                );
+              })}
+            </Fragment>
+          );
+        })}
+      </div>
     </div>
   );
 }

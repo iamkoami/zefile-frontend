@@ -2,7 +2,7 @@
 
 export const runtime = "edge";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, type ReactNode } from "react";
 import Header from "@/components/shared/Header";
 import Footer from "@/components/shared/Footer";
 import PageHero from "@/components/shared/PageHero";
@@ -62,6 +62,9 @@ function BrandCross({
 
 export default function HelpCenterPage() {
   const t = useTranslations("pages.help");
+  const highlight = (chunks: ReactNode) => (
+    <span className="ze-highlight-green">{chunks}</span>
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
 
@@ -128,7 +131,7 @@ export default function HelpCenterPage() {
       <Header />
 
       <main className="flex-1 overflow-x-clip">
-        <PageHero title={t("title")} subtitle={t("subtitle")} />
+        <PageHero title={t.rich("title", { highlight })} subtitle={t("subtitle")} />
 
         <div className="max-w-5xl mx-auto px-6 py-16 relative">
           <BrandCross

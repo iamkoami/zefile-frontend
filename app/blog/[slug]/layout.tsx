@@ -59,6 +59,11 @@ export async function generateMetadata({
       },
       alternates: {
         canonical: url,
+        languages: {
+          'en': url,
+          'fr': url,
+          'x-default': url,
+        },
       },
     };
   } catch {
