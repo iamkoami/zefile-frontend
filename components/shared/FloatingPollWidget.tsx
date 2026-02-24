@@ -18,6 +18,12 @@ import { useChatStore } from "@/stores/chat-store";
  */
 const FloatingPollWidget: React.FC = () => {
   const t = useTranslations("poll");
+
+  // Hydrate persist store on client (skipHydration: true in store for SSR safety)
+  useEffect(() => {
+    usePollStore.persist.rehydrate();
+  }, []);
+
   const {
     currentPoll,
     isWidgetVisible,
