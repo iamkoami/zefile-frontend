@@ -155,6 +155,7 @@ export const usePollStore = create<PollState>()(
     }),
     {
       name: 'zefile-poll-storage',
+      skipHydration: true,
       partialize: (state) => ({
         dismissedPolls: state.dismissedPolls,
         snoozedPolls: state.snoozedPolls,
