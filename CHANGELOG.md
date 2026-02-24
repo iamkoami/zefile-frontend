@@ -5,6 +5,33 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.0] - 2026-02-24
+
+### Added
+
+- Inline transfer options within UploadPanel (removed separate TransferOptionsPanel)
+- StepIndicator for download page multi-gate progress (Email > Code > Password)
+- OfferCatalogJsonLd structured data on pricing page for SEO
+- Onboarding tooltip sequence after first transfer completion
+- Mobile upgrade banner in Header for free-tier authenticated users
+- Searchable FAQ accordion in AccountPanel help section
+- Blog related articles section and CTA on post detail pages
+- SectionIndicator, StepIndicator, AccordionItem, OnboardingTooltip shared components
+- Slide animations for form view transitions
+- Social proof stats bar on hero section
+
+### Changed
+
+- Merged email + OTP into single inline flow on download page
+- Removed phone auth tab from AuthPanel (email-only)
+- Rewrote hero copy targeting freelancers
+- Extracted blog PostCard into reusable component
+- Updated about page with animated counters, how-it-works carousel with drag support
+
+### Fixed
+
+- Chat store false unread count on cold start, persist badge to localStorage
+
 ## [1.10.0] - 2026-02-23
 
 ### Added
