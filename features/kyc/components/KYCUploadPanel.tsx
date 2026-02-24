@@ -476,7 +476,7 @@ export function KYCUploadPanel({
             onChange={e => setIdNumber(e.target.value)}
             placeholder={t('idNumberPlaceholder')}
             maxLength={50}
-            className="w-full px-4 py-3 bg-white border border-gray-300 rounded text-sm placeholder-gray-400 hover:border-gray-400 focus:border-[#5E53E0] focus:ring-1 focus:ring-[#5E53E0] outline-none transition-colors"
+            className="w-full px-4 py-3 bg-white border border-gray-300 rounded text-sm placeholder-gray-400 hover:border-gray-400 focus:border-[#171717] focus:ring-1 focus:ring-[#171717] outline-none transition-colors"
           />
           <p className="text-xs text-gray-500 mt-1">{t('idNumberHint')}</p>
         </div>
@@ -502,7 +502,7 @@ export function KYCUploadPanel({
           id="kyc-confirmation"
           checked={isConfirmed}
           onChange={e => setIsConfirmed(e.target.checked)}
-          className="mt-1 w-4 h-4 rounded border-gray-300 text-[#5E53E0] focus:ring-[#5E53E0]"
+          className="mt-1 w-4 h-4 rounded border-gray-300 text-[#87E64B] focus:ring-[#171717]"
         />
         <label htmlFor="kyc-confirmation" className="text-sm text-gray-600">
           {t('confirmationText')}

@@ -186,7 +186,7 @@ const DangerZoneSection: React.FC = () => {
                 <button
                   onClick={() => setShowCancelModal(true)}
                   disabled={isCancelling}
-                  className="text-sm font-bold text-[#5E53E0] hover:underline disabled:opacity-50"
+                  className="text-sm font-bold text-[#171717] underline disabled:opacity-50"
                 >
                   {t("cancelDeletionButton")}
                 </button>

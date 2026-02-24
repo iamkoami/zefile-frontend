@@ -81,7 +81,7 @@ function renderMarkdown(text: string): React.ReactNode[] {
           href={match[6]}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-[#5E53E0] underline"
+          className="text-[#171717] underline font-medium"
         >
           {match[5]}
         </a>,
@@ -354,7 +354,7 @@ function EmailPrompt({ onSubmit }: { onSubmit: (email: string) => void }) {
           if (error) setError("");
         }}
         placeholder={t("emailPlaceholder")}
-        className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-[#5E53E0] focus:border-transparent"
+        className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-[#171717] focus:border-transparent"
         onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
       />
       {error && <p className="text-xs text-red-500">{error}</p>}
@@ -493,7 +493,7 @@ function SatisfactionRating({
 
       <button
         onClick={onNewConversation}
-        className="flex items-center gap-1.5 mx-auto text-xs text-[#5E53E0] hover:underline transition-colors"
+        className="flex items-center gap-1.5 mx-auto text-xs text-[#171717] underline font-medium transition-colors"
       >
         <RefreshDouble className="w-3.5 h-3.5" />
         {t("newConversation")}
@@ -549,7 +549,7 @@ function ChatInput({
           placeholder={t("placeholder")}
           rows={1}
           maxLength={2000}
-          className="flex-1 resize-none px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#5E53E0] focus:border-transparent"
+          className="flex-1 resize-none px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#171717] focus:border-transparent"
           disabled={disabled}
         />
         <button
@@ -623,12 +623,15 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ context: contextProp }) => {
     }
   }, [messages, isLoading]);
 
-  // Poll for new messages when conversation is active and chat is open
-  // Polls every 3s when escalated (waiting for agent), every 10s otherwise
+  // Poll for new messages when conversation is active
+  // Open + escalated: 3s, Open: 10s, Closed (background): 30s
+  // Immediate fetch so unread badge appears without waiting for first interval
   useEffect(() => {
-    if (!conversationId || !isOpen || isResolved) return;
+    if (!conversationId || isResolved) return;
 
-    const pollInterval = isEscalated ? 3000 : 10000;
+    loadConversation();
+
+    const pollInterval = !isOpen ? 30000 : isEscalated ? 3000 : 10000;
     const interval = setInterval(() => {
       loadConversation();
     }, pollInterval);
@@ -814,7 +817,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ context: contextProp }) => {
             <div className="flex items-center justify-end px-3 py-2 border-t border-gray-50 bg-gray-50 rounded-b-lg">
               <button
                 onClick={escalateConversation}
-                className="text-xs text-gray-500 hover:text-[#5E53E0] transition-colors"
+                className="text-xs text-gray-500 hover:text-[#171717] transition-colors"
               >
                 {t("escalate")}
               </button>

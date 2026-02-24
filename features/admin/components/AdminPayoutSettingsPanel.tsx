@@ -339,7 +339,7 @@ const AdminPayoutSettingsPanel: React.FC = () => {
                         setMinWithdrawal(e.target.value);
                         setIsPayoutsDirty(true);
                       }}
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-l focus:ring-1 focus:ring-[#5E53E0] focus:border-[#5E53E0]"
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-l focus:ring-1 focus:ring-[#171717] focus:border-[#171717]"
                     />
                     <span className="px-3 py-2 bg-gray-100 border border-l-0 border-gray-300 rounded-r text-sm text-gray-600">
                       XOF
@@ -360,7 +360,7 @@ const AdminPayoutSettingsPanel: React.FC = () => {
                         setMaxWithdrawal(e.target.value);
                         setIsPayoutsDirty(true);
                       }}
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-l focus:ring-1 focus:ring-[#5E53E0] focus:border-[#5E53E0]"
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-l focus:ring-1 focus:ring-[#171717] focus:border-[#171717]"
                     />
                     <span className="px-3 py-2 bg-gray-100 border border-l-0 border-gray-300 rounded-r text-sm text-gray-600">
                       XOF
@@ -381,7 +381,7 @@ const AdminPayoutSettingsPanel: React.FC = () => {
                         setDailyLimit(e.target.value);
                         setIsPayoutsDirty(true);
                       }}
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-l focus:ring-1 focus:ring-[#5E53E0] focus:border-[#5E53E0]"
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-l focus:ring-1 focus:ring-[#171717] focus:border-[#171717]"
                     />
                     <span className="px-3 py-2 bg-gray-100 border border-l-0 border-gray-300 rounded-r text-sm text-gray-600">
                       XOF
@@ -411,7 +411,7 @@ const AdminPayoutSettingsPanel: React.FC = () => {
                         setFeePercent(e.target.value);
                         setIsPayoutsDirty(true);
                       }}
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-l focus:ring-1 focus:ring-[#5E53E0] focus:border-[#5E53E0]"
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-l focus:ring-1 focus:ring-[#171717] focus:border-[#171717]"
                     />
                     <span className="px-3 py-2 bg-gray-100 border border-l-0 border-gray-300 rounded-r text-sm text-gray-600">
                       %
@@ -431,7 +431,7 @@ const AdminPayoutSettingsPanel: React.FC = () => {
                         setFeeFlat(e.target.value);
                         setIsPayoutsDirty(true);
                       }}
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-l focus:ring-1 focus:ring-[#5E53E0] focus:border-[#5E53E0]"
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-l focus:ring-1 focus:ring-[#171717] focus:border-[#171717]"
                     />
                     <span className="px-3 py-2 bg-gray-100 border border-l-0 border-gray-300 rounded-r text-sm text-gray-600">
                       XOF
@@ -451,7 +451,7 @@ const AdminPayoutSettingsPanel: React.FC = () => {
                         setFeeCap(e.target.value);
                         setIsPayoutsDirty(true);
                       }}
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-l focus:ring-1 focus:ring-[#5E53E0] focus:border-[#5E53E0]"
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-l focus:ring-1 focus:ring-[#171717] focus:border-[#171717]"
                     />
                     <span className="px-3 py-2 bg-gray-100 border border-l-0 border-gray-300 rounded-r text-sm text-gray-600">
                       XOF
@@ -480,7 +480,7 @@ const AdminPayoutSettingsPanel: React.FC = () => {
                       setAutoApproveThreshold(e.target.value);
                       setIsPayoutsDirty(true);
                     }}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-l focus:ring-1 focus:ring-[#5E53E0] focus:border-[#5E53E0]"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-l focus:ring-1 focus:ring-[#171717] focus:border-[#171717]"
                   />
                   <span className="px-3 py-2 bg-gray-100 border border-l-0 border-gray-300 rounded-r text-sm text-gray-600">
                     XOF
@@ -532,7 +532,7 @@ const AdminPayoutSettingsPanel: React.FC = () => {
                       setRefundWindowDays(e.target.value);
                       setIsRefundsDirty(true);
                     }}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-l focus:ring-1 focus:ring-[#5E53E0] focus:border-[#5E53E0]"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-l focus:ring-1 focus:ring-[#171717] focus:border-[#171717]"
                   />
                   <span className="px-3 py-2 bg-gray-100 border border-l-0 border-gray-300 rounded-r text-sm text-gray-600">
                     {t('days')}
@@ -558,7 +558,7 @@ const AdminPayoutSettingsPanel: React.FC = () => {
                       type="checkbox"
                       checked={autoRefundReasons.includes(reason)}
                       onChange={() => toggleAutoRefundReason(reason)}
-                      className="w-4 h-4 text-[#5E53E0] border-gray-300 rounded focus:ring-[#5E53E0]"
+                      className="w-4 h-4 text-[#87E64B] border-gray-300 rounded focus:ring-[#171717]"
                     />
                     <span className="text-sm text-gray-700">
                       {REFUND_REASON_CONFIG[reason]?.label || reason}
@@ -584,7 +584,7 @@ const AdminPayoutSettingsPanel: React.FC = () => {
                       setRequireScreenshot(true);
                       setIsRefundsDirty(true);
                     }}
-                    className="w-4 h-4 text-[#5E53E0] border-gray-300 focus:ring-[#5E53E0]"
+                    className="w-4 h-4 text-[#87E64B] border-gray-300 focus:ring-[#171717]"
                   />
                   <span className="text-sm text-gray-700">{t('yes')}</span>
                 </label>
@@ -597,7 +597,7 @@ const AdminPayoutSettingsPanel: React.FC = () => {
                       setRequireScreenshot(false);
                       setIsRefundsDirty(true);
                     }}
-                    className="w-4 h-4 text-[#5E53E0] border-gray-300 focus:ring-[#5E53E0]"
+                    className="w-4 h-4 text-[#87E64B] border-gray-300 focus:ring-[#171717]"
                   />
                   <span className="text-sm text-gray-700">{t('no')}</span>
                 </label>

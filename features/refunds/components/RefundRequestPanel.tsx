@@ -233,7 +233,7 @@ const RefundRequestPanel: React.FC<RefundRequestPanelProps> = ({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder={t('emailPlaceholder')}
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#5E53E0]"
+              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#171717]"
             />
             <p className="text-xs text-gray-400 mt-1">{t('emailHint')}</p>
           </div>
@@ -256,7 +256,7 @@ const RefundRequestPanel: React.FC<RefundRequestPanelProps> = ({
       <div>
         <button
           onClick={() => setStep('check')}
-          className="text-sm text-[#5E53E0] hover:underline mb-4"
+          className="text-sm text-[#171717] underline font-medium mb-4"
         >
           ← {t('back')}
         </button>
@@ -319,7 +319,7 @@ const RefundRequestPanel: React.FC<RefundRequestPanelProps> = ({
               onChange={(e) => setDescription(e.target.value)}
               placeholder={t('descriptionPlaceholder')}
               rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#5E53E0] resize-none"
+              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#171717] resize-none"
             />
             <p className="text-xs text-gray-400 mt-1">
               {description.length}/2000 ({t('minimum20')})
@@ -388,7 +388,7 @@ const RefundRequestPanel: React.FC<RefundRequestPanelProps> = ({
       <div>
         <button
           onClick={() => setStep('form')}
-          className="text-sm text-[#5E53E0] hover:underline mb-4"
+          className="text-sm text-[#171717] underline font-medium mb-4"
         >
           ← {t('back')}
         </button>

@@ -231,7 +231,9 @@ const SubscriptionPanel: React.FC = () => {
   const handleGetStarted = () => {
     closeDrawer();
     // Dispatch event to open auth panel in Header
-    window.dispatchEvent(new CustomEvent("open-auth-panel"));
+    window.dispatchEvent(new CustomEvent("open-auth-panel", {
+      detail: { returnTo: "subscriptions" },
+    }));
   };
 
   // Handle upgrade click
@@ -579,7 +581,7 @@ const SubscriptionPanel: React.FC = () => {
           {t("questionsContact")}{" "}
           <a
             href="mailto:hello@zefile.io"
-            className="text-[#5E53E0] hover:underline"
+            className="text-[#171717] underline font-medium"
           >
             hello@zefile.io
           </a>

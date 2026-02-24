@@ -171,7 +171,7 @@ const NPSSurveyModal: React.FC<NPSSurveyModalProps> = ({
               onChange={(e) => setComment(e.target.value)}
               placeholder={t("commentPlaceholder")}
               rows={3}
-              className="w-full px-4 py-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#5E53E0] focus:border-transparent resize-none"
+              className="w-full px-4 py-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#171717] focus:border-transparent resize-none"
             />
           </div>
 

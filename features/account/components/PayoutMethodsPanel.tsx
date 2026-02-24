@@ -296,7 +296,7 @@ const PayoutMethodsPanel: React.FC = () => {
         {/* Add button */}
         <button
           onClick={() => setFormStep("select-country")}
-          className="flex items-center gap-2 px-4 py-2 mb-6 border border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-[#5E53E0] hover:text-[#5E53E0] transition-colors w-full justify-center"
+          className="flex items-center gap-2 px-4 py-2 mb-6 border border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-[#171717] hover:text-[#171717] transition-colors w-full justify-center"
         >
           <Plus className="w-4 h-4" />
           {t("addMethod")}
@@ -361,7 +361,7 @@ const PayoutMethodsPanel: React.FC = () => {
                     ) : (
                       <button
                         onClick={() => handleSetDefault(method.id)}
-                        className="px-2 py-1 text-xs text-[#5E53E0] hover:underline"
+                        className="px-2 py-1 text-xs text-[#171717] underline font-medium"
                       >
                         {t("setDefault")}
                       </button>
@@ -389,7 +389,7 @@ const PayoutMethodsPanel: React.FC = () => {
       <div>
         <button
           onClick={resetForm}
-          className="text-sm text-[#5E53E0] hover:underline mb-4"
+          className="text-sm text-[#171717] underline font-medium mb-4"
         >
           ← {t("back")}
         </button>
@@ -439,7 +439,7 @@ const PayoutMethodsPanel: React.FC = () => {
       <div>
         <button
           onClick={() => setFormStep("select-country")}
-          className="text-sm text-[#5E53E0] hover:underline mb-4"
+          className="text-sm text-[#171717] underline font-medium mb-4"
         >
           ← {t("back")}
         </button>
@@ -503,7 +503,7 @@ const PayoutMethodsPanel: React.FC = () => {
             setAccountNumber("");
             setAccountName(null);
           }}
-          className="text-sm text-[#5E53E0] hover:underline mb-4"
+          className="text-sm text-[#171717] underline font-medium mb-4"
         >
           ← {t("back")}
         </button>
@@ -556,7 +556,7 @@ const PayoutMethodsPanel: React.FC = () => {
                       value={bankSearchQuery}
                       onChange={(e) => setBankSearchQuery(e.target.value)}
                       placeholder={t("searchBank")}
-                      className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:outline-none focus:border-[#5E53E0]"
+                      className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:outline-none focus:border-[#171717]"
                       autoFocus
                     />
                   </div>
@@ -623,7 +623,7 @@ const PayoutMethodsPanel: React.FC = () => {
                   setAccountName(null);
                 }}
                 placeholder={t("accountNumberPlaceholder")}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#5E53E0]"
+                className="flex-1 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#171717]"
               />
               <button
                 onClick={handleVerifyAccount}
@@ -675,7 +675,7 @@ const PayoutMethodsPanel: React.FC = () => {
             setSelectedProvider("");
             setPhoneNumber("");
           }}
-          className="text-sm text-[#5E53E0] hover:underline mb-4"
+          className="text-sm text-[#171717] underline font-medium mb-4"
         >
           ← {t("back")}
         </button>
@@ -728,7 +728,7 @@ const PayoutMethodsPanel: React.FC = () => {
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
               placeholder={t("phoneNumberPlaceholder")}
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#5E53E0]"
+              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#171717]"
             />
           </div>
 

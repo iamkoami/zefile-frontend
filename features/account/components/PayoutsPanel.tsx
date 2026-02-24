@@ -613,7 +613,7 @@ const PayoutsPanel: React.FC = () => {
                           <button
                             onClick={() => handleRetryPayout(payout.id)}
                             disabled={isRetrying === payout.id}
-                            className="mt-2 flex items-center gap-1 text-sm text-[#5E53E0] hover:underline disabled:opacity-50"
+                            className="mt-2 flex items-center gap-1 text-sm text-[#171717] underline font-medium disabled:opacity-50"
                           >
                             <Refresh
                               className={`w-4 h-4 ${isRetrying === payout.id ? "animate-spin" : ""}`}

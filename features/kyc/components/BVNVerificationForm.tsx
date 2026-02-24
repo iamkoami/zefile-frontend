@@ -502,7 +502,7 @@ export function BVNVerificationForm({
               className={`w-12 h-14 text-center text-xl font-semibold border-2 rounded transition-colors outline-none ${
                 errorMessage
                   ? "border-red-400 focus:border-red-500"
-                  : "border-gray-300 focus:border-[#5E53E0]"
+                  : "border-gray-300 focus:border-[#171717]"
               }`}
               disabled={isLoading}
               aria-label={t("bvnOtpDigit", { position: index + 1 })}
@@ -548,7 +548,7 @@ export function BVNVerificationForm({
             type="button"
             onClick={handleResendOtp}
             disabled={isLoading || resendCooldown > 0 || remainingResends <= 0}
-            className="inline-flex items-center gap-2 text-[#5E53E0] text-sm font-medium disabled:text-gray-400 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 text-[#171717] underline text-sm font-medium disabled:text-gray-400 disabled:cursor-not-allowed"
           >
             <Refresh className="w-4 h-4" />
             {resendCooldown > 0
@@ -574,7 +574,7 @@ export function BVNVerificationForm({
           <button
             type="button"
             onClick={onSwitchToDocuments}
-            className="w-full py-2 text-[#5E53E0] text-sm font-medium hover:underline"
+            className="w-full py-2 text-[#171717] underline text-sm font-medium"
           >
             {t("bvnUseDocumentsInstead")}
           </button>
@@ -609,7 +609,7 @@ export function BVNVerificationForm({
           className={`w-full px-4 py-3 border-2 rounded text-lg tracking-widest font-mono transition-colors outline-none ${
             errorMessage
               ? "border-red-400 focus:border-red-500"
-              : "border-gray-300 focus:border-[#5E53E0]"
+              : "border-gray-300 focus:border-[#171717]"
           }`}
           disabled={isLoading}
         />
@@ -644,7 +644,7 @@ export function BVNVerificationForm({
         <button
           type="button"
           onClick={onSwitchToDocuments}
-          className="w-full py-2 text-[#5E53E0] text-sm font-medium hover:underline"
+          className="w-full py-2 text-[#171717] underline text-sm font-medium"
         >
           {t("bvnUseDocumentsInstead")}
         </button>

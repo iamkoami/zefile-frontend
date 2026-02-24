@@ -210,7 +210,7 @@ export default function PaymentSuccessPage() {
               <p className="text-gray-500 mb-2">
                 {tLanding('filesExpireIn')}
               </p>
-              <p className="text-[#5E53E0] font-medium mb-8">
+              <p className="text-[#171717] font-medium mb-8">
                 {getExpiryDays()} {getExpiryDays() === 1 ? t('day') : t('days')}
               </p>
 

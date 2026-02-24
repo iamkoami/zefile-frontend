@@ -92,7 +92,8 @@ const DrawerFooter: React.FC = () => {
             <React.Fragment key={link.href}>
               <Link
                 href={link.href}
-                onClick={closeDrawer}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
               >
                 {link.label}

@@ -596,7 +596,7 @@ export function SubscriptionCheckoutPanel() {
                     <button
                       key={provider.provider}
                       onClick={() => handleSelectMethod(method)}
-                      className={`w-full flex items-center gap-4 p-4 rounded border-2 transition-colors focus:outline-none focus:ring-2 focus:ring-[#5E53E0] focus:ring-offset-2 ${
+                      className={`w-full flex items-center gap-4 p-4 rounded border-2 transition-colors focus:outline-none focus:ring-2 focus:ring-[#171717] focus:ring-offset-2 ${
                         isSelected
                           ? "border-[#5E53E0] bg-[#5E53E0]/5"
                           : "border-gray-200 hover:border-gray-300"
@@ -648,7 +648,7 @@ export function SubscriptionCheckoutPanel() {
                 {/* Card Option */}
                 <button
                   onClick={() => handleSelectMethod({ type: "card" })}
-                  className={`w-full flex items-center gap-4 p-4 rounded border-2 transition-colors focus:outline-none focus:ring-2 focus:ring-[#5E53E0] focus:ring-offset-2 ${
+                  className={`w-full flex items-center gap-4 p-4 rounded border-2 transition-colors focus:outline-none focus:ring-2 focus:ring-[#171717] focus:ring-offset-2 ${
                     selectedMethod?.type === "card"
                       ? "border-[#5E53E0] bg-[#5E53E0]/5"
                       : "border-gray-200 hover:border-gray-300"

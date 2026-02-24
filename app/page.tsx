@@ -10,7 +10,6 @@ import UploadPanel, {
   ReuseTransferData,
 } from "@/features/home/components/UploadPanel";
 import FilePreviewPanel from "@/features/transfer/components/FilePreviewPanel";
-import TransferOptionsPanel from "@/features/transfer/components/TransferOptionsPanel";
 import PaperPlaneAnimation from "@/components/shared/PaperPlaneAnimation";
 import HeroText from "@/components/shared/HeroText";
 import TimeOfDayBackground from "@/components/shared/TimeOfDayBackground";
@@ -33,8 +32,6 @@ export default function Home() {
   const router = useRouter();
   const { openDrawer, openAccountView } = useDrawerStore();
   const { timeOfDay } = useTimeOfDay();
-
-  const [showOptions, setShowOptions] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [maxUploadSize, setMaxUploadSize] = useState<number>(2147483648); // Default 2GB
   const [isLoading, setIsLoading] = useState(true);
@@ -47,22 +44,25 @@ export default function Home() {
   // Poll eligibility check — replaces FloatingPollWidget's former self-fetch
   const { checkForPoll } = usePollEligibility();
   useEffect(() => {
-    const timer = setTimeout(() => { checkForPoll('manual'); }, 2000);
+    const timer = setTimeout(() => {
+      checkForPoll("manual");
+    }, 2000);
     return () => clearTimeout(timer);
   }, [checkForPoll]);
 
   // User tier state (defaults to 'free' for unauthenticated users)
-  const [userTier, setUserTier] = useState<SubscriptionTier>('free');
+  const [userTier, setUserTier] = useState<SubscriptionTier>("free");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   // Fetch tier limits from API (dynamic values from admin configuration)
   const tierLimitsData = useTierLimits();
 
-  // Transfer options state - shared between TransferOptionsPanel and UploadPanel
+  // Transfer options state - shared between UploadPanel and FilePreviewPanel
   const [transferOptions, setTransferOptions] = useState<TransferOptions>({
-    accessControl: 'private',
-    validityDuration: '1', // Will be updated based on tier
-    password: '',
-    sizeLimit: '2', // Will be updated based on tier (in GB)
+    accessControl: "private",
+    validityDuration: "1", // Will be updated based on tier
+    password: "",
+    sizeLimit: "2", // Will be updated based on tier (in GB)
     wallpaperFile: undefined,
     wallpaperPreview: undefined,
   });
@@ -119,27 +119,41 @@ export default function Home() {
     return selectedFiles.reduce((sum, file) => sum + file.size, 0);
   }, [selectedFiles]);
 
-  // Fetch platform configuration and user tier on mount (only if authenticated)
+  // Fetch platform configuration and user tier
+  // Runs on mount + re-runs when user logs in (auth-state-change event)
   useEffect(() => {
     const fetchConfig = async () => {
       const user = authApi.getStoredUser();
-      if (!user) return; // Skip for unauthenticated users - defaults are fine
+      if (!user) {
+        // Reset to defaults for unauthenticated users
+        setUserTier("free");
+        setIsAuthenticated(false);
+        setMaxUploadSize(2147483648);
+        return;
+      }
+      setIsAuthenticated(true);
       try {
-        // Fetch user-specific config which includes tier
         const response = await platformApi.getUserConfig();
         if (response.data) {
           setMaxUploadSize(response.data.maxUploadSize);
-          // Normalize tier to lowercase to match SubscriptionTier type
-          const tier = (response.data.tier?.toLowerCase() || 'free') as SubscriptionTier;
+          const tier = (response.data.tier?.toLowerCase() ||
+            "free") as SubscriptionTier;
           setUserTier(tier);
         }
       } catch (error) {
         console.error("Failed to fetch platform config:", error);
       }
     };
+
     fetchConfig();
-    // Don't block page render - set loading to false immediately
     setIsLoading(false);
+
+    const handleAuthChange = () => {
+      fetchConfig();
+    };
+    window.addEventListener("auth-state-change", handleAuthChange);
+    return () =>
+      window.removeEventListener("auth-state-change", handleAuthChange);
   }, []);
 
   // Update transfer options defaults when tier limits data loads
@@ -187,25 +201,9 @@ export default function Home() {
     setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
   }, []);
 
-  const handleToggleOptions = useCallback(() => {
-    setShowOptions((prev) => !prev);
-  }, []);
-
   const handleClearReuseData = useCallback(() => {
     setReuseTransferData(null);
   }, []);
-
-  // Close options panel when transfer process starts
-  useEffect(() => {
-    if (
-      uploadPanelState === "otp" ||
-      uploadPanelState === "uploading" ||
-      uploadPanelState === "cancel-confirm" ||
-      uploadPanelState === "complete"
-    ) {
-      setShowOptions(false);
-    }
-  }, [uploadPanelState]);
 
   // Listen for add-transfer-files-to-upload event from TransferDetailsPanel
   useEffect(() => {
@@ -270,7 +268,14 @@ export default function Home() {
           >
             {/* Decorative elements - inside panel, on desktop right side */}
             <TimeOfDayBackground timeOfDay={timeOfDay} />
-            <HeroText isVisible={true} timeOfDay={timeOfDay} />
+            <HeroText
+              isVisible={true}
+              timeOfDay={timeOfDay}
+              showProofStats
+              showUpgradeCta={isAuthenticated && userTier === "free"}
+              onUpgradeClick={() => openDrawer("subscriptions")}
+            />
+
             <PaperPlaneAnimation isVisible={true} />
 
             <div
@@ -286,7 +291,6 @@ export default function Home() {
               <UploadPanel
                 selectedFiles={selectedFiles}
                 onFilesChange={handleFilesChange}
-                onShowOptions={handleToggleOptions}
                 maxUploadSize={maxUploadSize}
                 selectedFilesSize={selectedFilesSize}
                 onPanelStateChange={setUploadPanelState}
@@ -321,16 +325,6 @@ export default function Home() {
                 tierLimitsData={tierLimitsData}
               />
 
-              {/* Transfer Options Panel */}
-              <TransferOptionsPanel
-                isVisible={showOptions}
-                hasFilesSelected={selectedFiles.length > 0}
-                options={transferOptions}
-                onOptionsChange={setTransferOptions}
-                onClose={() => setShowOptions(false)}
-                userTier={userTier}
-                tierLimitsData={tierLimitsData}
-              />
             </div>
           </div>
         </main>

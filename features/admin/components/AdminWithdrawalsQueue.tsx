@@ -274,7 +274,7 @@ const AdminWithdrawalsQueue: React.FC = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t('searchPlaceholder')}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#5E53E0]"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#171717]"
             />
           </div>
         </form>
@@ -501,7 +501,7 @@ const AdminWithdrawalsQueue: React.FC = () => {
               onChange={(e) => setRejectReason(e.target.value)}
               placeholder={t('rejectReasonPlaceholder')}
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#5E53E0] resize-none mb-4"
+              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#171717] resize-none mb-4"
             />
             <div className="flex gap-3">
               <button

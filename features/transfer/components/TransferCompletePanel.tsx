@@ -1,12 +1,15 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { Link as LinkIcon } from "iconoir-react";
 import { TransferDto } from "@/services/transfer-api";
 import { useDrawerStore } from "@/stores/drawer-store";
 import CelebrationModal from "@/features/home/components/CelebrationModal";
 import QuickShareButtons from "./QuickShareButtons";
+import OnboardingTooltip, {
+  type TooltipStep,
+} from "@/components/shared/OnboardingTooltip";
 
 interface TransferCompletePanelProps {
   transferLink: string;
@@ -24,11 +27,13 @@ const TransferCompletePanel: React.FC<TransferCompletePanelProps> = ({
   isFirstTransfer = false,
 }) => {
   const t = useTranslations("upload");
+  const tOnboarding = useTranslations("onboarding");
   const { openDrawerToView } = useDrawerStore();
   const [showSuccess, setShowSuccess] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [showCelebration, setShowCelebration] = useState(isFirstTransfer);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   // Handle preview transfer - opens drawer directly to TransferPreviewPanel
   // Uses openDrawerToView so close button is shown (no back navigation needed)
@@ -65,6 +70,44 @@ const TransferCompletePanel: React.FC<TransferCompletePanelProps> = ({
     handleCopyLink();
   };
 
+  // Handle celebration dismiss — trigger onboarding if first transfer
+  const handleCelebrationDismiss = useCallback(() => {
+    setShowCelebration(false);
+    if (isFirstTransfer) {
+      try {
+        const alreadyComplete =
+          localStorage.getItem("zefile_onboarding_complete") === "true";
+        if (!alreadyComplete) {
+          setTimeout(() => setShowOnboarding(true), 400);
+        }
+      } catch {
+        // localStorage unavailable
+      }
+    }
+  }, [isFirstTransfer]);
+
+  // Onboarding tooltip steps
+  const onboardingSteps: TooltipStep[] = [
+    {
+      elementId: "ze-header-logo",
+      placement: "bottom",
+      title: tOnboarding("step1Title"),
+      body: tOnboarding("step1Body"),
+    },
+    {
+      elementId: "ze-connect-menu",
+      placement: "bottom",
+      title: tOnboarding("step2Title"),
+      body: tOnboarding("step2Body"),
+    },
+    {
+      elementId: "ze-panels-container",
+      placement: "top",
+      title: tOnboarding("step3Title"),
+      body: tOnboarding("step3Body"),
+    },
+  ];
+
   return (
     <>
       {/* First Transfer Celebration Modal */}
@@ -72,8 +115,16 @@ const TransferCompletePanel: React.FC<TransferCompletePanelProps> = ({
         <CelebrationModal
           transferTitle={transfer.title || ""}
           shortLink={shortLink}
-          onDismiss={() => setShowCelebration(false)}
+          onDismiss={handleCelebrationDismiss}
           onShare={handleShareFromCelebration}
+        />
+      )}
+
+      {/* First Transfer Onboarding Tooltip Sequence */}
+      {showOnboarding && (
+        <OnboardingTooltip
+          steps={onboardingSteps}
+          onComplete={() => setShowOnboarding(false)}
         />
       )}
 

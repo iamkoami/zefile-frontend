@@ -171,7 +171,7 @@ const EditableField: React.FC<EditableFieldProps> = ({
       </div>
       <button
         onClick={onEdit}
-        className="p-2 text-gray-400 hover:text-[#5E53E0] hover:bg-gray-100 rounded"
+        className="p-2 text-gray-400 hover:text-[#171717] hover:bg-gray-100 rounded"
         aria-label={`Edit ${label}`}
       >
         <EditPencil className="w-4 h-4" />

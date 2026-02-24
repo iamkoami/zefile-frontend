@@ -4,12 +4,19 @@ export const runtime = "edge";
 
 import Header from "@/components/shared/Header";
 import Footer from "@/components/shared/Footer";
+import SectionIndicator from "@/components/shared/SectionIndicator";
 import PageHero from "@/components/shared/PageHero";
 import Image from "next/image";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import LoadingFullscreen from "@/components/LoadingFullscreen";
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import {
   Upload,
   Lock,
@@ -345,11 +352,8 @@ function StackedCard({
 }) {
   const bg = colorScheme === "green" ? "bg-[#171717]" : "bg-[#1a1a2e]";
   const border =
-    colorScheme === "green"
-      ? "border-[#87E64B]/20"
-      : "border-[#5E53E0]/20";
-  const accentBar =
-    colorScheme === "green" ? "bg-[#87E64B]" : "bg-[#5E53E0]";
+    colorScheme === "green" ? "border-[#87E64B]/20" : "border-[#5E53E0]/20";
+  const accentBar = colorScheme === "green" ? "bg-[#87E64B]" : "bg-[#5E53E0]";
   const numberColor =
     colorScheme === "green" ? "text-[#87E64B]" : "text-[#5E53E0]";
 
@@ -560,16 +564,14 @@ function FeatureCarousel({
   const [paused, setPaused] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const dragRef = useRef({ isDown: false, startX: 0, scrollLeft: 0 });
 
-  const scrollTo = useCallback(
-    (index: number) => {
-      if (!scrollRef.current) return;
-      const offset = index * (FEATURE_CARD_WIDTH + FEATURE_GAP);
-      scrollRef.current.scrollTo({ left: offset, behavior: "smooth" });
-      setActive(index);
-    },
-    [],
-  );
+  const scrollTo = useCallback((index: number) => {
+    if (!scrollRef.current) return;
+    const offset = index * (FEATURE_CARD_WIDTH + FEATURE_GAP);
+    scrollRef.current.scrollTo({ left: offset, behavior: "smooth" });
+    setActive(index);
+  }, []);
 
   const startTimer = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -594,6 +596,36 @@ function FeatureCarousel({
     if (timerRef.current) clearInterval(timerRef.current);
     startTimer();
   };
+
+  const onDragStart = (e: React.MouseEvent) => {
+    if (!scrollRef.current) return;
+    dragRef.current = {
+      isDown: true,
+      startX: e.pageX - scrollRef.current.offsetLeft,
+      scrollLeft: scrollRef.current.scrollLeft,
+    };
+    scrollRef.current.style.scrollBehavior = "auto";
+    setPaused(true);
+  };
+  const onDragEnd = () => {
+    dragRef.current.isDown = false;
+    if (scrollRef.current) scrollRef.current.style.scrollBehavior = "";
+  };
+  const onDragMove = (e: React.MouseEvent) => {
+    if (!dragRef.current.isDown || !scrollRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - scrollRef.current.offsetLeft;
+    scrollRef.current.scrollLeft =
+      dragRef.current.scrollLeft - (x - dragRef.current.startX);
+  };
+
+  const onScroll = useCallback(() => {
+    if (!scrollRef.current) return;
+    const index = Math.round(
+      scrollRef.current.scrollLeft / (FEATURE_CARD_WIDTH + FEATURE_GAP),
+    );
+    setActive(Math.min(index, features.length - 1));
+  }, [features.length]);
 
   return (
     <section className="bg-gradient-to-b from-white via-[#FDFAF4] to-white relative overflow-x-clip">
@@ -633,12 +665,20 @@ function FeatureCarousel({
 
         <div
           onMouseEnter={() => setPaused(true)}
-          onMouseLeave={() => setPaused(false)}
+          onMouseLeave={() => {
+            setPaused(false);
+            onDragEnd();
+          }}
         >
           <div
             ref={scrollRef}
-            className="flex gap-5 overflow-x-auto scrollbar-hide scroll-smooth [mask-image:linear-gradient(to_right,transparent,black_3%,black_97%,transparent)]"
+            className="flex gap-5 overflow-x-auto scrollbar-hide scroll-smooth [mask-image:linear-gradient(to_right,transparent,black_3%,black_97%,transparent)] cursor-grab active:cursor-grabbing"
             style={{ scrollbarWidth: "none" }}
+            onScroll={onScroll}
+            onMouseDown={onDragStart}
+            onMouseUp={onDragEnd}
+            onMouseMove={onDragMove}
+            onMouseLeave={onDragEnd}
           >
             {features.map((feature, i) => (
               <div
@@ -857,7 +897,14 @@ function FileTypeStrip({
         {/* Mobile: 2-column grid, last item spans full width */}
         <div className="md:hidden grid grid-cols-2 gap-3">
           {types.map((type, i) => (
-            <div key={i} className={i === types.length - 1 && types.length % 2 !== 0 ? "col-span-2" : ""}>
+            <div
+              key={i}
+              className={
+                i === types.length - 1 && types.length % 2 !== 0
+                  ? "col-span-2"
+                  : ""
+              }
+            >
               <MosaicTile
                 icon={type.icon}
                 name={type.name}
@@ -928,7 +975,6 @@ function StatsBar({
 }) {
   return (
     <section className="relative overflow-x-clip bg-gradient-to-b from-[#F5F0E8] via-[#EAF9DE] to-white">
-
       <BrandCross
         size={160}
         color="#5E53E0"
@@ -983,7 +1029,9 @@ function StatsBar({
                 <p className="text-[#171717] font-semibold text-base leading-snug">
                   {stat.label}
                 </p>
-                <p className="text-[#171717]/50 text-sm mt-1">{stat.sublabel}</p>
+                <p className="text-[#171717]/50 text-sm mt-1">
+                  {stat.sublabel}
+                </p>
               </div>
             </Reveal>
           ))}
@@ -1042,7 +1090,7 @@ function FAQAccordionItem({
         <div className="overflow-hidden">
           <div className="px-6 md:px-8 pb-6">
             <div className="border-t border-black/[0.06] pt-4">
-              <p className="text-sm md:text-[15px] text-gray-500 leading-relaxed">
+              <p className="text-sm font-medium md:text-[15px] text-gray-500 leading-relaxed">
                 {answer}
               </p>
             </div>
@@ -1061,7 +1109,7 @@ function FAQSection({
   faqs: { question: string; answer: string }[];
 }) {
   return (
-    <section className="max-w-3xl mx-auto px-6 py-20 md:py-28">
+    <section className="max-w-[55rem] mx-auto px-6 py-20 md:py-28">
       <Reveal>
         <h2 className="text-3xl md:text-5xl font-bold text-[#171717] mb-12 text-center">
           {title}
@@ -1070,10 +1118,7 @@ function FAQSection({
       <div className="space-y-3 md:space-y-4">
         {faqs.map((faq, i) => (
           <Reveal key={i} delay={80 + i * 60}>
-            <FAQAccordionItem
-              question={faq.question}
-              answer={faq.answer}
-            />
+            <FAQAccordionItem question={faq.question} answer={faq.answer} />
           </Reveal>
         ))}
       </div>
@@ -1084,6 +1129,17 @@ function FAQSection({
 /* ------------------------------------------------------------------ */
 /*  8. CTA — same green card as About page                             */
 /* ------------------------------------------------------------------ */
+
+const HIW_SECTIONS = [
+  { id: "hiw-hero", label: "Hero" },
+  { id: "hiw-steps", label: "Steps" },
+  { id: "hiw-perspectives", label: "Perspectives" },
+  { id: "hiw-features", label: "Features" },
+  { id: "hiw-file-types", label: "File Types" },
+  { id: "hiw-stats", label: "Stats" },
+  { id: "hiw-faq", label: "FAQ" },
+  { id: "hiw-cta", label: "Get Started" },
+] as const;
 
 /* ------------------------------------------------------------------ */
 /*  Page                                                               */
@@ -1202,6 +1258,11 @@ export default function HowItWorksPage() {
       title: t("bento6Title"),
       description: t("bento6Desc"),
     },
+    {
+      icon: null,
+      title: t("bento7Title"),
+      description: t("bento7Desc"),
+    },
   ];
 
   /* ── File types ─── */
@@ -1241,21 +1302,21 @@ export default function HowItWorksPage() {
   /* ── Stats ─── */
   const stats = [
     {
-      value: 50,
+      value: 102,
       suffix: t("stat1Suffix"),
       label: t("stat1Label"),
       sublabel: t("stat1Sublabel"),
       textValue: undefined,
     },
     {
-      value: 10,
-      suffix: "",
+      value: 85,
+      suffix: t("stat2Suffix"),
       label: t("stat2Label"),
       sublabel: t("stat2Sublabel"),
       textValue: undefined,
     },
     {
-      value: 90,
+      value: 71,
       suffix: t("stat3Suffix"),
       label: t("stat3Label"),
       sublabel: t("stat3Sublabel"),
@@ -1273,15 +1334,19 @@ export default function HowItWorksPage() {
     { question: t("faq6Q"), answer: t("faq6A") },
     { question: t("faq7Q"), answer: t("faq7A") },
     { question: t("faq8Q"), answer: t("faq8A") },
+    { question: t("faq9Q"), answer: t("faq9A") },
+    { question: t("faq10Q"), answer: t("faq10A") },
   ];
 
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
 
+      <SectionIndicator sections={HIW_SECTIONS} />
+
       <main className="flex-1">
         {/* 1. Hero + decorative crosses */}
-        <div className="relative overflow-x-clip">
+        <div id="hiw-hero" className="relative overflow-x-clip">
           <PageHero
             title={t.rich("title", { highlight, br: () => <br /> })}
             subtitle={t("subtitle")}
@@ -1303,7 +1368,7 @@ export default function HowItWorksPage() {
         </div>
 
         {/* 2. Step cards — 3 dark cards with hover tilt */}
-        <div className="relative overflow-x-clip">
+        <div id="hiw-steps" className="relative overflow-x-clip">
           <BrandCross
             size={80}
             color="#87E64B"
@@ -1325,7 +1390,7 @@ export default function HowItWorksPage() {
         </div>
 
         {/* 3. Dual Perspective + shapes */}
-        <div className="relative overflow-x-clip">
+        <div id="hiw-perspectives" className="relative overflow-x-clip">
           <BrandCross
             size={100}
             color="#87E64B"
@@ -1362,27 +1427,33 @@ export default function HowItWorksPage() {
         </div>
 
         {/* 4. Feature Carousel (beige gradient, auto-scroll) */}
-        <FeatureCarousel
-          title={t.rich("bentoTitle", { highlight })}
-          subtitle={t("bentoSubtitle")}
-          features={bentoFeatures}
-        />
+        <div id="hiw-features">
+          <FeatureCarousel
+            title={t.rich("bentoTitle", { highlight })}
+            subtitle={t("bentoSubtitle")}
+            features={bentoFeatures}
+          />
+        </div>
 
         {/* 5. File Types — mosaic grid */}
-        <FileTypeStrip
-          title={t.rich("fileTypesTitle", { highlight })}
-          types={fileTypes}
-        />
+        <div id="hiw-file-types">
+          <FileTypeStrip
+            title={t.rich("fileTypesTitle", { highlight })}
+            types={fileTypes}
+          />
+        </div>
 
         {/* 6. Stats Bar */}
-        <StatsBar
-          titleLine1={t("statsTitleLine1")}
-          titleLine2={t.rich("statsTitleLine2", { highlight })}
-          stats={stats}
-        />
+        <div id="hiw-stats">
+          <StatsBar
+            titleLine1={t("statsTitleLine1")}
+            titleLine2={t.rich("statsTitleLine2", { highlight })}
+            stats={stats}
+          />
+        </div>
 
         {/* 7. FAQ + shapes */}
-        <div className="relative overflow-x-clip">
+        <div id="hiw-faq" className="relative overflow-x-clip">
           <BrandCross
             size={70}
             color="#87E64B"
@@ -1402,40 +1473,42 @@ export default function HowItWorksPage() {
 
         {/* 8. CTA — green card + interior shapes (same as About) */}
         <Reveal>
-          <section className="max-w-6xl mx-auto px-6 pb-20 md:pb-28 pt-4">
-            <div className="bg-[#87E64B] rounded-3xl p-10 md:p-16 text-center relative overflow-hidden">
-              <div className="absolute -top-6 -right-6 w-40 h-28 rounded-3xl bg-white/15 rotate-12 pointer-events-none" />
-              <div className="absolute -bottom-8 -left-4 w-28 h-28 rounded-full bg-white/10 pointer-events-none" />
-              <div className="absolute top-1/2 right-[15%] w-16 h-16 rounded-full bg-white/[0.08] pointer-events-none" />
+          <div id="hiw-cta">
+            <section className="max-w-6xl mx-auto px-6 pb-20 md:pb-28 pt-4">
+              <div className="bg-[#87E64B] rounded-3xl p-10 md:p-16 text-center relative overflow-hidden">
+                <div className="absolute -top-6 -right-6 w-40 h-28 rounded-3xl bg-white/15 rotate-12 pointer-events-none" />
+                <div className="absolute -bottom-8 -left-4 w-28 h-28 rounded-full bg-white/10 pointer-events-none" />
+                <div className="absolute top-1/2 right-[15%] w-16 h-16 rounded-full bg-white/[0.08] pointer-events-none" />
 
-              <div className="relative z-10">
-                <h2 className="text-3xl md:text-4xl font-bold text-[#171717] mb-4">
-                  {t.rich("ctaTitle", {
-                    highlight: (chunks) => (
-                      <span className="ze-highlight-purple">{chunks}</span>
-                    ),
-                  })}
-                </h2>
-                <p className="text-[#171717]/70 text-base md:text-lg mb-10 max-w-xl mx-auto">
-                  {t("ctaSubtext")}
-                </p>
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                  <Link
-                    href="/"
-                    className="bg-[#171717] text-white px-8 py-3.5 rounded font-bold text-lg hover:bg-[#2a2a2a] transition-colors"
-                  >
-                    {t("ctaButton")}
-                  </Link>
-                  <Link
-                    href="/pricing"
-                    className="text-[#171717] font-semibold underline underline-offset-2 hover:opacity-70 transition-opacity"
-                  >
-                    {t("ctaSecondaryLabel")}
-                  </Link>
+                <div className="relative z-10">
+                  <h2 className="text-3xl md:text-4xl font-bold text-[#171717] mb-4">
+                    {t.rich("ctaTitle", {
+                      highlight: (chunks) => (
+                        <span className="ze-highlight-purple">{chunks}</span>
+                      ),
+                    })}
+                  </h2>
+                  <p className="text-[#171717]/70 text-base md:text-lg mb-10 max-w-2xl mx-auto">
+                    {t("ctaSubtext")}
+                  </p>
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                    <Link
+                      href="/"
+                      className="bg-[#171717] text-white px-8 py-3.5 rounded font-bold text-lg hover:bg-[#2a2a2a] transition-colors"
+                    >
+                      {t("ctaButton")}
+                    </Link>
+                    <Link
+                      href="/pricing"
+                      className="text-[#171717] font-semibold underline underline-offset-2 hover:opacity-70 transition-opacity"
+                    >
+                      {t("ctaSecondaryLabel")}
+                    </Link>
+                  </div>
                 </div>
               </div>
-            </div>
-          </section>
+            </section>
+          </div>
         </Reveal>
       </main>
 

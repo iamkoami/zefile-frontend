@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { Plus, MoreHoriz } from "iconoir-react";
+import { Plus, MediaImagePlus, Xmark, NavArrowLeft } from "iconoir-react";
 import { useTranslations } from "next-intl";
 import {
   getFileInputAccept,
@@ -24,6 +24,8 @@ import { TransferOptions } from "@/features/transfer/components/TransferOptionsP
 import { storageApi } from "@/services/storage-api";
 import { getTierTranslationKey } from "@/hooks/useTierLimits";
 import { usePollEligibility } from "@/hooks/usePollEligibility";
+import { toast } from "@/components/shared/Toast";
+import Image from "next/image";
 
 // Interface for files from an existing transfer (reuse flow)
 export interface ReuseFile {
@@ -44,7 +46,6 @@ export interface ReuseTransferData {
 interface UploadPanelProps {
   selectedFiles: File[];
   onFilesChange: (files: File[]) => void;
-  onShowOptions: () => void;
   maxUploadSize: number;
   selectedFilesSize: number;
   onPanelStateChange?: (state: PanelState) => void;
@@ -71,7 +72,6 @@ export type PanelState =
 const UploadPanel: React.FC<UploadPanelProps> = ({
   selectedFiles,
   onFilesChange,
-  onShowOptions,
   maxUploadSize,
   selectedFilesSize,
   onPanelStateChange,
@@ -109,10 +109,12 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
   const [currency, setCurrency] = useState("XOF"); // Local currency for this transfer
   const [price, setPrice] = useState("");
   const [message, setMessage] = useState("");
+  const [isUserAuthenticated, setIsUserAuthenticated] = useState(false);
   const [showInfoTooltip, setShowInfoTooltip] = useState(false);
   const [fileError, setFileError] = useState<string>("");
   const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
   const [panelState, setPanelState] = useState<PanelState>("initial");
+  const [formView, setFormView] = useState<'main' | 'options'>('main');
   const [receivedAmount, setReceivedAmount] = useState<number>(0);
   const [serviceChargePercentage, setServiceChargePercentage] =
     useState<number>(15);
@@ -138,29 +140,167 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
   >([]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const wallpaperInputRef = useRef<HTMLInputElement>(null);
 
-  // Fetch service charge percentage on mount
-  // Uses tier-specific rate for authenticated users, default (15%) for anonymous
+  // Wallpaper constants
+  const MAX_WALLPAPER_SIZE = 5 * 1024 * 1024; // 5MB
+  const ALLOWED_WALLPAPER_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+  const MIN_PASSWORD_LENGTH = 8;
+
+  // Wallpaper handlers
+  const handleWallpaperSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    if (!ALLOWED_WALLPAPER_TYPES.includes(file.type)) {
+      toast.error(tOptions('invalidFileType'));
+      return;
+    }
+    if (file.size > MAX_WALLPAPER_SIZE) {
+      toast.error(tOptions('fileTooLarge'));
+      return;
+    }
+    if (transferOptions?.wallpaperPreview) {
+      URL.revokeObjectURL(transferOptions.wallpaperPreview);
+    }
+    const previewUrl = URL.createObjectURL(file);
+    onTransferOptionsChange?.({
+      ...transferOptions!,
+      wallpaperFile: file,
+      wallpaperPreview: previewUrl,
+    });
+  };
+
+  const handleRemoveWallpaper = () => {
+    if (transferOptions?.wallpaperPreview) {
+      URL.revokeObjectURL(transferOptions.wallpaperPreview);
+    }
+    onTransferOptionsChange?.({
+      ...transferOptions!,
+      wallpaperFile: undefined,
+      wallpaperPreview: undefined,
+    });
+  };
+
+  // Access control handler — clears password when switching away from password mode
+  const handleAccessControlChange = (value: string) => {
+    if (!transferOptions || !onTransferOptionsChange) return;
+    const newAccessControl = value as TransferOptions['accessControl'];
+    onTransferOptionsChange({
+      ...transferOptions,
+      accessControl: newAccessControl,
+      password: newAccessControl === 'password' ? transferOptions.password : '',
+    });
+  };
+
+  const handlePasswordChange = (value: string) => {
+    if (!transferOptions || !onTransferOptionsChange) return;
+    onTransferOptionsChange({ ...transferOptions, password: value });
+  };
+
+  // Password validation
+  const isPasswordTooShort =
+    transferOptions?.accessControl === 'password' &&
+    (transferOptions?.password?.length ?? 0) > 0 &&
+    (transferOptions?.password?.length ?? 0) < MIN_PASSWORD_LENGTH;
+
+  // Size limit handler
+  const handleSizeLimitChange = (value: string) => {
+    if (!transferOptions || !onTransferOptionsChange) return;
+    if (!value) {
+      onTransferOptionsChange({ ...transferOptions, sizeLimit: '' });
+      return;
+    }
+    const sizeGB = parseInt(value, 10);
+    if (isNaN(sizeGB)) return;
+    if (tierLimitsData?.isSizeLimitAvailable(sizeGB, userTier) ?? true) {
+      onTransferOptionsChange({ ...transferOptions, sizeLimit: value });
+    }
+  };
+
+  const isWallpaperDisabled = userTier === 'free';
+  const sizeLimitOptions = tierLimitsData?.allSizeLimitOptions ?? [];
+
+  // Reset to valid defaults if current selections become unavailable (e.g., tier downgrade)
+  useEffect(() => {
+    if (!tierLimitsData || tierLimitsData.isLoading || !transferOptions || !onTransferOptionsChange) return;
+
+    let needsUpdate = false;
+    const updates: Partial<TransferOptions> = {};
+
+    if (transferOptions.validityDuration) {
+      const currentDays = parseInt(transferOptions.validityDuration, 10);
+      if (!isNaN(currentDays) && !tierLimitsData.isValidityAvailable(currentDays, userTier)) {
+        updates.validityDuration = tierLimitsData.getDefaultValidity(userTier);
+        needsUpdate = true;
+      }
+    }
+
+    if (transferOptions.sizeLimit) {
+      const currentSizeGB = parseInt(transferOptions.sizeLimit, 10);
+      if (!isNaN(currentSizeGB) && !tierLimitsData.isSizeLimitAvailable(currentSizeGB, userTier)) {
+        updates.sizeLimit = tierLimitsData.getDefaultSizeLimit(userTier);
+        needsUpdate = true;
+      }
+    }
+
+    if (needsUpdate) {
+      onTransferOptionsChange({ ...transferOptions, ...updates });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userTier, tierLimitsData?.isLoading]);
+
+  // Fetch service charge percentage on mount + on auth change
+  // Uses tier-specific rate for authenticated users, default for anonymous
   useEffect(() => {
     const fetchConfig = async () => {
       const user = authApi.getStoredUser();
       if (user) {
-        // Try user-specific config first (includes tier-based service charge)
         const response = await platformApi.getUserConfig();
         if (response.data) {
           setServiceChargePercentage(response.data.serviceChargePercentage);
           return;
         }
       }
-      // Fallback to public config for anonymous users or if user-config fails
       const publicResponse = await platformApi.getPublicConfig();
       if (publicResponse.data) {
-        setServiceChargePercentage(
-          publicResponse.data.serviceChargePercentage,
-        );
+        setServiceChargePercentage(publicResponse.data.serviceChargePercentage);
       }
     };
+
     fetchConfig();
+
+    const handleAuthChange = () => { fetchConfig(); };
+    window.addEventListener("auth-state-change", handleAuthChange);
+    return () => window.removeEventListener("auth-state-change", handleAuthChange);
+  }, []);
+
+  // Detect authenticated user — auto-fill email, hide email field
+  // Listens for auth-state-change so login during form view hides the field
+  useEffect(() => {
+    const syncAuth = () => {
+      const user = authApi.getStoredUser();
+      if (user && authApi.isAuthenticated()) {
+        setIsUserAuthenticated(true);
+        setEmail(user.email);
+      } else {
+        setIsUserAuthenticated(false);
+      }
+    };
+
+    syncAuth();
+
+    const handleAuthChange = (e: CustomEvent<{ isAuthenticated: boolean; user?: { email?: string } }>) => {
+      if (e.detail.isAuthenticated && e.detail.user?.email) {
+        setIsUserAuthenticated(true);
+        setEmail(e.detail.user.email);
+      } else {
+        setIsUserAuthenticated(false);
+      }
+    };
+
+    window.addEventListener("auth-state-change", handleAuthChange as EventListener);
+    return () => window.removeEventListener("auth-state-change", handleAuthChange as EventListener);
   }, []);
 
   // Initialize local currency from global currency (one-time on mount)
@@ -191,6 +331,13 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
     recipientEmails.length,
     reuseTransferData,
   ]);
+
+  // Reset formView to main when leaving form state
+  useEffect(() => {
+    if (panelState !== 'form') {
+      setFormView('main');
+    }
+  }, [panelState]);
 
   // Listen for add-recipient-to-transfer event from ContactsPanel
   // Pre-fills the recipient email and shows the form
@@ -519,7 +666,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
     }
   };
 
-  const handleOTPVerify = async (code: string, termsAccepted: boolean) => {
+  const handleOTPVerify = async (code: string) => {
     try {
       // Verify OTP to authenticate user and get senderId
       const authResponse = await authApi.verifyOTP({
@@ -531,16 +678,16 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
         throw new Error(authResponse.error.message);
       }
 
-      // Save legal consent if terms were accepted (fire-and-forget)
-      if (termsAccepted) {
-        apiClient.post("/users/me/legal-consent", {
+      // Save legal consent (implicit: using the service = accepting terms)
+      apiClient
+        .post("/users/me/legal-consent", {
           termsAccepted: true,
           privacyAccepted: true,
           cookieConsentAnalytics: getAnalyticsConsent(),
-        }).catch(() => {
+        })
+        .catch(() => {
           // Non-blocking: consent will be prompted again on next login if this fails
         });
-      }
 
       // Now proceed with file upload or reuse transfer
       if (reuseTransferData) {
@@ -582,12 +729,17 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
       let wallpaperKey: string | undefined;
       if (transferOptions?.wallpaperFile) {
         try {
-          const wpResponse = await storageApi.uploadWallpaper(transferOptions.wallpaperFile);
+          const wpResponse = await storageApi.uploadWallpaper(
+            transferOptions.wallpaperFile,
+          );
           if (wpResponse.data?.wallpaperKey) {
             wallpaperKey = wpResponse.data.wallpaperKey;
           }
         } catch (wpError) {
-          console.warn("Wallpaper upload failed, continuing without wallpaper:", wpError);
+          console.warn(
+            "Wallpaper upload failed, continuing without wallpaper:",
+            wpError,
+          );
         }
       }
 
@@ -1014,23 +1166,14 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
               >
                 {t("transfer")}
               </button>
-
-              <button
-                id="ze-options-button"
-                onClick={onShowOptions}
-                className="ze-options-button"
-                aria-label="Options"
-              >
-                <MoreHoriz width={20} height={20} color="#171717" />
-              </button>
             </div>
           </>
         );
 
       case "form":
-        return (
-          <>
-            {/* Form Fields */}
+        return formView === 'main' ? (
+          <div key="form-main" className="animate-slideInLeft">
+            {/* Core Form Fields */}
             <div className="space-y-4 mb-6">
               {/* Recipient Emails */}
               <div>
@@ -1043,23 +1186,25 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                 />
               </div>
 
-              {/* Email */}
-              <div>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder={t("yourEmail")}
-                  className={`ze-form-input ${
-                    formErrors.email ? "border-red-500" : ""
-                  }`}
-                />
-                {formErrors.email && (
-                  <p className="text-sm text-red-600 mt-1">
-                    {formErrors.email}
-                  </p>
-                )}
-              </div>
+              {/* Email — hidden when authenticated (auto-filled) */}
+              {!isUserAuthenticated && (
+                <div>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder={t("yourEmail")}
+                    className={`ze-form-input ${
+                      formErrors.email ? "border-red-500" : ""
+                    }`}
+                  />
+                  {formErrors.email && (
+                    <p className="text-sm text-red-600 mt-1">
+                      {formErrors.email}
+                    </p>
+                  )}
+                </div>
+              )}
 
               {/* Title */}
               <div>
@@ -1169,18 +1314,67 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                 </div>
               )}
 
-              {/* Message */}
-              <div>
-                <textarea
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder={t("message")}
-                  className="ze-form-input resize-none pt-4"
-                  rows={2}
-                  style={{ height: "60px" }}
-                />
-              </div>
+              {/* More options link */}
+              <button
+                type="button"
+                onClick={() => setFormView('options')}
+                className="text-sm text-[#171717] underline font-medium"
+              >
+                {t("moreOptions")}
+              </button>
+            </div>
 
+            {/* Size limit warning when files exceed limit */}
+            {selectedFilesSize > maxUploadSize && (
+              <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-sm text-yellow-700 font-medium">
+                  {t("filesExceedLimit", {
+                    limit: formatBytes(maxUploadSize),
+                    current: formatBytes(selectedFilesSize),
+                  })}
+                </p>
+              </div>
+            )}
+
+            {/* Password validation error */}
+            {formErrors.password && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-600">{formErrors.password}</p>
+              </div>
+            )}
+
+            {/* Buttons */}
+            <div
+              id="ze-upload-actions"
+              className="ze-upload-actions flex items-center gap-3"
+            >
+              <button
+                id="ze-transfer-button"
+                className="ze-transfer-button"
+                disabled={
+                  (selectedFiles.length === 0 && !reuseTransferData) ||
+                  selectedFilesSize > maxUploadSize
+                }
+                onClick={handleTransfer}
+              >
+                {t("transfer")}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div key="form-options" className="animate-slideInRight">
+            {/* Back button */}
+            <button
+              type="button"
+              onClick={() => setFormView('main')}
+              className="flex items-center gap-1 text-sm text-[#5E53E0] hover:text-[#4a42b3] mb-4 transition-colors"
+            >
+              <NavArrowLeft className="w-4 h-4" />
+              {t("back")}
+            </button>
+
+            {/* Option Fields */}
+            <div className="space-y-4">
               {/* Expiry Duration Selector */}
               {tierLimitsData && onTransferOptionsChange && transferOptions && (
                 <div>
@@ -1229,56 +1423,149 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                       );
                     })}
                   </select>
+
+                  {/* 1-day expiry warning */}
+                  {transferOptions.validityDuration === "1" && (
+                    <p className="text-xs text-yellow-600 mt-1.5 bg-yellow-50 border border-yellow-200 rounded px-3 py-2">
+                      {t("shortExpiryWarning")}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Message */}
+              <textarea
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder={t("message")}
+                className="ze-form-input resize-none pt-4"
+                rows={2}
+                style={{ height: "60px" }}
+              />
+
+              {/* Access Control */}
+              {transferOptions && (
+                <select
+                  value={transferOptions.accessControl}
+                  onChange={(e) => handleAccessControlChange(e.target.value)}
+                  className="ze-form-select"
+                >
+                  <option value="" disabled>{tOptions("accessControl")}</option>
+                  <option value="private">{tOptions("accessPrivate")}</option>
+                  <option value="public">{tOptions("accessPublic")}</option>
+                  <option value="password">{tOptions("accessPassword")}</option>
+                </select>
+              )}
+
+              {/* Password — conditional */}
+              {transferOptions?.accessControl === "password" && (
+                <div className="transition-all duration-200 ease-in-out">
+                  <input
+                    type="password"
+                    value={transferOptions.password}
+                    onChange={(e) => handlePasswordChange(e.target.value)}
+                    placeholder={tOptions("setPassword")}
+                    className={`ze-form-input ${isPasswordTooShort ? "border-red-500" : ""}`}
+                    minLength={MIN_PASSWORD_LENGTH}
+                  />
+                  {isPasswordTooShort && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {tOptions("passwordMinLength", { min: MIN_PASSWORD_LENGTH })}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Size Limit */}
+              {tierLimitsData && transferOptions && (
+                <select
+                  value={transferOptions.sizeLimit}
+                  onChange={(e) => handleSizeLimitChange(e.target.value)}
+                  className="ze-form-select"
+                  disabled={tierLimitsData.isLoading}
+                >
+                  <option value="" disabled>
+                    {tierLimitsData.isLoading ? tOptions("loading") : tOptions("sizeLimitLabel")}
+                  </option>
+                  {sizeLimitOptions.map((option) => {
+                    const isAvailable = tierLimitsData.isSizeLimitAvailable(option.sizeGB, userTier) ?? true;
+                    const requiredTier = !isAvailable ? tierLimitsData.getRequiredTierForSize(option.sizeGB) : null;
+                    const tierBadge = requiredTier ? ` (${tOptions(getTierTranslationKey(requiredTier))})` : '';
+                    return (
+                      <option
+                        key={option.value}
+                        value={option.value}
+                        disabled={!isAvailable}
+                        className={!isAvailable ? 'text-gray-400' : ''}
+                      >
+                        {tOptions(option.labelKey)}{tierBadge}
+                      </option>
+                    );
+                  })}
+                </select>
+              )}
+
+              {/* Wallpaper Upload */}
+              {transferOptions && (
+                <div>
+                  <label className="text-xs font-medium text-gray-500 mb-2 block">
+                    {tOptions("wallpaperLabel")}
+                    {isWallpaperDisabled && (
+                      <span className="ml-1 text-[#5E53E0] text-[10px] font-semibold uppercase">
+                        ({tOptions("starterTier")})
+                      </span>
+                    )}
+                  </label>
+
+                  <input
+                    ref={wallpaperInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={handleWallpaperSelect}
+                    className="hidden"
+                    disabled={isWallpaperDisabled}
+                  />
+
+                  {transferOptions.wallpaperPreview ? (
+                    <div className="relative inline-block">
+                      <div className="w-[80px] h-[80px] rounded border-2 border-[#87E64B] overflow-hidden">
+                        <Image
+                          src={transferOptions.wallpaperPreview}
+                          alt={tOptions("wallpaperPreview")}
+                          width={80}
+                          height={80}
+                          className="object-cover w-full h-full"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleRemoveWallpaper}
+                        className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
+                        aria-label={tOptions("removeWallpaper")}
+                      >
+                        <Xmark className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => !isWallpaperDisabled && wallpaperInputRef.current?.click()}
+                      className={`w-full h-[60px] rounded border-2 border-dashed flex items-center justify-center gap-2 transition-colors ${
+                        isWallpaperDisabled
+                          ? 'opacity-50 cursor-not-allowed border-gray-200 bg-gray-50'
+                          : 'cursor-pointer border-gray-300 bg-gray-50 hover:border-[#5E53E0] hover:bg-gray-100'
+                      }`}
+                      disabled={isWallpaperDisabled}
+                    >
+                      <MediaImagePlus className="w-5 h-5 text-gray-400" />
+                      <span className="text-xs text-gray-400">{tOptions("uploadWallpaper")}</span>
+                    </button>
+                  )}
+                  <p className="text-[10px] text-gray-400 mt-1">{tOptions("wallpaperHint")}</p>
                 </div>
               )}
             </div>
-
-            {/* Size limit warning when files exceed limit */}
-            {selectedFilesSize > maxUploadSize && (
-              <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <p className="text-sm text-yellow-700 font-medium">
-                  {t("filesExceedLimit", {
-                    limit: formatBytes(maxUploadSize),
-                    current: formatBytes(selectedFilesSize),
-                  })}
-                </p>
-              </div>
-            )}
-
-            {/* Password validation error */}
-            {formErrors.password && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-sm text-red-600">{formErrors.password}</p>
-              </div>
-            )}
-
-            {/* Buttons */}
-            <div
-              id="ze-upload-actions"
-              className="ze-upload-actions flex items-center gap-3"
-            >
-              <button
-                id="ze-transfer-button"
-                className="ze-transfer-button"
-                disabled={
-                  (selectedFiles.length === 0 && !reuseTransferData) ||
-                  selectedFilesSize > maxUploadSize
-                }
-                onClick={handleTransfer}
-              >
-                {t("transfer")}
-              </button>
-
-              <button
-                id="ze-options-button"
-                onClick={onShowOptions}
-                className="ze-options-button"
-                aria-label="Options"
-              >
-                <MoreHoriz width={20} height={20} color="#171717" />
-              </button>
-            </div>
-          </>
+          </div>
         );
 
       default:

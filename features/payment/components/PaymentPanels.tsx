@@ -535,7 +535,7 @@ export function PaymentMethodPanel() {
             value={customerName}
             onChange={(e) => setCustomerName(e.target.value)}
             placeholder={t("yourName")}
-            className="w-full px-4 py-3 border border-gray-200 rounded text-[#171717] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#5E53E0] focus:border-transparent"
+            className="w-full px-4 py-3 border border-gray-200 rounded text-[#171717] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#171717] focus:border-transparent"
           />
         </div>
 
@@ -546,7 +546,7 @@ export function PaymentMethodPanel() {
             value={customerEmail}
             onChange={(e) => setCustomerEmail(e.target.value)}
             placeholder={t("yourEmail")}
-            className="w-full px-4 py-3 border border-gray-200 rounded text-[#171717] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#5E53E0] focus:border-transparent"
+            className="w-full px-4 py-3 border border-gray-200 rounded text-[#171717] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#171717] focus:border-transparent"
           />
         </div>
 
@@ -818,7 +818,7 @@ export function PaymentMethodPanel() {
                   value={cardNumber}
                   onChange={handleCardNumberChange}
                   placeholder={t("cardNumber")}
-                  className="w-full px-4 py-3 border border-gray-200 rounded text-[#171717] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#5E53E0] focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-200 rounded text-[#171717] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#171717] focus:border-transparent"
                   inputMode="numeric"
                   autoComplete="cc-number"
                 />
@@ -831,7 +831,7 @@ export function PaymentMethodPanel() {
                   value={expiryDate}
                   onChange={handleExpiryChange}
                   placeholder={t("expiryDate")}
-                  className="flex-1 px-4 py-3 border border-gray-200 rounded text-[#171717] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#5E53E0] focus:border-transparent"
+                  className="flex-1 px-4 py-3 border border-gray-200 rounded text-[#171717] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#171717] focus:border-transparent"
                   inputMode="numeric"
                   maxLength={5}
                   autoComplete="cc-exp"
@@ -841,7 +841,7 @@ export function PaymentMethodPanel() {
                   value={cvv}
                   onChange={handleCvvChange}
                   placeholder={t("cvv")}
-                  className="flex-1 px-4 py-3 border border-gray-200 rounded text-[#171717] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#5E53E0] focus:border-transparent"
+                  className="flex-1 px-4 py-3 border border-gray-200 rounded text-[#171717] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#171717] focus:border-transparent"
                   inputMode="numeric"
                   maxLength={4}
                   autoComplete="cc-csc"
@@ -855,7 +855,7 @@ export function PaymentMethodPanel() {
                   value={billingAddress}
                   onChange={(e) => setBillingAddress(e.target.value)}
                   placeholder={t("billingAddress")}
-                  className="w-full px-4 py-3 border border-gray-200 rounded text-[#171717] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#5E53E0] focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-200 rounded text-[#171717] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#171717] focus:border-transparent"
                   autoComplete="street-address"
                 />
               </div>
@@ -1671,7 +1671,7 @@ export function CardPaymentPanel() {
         {/* Cancel button */}
         <button
           onClick={handleBack}
-          className="mt-6 text-[#5E53E0] underline"
+          className="mt-6 text-[#171717] underline font-medium"
         >
           {t("cancel")}
         </button>
@@ -1971,7 +1971,7 @@ export function PaymentProcessingPanel() {
         )}
 
         {!timeoutReached && (
-          <button onClick={handleCancel} className="text-[#5E53E0] underline">
+          <button onClick={handleCancel} className="text-[#171717] underline font-medium">
             {t("cancel")}
           </button>
         )}
@@ -2269,7 +2269,7 @@ export function PaymentFailedPanel() {
         {/* Different Method Link */}
         <button
           onClick={handleDifferentMethod}
-          className="text-[#5E53E0] underline mb-4"
+          className="text-[#171717] underline font-medium mb-4"
         >
           {t("useDifferentMethod")}
         </button>

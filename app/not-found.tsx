@@ -164,7 +164,7 @@ export default function NotFound() {
         <div className="mt-4">
           <Link
             href="/"
-            className="text-sm text-gray-400 hover:text-[#5E53E0] transition-colors"
+            className="text-sm text-gray-400 hover:text-[#171717] transition-colors"
           >
             {t("goHome")}
           </Link>

@@ -254,7 +254,7 @@ const VersionHistorySection: React.FC<VersionHistorySectionProps> = ({
                       <button
                         onClick={() => handleSetDefault(version.id)}
                         disabled={settingDefault === version.id}
-                        className="text-xs text-[#5E53E0] hover:text-[#4a42b8] underline disabled:opacity-50"
+                        className="text-xs text-[#171717] hover:text-[#171717] underline disabled:opacity-50"
                       >
                         {settingDefault === version.id ? t("setting") : t("setDefault")}
                       </button>

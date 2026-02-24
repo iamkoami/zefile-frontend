@@ -225,6 +225,7 @@
     border-radius: 12px;
     position: relative;
     z-index: 2;
+    overflow: hidden;
   }
 
   /* Menu Items */
@@ -274,9 +275,10 @@
   /* Options Button */
   .ze-options-button {
     @apply px-4 py-3 transition-colors;
-    border: 1px solid #d1d5db;
+    border: 1px solid #171717;
     border-radius: 4px;
     background-color: #ffffff;
+    color: #171717;
   }
 
   .ze-options-button:hover {
@@ -526,6 +528,34 @@
   }
 }
 
+@keyframes formSlideInLeft {
+  0% {
+    opacity: 0;
+    transform: translateX(-60px);
+  }
+  40% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes formSlideInRight {
+  0% {
+    opacity: 0;
+    transform: translateX(60px);
+  }
+  40% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 @keyframes drawLine {
   from {
     height: 0;
@@ -605,6 +635,21 @@
 
 /* Custom Spacing Utilities - mt (margin-top) and mb (margin-bottom) 11-20 */
 @layer utilities {
+  /* Form view slide animations */
+  .animate-slideInLeft {
+    animation: formSlideInLeft 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+  .animate-slideInRight {
+    animation: formSlideInRight 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  /* Onboarding tooltip highlight ring */
+  .ze-onboarding-highlight {
+    outline: 2px solid #5E53E0;
+    outline-offset: 4px;
+    border-radius: 4px;
+  }
+
   /* Margin Top: mt-11 to mt-20 */
   .mt-11 {
     margin-top: 2.75rem;

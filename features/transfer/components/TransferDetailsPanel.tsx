@@ -964,7 +964,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
               <button
                 onClick={handlePayClick}
                 disabled={expiryStatus.isExpired}
-                className="flex flex-col items-center gap-1 px-4 py-2 text-[#5E53E0] hover:text-[#4a42b8] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex flex-col items-center gap-1 px-4 py-2 text-[#171717] hover:text-[#171717] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label={expiryStatus.isExpired ? t("expired") : tPayment("payAndDownload")}
                 title={expiryStatus.isExpired ? t("transferExpired") : undefined}
               >
@@ -1169,7 +1169,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
                               type="email"
                               value={editedRecipientValue}
                               onChange={(e) => setEditedRecipientValue(e.target.value)}
-                              className="flex-1 text-sm px-3 py-1.5 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-[#5E53E0] focus:border-transparent"
+                              className="flex-1 text-sm px-3 py-1.5 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-[#171717] focus:border-transparent"
                               autoFocus
                               onKeyDown={(e) => {
                                 if (e.key === "Enter") handleSaveEditedRecipient();
@@ -1200,7 +1200,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
                                 type="checkbox"
                                 checked={addToContactsOnEdit}
                                 onChange={(e) => setAddToContactsOnEdit(e.target.checked)}
-                                className="w-3.5 h-3.5 rounded border-gray-300 text-[#5E53E0] focus:ring-[#5E53E0]"
+                                className="w-3.5 h-3.5 rounded border-gray-300 text-[#87E64B] focus:ring-[#171717]"
                               />
                               {t("addToContacts")}
                             </label>
@@ -1222,7 +1222,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
                               {actionPermissions.canEditRecipient && (
                                 <button
                                   onClick={() => handleStartEditRecipient(email)}
-                                  className="p-1 text-gray-400 hover:text-[#5E53E0] rounded transition-colors"
+                                  className="p-1 text-gray-400 hover:text-[#171717] rounded transition-colors"
                                   aria-label={t("editRecipient")}
                                   title={t("editRecipient")}
                                 >
@@ -1257,7 +1257,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
                           value={newRecipientEmail}
                           onChange={(e) => setNewRecipientEmail(e.target.value)}
                           placeholder={t("enterRecipientEmail")}
-                          className="flex-1 text-sm px-3 py-1.5 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-[#5E53E0] focus:border-transparent"
+                          className="flex-1 text-sm px-3 py-1.5 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-[#171717] focus:border-transparent"
                           autoFocus
                           onKeyDown={(e) => {
                             if (e.key === "Enter") handleAddRecipient();
@@ -1284,7 +1284,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
                     ) : (
                       <button
                         onClick={() => setIsAddingRecipient(true)}
-                        className="text-sm text-[#5E53E0] hover:text-[#4a42b3] transition-colors"
+                        className="text-sm text-[#171717] underline font-medium hover:text-[#171717] transition-colors"
                       >
                         + {t("addRecipient")}
                       </button>
@@ -1380,7 +1380,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
                           disabled={
                             regeneratingFileId === file.id || expiryStatus.isExpired
                           }
-                          className="p-2 text-gray-400 hover:text-[#5E53E0] hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="p-2 text-gray-400 hover:text-[#171717] hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           aria-label={t("regeneratePreview")}
                           title={t("regeneratePreviewTooltip")}
                         >

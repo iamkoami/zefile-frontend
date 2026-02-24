@@ -274,7 +274,7 @@ const WithdrawalRequestPanel: React.FC<WithdrawalRequestPanelProps> = ({
       <div>
         <button
           onClick={() => setStep("form")}
-          className="text-sm text-[#5E53E0] hover:underline mb-4"
+          className="text-sm text-[#171717] underline font-medium mb-4"
         >
           ← {t("back")}
         </button>
@@ -514,11 +514,11 @@ const WithdrawalRequestPanel: React.FC<WithdrawalRequestPanelProps> = ({
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="0.00"
-              className="w-full px-3 py-2 pr-24 border border-gray-300 rounded focus:outline-none focus:border-[#5E53E0]"
+              className="w-full px-3 py-2 pr-24 border border-gray-300 rounded focus:outline-none focus:border-[#171717]"
             />
             <button
               onClick={handleWithdrawAll}
-              className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 text-xs text-[#5E53E0] hover:underline"
+              className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 text-xs text-[#171717] underline font-medium"
             >
               {t("withdrawAll")}
             </button>

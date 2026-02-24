@@ -5,6 +5,7 @@ export const runtime = "edge";
 import Header from "@/components/shared/Header";
 import Footer from "@/components/shared/Footer";
 import PageHero from "@/components/shared/PageHero";
+import SectionIndicator from "@/components/shared/SectionIndicator";
 import Image from "next/image";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
@@ -69,6 +70,43 @@ function Reveal({
       style={{ transitionDelay: `${delay}ms` }}
     >
       {children}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Animated counter (same style as How-It-Works stats bar)            */
+/* ------------------------------------------------------------------ */
+function AnimatedNumber({
+  target,
+  suffix = "",
+  duration = 1500,
+}: {
+  target: number;
+  suffix?: string;
+  duration?: number;
+}) {
+  const { ref, visible } = useInView(0.3);
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    if (!visible) return;
+    const start = performance.now();
+    const step = (now: number) => {
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setCount(Math.round(eased * target));
+      if (progress < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }, [visible, target, duration]);
+
+  return (
+    <div ref={ref}>
+      <span className="text-6xl md:text-8xl font-bold text-[#2d6b0e]/[0.12]">
+        {count}
+        <span className="text-4xl md:text-5xl">{suffix}</span>
+      </span>
     </div>
   );
 }
@@ -359,6 +397,7 @@ function TrustCarousel({ items }: { items: { pill: string; desc: string }[] }) {
   const [paused, setPaused] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const dragRef = useRef({ isDown: false, startX: 0, scrollLeft: 0 });
 
   const scrollTo = useCallback((index: number) => {
     if (!scrollRef.current) return;
@@ -391,15 +430,43 @@ function TrustCarousel({ items }: { items: { pill: string; desc: string }[] }) {
     startTimer();
   };
 
+  const onScroll = useCallback(() => {
+    if (!scrollRef.current) return;
+    const index = Math.round(scrollRef.current.scrollLeft / (TRUST_CARD_WIDTH + TRUST_GAP));
+    setActive(Math.min(index, items.length - 1));
+  }, [items.length]);
+
+  const onDragStart = (e: React.MouseEvent) => {
+    if (!scrollRef.current) return;
+    dragRef.current = { isDown: true, startX: e.pageX - scrollRef.current.offsetLeft, scrollLeft: scrollRef.current.scrollLeft };
+    scrollRef.current.style.scrollBehavior = "auto";
+    setPaused(true);
+  };
+  const onDragEnd = () => {
+    dragRef.current.isDown = false;
+    if (scrollRef.current) scrollRef.current.style.scrollBehavior = "";
+  };
+  const onDragMove = (e: React.MouseEvent) => {
+    if (!dragRef.current.isDown || !scrollRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - scrollRef.current.offsetLeft;
+    scrollRef.current.scrollLeft = dragRef.current.scrollLeft - (x - dragRef.current.startX);
+  };
+
   return (
     <div
       onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
+      onMouseLeave={() => { setPaused(false); onDragEnd(); }}
     >
       <div
         ref={scrollRef}
-        className="flex gap-5 overflow-x-auto scrollbar-hide scroll-smooth [mask-image:linear-gradient(to_right,transparent,black_3%,black_97%,transparent)]"
+        className="flex gap-5 overflow-x-auto scrollbar-hide scroll-smooth [mask-image:linear-gradient(to_right,transparent,black_3%,black_97%,transparent)] cursor-grab active:cursor-grabbing"
         style={{ scrollbarWidth: "none" }}
+        onScroll={onScroll}
+        onMouseDown={onDragStart}
+        onMouseUp={onDragEnd}
+        onMouseMove={onDragMove}
+        onMouseLeave={onDragEnd}
       >
         {items.map((item, i) => (
           <div
@@ -442,6 +509,18 @@ function TrustCarousel({ items }: { items: { pill: string; desc: string }[] }) {
     </div>
   );
 }
+
+const ABOUT_SECTIONS = [
+  { id: "about-hero", label: "Hero" },
+  { id: "about-problem", label: "The Problem" },
+  { id: "about-stats", label: "Numbers" },
+  { id: "about-origin", label: "Our Story" },
+  { id: "about-capabilities", label: "Capabilities" },
+  { id: "about-trust", label: "Trust" },
+  { id: "about-africa", label: "Made in Africa" },
+  { id: "about-values", label: "Values" },
+  { id: "about-cta", label: "Get Started" },
+] as const;
 
 /* ------------------------------------------------------------------ */
 /*  Page                                                               */
@@ -506,9 +585,11 @@ export default function AboutPage() {
     <div className="min-h-screen flex flex-col">
       <Header />
 
+      <SectionIndicator sections={ABOUT_SECTIONS} />
+
       <main className="flex-1">
         {/* ── 1. Hero + decorative crosses ─────────────────────── */}
-        <div className="relative overflow-x-clip">
+        <div id="about-hero" className="relative overflow-x-clip">
           <PageHero
             title={t.rich("title", {
               highlight: (chunks) => (
@@ -534,7 +615,7 @@ export default function AboutPage() {
         </div>
 
         {/* ── 2. The Problem — text left, image right ───────────── */}
-        <section className="max-w-6xl mx-auto px-6 pt-36 pb-30 md:pb-36">
+        <section id="about-problem" className="max-w-6xl mx-auto px-6 pt-36 pb-30 md:pb-36">
           <Reveal>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-center">
               <div>
@@ -571,9 +652,77 @@ export default function AboutPage() {
           </Reveal>
         </section>
 
+        {/* ── 2b. Pain Points in Numbers (same style as How-It-Works stats bar) */}
+        <section id="about-stats" className="relative overflow-x-clip bg-gradient-to-b from-white via-[#EAF9DE] to-white">
+          <BrandCross
+            size={160}
+            color="#5E53E0"
+            opacity={0.06}
+            rotate={-15}
+            className="absolute top-6 -right-12 hidden md:block"
+          />
+          <BrandCross
+            size={80}
+            color="#87E64B"
+            opacity={0.12}
+            rotate={20}
+            className="absolute top-[55%] -left-6 hidden lg:block"
+          />
+          <BrandCross
+            size={55}
+            color="#5E53E0"
+            opacity={0.07}
+            rotate={8}
+            className="absolute bottom-[10%] right-[8%] hidden md:block"
+          />
+
+          <div className="max-w-6xl mx-auto px-6 py-20 md:py-32 relative z-10">
+            <Reveal>
+              <div className="mb-20 md:mb-28">
+                <p className="text-2xl md:text-4xl text-[#171717]/50 font-light leading-snug">
+                  {t("painStatsTagline")}
+                </p>
+              </div>
+            </Reveal>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-16 md:gap-12">
+              <Reveal delay={0}>
+                <div className="text-left">
+                  <div className="mb-5">
+                    <AnimatedNumber target={85} suffix="%" />
+                  </div>
+                  <p className="text-[#171717] font-semibold text-base leading-snug">
+                    {t("painStat1Label")}
+                  </p>
+                </div>
+              </Reveal>
+              <Reveal delay={120}>
+                <div className="text-left">
+                  <div className="mb-5">
+                    <AnimatedNumber target={102} suffix="h" />
+                  </div>
+                  <p className="text-[#171717] font-semibold text-base leading-snug">
+                    {t("painStat2Label")}
+                  </p>
+                </div>
+              </Reveal>
+              <Reveal delay={240}>
+                <div className="text-left">
+                  <div className="mb-5">
+                    <AnimatedNumber target={71} suffix="%" />
+                  </div>
+                  <p className="text-[#171717] font-semibold text-base leading-snug">
+                    {t("painStat3Label")}
+                  </p>
+                </div>
+              </Reveal>
+            </div>
+          </div>
+        </section>
+
         {/* ── 3. Origin Story — dark card + interior shapes ────── */}
         <Reveal>
-          <section className="max-w-7xl mx-auto px-6 mt-10 mb-10">
+          <section id="about-origin" className="max-w-7xl mx-auto px-6 mt-10 mb-10">
             <div className="bg-[#FDFAF4] text-white rounded-3xl overflow-hidden relative">
               <div className="absolute top-8 right-8 w-40 h-28 rounded-3xl bg-[#87E64B]/[0.08] rotate-12 pointer-events-none" />
               <div className="absolute bottom-10 left-12 w-20 h-20 rounded-full bg-[#5E53E0]/10 pointer-events-none" />
@@ -615,17 +764,19 @@ export default function AboutPage() {
         </Reveal>
 
         {/* ── 4. Capabilities — dark fan cards ────────────────── */}
-        <CapabilitiesFanCards
-          title={t.rich("capabilitiesTitle", {
-            highlight: (chunks) => (
-              <span className="ze-highlight-purple">{chunks}</span>
-            ),
-          })}
-          capabilities={capabilities.map((cap) => ({
-            title: t(cap.titleKey),
-            content: t(cap.contentKey),
-          }))}
-        />
+        <div id="about-capabilities">
+          <CapabilitiesFanCards
+            title={t.rich("capabilitiesTitle", {
+              highlight: (chunks) => (
+                <span className="ze-highlight-purple">{chunks}</span>
+              ),
+            })}
+            capabilities={capabilities.map((cap) => ({
+              title: t(cap.titleKey),
+              content: t(cap.contentKey),
+            }))}
+          />
+        </div>
 
         {/* Section separator: Capabilities → Security */}
         <div className="relative max-w-6xl mx-auto h-16 z-20">
@@ -639,7 +790,7 @@ export default function AboutPage() {
         </div>
 
         {/* ── 5. Security — trust cards ──────────────────────── */}
-        <section className="bg-gradient-to-b from-white via-[#FDFAF4] to-white relative overflow-x-clip">
+        <section id="about-trust" className="bg-gradient-to-b from-white via-[#FDFAF4] to-white relative overflow-x-clip">
           <BrandCross
             size={200}
             color="#5E53E0"
@@ -683,7 +834,7 @@ export default function AboutPage() {
         </section>
 
         {/* ── 6. Made in Africa — green gradient + shapes ──────── */}
-        <section className="pt-10 relative overflow-x-clip bg-gradient-to-br from-[#87E64B]/10 via-white to-[#87E64B]/5">
+        <section id="about-africa" className="pt-10 relative overflow-x-clip bg-gradient-to-br from-[#87E64B]/10 via-white to-[#87E64B]/5">
           <BrandCross
             size={80}
             color="#87E64B"
@@ -726,7 +877,7 @@ export default function AboutPage() {
         </section>
 
         {/* ── 7. Values — colorful cards + watermark numbers ──── */}
-        <section>
+        <section id="about-values">
           <div className="max-w-6xl mx-auto px-6 pb-22 pt-8 md:pt-8 md:pb-22">
             <Reveal>
               <h2 className="text-3xl md:text-5xl font-bold text-[#171717] mb-14 text-center">
@@ -763,7 +914,7 @@ export default function AboutPage() {
 
         {/* ── 8. CTA — green card + interior shapes ────────────── */}
         <Reveal>
-          <section className="max-w-6xl mx-auto px-6 pb-20 md:pt-20 md:pb-28">
+          <section id="about-cta" className="max-w-6xl mx-auto px-6 pb-20 md:pt-20 md:pb-28">
             <div className="bg-[#87E64B] rounded-3xl p-10 md:p-16 text-center relative overflow-hidden">
               <div className="absolute -top-6 -right-6 w-40 h-28 rounded-3xl bg-white/15 rotate-12 pointer-events-none" />
               <div className="absolute -bottom-8 -left-4 w-28 h-28 rounded-full bg-white/10 pointer-events-none" />

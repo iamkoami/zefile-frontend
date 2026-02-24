@@ -9,6 +9,7 @@ import {
   NavArrowDown,
   ArrowLeft,
   WarningCircle,
+  Page,
 } from "iconoir-react";
 import {
   kycApi,
@@ -320,7 +321,7 @@ export function KYCFlowPanel({
                   <Flag code={country.flagCode} size="m" hasBorder={false} />
                   <span className="flex-1">{country.name}</span>
                   {country.hasBvn && (
-                    <span className="text-xs text-[#5E53E0] bg-[#5E53E0]/10 px-2 py-0.5 rounded">
+                    <span className="text-xs text-[#87E64B] bg-[#87E64B]/10 px-2 py-0.5 rounded font-medium">
                       {t("bvnAvailable")}
                     </span>
                   )}
@@ -370,8 +371,8 @@ export function KYCFlowPanel({
             className="w-full p-6 border-2 border-gray-200 rounded-lg hover:border-[#5E53E0] hover:bg-[#5E53E0]/5 transition-all text-left group"
           >
             <div className="flex items-start gap-4">
-              <div className="w-12 h-12 bg-[#5E53E0]/10 rounded-full flex items-center justify-center flex-shrink-0 group-hover:bg-[#5E53E0]/20 transition-colors">
-                <ShieldCheck className="w-6 h-6 text-[#5E53E0]" />
+              <div className="w-12 h-12 bg-[#87E64B]/10 rounded-full flex items-center justify-center flex-shrink-0 group-hover:bg-[#87E64B]/20 transition-colors">
+                <ShieldCheck className="w-6 h-6 text-[#171717]" />
               </div>
               <div className="flex-1">
                 <h3 className="text-lg font-semibold text-[#171717] mb-1">
@@ -381,7 +382,7 @@ export function KYCFlowPanel({
                   {t("bvnMethodDescription")}
                 </p>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-[#87E64B] bg-[#87E64B]/10 px-2 py-0.5 rounded font-medium">
+                  <span className="text-xs text-[#5E53E0] bg-[#5E53E0]/10 px-2 py-0.5 rounded font-medium">
                     {t("recommended")}
                   </span>
                   <span className="text-xs text-gray-500">
@@ -400,7 +401,7 @@ export function KYCFlowPanel({
           >
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0 group-hover:bg-gray-200 transition-colors">
-                <span className="text-2xl">📄</span>
+                <Page className="w-6 h-6 text-gray-500" />
               </div>
               <div className="flex-1">
                 <h3 className="text-lg font-semibold text-[#171717] mb-1">

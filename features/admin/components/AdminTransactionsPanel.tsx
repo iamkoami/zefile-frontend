@@ -259,14 +259,14 @@ const AdminTransactionsPanel: React.FC = () => {
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="px-3 py-2 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-[#5E53E0] focus:border-[#5E53E0]"
+              className="px-3 py-2 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-[#171717] focus:border-[#171717]"
             />
             <span className="text-gray-500">{t('to')}</span>
             <input
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="px-3 py-2 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-[#5E53E0] focus:border-[#5E53E0]"
+              className="px-3 py-2 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-[#171717] focus:border-[#171717]"
             />
           </div>
 
@@ -374,7 +374,7 @@ const AdminTransactionsPanel: React.FC = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t('searchEmail')}
-                className="pl-10 pr-4 py-2 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-[#5E53E0] focus:border-[#5E53E0]"
+                className="pl-10 pr-4 py-2 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-[#171717] focus:border-[#171717]"
               />
             </div>
             <button
@@ -402,7 +402,7 @@ const AdminTransactionsPanel: React.FC = () => {
             value={minAmount}
             onChange={(e) => setMinAmount(e.target.value)}
             placeholder={t('min')}
-            className="w-28 px-3 py-2 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-[#5E53E0] focus:border-[#5E53E0]"
+            className="w-28 px-3 py-2 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-[#171717] focus:border-[#171717]"
           />
           <span className="text-gray-500">-</span>
           <input
@@ -410,7 +410,7 @@ const AdminTransactionsPanel: React.FC = () => {
             value={maxAmount}
             onChange={(e) => setMaxAmount(e.target.value)}
             placeholder={t('max')}
-            className="w-28 px-3 py-2 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-[#5E53E0] focus:border-[#5E53E0]"
+            className="w-28 px-3 py-2 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-[#171717] focus:border-[#171717]"
           />
         </div>
       </div>
@@ -492,7 +492,7 @@ const AdminTransactionsPanel: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                     <button
                       onClick={() => handleViewDetails(tx.id)}
-                      className="text-[#5E53E0] hover:text-[#4d44c7]"
+                      className="text-[#171717] underline font-medium hover:text-[#171717]"
                     >
                       <InfoCircle className="w-5 h-5" />
                     </button>

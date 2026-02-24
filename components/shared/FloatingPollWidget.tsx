@@ -290,7 +290,7 @@ const FloatingPollWidget: React.FC = () => {
                 onChange={(e) => setOtherText(e.target.value)}
                 placeholder={t("otherPlaceholder")}
                 rows={2}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5E53E0] focus:border-transparent resize-none text-sm"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#171717] focus:border-transparent resize-none text-sm"
               />
             </div>
           )}

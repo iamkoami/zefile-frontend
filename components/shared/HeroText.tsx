@@ -6,15 +6,21 @@ import { useTranslations } from "next-intl";
 interface HeroTextProps {
   isVisible: boolean;
   timeOfDay?: "day" | "evening" | "night";
+  showProofStats?: boolean;
+  showUpgradeCta?: boolean;
+  onUpgradeClick?: () => void;
 }
 
 /**
  * HeroText - Marketing headline displayed on the home page
- * Positioned on the left side, visible only in initial state
+ * Positioned on the right side, visible only on desktop
  */
 const HeroText: React.FC<HeroTextProps> = ({
   isVisible,
   timeOfDay = "evening",
+  showProofStats = false,
+  showUpgradeCta = false,
+  onUpgradeClick,
 }) => {
   const t = useTranslations("hero");
 
@@ -46,7 +52,7 @@ const HeroText: React.FC<HeroTextProps> = ({
         right: "7rem",
         top: "4rem",
         transition: "opacity 500ms ease-in-out, color 1.5s ease-in-out",
-        zIndex: 2,
+        zIndex: 5,
         maxWidth: "600px",
         textAlign: "right",
       }}
@@ -63,13 +69,50 @@ const HeroText: React.FC<HeroTextProps> = ({
 
       {/* Subtitle */}
       <p
-        className={`text-lg xl:text-lg leading-relaxed ${colors.subtitle}`}
+        className={`text-lg xl:text-lg font-medium leading-relaxed ${colors.subtitle}`}
         style={{
           transition: "color 1.5s ease-in-out",
         }}
       >
         {t("subtitle")}
       </p>
+
+      {/* Social proof micro-bar */}
+      {showProofStats && (
+        <div
+          className="flex items-center gap-3 mt-5 animate-[fadeIn_1s_ease-in-out_2s_both]"
+        >
+          <span className="text-xs font-medium text-gray-400">
+            {t("proofStat1")}
+          </span>
+          <span className="text-xs font-medium text-gray-500">|</span>
+          <span className="text-xs font-medium text-gray-400">
+            {t("proofStat2")}
+          </span>
+          <span className="text-xs font-medium text-gray-500">|</span>
+          <span className="text-xs font-medium text-gray-400">
+            {t("proofStat3")}
+          </span>
+        </div>
+      )}
+
+      {/* Upgrade CTA - right after stats */}
+      {showUpgradeCta && onUpgradeClick && (
+        <div className="flex flex-col items-end mt-6 animate-[fadeIn_1s_ease-in-out_3s_both]">
+          <p
+            className={`text-sm font-medium mb-3 ${colors.subtitle}`}
+            style={{ transition: "color 1.5s ease-in-out" }}
+          >
+            {t("ctaText")}
+          </p>
+          <button
+            onClick={onUpgradeClick}
+            className="pointer-events-auto bg-[#87E64B] text-[#171717] rounded px-6 py-2.5 font-semibold text-sm hover:bg-[#78d43f] transition-colors"
+          >
+            {t("ctaButton")}
+          </button>
+        </div>
+      )}
     </div>
   );
 };

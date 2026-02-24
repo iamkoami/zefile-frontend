@@ -13,6 +13,7 @@ import {
 
 const CONVERSATION_ID_KEY = 'zefile-support-conversation-id';
 const VISITOR_EMAIL_KEY = 'zefile-support-visitor-email';
+const UNREAD_COUNT_KEY = 'zefile-support-unread-count';
 
 export interface ChatContext {
   pageType?: 'download' | 'transfers' | 'home' | 'account';
@@ -76,9 +77,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
     try {
       const storedId = localStorage.getItem(CONVERSATION_ID_KEY);
       const storedEmail = localStorage.getItem(VISITOR_EMAIL_KEY);
+      const storedUnread = parseInt(localStorage.getItem(UNREAD_COUNT_KEY) || '0', 10);
       set({
         conversationId: storedId,
         visitorEmail: storedEmail,
+        unreadCount: storedUnread || 0,
         isInitialized: true,
       });
     } catch {
@@ -92,6 +95,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       state.initFromStorage();
     }
     set({ isOpen: true, unreadCount: 0 });
+    try { localStorage.setItem(UNREAD_COUNT_KEY, '0'); } catch { /* noop */ }
 
     const { conversationId, messages } = get();
     if (conversationId && messages.length === 0) {
@@ -271,6 +275,16 @@ export const useChatStore = create<ChatState>((set, get) => ({
         const isOpen = get().isOpen;
         const status = response.data.status;
 
+        // Skip unread increment on initial hydration (cold start with empty messages).
+        // prevMessageCount === 0 means we just loaded from storage — all messages are
+        // "catching up", not truly new. Only increment when we already have messages
+        // and the count grows (meaning a new reply arrived while chat was closed).
+        const isColdStart = prevMessageCount === 0;
+        const newUnread =
+          !isOpen && !isColdStart && newMessageCount > prevMessageCount
+            ? get().unreadCount + (newMessageCount - prevMessageCount)
+            : get().unreadCount;
+
         set({
           messages: response.data.messages,
           conversationStatus: status,
@@ -278,12 +292,12 @@ export const useChatStore = create<ChatState>((set, get) => ({
           isAiHandled: response.data.isAiHandled,
           isResolved: status === 'resolved' || status === 'closed',
           isLoading: false,
-          // Increment unread if chat is closed and new messages arrived
-          unreadCount:
-            !isOpen && newMessageCount > prevMessageCount
-              ? get().unreadCount + (newMessageCount - prevMessageCount)
-              : get().unreadCount,
+          unreadCount: newUnread,
         });
+
+        if (newUnread > 0) {
+          try { localStorage.setItem(UNREAD_COUNT_KEY, String(newUnread)); } catch { /* noop */ }
+        }
       }
     } catch {
       // Network error — don't clear conversation, user can retry

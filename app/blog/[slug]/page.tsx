@@ -15,11 +15,13 @@ import {
   Whatsapp,
   Mail,
   Link as LinkIcon,
+  ArrowRight,
 } from "iconoir-react";
 import Lottie, { type LottieRefCurrentProps } from "lottie-react";
 import Header from "@/components/shared/Header";
 import Footer from "@/components/shared/Footer";
 import LoadingFullscreen from "@/components/LoadingFullscreen";
+import { PostCard } from "@/components/blog/PostCard";
 import { ArticleJsonLd } from "@/components/seo/JsonLd";
 import { toast } from "@/components/shared/Toast";
 import DOMPurify from "dompurify";
@@ -130,7 +132,7 @@ function BlogPostNotFound({
         <div className="mt-4">
           <Link
             href="/"
-            className="text-sm text-gray-400 hover:text-[#5E53E0] transition-colors"
+            className="text-sm text-gray-400 hover:text-[#171717] transition-colors"
           >
             {locale === "fr" ? "Retour à l'accueil" : "Go to homepage"}
           </Link>
@@ -157,6 +159,7 @@ export default function BlogPostPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [readProgress, setReadProgress] = useState(0);
+  const [relatedPosts, setRelatedPosts] = useState<BlogPostDto[]>([]);
 
   // Track reading progress based on page scroll
   useEffect(() => {
@@ -206,6 +209,27 @@ export default function BlogPostPage() {
 
     loadPost();
   }, [slug, locale]);
+
+  // Fetch related posts by first tag
+  useEffect(() => {
+    if (!post || post.tags.length === 0) return;
+
+    const loadRelated = async () => {
+      try {
+        const response = await blogApi.getPublishedPosts(locale, 1, 4, post.tags[0]);
+        if (response.data?.items) {
+          const filtered = response.data.items
+            .filter((p) => p.slug !== post.slug)
+            .slice(0, 3);
+          setRelatedPosts(filtered);
+        }
+      } catch {
+        // Related posts are non-critical — fail silently
+      }
+    };
+
+    loadRelated();
+  }, [post, locale]);
 
   if (isLoading) {
     return <LoadingFullscreen />;
@@ -272,14 +296,14 @@ export default function BlogPostPage() {
           <nav className="text-sm text-gray-400 mb-12 flex items-center gap-1.5 overflow-hidden">
             <Link
               href="/"
-              className="hover:text-[#5E53E0] transition-colors flex-shrink-0"
+              className="hover:text-[#171717] transition-colors flex-shrink-0"
             >
               {locale === "fr" ? "Accueil" : "Home"}
             </Link>
             <span className="flex-shrink-0">&rsaquo;</span>
             <Link
               href="/blog"
-              className="hover:text-[#5E53E0] transition-colors flex-shrink-0"
+              className="hover:text-[#171717] transition-colors flex-shrink-0"
             >
               Blog
             </Link>
@@ -382,7 +406,7 @@ export default function BlogPostPage() {
       </section>
 
       <main className="flex-1">
-        <div className="max-w-4xl mx-auto px-6 pt-12 pb-32">
+        <div className="max-w-4xl mx-auto px-6 pt-12 pb-16">
           {/* Cover image */}
           {post.coverImageUrl && (
             <div className="relative w-full aspect-[2/1] mb-10 rounded-2xl overflow-hidden">
@@ -400,7 +424,7 @@ export default function BlogPostPage() {
           {/* Content */}
           {post.content ? (
             <article
-              className="prose prose-lg max-w-none prose-headings:font-bold prose-a:text-[#5E53E0] prose-img:rounded-lg"
+              className="prose prose-lg max-w-none prose-headings:font-bold prose-a:text-[#171717] prose-img:rounded-lg"
               dangerouslySetInnerHTML={{
                 __html: DOMPurify.sanitize(post.content, SANITIZE_CONFIG),
               }}
@@ -412,7 +436,42 @@ export default function BlogPostPage() {
                 : "Content not available."}
             </p>
           )}
+
+          {/* Soft CTA */}
+          <div className="mt-16 p-6 bg-[#FDFAF4] border border-gray-200 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <p className="text-[#171717] text-sm font-medium">
+              {t("tryZefileCta")}
+            </p>
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#87E64B] text-[#171717] text-sm font-bold rounded hover:bg-[#78d43f] transition-colors flex-shrink-0"
+            >
+              {t("getStarted")}
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
         </div>
+
+        {/* Related Articles */}
+        {relatedPosts.length > 0 && (
+          <div className="max-w-5xl mx-auto px-6 pb-32">
+            <div className="border-t border-gray-200 pt-16">
+              <h2 className="text-2xl font-bold text-[#171717] mb-8">
+                {t("relatedArticles")}
+              </h2>
+              <div className="space-y-8">
+                {relatedPosts.map((relatedPost) => (
+                  <PostCard
+                    key={relatedPost.id}
+                    post={relatedPost}
+                    locale={locale}
+                    t={t}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </main>
 
       <Footer />

@@ -389,7 +389,7 @@ const VersionUploadModal: React.FC<VersionUploadModalProps> = ({
                     onClose();
                     openDrawerToView("subscriptions", "list", undefined, "sender");
                   }}
-                  className="text-sm font-medium text-[#5E53E0] hover:underline"
+                  className="text-sm font-medium text-[#171717] underline"
                 >
                   {t("upgradeToCreateMore")}
                 </button>
@@ -516,7 +516,7 @@ const VersionUploadModal: React.FC<VersionUploadModalProps> = ({
                   {!isUploading && (
                     <button
                       onClick={() => fileInputRef.current?.click()}
-                      className="text-sm text-[#5E53E0] hover:underline"
+                      className="text-sm text-[#171717] underline font-medium"
                     >
                       {t("addMore")}
                     </button>

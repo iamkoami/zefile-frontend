@@ -16,6 +16,7 @@ import React, {
   useMemo,
   useRef,
 } from "react";
+import StepIndicator from "@/components/shared/StepIndicator";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
@@ -98,7 +99,6 @@ type PageState =
   | "loading"
   | "password"
   | "email"
-  | "otp"
   | "payment"
   | "phone-input"
   | "payment-prompt"
@@ -240,23 +240,59 @@ export default function TransferLandingPage() {
   // Access logging state
   const [accessLogged, setAccessLogged] = useState(false);
 
+  // Inline email + OTP flow: tracks whether email was submitted (OTP section visible)
+  const [emailSubmitted, setEmailSubmitted] = useState(false);
+
   // OTP verification
   const [otpValue, setOtpValue] = useState("");
   const [_isNewUser, setIsNewUser] = useState(false);
   const [_otpExpiresIn, setOtpExpiresIn] = useState(0);
   const [canResendOtp, setCanResendOtp] = useState(false);
   const [otpResendCountdown, setOtpResendCountdown] = useState(0);
+  const otpInputRef = useRef<HTMLInputElement>(null);
+
+  // Focus OTP input when email is submitted and section slides in
+  useEffect(() => {
+    if (emailSubmitted) {
+      const timer = setTimeout(() => otpInputRef.current?.focus(), 350);
+      return () => clearTimeout(timer);
+    }
+  }, [emailSubmitted]);
+
+  // Step indicator for multi-gate download flow
+  const gateSteps = useMemo((): string[] => {
+    if (!transfer) return [];
+    const steps: string[] = [];
+    if (transfer.accessControl !== "public") {
+      steps.push(t("stepEmail"));
+      steps.push(t("stepCode"));
+    }
+    if (transfer.accessControl === "password") {
+      steps.push(t("stepPassword"));
+    }
+    return steps;
+  }, [transfer, t]);
+
+  const gateCurrentStep = useMemo((): number => {
+    if (!transfer || gateSteps.length <= 1) return 0;
+    if (pageState === "email" && !emailSubmitted) return 0;
+    if (pageState === "email" && emailSubmitted) return 1;
+    if (pageState === "password") {
+      return gateSteps.indexOf(t("stepPassword"));
+    }
+    return gateSteps.length;
+  }, [transfer, pageState, emailSubmitted, gateSteps, t]);
 
   // OTP resend countdown timer
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (otpResendCountdown > 0) {
       timer = setTimeout(() => setOtpResendCountdown(otpResendCountdown - 1), 1000);
-    } else if (otpResendCountdown === 0 && pageState === "otp") {
+    } else if (otpResendCountdown === 0 && emailSubmitted) {
       setCanResendOtp(true);
     }
     return () => clearTimeout(timer);
-  }, [otpResendCountdown, pageState]);
+  }, [otpResendCountdown, emailSubmitted]);
 
   // Payment status polling
   const {
@@ -540,7 +576,8 @@ export default function TransferLandingPage() {
         setOtpExpiresIn(300); // Default 5 minutes
         setCanResendOtp(false);
         setOtpResendCountdown(30);
-        setPageState("otp");
+        setEmailSubmitted(true);
+        // Stay in "email" state — OTP section slides in inline
       }
     } catch {
       toast.error(t("error"));
@@ -942,6 +979,10 @@ export default function TransferLandingPage() {
               style={{ position: "relative", zIndex: 10 }}
             >
               <div className="ze-upload-panel">
+                {/* Step indicator for multi-gate flow */}
+                {gateSteps.length > 1 && (
+                  <StepIndicator steps={gateSteps} currentStep={gateCurrentStep} />
+                )}
                 {/* Lock Icon */}
                 <div className="flex flex-col items-center mb-6">
                   <Lock className="w-12 h-12 text-gray-300" strokeWidth={1.5} />
@@ -962,7 +1003,7 @@ export default function TransferLandingPage() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder={t("enterPassword")}
-                        className="w-full px-4 py-3 border border-gray-200 rounded text-[#171717] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#5E53E0] focus:border-transparent pr-12 text-sm"
+                        className="w-full px-4 py-3 border border-gray-200 rounded text-[#171717] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#171717] focus:border-transparent pr-12 text-sm"
                         required
                       />
                       <button
@@ -1030,7 +1071,7 @@ export default function TransferLandingPage() {
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
                     placeholder={tPayment("yourName")}
-                    className="w-full px-4 py-3 border border-gray-200 rounded text-[#171717] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#5E53E0] focus:border-transparent text-sm"
+                    className="w-full px-4 py-3 border border-gray-200 rounded text-[#171717] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#171717] focus:border-transparent text-sm"
                   />
                 </div>
 
@@ -1041,7 +1082,7 @@ export default function TransferLandingPage() {
                     value={customerEmail}
                     onChange={(e) => setCustomerEmail(e.target.value)}
                     placeholder={tPayment("yourEmail")}
-                    className="w-full px-4 py-3 border border-gray-200 rounded text-[#171717] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#5E53E0] focus:border-transparent text-sm"
+                    className="w-full px-4 py-3 border border-gray-200 rounded text-[#171717] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#171717] focus:border-transparent text-sm"
                   />
                 </div>
 
@@ -1400,7 +1441,7 @@ export default function TransferLandingPage() {
                   {isPolling && paymentReference && (
                     <button
                       onClick={() => startPolling(paymentReference)}
-                      className="text-sm text-[#5E53E0] hover:underline mt-2"
+                      className="text-sm text-[#171717] underline font-medium mt-2"
                     >
                       {tPayment("iAlreadyPaid")}
                     </button>
@@ -1448,180 +1489,202 @@ export default function TransferLandingPage() {
               style={{ position: "relative", zIndex: 10 }}
             >
               <div className="ze-upload-panel">
-                {/* Email Icon */}
-                <div className="flex flex-col items-center mb-6">
-                  <svg
-                    width="64"
-                    height="64"
-                    viewBox="0 0 64 64"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="text-gray-300"
+                {/* Step indicator for multi-gate flow */}
+                {gateSteps.length > 1 && (
+                  <StepIndicator steps={gateSteps} currentStep={gateCurrentStep} />
+                )}
+                {/* Icon — transitions from envelope to lock */}
+                <div className="flex flex-col items-center mb-6 relative h-16 w-16">
+                  <div
+                    key="envelope"
+                    className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ${
+                      emailSubmitted ? "opacity-0 scale-75" : "opacity-100 scale-100"
+                    }`}
                   >
-                    <rect
-                      x="8"
-                      y="16"
-                      width="48"
-                      height="32"
-                      rx="4"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                    />
-                    <path
-                      d="M8 20L32 36L56 20"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
+                    <svg
+                      width="64"
+                      height="64"
+                      viewBox="0 0 64 64"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="text-gray-300"
+                    >
+                      <rect
+                        x="8"
+                        y="16"
+                        width="48"
+                        height="32"
+                        rx="4"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                      />
+                      <path
+                        d="M8 20L32 36L56 20"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </div>
+                  <div
+                    key="lock"
+                    className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ${
+                      emailSubmitted ? "opacity-100 scale-100" : "opacity-0 scale-75"
+                    }`}
+                  >
+                    <Lock className="w-12 h-12 text-gray-300" strokeWidth={1.5} />
+                  </div>
                 </div>
 
-                {/* Title */}
-                <h1 className="text-xl font-bold text-[#171717] text-center mb-2">
-                  {t("enterEmailToAccess")}
+                {/* Title — transitions on email submit */}
+                <h1 className="text-xl font-bold text-[#171717] text-center mb-2 transition-all duration-300">
+                  {emailSubmitted ? t("verifyEmail") : t("enterEmailToAccess")}
                 </h1>
-                <p className="text-sm text-gray-500 text-center mb-6">
-                  {t("emailRequiredForAccess")}
+                <p className="text-sm text-gray-500 text-center mb-1 transition-all duration-300">
+                  {emailSubmitted ? (
+                    <>
+                      {t("otpSentTo")}{" "}
+                      <span className="font-medium text-[#171717]">{customerEmail}</span>
+                    </>
+                  ) : (
+                    t("emailRequiredForAccess")
+                  )}
                 </p>
+                {emailSubmitted && (
+                  <p className="text-xs text-gray-400 text-center mb-1">
+                    {t("checkSpamFolder")}
+                  </p>
+                )}
 
-                {/* Email Form */}
-                <form onSubmit={handleEmailConfirm}>
-                  <div className="mb-4">
+                {/* Spacer */}
+                <div className={emailSubmitted ? "mb-4" : "mb-5"} />
+
+                {/* Email field — read-only after submit */}
+                <div className="mb-4">
+                  <div className="relative">
                     <input
                       type="email"
                       value={customerEmail}
-                      onChange={(e) => setCustomerEmail(e.target.value)}
+                      onChange={(e) => !emailSubmitted && setCustomerEmail(e.target.value)}
                       placeholder={t("yourEmail")}
-                      className="w-full px-4 py-3 border border-gray-200 rounded text-[#171717] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#5E53E0] focus:border-transparent text-sm"
+                      className={`w-full px-4 py-3 border rounded text-sm focus:outline-none transition-all duration-300 ${
+                        emailSubmitted
+                          ? "border-[#87E64B] bg-[#87E64B]/5 text-[#171717] cursor-default"
+                          : "border-gray-200 text-[#171717] placeholder:text-gray-400 focus:ring-2 focus:ring-[#171717] focus:border-transparent"
+                      }`}
+                      readOnly={emailSubmitted}
                       required
-                      autoFocus
+                      autoFocus={!emailSubmitted}
                     />
-                    {error && (
-                      <p className="text-sm text-red-500 mt-2">{error}</p>
+                    {emailSubmitted && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                          <path d="M4 10.5L8 14.5L16 6.5" stroke="#87E64B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </div>
                     )}
                   </div>
-
-                  <button
-                    type="submit"
-                    disabled={isLoading || !customerEmail.trim()}
-                    className="w-full px-6 py-3.5 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isLoading ? t("loading") : t("continue")}
-                  </button>
-                </form>
-
-                {/* Back Link */}
-                <button
-                  onClick={() => setPageState("ready")}
-                  className="w-full mt-4 text-sm text-gray-500 hover:text-gray-700 transition-colors"
-                >
-                  ← {tPayment("cancel")}
-                </button>
-              </div>
-            </div>
-          </div>
-        </main>
-      </div>
-    );
-  }
-
-  // OTP verification state
-  if (pageState === "otp" && transfer) {
-    return (
-      <div className="min-h-screen bg-white">
-        <ToastContainer />
-        {pageHeader}
-        <main style={{ minHeight: "calc(100vh - 64px)", position: "relative" }}>
-          <div
-            className={`ze-content-panel ${transfer?.wallpaperUrl ? 'ze-wallpaper-mode' : `ze-time-${timeOfDay}`}`}
-            style={{ position: "relative", overflow: "hidden" }}
-          >
-            <ContentPanelBackground wallpaperUrl={transfer?.wallpaperUrl} timeOfDay={timeOfDay} />
-            <div
-              className="ze-panels-container"
-              style={{ position: "relative", zIndex: 10 }}
-            >
-              <div className="ze-upload-panel">
-                {/* Lock Icon */}
-                <div className="flex flex-col items-center mb-6">
-                  <Lock className="w-12 h-12 text-gray-300" strokeWidth={1.5} />
+                  {emailSubmitted && (
+                    <button
+                      onClick={() => {
+                        setEmailSubmitted(false);
+                        setOtpValue("");
+                        setError("");
+                      }}
+                      className="text-xs text-[#171717] underline font-medium mt-1.5"
+                    >
+                      {t("changeEmail")}
+                    </button>
+                  )}
+                  {!emailSubmitted && error && (
+                    <p className="text-sm text-red-500 mt-2">{error}</p>
+                  )}
                 </div>
 
-                {/* Title */}
-                <h1 className="text-xl font-bold text-[#171717] text-center mb-2">
-                  {t("verifyEmail")}
-                </h1>
-                <p className="text-sm text-gray-500 text-center mb-1">
-                  {t("otpSentTo")}{" "}
-                  <span className="font-medium text-[#171717]">
-                    {customerEmail}
-                  </span>
-                </p>
-                <p className="text-xs text-gray-400 text-center mb-6">
-                  {t("checkSpamFolder")}
-                </p>
+                {/* Continue button — hidden after email submitted */}
+                {!emailSubmitted && (
+                  <form onSubmit={handleEmailConfirm}>
+                    <button
+                      type="submit"
+                      disabled={isLoading || !customerEmail.trim()}
+                      className="w-full px-6 py-3.5 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isLoading ? t("loading") : t("continue")}
+                    </button>
+                  </form>
+                )}
 
-                {/* OTP Form */}
-                <form onSubmit={handleOtpVerify}>
-                  <div className="mb-4">
-                    <input
-                      type="text"
-                      value={otpValue}
-                      onChange={(e) =>
-                        setOtpValue(
-                          e.target.value.replace(/\D/g, "").slice(0, 6),
-                        )
-                      }
-                      placeholder={t("enterOtp")}
-                      className="w-full px-4 py-3 border border-gray-200 rounded text-[#171717] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#5E53E0] focus:border-transparent text-md text-bold text-center tracking-widest font-mono text-lg"
-                      maxLength={6}
-                      required
-                      autoFocus
-                    />
-                    {error && (
-                      <p className="text-sm text-red-500 mt-2 text-center">
-                        {error}
+                {/* OTP section — slides in after email confirmed */}
+                <div
+                  aria-live="polite"
+                  className={`transition-all duration-300 ease-out overflow-hidden ${
+                    emailSubmitted
+                      ? "max-h-[400px] opacity-100"
+                      : "max-h-0 opacity-0"
+                  }`}
+                >
+                  <form onSubmit={handleOtpVerify}>
+                    <div className="mb-4">
+                      <input
+                        ref={otpInputRef}
+                        type="text"
+                        value={otpValue}
+                        onChange={(e) =>
+                          setOtpValue(
+                            e.target.value.replace(/\D/g, "").slice(0, 6),
+                          )
+                        }
+                        placeholder={t("enterOtp")}
+                        className="w-full px-4 py-3 border border-gray-200 rounded text-[#171717] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#171717] focus:border-transparent text-center tracking-widest font-mono text-lg"
+                        maxLength={6}
+                        required
+                      />
+                      {emailSubmitted && error && (
+                        <p className="text-sm text-red-500 mt-2 text-center">
+                          {error}
+                        </p>
+                      )}
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={isLoading || otpValue.length !== 6}
+                      className="w-full px-6 py-3.5 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isLoading ? t("loading") : t("verifyAndContinue")}
+                    </button>
+                  </form>
+
+                  {/* Resend OTP */}
+                  <div className="text-center mt-4">
+                    {canResendOtp ? (
+                      <button
+                        onClick={handleResendOtp}
+                        disabled={isLoading}
+                        className="text-sm text-[#171717] underline font-medium disabled:opacity-50"
+                      >
+                        {t("resendOtp")}
+                      </button>
+                    ) : (
+                      <p className="text-sm text-gray-400">
+                        {t("resendOtpCountdown", { seconds: otpResendCountdown })}
                       </p>
                     )}
                   </div>
-
-                  <button
-                    type="submit"
-                    disabled={isLoading || otpValue.length !== 6}
-                    className="w-full px-6 py-3.5 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isLoading ? t("loading") : t("verifyAndContinue")}
-                  </button>
-                </form>
-
-                {/* Resend OTP */}
-                <div className="text-center mt-4">
-                  {canResendOtp ? (
-                    <button
-                      onClick={handleResendOtp}
-                      disabled={isLoading}
-                      className="text-sm text-[#5E53E0] hover:underline disabled:opacity-50"
-                    >
-                      {t("resendOtp")}
-                    </button>
-                  ) : (
-                    <p className="text-sm text-gray-400">
-                      {t("resendOtpCountdown", { seconds: otpResendCountdown })}
-                    </p>
-                  )}
                 </div>
 
                 {/* Back Link */}
                 <button
                   onClick={() => {
+                    setEmailSubmitted(false);
                     setOtpValue("");
                     setError("");
-                    setPageState("email");
+                    setPageState("ready");
                   }}
                   className="w-full mt-4 text-sm text-gray-500 hover:text-gray-700 transition-colors"
                 >
-                  ← {t("changeEmail")}
+                  ← {tPayment("cancel")}
                 </button>
               </div>
             </div>

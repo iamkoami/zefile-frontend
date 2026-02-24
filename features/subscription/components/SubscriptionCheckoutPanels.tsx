@@ -392,7 +392,7 @@ export function SubscriptionMethodPanel() {
                   <button
                     key={provider.provider}
                     onClick={() => handleSelectMethod("mobile_money", provider.provider)}
-                    className={`w-full flex items-center gap-4 p-4 rounded border-2 transition-colors focus:outline-none focus:ring-2 focus:ring-[#5E53E0] focus:ring-offset-2 ${
+                    className={`w-full flex items-center gap-4 p-4 rounded border-2 transition-colors focus:outline-none focus:ring-2 focus:ring-[#171717] focus:ring-offset-2 ${
                       isSelected
                         ? "border-[#5E53E0] bg-[#5E53E0]/5"
                         : "border-gray-200 hover:border-gray-300"
@@ -438,7 +438,7 @@ export function SubscriptionMethodPanel() {
               {/* Card Option */}
               <button
                 onClick={() => handleSelectMethod("card")}
-                className={`w-full flex items-center gap-4 p-4 rounded border-2 transition-colors focus:outline-none focus:ring-2 focus:ring-[#5E53E0] focus:ring-offset-2 ${
+                className={`w-full flex items-center gap-4 p-4 rounded border-2 transition-colors focus:outline-none focus:ring-2 focus:ring-[#171717] focus:ring-offset-2 ${
                   selectedMethodType === "card"
                     ? "border-[#5E53E0] bg-[#5E53E0]/5"
                     : "border-gray-200 hover:border-gray-300"

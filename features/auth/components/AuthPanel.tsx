@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Xmark } from "iconoir-react";
 import EmailAuthForm from "./EmailAuthForm";
-import PhoneAuthForm from "./PhoneAuthForm";
+// Phone tab hidden until SMS auth is implemented
+// import PhoneAuthForm from "./PhoneAuthForm";
 
 interface AuthPanelProps {
   isOpen: boolean;
@@ -21,7 +22,7 @@ const AuthPanel: React.FC<AuthPanelProps> = ({
   mode = "signup",
 }) => {
   const t = useTranslations("auth");
-  const [activeTab, setActiveTab] = useState<"email" | "phone">(defaultTab);
+  // Phone tab hidden until SMS auth is implemented
   const [shouldRender, setShouldRender] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
@@ -93,46 +94,12 @@ const AuthPanel: React.FC<AuthPanelProps> = ({
             </p>
           </div>
 
-          {/* Tabs - centered */}
-          <div className="ze-auth-tabs flex justify-center mt-6 mb-2">
-            <div className="inline-flex bg-[#FFF5F0] rounded-lg p-1.5">
-              <button
-                onClick={() => setActiveTab("phone")}
-                className={`ze-auth-tab px-10 py-3 rounded-md text-sm font-medium transition-all ${
-                  activeTab === "phone"
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-600 hover:text-gray-900"
-                }`}
-              >
-                {t("phoneTab")}
-              </button>
-              <button
-                onClick={() => setActiveTab("email")}
-                className={`ze-auth-tab px-10 py-3 rounded-md text-sm font-medium transition-all ${
-                  activeTab === "email"
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-600 hover:text-gray-900"
-                }`}
-              >
-                {t("emailTab")}
-              </button>
-            </div>
-          </div>
-
-          {/* Tab Content - full width with symmetric padding */}
-          <div className="ze-auth-form-container flex-1 flex flex-col justify-center px-20 md:px-28 lg:px-36">
-            {activeTab === "email" && (
-              <EmailAuthForm
-                onSuccess={onClose}
-                termsAccepted={mode === "signup" ? termsAccepted : undefined}
-              />
-            )}
-            {activeTab === "phone" && (
-              <PhoneAuthForm
-                onSuccess={onClose}
-                termsAccepted={mode === "signup" ? termsAccepted : undefined}
-              />
-            )}
+          {/* Auth Form - full width with symmetric padding */}
+          <div className="ze-auth-form-container flex-1 flex flex-col justify-center px-20 md:px-28 lg:px-36 mt-6">
+            <EmailAuthForm
+              onSuccess={onClose}
+              termsAccepted={mode === "signup" ? termsAccepted : undefined}
+            />
 
             {/* Terms & Privacy Checkbox (signup) / Passive notice (login) */}
             {mode === "signup" ? (

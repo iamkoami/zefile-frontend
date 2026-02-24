@@ -37,12 +37,29 @@ const Header = () => {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [showLogoutConfirmation, setShowLogoutConfirmation] = useState(false);
   const [showLegalConsent, setShowLegalConsent] = useState(false);
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [subscriptionTier, setSubscriptionTier] =
     useState<SubscriptionTier>("free");
   const resourcesTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
   const userTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [upgradeBannerDismissed, setUpgradeBannerDismissed] = useState(true);
+
+  // Check if mobile upgrade banner was recently dismissed
+  useEffect(() => {
+    try {
+      const dismissedAt = localStorage.getItem("upgrade_banner_dismissed");
+      if (dismissedAt) {
+        const daysSince = (Date.now() - Number(dismissedAt)) / (1000 * 60 * 60 * 24);
+        setUpgradeBannerDismissed(daysSince < 7);
+      } else {
+        setUpgradeBannerDismissed(false);
+      }
+    } catch {
+      setUpgradeBannerDismissed(false);
+    }
+  }, []);
 
   // Track auth transition for smooth animation
   const [isAuthTransitioning, setIsAuthTransitioning] = useState(false);
@@ -210,7 +227,9 @@ const Header = () => {
     };
 
     // Handle open-auth-panel event (from SubscriptionPanel)
-    const handleOpenAuthPanel = () => {
+    const handleOpenAuthPanel = (event: Event) => {
+      const customEvent = event as CustomEvent<{ returnTo?: string }>;
+      setPendingAction(customEvent.detail?.returnTo ?? null);
       setShowAuthPanel(true);
     };
 
@@ -660,9 +679,47 @@ const Header = () => {
         </div>
       </header>
 
+      {/* Mobile upgrade banner for free-tier users */}
+      {isAuthChecked && isAuthenticated && subscriptionTier === "free" && !upgradeBannerDismissed && (
+        <div className="lg:hidden flex items-center justify-center gap-2 py-1.5 px-4 bg-[#5E53E0]/5 border-b border-[#5E53E0]/10">
+          <span className="text-xs text-gray-500">{t("freePlan")}</span>
+          <button
+            onClick={() => handleOpenDrawer("subscriptions")}
+            className="text-xs font-semibold text-[#5E53E0] hover:text-[#4a42b8] transition-colors"
+          >
+            {t("upgrade")}
+          </button>
+          <button
+            onClick={() => {
+              setUpgradeBannerDismissed(true);
+              try {
+                localStorage.setItem("upgrade_banner_dismissed", String(Date.now()));
+              } catch {
+                // localStorage unavailable
+              }
+            }}
+            className="ml-auto text-gray-400 hover:text-gray-600 transition-colors p-0.5"
+            aria-label="Dismiss"
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M10.5 3.5L3.5 10.5M3.5 3.5L10.5 10.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </button>
+        </div>
+      )}
+
       <AuthPanel
         isOpen={showAuthPanel}
-        onClose={() => setShowAuthPanel(false)}
+        onClose={() => {
+          setShowAuthPanel(false);
+          if (pendingAction === "subscriptions") {
+            // Delay to let auth panel exit animation finish
+            setTimeout(() => {
+              openDrawer("subscriptions");
+            }, 300);
+          }
+          setPendingAction(null);
+        }}
         mode={authMode}
       />
 

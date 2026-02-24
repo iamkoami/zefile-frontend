@@ -165,6 +165,55 @@ export function BreadcrumbJsonLd({ items }: { items: BreadcrumbItem[] }) {
   );
 }
 
+// Product/Offer Catalog Schema - for pricing page
+interface PricingTier {
+  name: string;
+  description: string;
+  price: string;
+  priceCurrency: string;
+  billingPeriod?: string;
+  features: string[];
+}
+
+export function OfferCatalogJsonLd({ tiers }: { tiers: PricingTier[] }) {
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "OfferCatalog",
+    name: "ZeFile Plans",
+    itemListElement: tiers.map((tier) => ({
+      "@type": "Offer",
+      name: tier.name,
+      description: tier.description,
+      price: tier.price,
+      priceCurrency: tier.priceCurrency,
+      ...(tier.billingPeriod && { billingDuration: tier.billingPeriod }),
+      seller: { "@id": `${SITE_URL}/#org` },
+      itemOffered: {
+        "@type": "Service",
+        name: `ZeFile ${tier.name}`,
+        description: tier.description,
+        provider: { "@id": `${SITE_URL}/#org` },
+        hasOfferCatalog: {
+          "@type": "OfferCatalog",
+          name: "Features",
+          itemListElement: tier.features.map((f) => ({
+            "@type": "Offer",
+            itemOffered: { "@type": "Service", name: f },
+          })),
+        },
+      },
+    })),
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      suppressHydrationWarning
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+    />
+  );
+}
+
 // Article Schema - for blog posts
 interface ArticleJsonLdProps {
   headline: string;

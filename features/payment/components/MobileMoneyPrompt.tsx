@@ -282,7 +282,7 @@ export function MobileMoneyPrompt({
 
             <button
               onClick={onChangeMethod}
-              className="w-full px-5 py-2 text-[#5E53E0] font-medium hover:underline"
+              className="w-full px-5 py-2 text-[#171717] underline font-medium"
             >
               {t('useDifferentMethod')}
             </button>
@@ -314,7 +314,7 @@ export function MobileMoneyPrompt({
 
             <button
               onClick={onChangeMethod}
-              className="w-full mt-3 px-5 py-2 text-[#5E53E0] font-medium hover:underline"
+              className="w-full mt-3 px-5 py-2 text-[#171717] underline font-medium"
             >
               {t('useDifferentMethod')}
             </button>

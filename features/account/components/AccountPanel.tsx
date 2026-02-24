@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import {
   Settings,
@@ -11,6 +11,7 @@ import {
   RefreshDouble,
   Globe,
 } from "iconoir-react";
+import AccordionItem from "@/components/shared/AccordionItem";
 import { useDrawerStore, AccountMenuItem } from "@/stores/drawer-store";
 import TransactionsPanel from "./TransactionsPanel";
 import PayoutsPanel from "./PayoutsPanel";
@@ -144,18 +145,132 @@ const VerificationContent: React.FC = () => {
 };
 
 /**
- * HelpContent - Placeholder for help center
- * TODO: Implement help center with FAQ, contact support
+ * HelpContent - FAQ search + accordion sections
+ * Mirrors the public /help page using the same pages.help translation namespace
  */
 const HelpContent: React.FC = () => {
-  const t = useTranslations("account");
+  const t = useTranslations("pages.help");
+  const [search, setSearch] = useState("");
+
+  const sections = useMemo(
+    () => [
+      {
+        title: t("gettingStartedTitle"),
+        faqs: [
+          { q: t("faq1Q"), a: t("faq1A") },
+          { q: t("faq2Q"), a: t("faq2A") },
+          { q: t("faq3Q"), a: t("faq3A") },
+        ],
+      },
+      {
+        title: t("transfersTitle"),
+        faqs: [
+          { q: t("faq4Q"), a: t("faq4A") },
+          { q: t("faq5Q"), a: t("faq5A") },
+          { q: t("faq6Q"), a: t("faq6A") },
+        ],
+      },
+      {
+        title: t("paymentsTitle"),
+        faqs: [
+          { q: t("faq7Q"), a: t("faq7A") },
+          { q: t("faq8Q"), a: t("faq8A") },
+          { q: t("faq9Q"), a: t("faq9A") },
+        ],
+      },
+      {
+        title: t("securityTitle"),
+        faqs: [
+          { q: t("faq10Q"), a: t("faq10A") },
+          { q: t("faq11Q"), a: t("faq11A") },
+        ],
+      },
+    ],
+    [t],
+  );
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return sections;
+    const q = search.toLowerCase();
+    return sections
+      .map((s) => ({
+        ...s,
+        faqs: s.faqs.filter(
+          (f) => f.q.toLowerCase().includes(q) || f.a.toLowerCase().includes(q),
+        ),
+      }))
+      .filter((s) => s.faqs.length > 0);
+  }, [search, sections]);
 
   return (
     <div className="mb-10">
       <h3 className="text-2xl font-semibold text-[#171717] mb-6">
-        {t("helpTitle")}
+        {t("title")}
       </h3>
-      <p className="text-gray-500">{t("helpPlaceholder")}</p>
+
+      {/* Search */}
+      <div className="mb-8">
+        <div className="relative">
+          <svg
+            className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+          </svg>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={t("searchPlaceholder")}
+            className="w-full pl-12 pr-4 py-3.5 bg-white rounded-lg border border-gray-200 text-sm text-[#171717] placeholder-gray-400 focus:outline-none focus:border-[#171717] focus:ring-1 focus:ring-[#171717] transition-colors"
+          />
+        </div>
+      </div>
+
+      {/* FAQ Sections */}
+      <div className="space-y-10">
+        {filtered.map((section, sIdx) => (
+          <div key={sIdx}>
+            <h4 className="text-lg font-bold text-[#171717] mb-4">
+              {section.title}
+            </h4>
+            <div className="space-y-2">
+              {section.faqs.map((faq, fIdx) => (
+                <AccordionItem key={fIdx} question={faq.q} answer={faq.a} />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {filtered.length === 0 && (
+        <p className="text-center text-gray-500 mt-8">
+          {t("noResults")}
+        </p>
+      )}
+
+      {/* Contact */}
+      <div className="mt-12 pt-8 border-t border-gray-200">
+        <h4 className="text-lg font-semibold text-[#171717] mb-2">
+          {t("contactTitle")}
+        </h4>
+        <p className="text-sm text-gray-600">
+          {t("contactContent")}{" "}
+          <a
+            href={`mailto:${t("contactEmail")}`}
+            className="text-[#171717] underline font-medium"
+          >
+            {t("contactEmail")}
+          </a>
+        </p>
+      </div>
     </div>
   );
 };

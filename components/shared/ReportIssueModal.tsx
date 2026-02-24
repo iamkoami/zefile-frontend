@@ -273,7 +273,7 @@ const ReportIssueModal: React.FC<ReportIssueModalProps> = ({
                       setFormData((f) => ({ ...f, email: e.target.value }))
                     }
                     placeholder="your@email.com"
-                    className="w-full px-3 py-2 border border-gray-200 rounded focus:border-[#5E53E0] focus:ring-1 focus:ring-[#5E53E0] outline-none text-sm"
+                    className="w-full px-3 py-2 border border-gray-200 rounded focus:border-[#171717] focus:ring-1 focus:ring-[#171717] outline-none text-sm"
                     required
                   />
                 </div>
@@ -292,7 +292,7 @@ const ReportIssueModal: React.FC<ReportIssueModalProps> = ({
                       type: e.target.value as DisputeType,
                     }))
                   }
-                  className="w-full px-3 py-2 border border-gray-200 rounded focus:border-[#5E53E0] focus:ring-1 focus:ring-[#5E53E0] outline-none text-sm"
+                  className="w-full px-3 py-2 border border-gray-200 rounded focus:border-[#171717] focus:ring-1 focus:ring-[#171717] outline-none text-sm"
                   required
                 >
                   <option value="">{t('selectIssue')}</option>
@@ -317,7 +317,7 @@ const ReportIssueModal: React.FC<ReportIssueModalProps> = ({
                   placeholder={t('descriptionPlaceholder')}
                   rows={4}
                   maxLength={1000}
-                  className="w-full px-3 py-2 border border-gray-200 rounded focus:border-[#5E53E0] focus:ring-1 focus:ring-[#5E53E0] outline-none text-sm resize-none"
+                  className="w-full px-3 py-2 border border-gray-200 rounded focus:border-[#171717] focus:ring-1 focus:ring-[#171717] outline-none text-sm resize-none"
                   required
                 />
                 <p className="text-xs text-gray-400 mt-1">

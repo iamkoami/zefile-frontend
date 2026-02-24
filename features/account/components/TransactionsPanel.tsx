@@ -452,7 +452,7 @@ const TransactionsPanel: React.FC = () => {
             placeholder={t("searchPlaceholder")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#5E53E0] text-sm"
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded focus:outline-none hover:border-[#171717] focus:border-[#171717] text-sm"
           />
         </div>
       </div>

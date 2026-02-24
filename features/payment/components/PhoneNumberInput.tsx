@@ -265,7 +265,7 @@ export function PhoneNumberInput({
             onChange={handleInputChange}
             disabled={disabled}
             placeholder={t('enterPhoneNumber')}
-            className={`w-full px-4 py-3 border rounded-r text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#5E53E0] disabled:opacity-50 disabled:cursor-not-allowed ${
+            className={`w-full px-4 py-3 border rounded-r text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#171717] disabled:opacity-50 disabled:cursor-not-allowed ${
               displayError
                 ? 'border-red-500 focus:ring-red-500'
                 : 'border-gray-300'

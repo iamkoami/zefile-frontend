@@ -111,7 +111,7 @@ const ShareButtons: React.FC<ShareButtonsProps> = ({
     <div className={className}>
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="text-sm text-[#5E53E0] hover:underline flex items-center gap-1"
+        className="text-sm text-[#171717] underline font-medium flex items-center gap-1"
       >
         {isExpanded ? t("hideShare") : t("shareLink")}
         <svg

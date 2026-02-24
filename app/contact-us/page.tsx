@@ -138,14 +138,14 @@ export default function ContactPage() {
                         {channel.onClick ? (
                           <button
                             onClick={channel.onClick}
-                            className="text-sm font-medium text-[#171717] underline underline-offset-2 hover:text-[#5E53E0] transition-colors"
+                            className="text-sm font-medium text-[#171717] underline underline-offset-2 hover:text-[#171717] transition-colors"
                           >
                             {t(channel.valueKey)}
                           </button>
                         ) : channel.href ? (
                           <a
                             href={channel.href}
-                            className="text-sm font-medium text-[#171717] underline underline-offset-2 hover:text-[#5E53E0] transition-colors"
+                            className="text-sm font-medium text-[#171717] underline underline-offset-2 hover:text-[#171717] transition-colors"
                           >
                             {t(channel.valueKey)}
                           </a>

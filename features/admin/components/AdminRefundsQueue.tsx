@@ -290,7 +290,7 @@ const AdminRefundsQueue: React.FC = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t('searchPlaceholder')}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#5E53E0]"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#171717]"
             />
           </div>
         </form>
@@ -420,7 +420,7 @@ const AdminRefundsQueue: React.FC = () => {
                   <td className="px-4 py-3">
                     <button
                       onClick={() => setShowDetailModal(refund)}
-                      className="font-medium text-[#5E53E0] hover:underline"
+                      className="font-medium text-[#171717] underline"
                     >
                       {refund.reference}
                     </button>
@@ -640,7 +640,7 @@ const AdminRefundsQueue: React.FC = () => {
                   onChange={(e) => setRejectReason(e.target.value)}
                   placeholder={t('rejectionReasonPlaceholder')}
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#5E53E0] resize-none"
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#171717] resize-none"
                 />
                 <p className="text-xs text-gray-400 mt-1">{t('rejectionReasonHint')}</p>
               </div>
@@ -653,7 +653,7 @@ const AdminRefundsQueue: React.FC = () => {
                   onChange={(e) => setAdminNotes(e.target.value)}
                   placeholder={t('adminNotesPlaceholder')}
                   rows={2}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#5E53E0] resize-none"
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#171717] resize-none"
                 />
               </div>
             </div>

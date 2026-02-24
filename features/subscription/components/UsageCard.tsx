@@ -110,7 +110,7 @@ export function UsageCard({
           </p>
           <button
             onClick={onUpgrade}
-            className="mt-2 flex items-center gap-1 text-sm font-semibold text-[#5E53E0] hover:underline"
+            className="mt-2 flex items-center gap-1 text-sm font-semibold text-[#171717] underline"
           >
             {t('upgradeNow')}
             <ArrowUpRight className="h-4 w-4" />

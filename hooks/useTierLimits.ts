@@ -309,7 +309,7 @@ export function useTierLimits(): UseTierLimitsReturn {
     (tier: SubscriptionTier): string => {
       // Preferred defaults per tier, validated against tier's max
       const preferredDefaults: Record<SubscriptionTier, number> = {
-        free: 1,
+        free: 3,
         starter: 7,
         pro: 14,
       };

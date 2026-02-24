@@ -373,7 +373,7 @@ const CustomDomainPanel: React.FC = () => {
               onChange={(e) => handleDomainInputChange(e.target.value)}
               placeholder="files.yourdomain.com"
               pattern="^(?!:\/\/)([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$"
-              className={`flex-1 px-4 py-3 border rounded text-sm text-[#171717] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#5E53E0] focus:border-transparent ${
+              className={`flex-1 px-4 py-3 border rounded text-sm text-[#171717] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#171717] focus:border-transparent ${
                 domainError ? "border-red-300" : "border-gray-200"
               }`}
               required
@@ -508,7 +508,7 @@ const CustomDomainPanel: React.FC = () => {
                 onChange={(e) => setBrandingForm((prev) => ({ ...prev, companyName: e.target.value }))}
                 placeholder={t("companyNamePlaceholder")}
                 maxLength={100}
-                className="w-full px-4 py-2.5 border border-gray-200 rounded text-sm focus:outline-none focus:ring-2 focus:ring-[#5E53E0] focus:border-transparent"
+                className="w-full px-4 py-2.5 border border-gray-200 rounded text-sm focus:outline-none focus:ring-2 focus:ring-[#171717] focus:border-transparent"
               />
             </div>
 
@@ -801,7 +801,7 @@ function ColorPicker({
               setTextValue(value);
             }
           }}
-          className={`flex-1 px-3 py-1.5 border rounded text-xs font-mono focus:outline-none focus:ring-1 focus:ring-[#5E53E0] ${
+          className={`flex-1 px-3 py-1.5 border rounded text-xs font-mono focus:outline-none focus:ring-1 focus:ring-[#171717] ${
             HEX_COLOR_RE.test(textValue) ? "border-gray-200" : "border-red-300"
           }`}
           maxLength={7}

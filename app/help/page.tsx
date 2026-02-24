@@ -7,52 +7,8 @@ import Header from "@/components/shared/Header";
 import Footer from "@/components/shared/Footer";
 import PageHero from "@/components/shared/PageHero";
 import LoadingFullscreen from "@/components/LoadingFullscreen";
+import AccordionItem from "@/components/shared/AccordionItem";
 import { useTranslations } from "next-intl";
-
-function AccordionItem({ question, answer }: { question: string; answer: string }) {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <div className="rounded-2xl bg-[#F5F5F4] transition-colors duration-300">
-      <button
-        onClick={() => setOpen(!open)}
-        className="flex items-center justify-between w-full px-5 py-4 text-left"
-        aria-expanded={open}
-      >
-        <span className="text-[15px] font-semibold text-[#171717] pr-4">
-          {question}
-        </span>
-        <div
-          className={`w-6 h-6 rounded-full shrink-0 flex items-center justify-center transition-all duration-300 ${
-            open ? "rotate-180" : ""
-          }`}
-        >
-          <svg
-            className="w-3.5 h-3.5 text-gray-400"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={1.5}
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-          </svg>
-        </div>
-      </button>
-      <div
-        className="grid transition-all duration-400 ease-in-out"
-        style={{ gridTemplateRows: open ? "1fr" : "0fr" }}
-      >
-        <div className="overflow-hidden">
-          <div className="px-5 pb-5">
-            <div className="border-t border-black/[0.06] pt-3">
-              <p className="text-sm text-gray-500 leading-relaxed">{answer}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function BrandCross({
   size = 80,
@@ -225,7 +181,7 @@ export default function HelpCenterPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={t("searchPlaceholder")}
-                className="w-full pl-12 pr-4 py-4 bg-white rounded-lg border border-gray-200 text-[15px] text-[#171717] placeholder-gray-400 focus:outline-none focus:border-[#5E53E0] focus:ring-1 focus:ring-[#5E53E0] transition-colors"
+                className="w-full pl-12 pr-4 py-4 bg-white rounded-lg border border-gray-200 text-[15px] text-[#171717] placeholder-gray-400 focus:outline-none focus:border-[#171717] focus:ring-1 focus:ring-[#171717] transition-colors"
               />
             </div>
           </div>
@@ -261,7 +217,7 @@ export default function HelpCenterPage() {
               {t("contactContent")}{" "}
               <a
                 href={`mailto:${t("contactEmail")}`}
-                className="text-[#5E53E0] hover:underline font-medium"
+                className="text-[#171717] underline font-medium"
               >
                 {t("contactEmail")}
               </a>

@@ -364,7 +364,7 @@ export function PaymentMethodSelector({
                       key={provider.provider}
                       onClick={() => handleSelectMethod(method)}
                       onFocus={() => setFocusedIndex(mobileMoneyProviders.indexOf(provider))}
-                      className={`w-full flex items-center gap-4 p-4 rounded border-2 transition-colors focus:outline-none focus:ring-2 focus:ring-[#5E53E0] focus:ring-offset-2 ${
+                      className={`w-full flex items-center gap-4 p-4 rounded border-2 transition-colors focus:outline-none focus:ring-2 focus:ring-[#171717] focus:ring-offset-2 ${
                         isSelected
                           ? 'border-[#5E53E0] bg-[#5E53E0]/5'
                           : 'border-gray-200 hover:border-gray-300'
@@ -416,7 +416,7 @@ export function PaymentMethodSelector({
                 <button
                   onClick={() => handleSelectMethod({ type: 'card' })}
                   onFocus={() => setFocusedIndex(mobileMoneyProviders.length)}
-                  className={`w-full flex items-center gap-4 p-4 rounded border-2 transition-colors focus:outline-none focus:ring-2 focus:ring-[#5E53E0] focus:ring-offset-2 ${
+                  className={`w-full flex items-center gap-4 p-4 rounded border-2 transition-colors focus:outline-none focus:ring-2 focus:ring-[#171717] focus:ring-offset-2 ${
                     selectedMethod?.type === 'card'
                       ? 'border-[#5E53E0] bg-[#5E53E0]/5'
                       : 'border-gray-200 hover:border-gray-300'
@@ -456,7 +456,7 @@ export function PaymentMethodSelector({
                     <button
                       type="button"
                       onClick={() => setShowMoreMethods(!showMoreMethods)}
-                      className="w-full text-sm text-[#5E53E0] hover:underline text-center py-2"
+                      className="w-full text-sm text-[#171717] underline font-medium text-center py-2"
                     >
                       {showMoreMethods ? t('lessPaymentOptions') : t('morePaymentOptions')}
                     </button>
@@ -473,7 +473,7 @@ export function PaymentMethodSelector({
                           key={provider.provider}
                           onClick={() => handleSelectMethod(method)}
                           onFocus={() => setFocusedIndex(mobileMoneyProviders.indexOf(provider))}
-                          className={`w-full flex items-center gap-4 p-4 rounded border-2 transition-colors focus:outline-none focus:ring-2 focus:ring-[#5E53E0] focus:ring-offset-2 ${
+                          className={`w-full flex items-center gap-4 p-4 rounded border-2 transition-colors focus:outline-none focus:ring-2 focus:ring-[#171717] focus:ring-offset-2 ${
                             isSelected
                               ? 'border-[#5E53E0] bg-[#5E53E0]/5'
                               : 'border-gray-200 hover:border-gray-300'
@@ -559,7 +559,7 @@ export function PaymentMethodSelector({
             <button
               onClick={onCancel}
               disabled={isLoading}
-              className="w-full mt-3 px-5 py-2 text-sm font-medium text-[#5E53E0] hover:underline disabled:opacity-50"
+              className="w-full mt-3 px-5 py-2 text-sm font-medium text-[#171717] underline disabled:opacity-50"
             >
               {t('cancel')}
             </button>
