@@ -5,6 +5,19 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.14.0] - 2026-02-24
+
+### Changed
+
+- Homepage converted from client component to Server Component for SSR — H1 and subtitle now in initial HTML response for crawlers
+- Homepage client logic extracted to `HomeClient.tsx` (no visual change)
+- HeroText `<h1>` changed to `<div role="heading">` to avoid duplicate H1s with server-rendered heading
+- Removed duplicate AI bot rules from `robots.ts` (Cloudflare managed section already handles GPTBot, CCBot, ClaudeBot, Amazonbot, Google-Extended, Bytespider)
+
+### Removed
+
+- Broken hreflang language alternate tags from all 12 layout files — EN and FR pointed to same URL without URL-based i18n routing
+
 ## [1.13.0] - 2026-02-24
 
 ### Added
