@@ -29,7 +29,7 @@ function buildCsp(nonce: string): string {
 
   const directives = [
     `default-src 'self'`,
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${process.env.NODE_ENV === 'development' ? " 'unsafe-eval'" : ''}`,
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://www.google.com https://www.gstatic.com${process.env.NODE_ENV === 'development' ? " 'unsafe-eval'" : ''}`,
     // style-src 'unsafe-inline' is required: Next.js injects inline <style> tags for
     // styled-jsx and framework styles, and TailwindCSS generates inline style attributes.
     // CSP Level 2 hashes/nonces for styles are not supported by Next.js's build pipeline.
@@ -37,7 +37,7 @@ function buildCsp(nonce: string): string {
     `style-src 'self' 'unsafe-inline'`,
     `img-src 'self' data: blob: ${apiUrl} https://s3.eu-central-1.wasabisys.com`,
     `media-src 'self' blob: ${apiUrl} https://s3.eu-central-1.wasabisys.com`,
-    `connect-src 'self' ${apiUrl} https://s3.eu-central-1.wasabisys.com ${posthogDomains} https://*.ingest.us.sentry.io https://*.ingest.de.sentry.io`,
+    `connect-src 'self' ${apiUrl} https://s3.eu-central-1.wasabisys.com ${posthogDomains} https://*.ingest.us.sentry.io https://*.ingest.de.sentry.io https://www.google.com`,
     `font-src 'self'`,
     `frame-src ${apiUrl} https://checkout.paystack.com https://www.google.com`,
     `worker-src 'self' blob:`,
