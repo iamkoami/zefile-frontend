@@ -5,6 +5,19 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.12.0] - 2026-02-24
+
+### Added
+
+- Wire all 9 frontend-only PostHog events for 100% analytics coverage
+- FILES_SELECTED tracking on file drop and file picker selection
+- TRANSFER_STARTED tracking when user initiates transfer
+- FILE_UPLOADED tracking per-file after successful multipart upload
+- UPLOAD_FAILED tracking on upload finalization failure
+- PRICING_VIEWED tracking on pricing page load
+- PLAN_SELECTED tracking when user selects a subscription plan
+- FILE_UPLOADED and UPLOAD_FAILED enum values and convenience functions in posthog lib
+
 ## [1.11.0] - 2026-02-24
 
 ### Added
