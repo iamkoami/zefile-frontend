@@ -57,15 +57,17 @@ const HeroText: React.FC<HeroTextProps> = ({
         textAlign: "right",
       }}
     >
-      {/* Title */}
-      <h1
+      {/* Title — visual heading only; the semantic <h1> is server-rendered in app/page.tsx */}
+      <div
+        role="heading"
+        aria-level={1}
         className={`text-4xl xl:text-4xl font-bold leading-tight mb-4 ${colors.title}`}
         style={{
           transition: "color 1.5s ease-in-out",
         }}
       >
         {t("title")}
-      </h1>
+      </div>
 
       {/* Subtitle */}
       <p

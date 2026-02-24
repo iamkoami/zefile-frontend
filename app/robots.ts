@@ -3,6 +3,14 @@ import type { MetadataRoute } from 'next';
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://zefile.io';
 const isProduction = SITE_URL === 'https://zefile.io';
 
+// NOTE: Cloudflare Pages prepends a managed robots.txt section with Content-Signal
+// directives and AI bot blocks. That section already handles GPTBot, CCBot, ClaudeBot,
+// Amazonbot, Google-Extended, Bytespider, and meta-externalagent.
+// To avoid duplicate User-agent: * blocks (undefined per RFC 9309), either:
+//   1. Disable Cloudflare managed robots.txt in Pages dashboard (Settings > Scrape Shield)
+//   2. Or keep both sections as-is (Cloudflare's block uses Allow: /, ours is more specific)
+// We omit AI bot rules here to avoid duplication with the Cloudflare managed section.
+
 export default function robots(): MetadataRoute.Robots {
   // Block all crawlers on staging/dev environments
   if (!isProduction) {
@@ -63,15 +71,10 @@ export default function robots(): MetadataRoute.Robots {
         userAgent: 'Bingbot',
         disallow: ['/download/', '/transfer/', '/dashboard/', '/z-'],
       },
-      // Block AI training crawlers
-      { userAgent: 'GPTBot', disallow: '/' },
+      // AI training crawlers are blocked by Cloudflare's managed robots.txt section.
+      // Only ChatGPT-User and anthropic-ai are not in Cloudflare's list, so keep them here.
       { userAgent: 'ChatGPT-User', disallow: '/' },
-      { userAgent: 'CCBot', disallow: '/' },
-      { userAgent: 'ClaudeBot', disallow: '/' },
-      { userAgent: 'Amazonbot', disallow: '/' },
-      { userAgent: 'Google-Extended', disallow: '/' },
       { userAgent: 'anthropic-ai', disallow: '/' },
-      { userAgent: 'Bytespider', disallow: '/' },
     ],
     sitemap: `${SITE_URL}/sitemap.xml`,
   };

@@ -34,11 +34,6 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     alternates: {
       canonical: `${SITE_URL}/terms`,
-      languages: {
-        'en': `${SITE_URL}/terms`,
-        'fr': `${SITE_URL}/terms`,
-        'x-default': `${SITE_URL}/terms`,
-      },
     },
   };
 }

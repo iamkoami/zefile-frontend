@@ -139,11 +139,6 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     alternates: {
       canonical: `${SITE_URL}/pricing`,
-      languages: {
-        'en': `${SITE_URL}/pricing`,
-        'fr': `${SITE_URL}/pricing`,
-        'x-default': `${SITE_URL}/pricing`,
-      },
     },
   };
 }

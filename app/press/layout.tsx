@@ -12,11 +12,6 @@ export const metadata: Metadata = {
   },
   alternates: {
     canonical: `${SITE_URL}/press`,
-    languages: {
-      'en': `${SITE_URL}/press`,
-      'fr': `${SITE_URL}/press`,
-      'x-default': `${SITE_URL}/press`,
-    },
   },
 };
 

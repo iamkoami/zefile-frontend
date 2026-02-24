@@ -12,11 +12,6 @@ export const metadata: Metadata = {
   },
   alternates: {
     canonical: `${SITE_URL}/jobs`,
-    languages: {
-      'en': `${SITE_URL}/jobs`,
-      'fr': `${SITE_URL}/jobs`,
-      'x-default': `${SITE_URL}/jobs`,
-    },
   },
 };
 
