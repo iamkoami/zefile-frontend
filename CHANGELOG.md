@@ -5,6 +5,13 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.14.4] - 2026-02-25
+
+### Fixed
+
+- Improve text readability on About and How It Works pages (darker text color, font-medium weight, consistent text-base sizing)
+- Change toggle buttons from rounded-full to rounded-md on How It Works page
+
 ## [1.14.3] - 2026-02-24
 
 ### Fixed
