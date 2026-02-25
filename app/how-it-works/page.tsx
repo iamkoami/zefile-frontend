@@ -212,7 +212,7 @@ function StepCardInner({
   return (
     <div className="bg-[#171717] border border-[#87E64B]/20 rounded-2xl p-6 md:p-8 text-white h-full flex flex-col">
       <div className="flex items-start gap-1 mb-4">
-        <span className="text-[#87E64B] text-3xl md:text-4xl font-bold leading-none">
+        <span className="text-[#87E64B] text-2xl md:text-4xl font-bold leading-none">
           {String(number).padStart(2, "0")}
         </span>
         <svg
@@ -228,8 +228,8 @@ function StepCardInner({
           />
         </svg>
       </div>
-      <h3 className="text-xl md:text-2xl font-bold mb-3">{title}</h3>
-      <p className="text-white/60 text-sm md:text-base leading-relaxed mb-6 flex-1">
+      <h3 className="text-xl md:text-xl font-bold mb-3">{title}</h3>
+      <p className="text-white/60 font-medium text-base leading-relaxed mb-6 flex-1">
         {content}
       </p>
       <div className="rounded-xl overflow-hidden bg-[#2a2a2a]">
@@ -388,10 +388,10 @@ function StackedCard({
               {String(i + 1).padStart(2, "0")}
             </span>
             <div className="min-w-0 pt-1">
-              <h4 className="font-semibold text-white text-sm leading-snug">
+              <h4 className="font-semibold text-white text-base leading-snug">
                 {step.title}
               </h4>
-              <p className="text-gray-400 text-xs leading-relaxed mt-1">
+              <p className="text-gray-400 text-base font-medium leading-relaxed mt-1">
                 {step.description}
               </p>
             </div>
@@ -436,10 +436,10 @@ function SplitPerspective({
         {/* Toggle */}
         <Reveal delay={100}>
           <div className="flex justify-center mb-10">
-            <div className="inline-flex bg-[#171717] rounded-full p-1 gap-1">
+            <div className="inline-flex bg-[#171717] rounded-md p-1 gap-1">
               <button
                 onClick={() => setActive("sender")}
-                className={`px-5 py-2.5 text-sm font-semibold rounded-full transition-all duration-300 ${
+                className={`px-5 py-2.5 text-sm font-semibold rounded-md transition-all duration-300 ${
                   active === "sender"
                     ? "bg-[#87E64B] text-[#171717]"
                     : "text-gray-400 hover:text-white"
@@ -449,7 +449,7 @@ function SplitPerspective({
               </button>
               <button
                 onClick={() => setActive("receiver")}
-                className={`px-5 py-2.5 text-sm font-semibold rounded-full transition-all duration-300 ${
+                className={`px-5 py-2.5 text-sm font-semibold rounded-md transition-all duration-300 ${
                   active === "receiver"
                     ? "bg-[#5E53E0] text-white"
                     : "text-gray-400 hover:text-white"
@@ -499,10 +499,10 @@ function SplitPerspective({
                     {String(i + 1).padStart(2, "0")}
                   </span>
                   <div>
-                    <h4 className="font-semibold text-white text-sm">
+                    <h4 className="font-semibold text-white text-base">
                       {step.title}
                     </h4>
-                    <p className="text-gray-400 text-xs mt-0.5">
+                    <p className="text-gray-400 font-medium text-base mt-0.5">
                       {step.description}
                     </p>
                   </div>
@@ -527,7 +527,7 @@ function SplitPerspective({
                     <h4 className="font-semibold text-white text-sm">
                       {step.title}
                     </h4>
-                    <p className="text-gray-400 text-xs mt-0.5">
+                    <p className="text-gray-400 font-medium text-base mt-0.5">
                       {step.description}
                     </p>
                   </div>
@@ -541,9 +541,6 @@ function SplitPerspective({
   );
 }
 
-/* ------------------------------------------------------------------ */
-/*  4. Bento feature grid                                              */
-/* ------------------------------------------------------------------ */
 /* ------------------------------------------------------------------ */
 /*  4. Feature carousel (same layout as About's Security section)       */
 /* ------------------------------------------------------------------ */
@@ -657,7 +654,7 @@ function FeatureCarousel({
             <h2 className="text-3xl md:text-5xl font-bold text-[#171717] mb-3">
               {title}
             </h2>
-            <p className="text-gray-500 text-base max-w-xl mx-auto leading-relaxed">
+            <p className="text-[#171717]/70 font-medium text-base max-w-xl mx-auto leading-relaxed">
               {subtitle}
             </p>
           </div>
@@ -691,7 +688,7 @@ function FeatureCarousel({
                 <h3 className="text-[#171717] font-bold text-base mb-2">
                   {feature.title}
                 </h3>
-                <p className="text-gray-400 text-sm leading-relaxed mb-4">
+                <p className="text-[#171717] font-medium text-base leading-relaxed mb-4">
                   {feature.description}
                 </p>
                 <div className="mt-auto rounded-xl bg-[#F3F0FF] aspect-[16/10] flex items-center justify-center">
@@ -777,7 +774,7 @@ function MosaicTile({
         <h3 className="text-lg font-bold text-[#171717] mb-1">{name}</h3>
 
         {/* Formats — always visible */}
-        <p className="text-xs text-gray-500 leading-relaxed mb-3 flex-1">
+        <p className="text-sm font-medium text-gray-500 leading-relaxed mb-3 flex-1">
           {formats}
         </p>
 
@@ -1029,7 +1026,7 @@ function StatsBar({
                 <p className="text-[#171717] font-semibold text-base leading-snug">
                   {stat.label}
                 </p>
-                <p className="text-[#171717]/50 text-sm mt-1">
+                <p className="text-[#171717]/70 text-base font-medium mt-1">
                   {stat.sublabel}
                 </p>
               </div>

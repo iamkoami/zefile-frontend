@@ -186,7 +186,7 @@ function CapCardInner({
         </svg>
       </div>
       <h3 className="text-lg md:text-xl font-bold mb-2">{title}</h3>
-      <p className="text-white/60 text-sm md:text-base leading-relaxed flex-1">
+      <p className="text-white/60 font-medium text-base leading-relaxed flex-1">
         {content}
       </p>
     </div>
@@ -432,13 +432,19 @@ function TrustCarousel({ items }: { items: { pill: string; desc: string }[] }) {
 
   const onScroll = useCallback(() => {
     if (!scrollRef.current) return;
-    const index = Math.round(scrollRef.current.scrollLeft / (TRUST_CARD_WIDTH + TRUST_GAP));
+    const index = Math.round(
+      scrollRef.current.scrollLeft / (TRUST_CARD_WIDTH + TRUST_GAP),
+    );
     setActive(Math.min(index, items.length - 1));
   }, [items.length]);
 
   const onDragStart = (e: React.MouseEvent) => {
     if (!scrollRef.current) return;
-    dragRef.current = { isDown: true, startX: e.pageX - scrollRef.current.offsetLeft, scrollLeft: scrollRef.current.scrollLeft };
+    dragRef.current = {
+      isDown: true,
+      startX: e.pageX - scrollRef.current.offsetLeft,
+      scrollLeft: scrollRef.current.scrollLeft,
+    };
     scrollRef.current.style.scrollBehavior = "auto";
     setPaused(true);
   };
@@ -450,13 +456,17 @@ function TrustCarousel({ items }: { items: { pill: string; desc: string }[] }) {
     if (!dragRef.current.isDown || !scrollRef.current) return;
     e.preventDefault();
     const x = e.pageX - scrollRef.current.offsetLeft;
-    scrollRef.current.scrollLeft = dragRef.current.scrollLeft - (x - dragRef.current.startX);
+    scrollRef.current.scrollLeft =
+      dragRef.current.scrollLeft - (x - dragRef.current.startX);
   };
 
   return (
     <div
       onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => { setPaused(false); onDragEnd(); }}
+      onMouseLeave={() => {
+        setPaused(false);
+        onDragEnd();
+      }}
     >
       <div
         ref={scrollRef}
@@ -479,7 +489,7 @@ function TrustCarousel({ items }: { items: { pill: string; desc: string }[] }) {
             <h3 className="text-[#171717] font-bold text-base mb-2">
               {item.pill}
             </h3>
-            <p className="text-gray-400 text-sm leading-relaxed mb-4">
+            <p className="text-[#171717] font-medium text-base leading-relaxed mb-4">
               {item.desc}
             </p>
             <div className="mt-auto rounded-xl bg-[#F3F0FF] aspect-[16/10] flex items-center justify-center">
@@ -615,7 +625,10 @@ export default function AboutPage() {
         </div>
 
         {/* ── 2. The Problem — text left, image right ───────────── */}
-        <section id="about-problem" className="max-w-6xl mx-auto px-6 pt-36 pb-30 md:pb-36">
+        <section
+          id="about-problem"
+          className="max-w-6xl mx-auto px-6 pt-36 pb-30 md:pb-36"
+        >
           <Reveal>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-center">
               <div>
@@ -627,13 +640,13 @@ export default function AboutPage() {
                   })}
                 </h2>
                 <div className="space-y-4">
-                  <p className="text-gray-500 font-medium text-base md:text-lg leading-relaxed">
+                  <p className="text-[#171717] font-medium text-base leading-relaxed">
                     {t("problemP1")}
                   </p>
-                  <p className="text-gray-500 font-medium text-base md:text-lg leading-relaxed">
+                  <p className="text-[#171717] font-medium text-base leading-relaxed">
                     {t("problemP2")}
                   </p>
-                  <p className="text-gray-500 font-medium text-base md:text-lg leading-relaxed">
+                  <p className="text-[#171717] font-medium text-base leading-relaxed">
                     {t("problemP3")}
                   </p>
                 </div>
@@ -653,7 +666,10 @@ export default function AboutPage() {
         </section>
 
         {/* ── 2b. Pain Points in Numbers (same style as How-It-Works stats bar) */}
-        <section id="about-stats" className="relative overflow-x-clip bg-gradient-to-b from-white via-[#EAF9DE] to-white">
+        <section
+          id="about-stats"
+          className="relative overflow-x-clip bg-gradient-to-b from-white via-[#EAF9DE] to-white"
+        >
           <BrandCross
             size={160}
             color="#5E53E0"
@@ -722,7 +738,10 @@ export default function AboutPage() {
 
         {/* ── 3. Origin Story — dark card + interior shapes ────── */}
         <Reveal>
-          <section id="about-origin" className="max-w-7xl mx-auto px-6 mt-10 mb-10">
+          <section
+            id="about-origin"
+            className="max-w-7xl mx-auto px-6 mt-10 mb-10"
+          >
             <div className="bg-[#FDFAF4] text-white rounded-3xl overflow-hidden relative">
               <div className="absolute top-8 right-8 w-40 h-28 rounded-3xl bg-[#87E64B]/[0.08] rotate-12 pointer-events-none" />
               <div className="absolute bottom-10 left-12 w-20 h-20 rounded-full bg-[#5E53E0]/10 pointer-events-none" />
@@ -790,7 +809,10 @@ export default function AboutPage() {
         </div>
 
         {/* ── 5. Security — trust cards ──────────────────────── */}
-        <section id="about-trust" className="bg-gradient-to-b from-white via-[#FDFAF4] to-white relative overflow-x-clip">
+        <section
+          id="about-trust"
+          className="bg-gradient-to-b from-white via-[#FDFAF4] to-white relative overflow-x-clip"
+        >
           <BrandCross
             size={200}
             color="#5E53E0"
@@ -834,7 +856,10 @@ export default function AboutPage() {
         </section>
 
         {/* ── 6. Made in Africa — green gradient + shapes ──────── */}
-        <section id="about-africa" className="pt-10 relative overflow-x-clip bg-gradient-to-br from-[#87E64B]/10 via-white to-[#87E64B]/5">
+        <section
+          id="about-africa"
+          className="pt-10 relative overflow-x-clip bg-gradient-to-br from-[#87E64B]/10 via-white to-[#87E64B]/5"
+        >
           <BrandCross
             size={80}
             color="#87E64B"
@@ -863,10 +888,10 @@ export default function AboutPage() {
                     })}
                   </h2>
                   <div className="space-y-5">
-                    <p className="text-gray-500 text-base md:text-base leading-relaxed">
+                    <p className="text-[#171717] font-medium text-base md:text-base leading-relaxed">
                       {t("africaP1")}
                     </p>
-                    <p className="text-gray-500 text-base md:text-base leading-relaxed">
+                    <p className="text-[#171717] font-medium text-base md:text-base leading-relaxed">
                       {t("africaP2")}
                     </p>
                   </div>
@@ -901,7 +926,7 @@ export default function AboutPage() {
                       <h3 className="text-lg font-bold text-[#171717] mb-2">
                         {t(v.titleKey)}
                       </h3>
-                      <p className="text-gray-600 text-base leading-relaxed">
+                      <p className="text-[#171717] font-medium text-base">
                         {t(v.contentKey)}
                       </p>
                     </div>
@@ -914,7 +939,10 @@ export default function AboutPage() {
 
         {/* ── 8. CTA — green card + interior shapes ────────────── */}
         <Reveal>
-          <section id="about-cta" className="max-w-6xl mx-auto px-6 pb-20 md:pt-20 md:pb-28">
+          <section
+            id="about-cta"
+            className="max-w-6xl mx-auto px-6 pb-20 md:pt-20 md:pb-28"
+          >
             <div className="bg-[#87E64B] rounded-3xl p-10 md:p-16 text-center relative overflow-hidden">
               <div className="absolute -top-6 -right-6 w-40 h-28 rounded-3xl bg-white/15 rotate-12 pointer-events-none" />
               <div className="absolute -bottom-8 -left-4 w-28 h-28 rounded-full bg-white/10 pointer-events-none" />
@@ -928,7 +956,7 @@ export default function AboutPage() {
                     ),
                   })}
                 </h2>
-                <p className="text-[#171717]/70 text-base md:text-lg mb-10 max-w-xl mx-auto">
+                <p className="text-[#171717]/70 font-medium text-base mb-10 max-w-xl mx-auto">
                   {t("ctaSubtext")}
                 </p>
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
