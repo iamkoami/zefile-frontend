@@ -5,6 +5,20 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.15.0] - 2026-02-25
+
+### Added
+
+- Processing fee breakdown in buyer checkout (file price + processing fee + total)
+- Fee breakdown props in TransferSummaryCard component
+- countryCode parameter in payment initialization request
+- Payout fee percentage display in withdrawal panel
+- Fee-related i18n keys for EN and FR (filePrice, processingFee, totalCharged, withdrawalFeePercent)
+
+### Changed
+
+- Tier limit fallback defaults updated: FREE 7%, STARTER 5%, PRO 3% (matching backend pass-through model)
+
 ## [1.14.4] - 2026-02-25
 
 ### Fixed
