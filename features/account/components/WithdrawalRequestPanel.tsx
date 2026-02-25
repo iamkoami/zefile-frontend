@@ -298,7 +298,11 @@ const WithdrawalRequestPanel: React.FC<WithdrawalRequestPanelProps> = ({
             </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-500">{t("fee")}</span>
+            <span className="text-gray-500">
+              {feeCalculation?.feePercent && feeCalculation.feePercent > 0
+                ? t("withdrawalFeePercent", { percent: feeCalculation.feePercent })
+                : t("fee")}
+            </span>
             <span className="text-gray-700">
               - {formatAmount(feeCalculation?.fee || 0, balance?.currency)}
             </span>
@@ -539,7 +543,11 @@ const WithdrawalRequestPanel: React.FC<WithdrawalRequestPanelProps> = ({
             </div>
             <div className="text-sm space-y-1">
               <div className="flex justify-between">
-                <span className="text-gray-500">{t("withdrawalFee")}</span>
+                <span className="text-gray-500">
+                  {feeCalculation.feePercent > 0
+                    ? t("withdrawalFeePercent", { percent: feeCalculation.feePercent })
+                    : t("withdrawalFee")}
+                </span>
                 <span>
                   - {formatAmount(feeCalculation.fee, balance?.currency)}
                 </span>

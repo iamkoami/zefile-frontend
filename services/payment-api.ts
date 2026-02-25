@@ -116,6 +116,8 @@ export interface InitializePaymentV2Request {
   phoneNumber?: string;
   /** Preferred Paystack channel for checkout (card, bank_transfer, ussd) */
   preferredChannel?: 'card' | 'bank_transfer' | 'ussd' | 'bank' | 'qr';
+  /** Buyer's country code (ISO 3166-1 alpha-2) for processing fee lookup */
+  countryCode?: string;
 }
 
 /**
@@ -136,6 +138,16 @@ export interface InitializePaymentV2Response {
   /** Whether this is a mobile money payment (STK push) */
   isMobileMoney?: boolean;
   metadata?: Record<string, unknown>;
+  /** Processing fee in minor units (buyer surcharge) */
+  processingFeeMinorUnits?: number;
+  /** Processing fee rate applied (e.g. 2.95) */
+  processingFeePercent?: number;
+  /** Total amount charged to buyer (price + processing fee) in minor units */
+  totalAmountMinorUnits?: number;
+  /** Pre-formatted total amount for display (e.g. "10,304 XOF") */
+  displayTotalAmount?: string;
+  /** Pre-formatted processing fee for display (e.g. "304 XOF") */
+  displayProcessingFee?: string;
 }
 
 /**

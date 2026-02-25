@@ -196,6 +196,10 @@ export default function TransferLandingPage() {
   // Payment prompt
   const [paymentReference, setPaymentReference] = useState("");
   const [paymentAmount, setPaymentAmount] = useState(0);
+  // Processing fee breakdown (from payment initialization response)
+  const [processingFee, setProcessingFee] = useState(0);
+  const [processingFeePercent, setProcessingFeePercent] = useState(0);
+  const [totalAmountCharged, setTotalAmountCharged] = useState(0);
 
   // Payment block (admin can disable all payments)
   // null = not yet checked, true = disabled, false = enabled
@@ -742,11 +746,13 @@ export default function TransferLandingPage() {
     } else {
       setIsLoading(true);
       try {
+        const detectedCountry = localStorage.getItem("zefile_detected_country") || undefined;
         const response = await paymentApi.initializePaymentV2({
           transferId: transfer.id,
           customerEmail: customerEmail,
           requestedCurrency: transfer.currency,
           paymentMethod: "card",
+          countryCode: detectedCountry,
         });
 
         if (response.error) {
@@ -757,6 +763,13 @@ export default function TransferLandingPage() {
             toast.error(response.error.message || tPayment("paymentInitFailed"));
           }
           return;
+        }
+
+        if (response.data) {
+          // Store fee breakdown for display
+          setProcessingFee(response.data.processingFeeMinorUnits || 0);
+          setProcessingFeePercent(response.data.processingFeePercent || 0);
+          setTotalAmountCharged(response.data.totalAmountMinorUnits || response.data.pricingAmountMinorUnits);
         }
 
         if (response.data?.authorizationUrl) {
@@ -780,6 +793,7 @@ export default function TransferLandingPage() {
     setIsLoading(true);
 
     try {
+      const detectedCountry = localStorage.getItem("zefile_detected_country") || undefined;
       const response = await paymentApi.initializePaymentV2({
         transferId: transfer.id,
         customerEmail: customerEmail,
@@ -787,6 +801,7 @@ export default function TransferLandingPage() {
         paymentMethod: "mobile_money",
         mobileMoneyProvider: selectedProvider,
         phoneNumber: phoneNumber,
+        countryCode: detectedCountry,
       });
 
       if (response.error) {
@@ -803,6 +818,9 @@ export default function TransferLandingPage() {
       if (response.data) {
         setPaymentReference(response.data.reference);
         setPaymentAmount(response.data.pricingAmountMinorUnits);
+        setProcessingFee(response.data.processingFeeMinorUnits || 0);
+        setProcessingFeePercent(response.data.processingFeePercent || 0);
+        setTotalAmountCharged(response.data.totalAmountMinorUnits || response.data.pricingAmountMinorUnits);
         setPageState("payment-prompt");
       }
     } catch {
@@ -1154,7 +1172,7 @@ export default function TransferLandingPage() {
                 </div>
               </div>
 
-              {/* Transfer Summary */}
+              {/* Transfer Summary - payment state (pre-init, no fee data yet) */}
               {transfer && (
                 <div className="w-full lg:w-[300px] flex-shrink-0">
                   <TransferSummaryCard
@@ -1382,14 +1400,43 @@ export default function TransferLandingPage() {
                       {phoneNumber}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center pt-2 border-t border-gray-200">
-                    <span className="text-gray-600">{tPayment("amount")}</span>
-                    <span className="font-bold text-[#171717]">
-                      {paymentAmount
-                        ? `${(paymentAmount / 100).toLocaleString()} ${transfer?.currency === "XOF" ? "Fr CFA" : transfer?.currency || ""}`
-                        : ""}
-                    </span>
-                  </div>
+                  {processingFee > 0 ? (
+                    <>
+                      <div className="flex justify-between items-center pt-2 border-t border-gray-200 mb-1">
+                        <span className="text-gray-600">{tPayment("filePrice")}</span>
+                        <span className="font-medium text-[#171717]">
+                          {paymentAmount
+                            ? `${(paymentAmount / 100).toLocaleString()} ${transfer?.currency === "XOF" ? "Fr CFA" : transfer?.currency || ""}`
+                            : ""}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-gray-500">
+                          {processingFeePercent
+                            ? tPayment("processingFee", { percent: processingFeePercent.toFixed(processingFeePercent % 1 === 0 ? 0 : 2) })
+                            : tPayment("processingFeeGeneric")}
+                        </span>
+                        <span className="font-medium text-[#171717]">
+                          {`${(processingFee / 100).toLocaleString()} ${transfer?.currency === "XOF" ? "Fr CFA" : transfer?.currency || ""}`}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center pt-1 border-t border-gray-200">
+                        <span className="text-gray-600 font-semibold">{tPayment("totalCharged")}</span>
+                        <span className="font-bold text-[#171717]">
+                          {`${(totalAmountCharged / 100).toLocaleString()} ${transfer?.currency === "XOF" ? "Fr CFA" : transfer?.currency || ""}`}
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex justify-between items-center pt-2 border-t border-gray-200">
+                      <span className="text-gray-600">{tPayment("amount")}</span>
+                      <span className="font-bold text-[#171717]">
+                        {paymentAmount
+                          ? `${(paymentAmount / 100).toLocaleString()} ${transfer?.currency === "XOF" ? "Fr CFA" : transfer?.currency || ""}`
+                          : ""}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Polling Status */}
@@ -1449,7 +1496,7 @@ export default function TransferLandingPage() {
                 </div>
               </div>
 
-              {/* Transfer Summary */}
+              {/* Transfer Summary - payment-prompt state (post-init, fee data available) */}
               {transfer && (
                 <div className="w-full lg:w-[300px] flex-shrink-0">
                   <TransferSummaryCard
@@ -1462,6 +1509,9 @@ export default function TransferLandingPage() {
                     createdAt={transfer.createdAt}
                     senderEmail={getSenderEmail(transfer)}
                     versionCount={transfer.versionCount}
+                    processingFeeMinorUnits={processingFee}
+                    processingFeePercent={processingFeePercent}
+                    totalAmountMinorUnits={totalAmountCharged}
                   />
                 </div>
               )}

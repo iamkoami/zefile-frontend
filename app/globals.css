@@ -129,6 +129,51 @@
   /* Header */
   .ze-header {
     @apply w-full bg-white;
+    position: relative;
+    z-index: 100;
+  }
+
+  /* Both hidden and floating share fixed positioning + transition */
+  .ze-header-hidden,
+  .ze-header-floating {
+    position: fixed;
+    top: 12px;
+    left: 28px;
+    right: 28px;
+    width: auto;
+    border-radius: 16px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    box-shadow:
+      0 4px 16px 0 rgba(0, 0, 0, 0.08),
+      0 1px 4px 0 rgba(0, 0, 0, 0.04);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    background-color: rgba(255, 255, 255, 0.92);
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* Hidden: same pill shape but slid up off-screen */
+  .ze-header-hidden {
+    transform: translateY(calc(-100% - 24px));
+  }
+
+  /* Floating: visible */
+  .ze-header-floating {
+    transform: translateY(0);
+  }
+
+  @media (max-width: 1023px) {
+    .ze-header-hidden,
+    .ze-header-floating {
+      top: 8px;
+      left: 12px;
+      right: 12px;
+      border-radius: 12px;
+    }
+
+    .ze-header-hidden {
+      transform: translateY(calc(-100% - 20px));
+    }
   }
 
   .ze-header-container {

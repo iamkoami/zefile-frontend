@@ -45,6 +45,27 @@ const Header = () => {
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [upgradeBannerDismissed, setUpgradeBannerDismissed] = useState(true);
+  const [headerState, setHeaderState] = useState<"normal" | "hidden" | "floating">("normal");
+  const lastScrollY = useRef(0);
+
+  // Sticky header: normal at top, hidden on scroll down, floating on scroll up
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentY = window.scrollY;
+      const goingDown = currentY > lastScrollY.current;
+      lastScrollY.current = currentY;
+
+      if (currentY <= 40) {
+        setHeaderState("normal");
+      } else if (goingDown) {
+        setHeaderState("hidden");
+      } else {
+        setHeaderState("floating");
+      }
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   // Check if mobile upgrade banner was recently dismissed
   useEffect(() => {
@@ -388,7 +409,9 @@ const Header = () => {
     <>
       {/* Full page loading overlay for logout */}
       {isLoggingOut && <LoadingFullscreen />}
-      <header id="ze-header" className="ze-header">
+      {/* Spacer keeps layout stable when header becomes fixed */}
+      {headerState === "floating" && <div className="h-16" />}
+      <header id="ze-header" className={`ze-header${headerState === "floating" ? " ze-header-floating" : ""}${headerState === "hidden" ? " ze-header-hidden" : ""}`}>
         <div className="ze-header-container">
           {/* Left: Hamburger (mobile) + Logo */}
           <div id="ze-header-logo" className="ze-header-left">

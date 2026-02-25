@@ -20,6 +20,12 @@ export interface TransferSummaryCardProps {
   senderEmail?: string;
   versionCount?: number;
   className?: string;
+  /** Processing fee in minor units (pass-through to buyer) */
+  processingFeeMinorUnits?: number;
+  /** Processing fee rate (e.g. 2.95 means 2.95%) */
+  processingFeePercent?: number;
+  /** Total charged to buyer in minor units (price + processing fee) */
+  totalAmountMinorUnits?: number;
 }
 
 /**
@@ -37,6 +43,9 @@ export function TransferSummaryCard({
   senderEmail,
   versionCount,
   className = "",
+  processingFeeMinorUnits,
+  processingFeePercent,
+  totalAmountMinorUnits,
 }: TransferSummaryCardProps) {
   const t = useTranslations("payment");
   const { pricing } = useCurrencyStore();
@@ -141,13 +150,40 @@ export function TransferSummaryCard({
       {/* Spacer */}
       <div className="flex-1" />
 
-      {/* Total */}
-      <div className="flex items-center justify-between pt-4 border-t border-[#E8E0D5]">
-        <span className="font-semibold text-[#171717]">{t("total")}</span>
-        <span className="text-xl font-bold text-[#171717]">
-          {price > 0 ? formatAmount(price, currency) : t("freeTransfer")}
-        </span>
-      </div>
+      {/* Price breakdown with processing fee */}
+      {price > 0 && processingFeeMinorUnits && processingFeeMinorUnits > 0 ? (
+        <div className="pt-4 border-t border-[#E8E0D5] space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-gray-600">{t("filePrice")}</span>
+            <span className="text-sm font-medium text-[#171717]">
+              {formatAmount(price, currency)}
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-gray-600">
+              {processingFeePercent
+                ? t("processingFee", { percent: processingFeePercent.toFixed(processingFeePercent % 1 === 0 ? 0 : 2) })
+                : t("processingFeeGeneric")}
+            </span>
+            <span className="text-sm font-medium text-[#171717]">
+              {formatAmount(processingFeeMinorUnits, currency)}
+            </span>
+          </div>
+          <div className="flex items-center justify-between pt-2 border-t border-[#E8E0D5]">
+            <span className="font-semibold text-[#171717]">{t("totalCharged")}</span>
+            <span className="text-xl font-bold text-[#171717]">
+              {formatAmount(totalAmountMinorUnits || (price + processingFeeMinorUnits), currency)}
+            </span>
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-center justify-between pt-4 border-t border-[#E8E0D5]">
+          <span className="font-semibold text-[#171717]">{t("total")}</span>
+          <span className="text-xl font-bold text-[#171717]">
+            {price > 0 ? formatAmount(price, currency) : t("freeTransfer")}
+          </span>
+        </div>
+      )}
     </div>
   );
 }

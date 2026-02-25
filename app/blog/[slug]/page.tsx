@@ -275,7 +275,7 @@ export default function BlogPostPage() {
 
       {/* Reading progress bar */}
       {readProgress > 0 && (
-        <div className="fixed top-0 left-0 right-0 z-50 h-1 bg-gray-200/50">
+        <div className="fixed top-16 left-0 right-0 z-[101] h-1 bg-gray-200/50">
           <div
             className="h-full bg-[#5E53E0] transition-[width] duration-150 ease-out"
             style={{ width: `${readProgress}%` }}
