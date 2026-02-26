@@ -645,7 +645,11 @@
       "faq11A": "Yes. You can cancel or delete any transfer from your dashboard. The files will be removed from our servers.",
       "contactTitle": "Still need help?",
       "contactContent": "Reach out to our support team at",
-      "contactEmail": "hello@zefile.io"
+      "contactEmail": "hello@zefile.io",
+      "ctaTitle": "Got your answer? <highlight>Let's go.</highlight>",
+      "ctaSubtext": "No subscription needed to start. Your files stay locked until you're paid.",
+      "ctaButton": "Send your first file",
+      "ctaSecondary": "See pricing"
     },
     "howItWorks": {
       "title": "Three steps<br></br>to get <highlight>paid</highlight>",
@@ -748,7 +752,7 @@
       "faq10A": "71% of consumers have ended relationships due to poor service experiences. A WeTransfer link or Google Drive folder gets the job done, but it doesn't present your work professionally. ZeFile gives your clients a branded preview gallery with watermarks, which makes you look like the pro you are —and keeps them coming back.",
 
       "ctaTitle": "Tired of chasing? <highlight>Let's fix that.</highlight>",
-      "ctaSubtext": "Your first transfer is free. Files stay locked until you're paid. That's the deal.",
+      "ctaSubtext": "No subscription needed to start. Files stay locked until you're paid. That's the deal.",
       "ctaButton": "Send your first file",
       "ctaSecondaryLabel": "See pricing"
     },
@@ -817,7 +821,7 @@
       "value4Content": "We're building infrastructure, not a hype product. Security, reliability, and simplicity over flashy features.",
 
       "ctaTitle": "Done chasing payments? <highlight>Start here.</highlight>",
-      "ctaSubtext": "Your first transfer is free. Your files stay locked until you're paid.",
+      "ctaSubtext": "No subscription needed to start. Your files stay locked until you're paid.",
       "ctaButton": "Send your first file",
       "ctaSecondaryLabel": "See how it works"
     },
@@ -1382,6 +1386,10 @@
     "paymentsUnavailable": "Subscriptions temporarily down",
     "paymentsUnavailableDesc": "Plan upgrades are paused for maintenance. Your current plan isn't affected.",
     "questionsContact": "Questions? Contact us at",
+    "pricingCtaTitle": "Ready to get paid for your work? <highlight>Start now.</highlight>",
+    "pricingCtaSubtext": "No subscription needed to start. Files stay locked until you're paid. That's the deal.",
+    "pricingCtaButton": "Send your first file",
+    "pricingCtaSecondary": "See how it works",
     "tiers": {
       "free": {
         "name": "Free",
@@ -1436,7 +1444,7 @@
     "today": "Today",
     "nextBillingDate": "Next billing",
     "changeCurrency": "Change currency",
-    "faqTitle": "Frequently Asked Questions",
+    "faqTitle": "Frequently Asked <highlight>Questions</highlight>",
     "faqQ1": "Can I cancel my subscription anytime?",
     "faqA1": "Yes, you can cancel your subscription at any time. Your plan will remain active until the end of the billing period.",
     "faqQ2": "What payment methods do you accept?",
@@ -1474,7 +1482,34 @@
     "goBack": "Go back",
     "cannotUpgrade": "Cannot upgrade",
     "upgradePreviewError": "Failed to load upgrade preview",
-    "upgradeError": "Failed to process upgrade"
+    "upgradeError": "Failed to process upgrade",
+    "transactionFeesTitle": "About our <highlight>transaction fees</highlight>",
+    "transactionFeesSubtitle": "Small fees apply on each sale — they vary by country and payment method. Here's what to expect.",
+    "processingFee": "Processing fee",
+    "payoutFee": "Payout fee",
+    "buyerPays": "buyer pays",
+    "sellerPays": "seller pays",
+    "mobileMoney": "Mobile Money",
+    "card": "Card",
+    "bank": "Bank",
+    "notAvailable": "N/A",
+    "startSelling": "Start selling on ZeFile",
+    "countryNG": "Nigeria",
+    "countryGH": "Ghana",
+    "countryKE": "Kenya",
+    "countryRW": "Rwanda",
+    "countryZA": "South Africa",
+    "countryTZ": "Tanzania",
+    "countryUG": "Uganda",
+    "countryCI": "Ivory Coast",
+    "countryBF": "Burkina Faso",
+    "countryML": "Mali",
+    "countryCM": "Cameroon",
+    "countryGN": "Guinea",
+    "countryBJ": "Benin",
+    "countrySN": "Senegal",
+    "countryTG": "Togo",
+    "countryINTL": "International"
   },
   "account": {
     "title": "Account",

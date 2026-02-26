@@ -14,6 +14,7 @@ import {
   subscriptionApi,
 } from "@/services/subscription-api";
 import { useTierLimits } from "@/hooks/useTierLimits";
+import { TransactionFeesSection } from "./TransactionFeesSection";
 import {
   useCurrencyStore,
   COUNTRY_CONFIG,
@@ -535,10 +536,17 @@ const SubscriptionPanel: React.FC = () => {
         })}
       </div>
 
+      {/* Transaction Fees */}
+      <TransactionFeesSection compact />
+
       {/* FAQ Section */}
       <div className="mt-20 mb-16">
         <h2 className="mb-6 text-xl font-semibold text-[#171717] mb-4 text-center">
-          {t("faqTitle")}
+          {t.rich("faqTitle", {
+            highlight: (chunks: ReactNode) => (
+              <span className="ze-highlight-green">{chunks}</span>
+            ),
+          })}
         </h2>
         <div className="space-y-3 max-w-2xl mx-auto">
           {[1, 2, 3].map((num) => {

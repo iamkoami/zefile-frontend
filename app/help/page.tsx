@@ -3,6 +3,7 @@
 export const runtime = "edge";
 
 import { useState, useMemo, useEffect, type ReactNode } from "react";
+import Link from "next/link";
 import Header from "@/components/shared/Header";
 import Footer from "@/components/shared/Footer";
 import PageHero from "@/components/shared/PageHero";
@@ -228,6 +229,42 @@ export default function HelpCenterPage() {
           </section>
         </div>
       </main>
+
+      {/* CTA */}
+      <section className="w-full max-w-6xl mx-auto px-6 pb-20 md:pb-28 pt-4">
+        <div className="bg-[#87E64B] rounded-3xl p-10 md:p-16 text-center relative overflow-hidden">
+          <div className="absolute -top-6 -right-6 w-40 h-28 rounded-3xl bg-white/15 rotate-12 pointer-events-none" />
+          <div className="absolute -bottom-8 -left-4 w-28 h-28 rounded-full bg-white/10 pointer-events-none" />
+          <div className="absolute top-1/2 right-[15%] w-16 h-16 rounded-full bg-white/[0.08] pointer-events-none" />
+
+          <div className="relative z-10">
+            <h2 className="text-3xl md:text-4xl font-bold text-[#171717] mb-4">
+              {t.rich("ctaTitle", {
+                highlight: (chunks: ReactNode) => (
+                  <span className="ze-highlight-purple">{chunks}</span>
+                ),
+              })}
+            </h2>
+            <p className="text-[#171717]/70 font-medium text-base md:text-lg mb-10 max-w-2xl mx-auto">
+              {t("ctaSubtext")}
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Link
+                href="/"
+                className="bg-[#171717] text-white px-8 py-3.5 rounded font-bold text-lg hover:bg-[#2a2a2a] transition-colors"
+              >
+                {t("ctaButton")}
+              </Link>
+              <Link
+                href="/pricing"
+                className="text-[#171717] font-semibold underline underline-offset-2 hover:opacity-70 transition-opacity"
+              >
+                {t("ctaSecondary")}
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
 
       <Footer />
     </div>

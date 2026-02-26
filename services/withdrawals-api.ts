@@ -156,9 +156,15 @@ class WithdrawalsApi {
   /**
    * Calculate withdrawal fee for an amount
    */
-  async calculateFee(amountMinorUnits: number): Promise<ApiResponse<FeeCalculationResponse>> {
+  async calculateFee(
+    amountMinorUnits: number,
+    countryCode?: string,
+    payoutMethod?: 'mobile_money' | 'bank',
+  ): Promise<ApiResponse<FeeCalculationResponse>> {
     return apiClient.post<FeeCalculationResponse>('/withdrawals/calculate-fee', {
       amountMinorUnits,
+      ...(countryCode && { countryCode }),
+      ...(payoutMethod && { payoutMethod }),
     });
   }
 

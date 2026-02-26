@@ -50,18 +50,33 @@ const Header = () => {
 
   // Sticky header: normal at top, hidden on scroll down, floating on scroll up
   useEffect(() => {
+    // Track the scroll position at which the last direction change was committed
+    const scrollDirAnchor = { current: 0 };
+    const SCROLL_DELTA = 8; // px of scroll needed to confirm direction change
+
     const handleScroll = () => {
       const currentY = window.scrollY;
-      const goingDown = currentY > lastScrollY.current;
-      lastScrollY.current = currentY;
 
       if (currentY <= 40) {
         setHeaderState("normal");
-      } else if (goingDown) {
-        setHeaderState("hidden");
-      } else {
-        setHeaderState("floating");
+        lastScrollY.current = currentY;
+        scrollDirAnchor.current = currentY;
+        return;
       }
+
+      const delta = currentY - scrollDirAnchor.current;
+
+      if (delta > SCROLL_DELTA) {
+        // Confirmed scroll down
+        setHeaderState("hidden");
+        scrollDirAnchor.current = currentY;
+      } else if (delta < -SCROLL_DELTA) {
+        // Confirmed scroll up
+        setHeaderState("floating");
+        scrollDirAnchor.current = currentY;
+      }
+
+      lastScrollY.current = currentY;
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
@@ -410,7 +425,7 @@ const Header = () => {
       {/* Full page loading overlay for logout */}
       {isLoggingOut && <LoadingFullscreen />}
       {/* Spacer keeps layout stable when header becomes fixed */}
-      {headerState === "floating" && <div className="h-16" />}
+      {headerState !== "normal" && <div className="h-16" />}
       <header id="ze-header" className={`ze-header${headerState === "floating" ? " ze-header-floating" : ""}${headerState === "hidden" ? " ze-header-hidden" : ""}`}>
         <div className="ze-header-container">
           {/* Left: Hamburger (mobile) + Logo */}

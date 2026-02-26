@@ -133,7 +133,7 @@
     z-index: 100;
   }
 
-  /* Both hidden and floating share fixed positioning + transition */
+  /* Both hidden and floating share fixed pill positioning */
   .ze-header-hidden,
   .ze-header-floating {
     position: fixed;
@@ -149,17 +149,17 @@
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     background-color: rgba(255, 255, 255, 0.92);
-    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
-  /* Hidden: same pill shape but slid up off-screen */
+  /* Hidden: instantly off-screen (no transition to avoid flash) */
   .ze-header-hidden {
     transform: translateY(calc(-100% - 24px));
   }
 
-  /* Floating: visible */
+  /* Floating: smoothly slides into view */
   .ze-header-floating {
     transform: translateY(0);
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   @media (max-width: 1023px) {

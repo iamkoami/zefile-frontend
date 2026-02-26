@@ -614,7 +614,7 @@
   },
   "pages": {
     "help": {
-      "title": "Centre d'<highlight>aide</highlight>",
+      "title": "Centre d''<highlight>aide</highlight>",
       "subtitle": "Une question ? On a les réponses.",
       "searchPlaceholder": "Recherchez la réponse à votre question",
       "noResults": "Aucun résultat trouvé. Essayez une autre recherche.",
@@ -646,7 +646,11 @@
       "faq11A": "Oui. Vous pouvez annuler ou supprimer n'importe quel transfert depuis votre tableau de bord. Les fichiers seront supprimés de nos serveurs.",
       "contactTitle": "Encore besoin d'aide ?",
       "contactContent": "Contactez notre équipe support à",
-      "contactEmail": "hello@zefile.io"
+      "contactEmail": "hello@zefile.io",
+      "ctaTitle": "Vous avez votre réponse ? <highlight>C'est parti.</highlight>",
+      "ctaSubtext": "Aucun abonnement requis pour commencer. Vos fichiers restent verrouillés jusqu'au paiement.",
+      "ctaButton": "Envoyez votre premier fichier",
+      "ctaSecondary": "Voir les tarifs"
     },
     "howItWorks": {
       "title": "Trois etapes<br></br>pour etre <highlight>paye</highlight>",
@@ -749,7 +753,7 @@
       "faq10A": "71 % des consommateurs ont mis fin \u00e0 des relations \u00e0 cause d'un mauvais service. Un lien WeTransfer ou un dossier Google Drive fait le job, mais ne pr\u00e9sente pas votre travail de mani\u00e8re professionnelle. ZeFile offre \u00e0 vos clients une galerie d'aper\u00e7u filigran\u00e9e, ce qui renforce votre image de pro —et les fid\u00e9lise.",
 
       "ctaTitle": "Fini les relances ? <highlight>R\u00e9glons \u00e7a.</highlight>",
-      "ctaSubtext": "Votre premier transfert est gratuit. Les fichiers restent verrouill\u00e9s jusqu'au paiement. C'est aussi simple que \u00e7a.",
+      "ctaSubtext": "Aucun abonnement requis pour commencer. Les fichiers restent verrouill\u00e9s jusqu'au paiement. C'est aussi simple que \u00e7a.",
       "ctaButton": "Envoyez votre premier fichier",
       "ctaSecondaryLabel": "Voir les tarifs"
     },
@@ -818,7 +822,7 @@
       "value4Content": "Nous construisons une infrastructure, pas un produit \u00e0 la mode. S\u00e9curit\u00e9, fiabilit\u00e9 et simplicit\u00e9 avant les fonctionnalit\u00e9s tape-\u00e0-l'\u0153il.",
 
       "ctaTitle": "Fini les relances ? <highlight>C'est par ici.</highlight>",
-      "ctaSubtext": "Votre premier transfert est gratuit. Vos fichiers restent verrouill\u00e9s jusqu'au paiement.",
+      "ctaSubtext": "Aucun abonnement requis pour commencer. Vos fichiers restent verrouill\u00e9s jusqu'au paiement.",
       "ctaButton": "Envoyez votre premier fichier",
       "ctaSecondaryLabel": "Voir comment \u00e7a marche"
     },
@@ -1383,6 +1387,10 @@
     "paymentsUnavailable": "Abonnements temporairement indisponibles",
     "paymentsUnavailableDesc": "Les mises à niveau sont en pause pour maintenance. Votre forfait actuel n'est pas affecté.",
     "questionsContact": "Des questions ? Contactez-nous à",
+    "pricingCtaTitle": "Prêt à être payé pour votre travail ? <highlight>C'est parti.</highlight>",
+    "pricingCtaSubtext": "Aucun abonnement requis pour commencer. Les fichiers restent verrouillés jusqu'au paiement. C'est aussi simple que ça.",
+    "pricingCtaButton": "Envoyez votre premier fichier",
+    "pricingCtaSecondary": "Voir comment ça marche",
     "tiers": {
       "free": {
         "name": "Gratuit",
@@ -1437,7 +1445,7 @@
     "today": "Aujourd'hui",
     "nextBillingDate": "Prochaine facturation",
     "changeCurrency": "Changer la devise",
-    "faqTitle": "Questions fréquentes",
+    "faqTitle": "Questions <highlight>Fréquentes</highlight>",
     "faqQ1": "Puis-je annuler mon abonnement à tout moment ?",
     "faqA1": "Oui, vous pouvez annuler votre abonnement à tout moment. Votre forfait restera actif jusqu'à la fin de la période de facturation.",
     "faqQ2": "Quels modes de paiement acceptez-vous ?",
@@ -1475,7 +1483,34 @@
     "goBack": "Retour",
     "cannotUpgrade": "Impossible de mettre à niveau",
     "upgradePreviewError": "Échec du chargement de l'aperçu de la mise à niveau",
-    "upgradeError": "Échec du traitement de la mise à niveau"
+    "upgradeError": "Échec du traitement de la mise à niveau",
+    "transactionFeesTitle": "A propos de nos <highlight>frais de transaction</highlight>",
+    "transactionFeesSubtitle": "De petits frais s'appliquent sur chaque vente — ils varient selon le pays et le moyen de paiement. Voici le détail.",
+    "processingFee": "Frais de traitement",
+    "payoutFee": "Frais de retrait",
+    "buyerPays": "payé par l'acheteur",
+    "sellerPays": "payé par le vendeur",
+    "mobileMoney": "Mobile Money",
+    "card": "Carte",
+    "bank": "Banque",
+    "notAvailable": "N/A",
+    "startSelling": "Commencez vos ventes sur ZeFile",
+    "countryNG": "Nigéria",
+    "countryGH": "Ghana",
+    "countryKE": "Kenya",
+    "countryRW": "Rwanda",
+    "countryZA": "Afrique du Sud",
+    "countryTZ": "Tanzanie",
+    "countryUG": "Ouganda",
+    "countryCI": "Côte d'Ivoire",
+    "countryBF": "Burkina Faso",
+    "countryML": "Mali",
+    "countryCM": "Cameroun",
+    "countryGN": "Guinée",
+    "countryBJ": "Bénin",
+    "countrySN": "Sénégal",
+    "countryTG": "Togo",
+    "countryINTL": "International"
   },
   "account": {
     "title": "Compte",

@@ -9,3 +9,4 @@ export { PaymentIssueBar } from './PaymentIssueBar';
 export { BillingSettingsPanel } from './BillingSettingsPanel';
 export { TrialCountdown } from './TrialCountdown';
 export { TierDetailsSummary } from './TierDetailsSummary';
+export { TransactionFeesSection } from './TransactionFeesSection';

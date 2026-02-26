@@ -133,7 +133,12 @@ const WithdrawalRequestPanel: React.FC<WithdrawalRequestPanelProps> = ({
     }
   };
 
-  // Calculate fee when amount changes
+  // Get selected method
+  const selectedMethod = useMemo(() => {
+    return payoutMethods.find((m) => m.id === selectedMethodId);
+  }, [payoutMethods, selectedMethodId]);
+
+  // Calculate fee when amount or selected method changes
   useEffect(() => {
     const calculateFee = async () => {
       const amountValue = parseFloat(amount);
@@ -145,7 +150,18 @@ const WithdrawalRequestPanel: React.FC<WithdrawalRequestPanelProps> = ({
       setIsCalculating(true);
       try {
         const amountMinorUnits = Math.round(amountValue * 100);
-        const response = await withdrawalsApi.calculateFee(amountMinorUnits);
+        const countryCode = selectedMethod?.country;
+        const payoutMethod =
+          selectedMethod?.type === PayoutMethodType.BANK_TRANSFER
+            ? "bank" as const
+            : selectedMethod?.type === PayoutMethodType.MOBILE_MONEY
+              ? "mobile_money" as const
+              : undefined;
+        const response = await withdrawalsApi.calculateFee(
+          amountMinorUnits,
+          countryCode,
+          payoutMethod,
+        );
         if (response.data) {
           setFeeCalculation(response.data);
         }
@@ -158,12 +174,7 @@ const WithdrawalRequestPanel: React.FC<WithdrawalRequestPanelProps> = ({
 
     const debounce = setTimeout(calculateFee, 500);
     return () => clearTimeout(debounce);
-  }, [amount]);
-
-  // Get selected method
-  const selectedMethod = useMemo(() => {
-    return payoutMethods.find((m) => m.id === selectedMethodId);
-  }, [payoutMethods, selectedMethodId]);
+  }, [amount, selectedMethod]);
 
   // Format currency
   const formatAmount = (
