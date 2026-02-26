@@ -5,6 +5,25 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.16.0] - 2026-02-26
+
+### Added
+
+- CTA sections on pricing and help pages
+- TransactionFeesSection component showing processing, platform, and payout fees
+- Regional flag SVGs for BF, BJ, CM, GN, ML, RW, TG, TZ, UG
+- Country code and payout method params in withdrawal fee calculation
+
+### Fixed
+
+- Header scroll glitch: 8px delta threshold prevents flicker on trackpad micro-movements
+- Header layout shift between hidden/floating states (spacer present in both)
+- Header flash on initial hide (CSS transition only on slide-in, instant slide-out)
+
+### Changed
+
+- How-it-works CTA subtext styling alignment with other pages
+
 ## [1.15.0] - 2026-02-25
 
 ### Added
