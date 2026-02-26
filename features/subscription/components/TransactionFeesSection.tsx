@@ -224,14 +224,21 @@ export function TransactionFeesSection({ compact = false }: TransactionFeesSecti
     return () => window.removeEventListener("resize", updateScrollState);
   }, [updateScrollState]);
 
-  // Auto-scroll selected pill into view
+  // Scroll selected pill into view within the horizontal strip (not the page)
+  const isUserSelection = useRef(false);
   useEffect(() => {
-    const el = scrollRef.current?.querySelector(
+    if (!isUserSelection.current) return;
+    isUserSelection.current = false;
+    const container = scrollRef.current;
+    const el = container?.querySelector(
       `[data-country="${selectedCountry}"]`,
-    );
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
-    }
+    ) as HTMLElement | null;
+    if (!container || !el) return;
+    const elCenter = el.offsetLeft + el.offsetWidth / 2;
+    container.scrollTo({
+      left: elCenter - container.clientWidth / 2,
+      behavior: "smooth",
+    });
   }, [selectedCountry]);
 
   const selectedData = TRANSACTION_FEE_DATA.find(
@@ -281,6 +288,7 @@ export function TransactionFeesSection({ compact = false }: TransactionFeesSecti
                 data-country={entry.countryCode}
                 onClick={() => {
                   if (hasDragged.current) return;
+                  isUserSelection.current = true;
                   setSelectedCountry(entry.countryCode);
                 }}
                 className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-200 flex-shrink-0 ${
