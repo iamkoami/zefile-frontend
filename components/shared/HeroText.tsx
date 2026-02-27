@@ -57,10 +57,9 @@ const HeroText: React.FC<HeroTextProps> = ({
         textAlign: "right",
       }}
     >
-      {/* Title — visual heading only; the semantic <h1> is server-rendered in app/page.tsx */}
+      {/* Title — visual duplicate; the semantic <h1> is server-rendered in app/page.tsx */}
       <div
-        role="heading"
-        aria-level={1}
+        aria-hidden="true"
         className={`text-4xl xl:text-4xl font-bold leading-tight mb-4 ${colors.title}`}
         style={{
           transition: "color 1.5s ease-in-out",

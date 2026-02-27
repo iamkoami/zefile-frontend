@@ -184,9 +184,13 @@ export function OfferCatalogJsonLd({ tiers }: { tiers: PricingTier[] }) {
       "@type": "Offer",
       name: tier.name,
       description: tier.description,
-      price: tier.price,
-      priceCurrency: tier.priceCurrency,
-      ...(tier.billingPeriod && { billingDuration: tier.billingPeriod }),
+      priceSpecification: {
+        "@type": "UnitPriceSpecification",
+        price: tier.price,
+        priceCurrency: tier.priceCurrency,
+        ...(tier.billingPeriod && { billingDuration: tier.billingPeriod }),
+        unitText: tier.billingPeriod ? "MONTH" : undefined,
+      },
       seller: { "@id": `${SITE_URL}/#org` },
       itemOffered: {
         "@type": "Service",

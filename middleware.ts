@@ -52,9 +52,28 @@ function buildCsp(nonce: string): string {
 }
 
 /**
+ * Parse Accept-Language header to detect preferred locale.
+ * Returns 'fr' if French is preferred, otherwise 'en'.
+ */
+function parseAcceptLanguage(header: string | null): 'en' | 'fr' {
+  if (!header) return 'en';
+  const languages = header.split(',').map((lang) => {
+    const [code, q] = lang.trim().split(';q=');
+    return { code: code.trim().toLowerCase().split('-')[0], q: q ? parseFloat(q) : 1.0 };
+  });
+  languages.sort((a, b) => b.q - a.q);
+  for (const { code } of languages) {
+    if (code === 'fr') return 'fr';
+    if (code === 'en') return 'en';
+  }
+  return 'en';
+}
+
+/**
  * Middleware handles:
  * 1. Short link redirects (/z-{code} → /downloads?code=z-{code})
  * 2. Content-Security-Policy with per-request nonce
+ * 3. SEO headers (Vary, Content-Language) for i18n content negotiation
  */
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -103,6 +122,15 @@ export function middleware(request: NextRequest) {
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   response.headers.set('X-XSS-Protection', '1; mode=block');
+
+  // SEO: Signal language negotiation to search engines and CDN caches.
+  // Content varies by Accept-Language (i18n fallback) and Cookie (NEXT_LOCALE).
+  response.headers.set('Vary', 'Accept-Language, Cookie');
+
+  // SEO: Set Content-Language based on detected locale (cookie > Accept-Language > default)
+  const localeCookie = request.cookies.get('NEXT_LOCALE')?.value;
+  const detectedLocale = localeCookie === 'fr' ? 'fr' : parseAcceptLanguage(request.headers.get('Accept-Language'));
+  response.headers.set('Content-Language', detectedLocale);
 
   // Cache-control for HTML pages — prevent stale content from heuristic caching
   // (Cloudflare Pages _headers only applies to static files, not dynamic routes)
