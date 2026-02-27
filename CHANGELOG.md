@@ -5,6 +5,21 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.16.2] - 2026-02-27
+
+### Fixed
+
+- Sitemap hardcoded lastModified dates replaced with dynamic timestamps
+- Homepage double h1 issue (HeroText ARIA heading marked as aria-hidden)
+- OfferCatalog structured data using proper UnitPriceSpecification for pricing schema
+- Blog index converted from client-side to server-side rendering for search engine crawlability
+
+### Added
+
+- Vary (Accept-Language, Cookie) and Content-Language response headers for i18n SEO
+- Dynamic locale-aware manifest.ts replacing static manifest.json
+- Dynamic OG image generation for blog posts (opengraph-image.tsx)
+
 ## [1.16.1] - 2026-02-26
 
 ### Fixed
