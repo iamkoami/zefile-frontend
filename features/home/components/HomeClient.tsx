@@ -22,19 +22,26 @@ import { authApi } from "@/services/auth-api";
 import ToastContainer from "@/components/shared/Toast";
 import { UploadProtectionProvider } from "@/components/providers/UploadProtectionProvider";
 import { useDrawerStore } from "@/stores/drawer-store";
+import { useTranslations } from "next-intl";
 import { useTimeOfDay } from "@/hooks/useTimeOfDay";
 import { useTierLimits, SubscriptionTier } from "@/hooks/useTierLimits";
 import { TransferOptions } from "@/features/transfer/components/TransferOptionsPanel";
+import { TestSimulationData } from "@/features/home/components/TestResultPage";
+import TestDownloadSimulation from "@/features/home/components/TestDownloadSimulation";
 
 export default function HomeClient() {
   const router = useRouter();
   const { openDrawer, openAccountView } = useDrawerStore();
   const { timeOfDay } = useTimeOfDay();
+  const tTest = useTranslations("testResult");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [maxUploadSize, setMaxUploadSize] = useState<number>(2147483648); // Default 2GB
   const [uploadPanelState, setUploadPanelState] =
     useState<PanelState>("initial");
   const [transferMode, setTransferMode] = useState<"test" | "real" | null>(null);
+  const [testSimulationData, setTestSimulationData] = useState<TestSimulationData | null>(null);
+  const [testConvertFn, setTestConvertFn] = useState<(() => void) | null>(null);
+  const [testResetFn, setTestResetFn] = useState<(() => void) | null>(null);
   const [reuseTransferData, setReuseTransferData] =
     useState<ReuseTransferData | null>(null);
   const [showNpsSurvey, setShowNpsSurvey] = useState(false);
@@ -290,6 +297,9 @@ export default function HomeClient() {
                 selectedFilesSize={selectedFilesSize}
                 onPanelStateChange={setUploadPanelState}
                 onTransferModeChange={setTransferMode}
+                onTestConvert={(fn) => setTestConvertFn(() => fn)}
+                onTestReset={(fn) => setTestResetFn(() => fn)}
+                onTestSimulationDataChange={setTestSimulationData}
                 reuseTransferData={reuseTransferData}
                 onClearReuseData={handleClearReuseData}
                 transferOptions={transferOptions}
@@ -323,6 +333,15 @@ export default function HomeClient() {
                 tierLimitsData={tierLimitsData}
                 transferMode={transferMode}
               />
+
+              {/* Test Result Side Panel - simulated download page */}
+              {uploadPanelState === "test-result" && testSimulationData && (
+                <div className="ze-file-preview-panel ze-test-result-side visible">
+                  <div className="ze-file-preview-content">
+                    <TestDownloadSimulation simulationData={testSimulationData} />
+                  </div>
+                </div>
+              )}
 
             </div>
           </div>

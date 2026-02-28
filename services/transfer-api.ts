@@ -356,6 +356,8 @@ export class TransferApi {
       fileSize: number;
       mimeType: string;
       isTestTransfer: boolean;
+      previewBase64: string | null;
+      previewMimeType: string | null;
     }>
   > {
     const baseUrl =

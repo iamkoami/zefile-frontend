@@ -273,6 +273,10 @@
     overflow: hidden;
   }
 
+  .ze-upload-panel.ze-test-result {
+    max-width: 420px;
+  }
+
   /* Menu Items */
   .ze-menu-item {
     @apply px-3 py-2 text-sm font-medium transition-colors;
@@ -333,16 +337,20 @@
   /* Choice Blocks (two-block upload selection for visitors) */
   .ze-choice-block {
     cursor: pointer;
-    background-color: #fff5ed;
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    padding: 20px;
-    transition: all 0.2s;
+    background-color: #f9f8f7;
+    border: 2px solid #ebebeb;
+    border-radius: 10px;
+    padding: 40px 22px;
+    transition: all 0.2s ease;
     pointer-events: auto;
   }
   .ze-choice-block:hover {
-    border-color: #5e53e0;
-    background-color: #f3f2fd;
+    border-color: #c4c0f0;
+    background-color: #f5f4fd;
+    transform: scale(1.02);
+  }
+  .ze-choice-block:active {
+    transform: scale(0.98);
   }
   .ze-time-night .ze-choice-block {
     background-color: #1e1d2e;
@@ -351,6 +359,7 @@
   .ze-time-night .ze-choice-block:hover {
     border-color: #87e64b;
     background-color: #252436;
+    transform: scale(1.02);
   }
 
   /* Form Controls */
@@ -440,6 +449,11 @@
 
   .ze-file-preview-panel.visible {
     left: 344px;
+    opacity: 1;
+  }
+
+  .ze-file-preview-panel.ze-test-result-side.visible {
+    left: 444px;
     opacity: 1;
   }
 

@@ -149,7 +149,7 @@ export interface UserPlatformConfig {
 export class PlatformApi {
   /**
    * Get public platform configuration (legacy endpoint)
-   * Returns default FREE tier service charge (10%)
+   * Returns default FREE tier service charge (7%)
    */
   async getPublicConfig(): Promise<ApiResponse<PlatformConfig>> {
     return apiClient.get<PlatformConfig>('/platform-settings/public/config');
@@ -158,9 +158,9 @@ export class PlatformApi {
   /**
    * Get user-specific platform configuration
    * Returns tier-specific service charge based on user's subscription:
-   * - FREE: 10%
-   * - STARTER: 7%
-   * - PRO: 5%
+   * - FREE: 7%
+   * - STARTER: 5%
+   * - PRO: 3%
    *
    * Works for both authenticated and unauthenticated users.
    * Unauthenticated users get FREE tier rate.

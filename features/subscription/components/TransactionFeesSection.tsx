@@ -1,158 +1,73 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import Flag from "react-flagpack";
 import { Globe } from "iconoir-react";
 
-interface FeeMethod {
-  method: string;
-  rate: string;
+// Payout fee data per country for calculator computation
+interface PayoutFee {
+  type: "percent" | "fixed";
+  value: number; // percent value (2.5) or fixed amount in major currency units
 }
 
-interface CountryFeeData {
+interface CountryCalcData {
   countryCode: string;
   flagCode: string | null;
   currency: string;
-  processingFees: FeeMethod[];
-  payoutFees: FeeMethod[];
+  currencySymbol: string;
+  payoutFee: PayoutFee | null;
+  noDecimals: boolean;
 }
 
-const TRANSACTION_FEE_DATA: CountryFeeData[] = [
-  {
-    countryCode: "CI",
-    flagCode: "CI",
-    currency: "XOF",
-    processingFees: [
-      { method: "mobileMoney", rate: "2.95%" },
-      { method: "card", rate: "4%" },
-    ],
-    payoutFees: [{ method: "mobileMoney", rate: "2.5%" }],
-  },
-  {
-    countryCode: "NG",
-    flagCode: "NG",
-    currency: "NGN",
-    processingFees: [
-      { method: "mobileMoney", rate: "2%" },
-      { method: "card", rate: "2.5%" },
-    ],
-    payoutFees: [{ method: "bank", rate: "50 NGN" }],
-  },
-  {
-    countryCode: "GH",
-    flagCode: "GH",
-    currency: "GHS",
-    processingFees: [
-      { method: "mobileMoney", rate: "2.9%" },
-      { method: "card", rate: "2.9%" },
-    ],
-    payoutFees: [
-      { method: "mobileMoney", rate: "2 GHS" },
-      { method: "bank", rate: "15 GHS" },
-    ],
-  },
-  {
-    countryCode: "KE",
-    flagCode: "KE",
-    currency: "KES",
-    processingFees: [
-      { method: "mobileMoney", rate: "2.5%" },
-      { method: "card", rate: "3.9%" },
-    ],
-    payoutFees: [
-      { method: "mobileMoney", rate: "50 KES" },
-      { method: "bank", rate: "200 KES" },
-    ],
-  },
-  {
-    countryCode: "SN",
-    flagCode: "SN",
-    currency: "XOF",
-    processingFees: [
-      { method: "mobileMoney", rate: "3%" },
-      { method: "card", rate: "4%" },
-    ],
-    payoutFees: [{ method: "mobileMoney", rate: "2.5%" }],
-  },
-  {
-    countryCode: "BJ",
-    flagCode: "BJ",
-    currency: "XOF",
-    processingFees: [{ method: "mobileMoney", rate: "3.5%" }],
-    payoutFees: [{ method: "mobileMoney", rate: "2.5%" }],
-  },
-  {
-    countryCode: "TG",
-    flagCode: "TG",
-    currency: "XOF",
-    processingFees: [{ method: "mobileMoney", rate: "3.5%" }],
-    payoutFees: [{ method: "mobileMoney", rate: "2.5%" }],
-  },
-  {
-    countryCode: "BF",
-    flagCode: "BF",
-    currency: "XOF",
-    processingFees: [{ method: "mobileMoney", rate: "3.5%" }],
-    payoutFees: [{ method: "mobileMoney", rate: "2.5%" }],
-  },
-  {
-    countryCode: "ML",
-    flagCode: "ML",
-    currency: "XOF",
-    processingFees: [{ method: "mobileMoney", rate: "3.5%" }],
-    payoutFees: [{ method: "mobileMoney", rate: "2.5%" }],
-  },
-  {
-    countryCode: "GN",
-    flagCode: "GN",
-    currency: "XOF",
-    processingFees: [{ method: "mobileMoney", rate: "3.5%" }],
-    payoutFees: [{ method: "mobileMoney", rate: "2.5%" }],
-  },
-  {
-    countryCode: "CM",
-    flagCode: "CM",
-    currency: "XAF",
-    processingFees: [{ method: "mobileMoney", rate: "3.5%" }],
-    payoutFees: [{ method: "mobileMoney", rate: "2.5%" }],
-  },
-  {
-    countryCode: "ZA",
-    flagCode: "ZA",
-    currency: "ZAR",
-    processingFees: [{ method: "card", rate: "3.9%" }],
-    payoutFees: [{ method: "bank", rate: "5 ZAR" }],
-  },
-  {
-    countryCode: "TZ",
-    flagCode: "TZ",
-    currency: "TZS",
-    processingFees: [{ method: "mobileMoney", rate: "3%" }],
-    payoutFees: [{ method: "mobileMoney", rate: "3%" }],
-  },
-  {
-    countryCode: "UG",
-    flagCode: "UG",
-    currency: "UGX",
-    processingFees: [{ method: "mobileMoney", rate: "3%" }],
-    payoutFees: [{ method: "mobileMoney", rate: "1,150 UGX" }],
-  },
-  {
-    countryCode: "RW",
-    flagCode: "RW",
-    currency: "RWF",
-    processingFees: [{ method: "card", rate: "3.9%" }],
-    payoutFees: [{ method: "bank", rate: "400 RWF" }],
-  },
-  {
-    countryCode: "INTL",
-    flagCode: null,
-    currency: "USD",
-    processingFees: [{ method: "card", rate: "4.6%" }],
-    payoutFees: [],
-  },
+const COUNTRY_CALC_DATA: CountryCalcData[] = [
+  { countryCode: "CI", flagCode: "CI", currency: "XOF", currencySymbol: "CFA", payoutFee: { type: "percent", value: 2.5 }, noDecimals: true },
+  { countryCode: "NG", flagCode: "NG", currency: "NGN", currencySymbol: "\u20A6", payoutFee: { type: "fixed", value: 50 }, noDecimals: true },
+  { countryCode: "GH", flagCode: "GH", currency: "GHS", currencySymbol: "GH\u20B5", payoutFee: { type: "fixed", value: 2 }, noDecimals: false },
+  { countryCode: "KE", flagCode: "KE", currency: "KES", currencySymbol: "KSh", payoutFee: { type: "fixed", value: 50 }, noDecimals: true },
+  { countryCode: "SN", flagCode: "SN", currency: "XOF", currencySymbol: "CFA", payoutFee: { type: "percent", value: 2.5 }, noDecimals: true },
+  { countryCode: "BJ", flagCode: "BJ", currency: "XOF", currencySymbol: "CFA", payoutFee: { type: "percent", value: 2.5 }, noDecimals: true },
+  { countryCode: "TG", flagCode: "TG", currency: "XOF", currencySymbol: "CFA", payoutFee: { type: "percent", value: 2.5 }, noDecimals: true },
+  { countryCode: "BF", flagCode: "BF", currency: "XOF", currencySymbol: "CFA", payoutFee: { type: "percent", value: 2.5 }, noDecimals: true },
+  { countryCode: "ML", flagCode: "ML", currency: "XOF", currencySymbol: "CFA", payoutFee: { type: "percent", value: 2.5 }, noDecimals: true },
+  { countryCode: "GN", flagCode: "GN", currency: "XOF", currencySymbol: "CFA", payoutFee: { type: "percent", value: 2.5 }, noDecimals: true },
+  { countryCode: "CM", flagCode: "CM", currency: "XAF", currencySymbol: "CFA", payoutFee: { type: "percent", value: 2.5 }, noDecimals: true },
+  { countryCode: "ZA", flagCode: "ZA", currency: "ZAR", currencySymbol: "R", payoutFee: { type: "fixed", value: 5 }, noDecimals: false },
+  { countryCode: "TZ", flagCode: "TZ", currency: "TZS", currencySymbol: "TSh", payoutFee: { type: "percent", value: 3 }, noDecimals: true },
+  { countryCode: "UG", flagCode: "UG", currency: "UGX", currencySymbol: "USh", payoutFee: { type: "fixed", value: 1150 }, noDecimals: true },
+  { countryCode: "RW", flagCode: "RW", currency: "RWF", currencySymbol: "RF", payoutFee: { type: "fixed", value: 400 }, noDecimals: true },
+  { countryCode: "INTL", flagCode: null, currency: "USD", currencySymbol: "$", payoutFee: null, noDecimals: false },
 ];
+
+const PLATFORM_FEE_TIERS = [
+  { id: "free", percent: 7 },
+  { id: "starter", percent: 5 },
+  { id: "pro", percent: 3 },
+] as const;
+
+// Sensible default prices per currency
+const DEFAULT_PRICES: Record<string, number> = {
+  XOF: 10000,
+  XAF: 10000,
+  NGN: 10000,
+  GHS: 100,
+  KES: 5000,
+  ZAR: 500,
+  TZS: 50000,
+  UGX: 100000,
+  RWF: 50000,
+  USD: 50,
+};
+
+function formatAmount(amount: number, noDecimals: boolean): string {
+  if (noDecimals) {
+    return Math.round(amount).toLocaleString("en-US");
+  }
+  return amount.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
 
 interface TransactionFeesSectionProps {
   compact?: boolean;
@@ -161,6 +76,10 @@ interface TransactionFeesSectionProps {
 export function TransactionFeesSection({ compact = false }: TransactionFeesSectionProps) {
   const t = useTranslations("subscriptions");
   const [selectedCountry, setSelectedCountry] = useState("CI");
+  const [selectedTier, setSelectedTier] = useState<"free" | "starter" | "pro">("free");
+  const [priceInput, setPriceInput] = useState(
+    String(DEFAULT_PRICES["XOF"] || 10000),
+  );
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
@@ -217,14 +136,13 @@ export function TransactionFeesSection({ compact = false }: TransactionFeesSecti
     };
   }, [onMouseUp, onMouseMove]);
 
-  // Update scroll indicators on mount and resize
   useEffect(() => {
     updateScrollState();
     window.addEventListener("resize", updateScrollState);
     return () => window.removeEventListener("resize", updateScrollState);
   }, [updateScrollState]);
 
-  // Scroll selected pill into view within the horizontal strip (not the page)
+  // Scroll selected pill into view
   const isUserSelection = useRef(false);
   useEffect(() => {
     if (!isUserSelection.current) return;
@@ -241,8 +159,64 @@ export function TransactionFeesSection({ compact = false }: TransactionFeesSecti
     });
   }, [selectedCountry]);
 
-  const selectedData = TRANSACTION_FEE_DATA.find(
-    (d) => d.countryCode === selectedCountry,
+  const selectedData = useMemo(
+    () => COUNTRY_CALC_DATA.find((d) => d.countryCode === selectedCountry),
+    [selectedCountry],
+  );
+
+  // Update default price when country changes
+  useEffect(() => {
+    if (selectedData) {
+      setPriceInput(String(DEFAULT_PRICES[selectedData.currency] || 50));
+    }
+  }, [selectedData]);
+
+  const price = useMemo(() => {
+    const val = parseFloat(priceInput.replace(/,/g, ""));
+    return isNaN(val) || val < 0 ? 0 : val;
+  }, [priceInput]);
+
+  const platformFeePercent =
+    PLATFORM_FEE_TIERS.find((tier) => tier.id === selectedTier)?.percent || 7;
+
+  const breakdown = useMemo(() => {
+    if (!selectedData || price <= 0) return null;
+
+    const platformFee = price * (platformFeePercent / 100);
+
+    let payoutFee = 0;
+    let payoutFeeLabel = "";
+    if (selectedData.payoutFee) {
+      if (selectedData.payoutFee.type === "percent") {
+        payoutFee = price * (selectedData.payoutFee.value / 100);
+        payoutFeeLabel = `~${selectedData.payoutFee.value}%`;
+      } else {
+        payoutFee = selectedData.payoutFee.value;
+        payoutFeeLabel = `${formatAmount(payoutFee, selectedData.noDecimals)} ${selectedData.currency}`;
+      }
+    }
+
+    const youEarn = Math.max(0, price - platformFee - payoutFee);
+
+    return {
+      platformFee,
+      payoutFee,
+      payoutFeeLabel,
+      youEarn,
+      hasPayoutFee: selectedData.payoutFee !== null,
+    };
+  }, [price, platformFeePercent, selectedData]);
+
+  const fmt = useCallback(
+    (amount: number) => {
+      if (!selectedData) return "";
+      const num = formatAmount(amount, selectedData.noDecimals);
+      if (selectedData.currency === "USD" || selectedData.currency === "GHS") {
+        return `${selectedData.currencySymbol}${num}`;
+      }
+      return `${num} ${selectedData.currencySymbol}`;
+    },
+    [selectedData],
   );
 
   const highlight = (chunks: React.ReactNode) => (
@@ -250,37 +224,49 @@ export function TransactionFeesSection({ compact = false }: TransactionFeesSecti
   );
 
   return (
-    <div className={compact ? "mt-20 relative" : "mt-32 max-w-[55rem] mx-auto relative"}>
-      <h2 className={compact
-        ? "text-xl font-semibold text-[#171717] mb-4 text-center"
-        : "text-3xl md:text-5xl font-bold text-[#171717] mb-4 text-center"
-      }>
-        {t.rich("transactionFeesTitle", { highlight })}
+    <div
+      className={
+        compact
+          ? "mt-20 relative"
+          : "mt-32 max-w-[55rem] mx-auto relative"
+      }
+    >
+      <h2
+        className={
+          compact
+            ? "text-xl font-semibold text-[#171717] mb-4 text-center"
+            : "text-3xl md:text-5xl font-bold text-[#171717] mb-4 text-center"
+        }
+      >
+        {t.rich("earningsCalcTitle", { highlight })}
       </h2>
-      <p className={compact
-        ? "text-sm text-gray-500 text-center max-w-2xl mx-auto mb-8"
-        : "text-sm md:text-base text-gray-500 text-center max-w-2xl mx-auto mb-10"
-      }>
-        {t("transactionFeesSubtitle")}
+      <p
+        className={
+          compact
+            ? "text-sm text-gray-500 text-center max-w-2xl mx-auto mb-8"
+            : "text-sm md:text-base text-gray-500 text-center max-w-2xl mx-auto mb-10"
+        }
+      >
+        {t("earningsCalcSubtitle")}
       </p>
 
-      {/* Currency scroll strip */}
-      <div className={`relative mx-auto ${compact ? "max-w-3xl mb-8" : "max-w-3xl mb-10"}`}>
-        {/* Left gradient fade */}
+      {/* Country scroll strip */}
+      <div
+        className={`relative mx-auto ${compact ? "max-w-3xl mb-8" : "max-w-3xl mb-10"}`}
+      >
         <div
           className={`absolute left-0 top-0 bottom-0 w-10 bg-gradient-to-r from-gray-50 to-transparent z-10 pointer-events-none rounded-l-xl transition-opacity duration-200 ${
             canScrollLeft ? "opacity-100" : "opacity-0"
           }`}
         />
 
-        {/* Scrollable track */}
         <div
           ref={scrollRef}
           onScroll={updateScrollState}
           onMouseDown={onMouseDown}
           className="flex flex-nowrap gap-2 overflow-x-auto scroll-smooth p-2 bg-gray-50/80 rounded-xl cursor-grab [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
         >
-          {TRANSACTION_FEE_DATA.map((entry) => {
+          {COUNTRY_CALC_DATA.map((entry) => {
             const isSelected = selectedCountry === entry.countryCode;
             return (
               <button
@@ -308,7 +294,6 @@ export function TransactionFeesSection({ compact = false }: TransactionFeesSecti
           })}
         </div>
 
-        {/* Right gradient fade */}
         <div
           className={`absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-gray-50 to-transparent z-10 pointer-events-none rounded-r-xl transition-opacity duration-200 ${
             canScrollRight ? "opacity-100" : "opacity-0"
@@ -316,69 +301,96 @@ export function TransactionFeesSection({ compact = false }: TransactionFeesSecti
         />
       </div>
 
-      {/* Fee card */}
+      {/* Calculator card */}
       {selectedData && (
         <div className="max-w-lg mx-auto rounded-2xl border border-gray-200 bg-white p-6 md:p-8">
-          <h3 className="text-lg font-bold text-[#171717] text-center mb-6">
-            {t(`country${selectedData.countryCode}`)} ({selectedData.currency})
-          </h3>
+          {/* Price input */}
+          <div className="mb-5">
+            <label className="text-sm font-semibold text-[#171717] mb-2 block">
+              {t("calcYourPrice")}
+            </label>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-gray-400 font-medium pointer-events-none">
+                {selectedData.currencySymbol}
+              </span>
+              <input
+                type="text"
+                inputMode="decimal"
+                value={priceInput}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/[^0-9.,]/g, "");
+                  setPriceInput(val);
+                }}
+                className="w-full pl-14 pr-4 py-3 border border-gray-200 rounded-lg text-lg font-semibold text-[#171717] focus:outline-none focus:border-[#5E53E0] focus:ring-1 focus:ring-[#5E53E0] transition-colors"
+                placeholder="0"
+              />
+            </div>
+          </div>
 
-          <div className="space-y-5">
-            {/* Processing fee */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-semibold text-[#171717]">
-                  {t("processingFee")}
-                </span>
-                <span className="text-xs text-gray-400">
-                  {t("buyerPays")}
+          {/* Tier selector */}
+          <div className="mb-6">
+            <label className="text-sm font-semibold text-[#171717] mb-2 block">
+              {t("calcYourPlan")}
+            </label>
+            <div className="flex gap-2">
+              {PLATFORM_FEE_TIERS.map((tier) => (
+                <button
+                  key={tier.id}
+                  onClick={() => setSelectedTier(tier.id)}
+                  className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                    selectedTier === tier.id
+                      ? "bg-[#171717] text-white"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
+                >
+                  {t(`tiers.${tier.id}.name`)}
+                  <span className="ml-1 opacity-70">({tier.percent}%)</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Breakdown */}
+          {breakdown && price > 0 ? (
+            <div className="border-t border-gray-100 pt-5 space-y-3">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-500">{t("calcYourPrice")}</span>
+                <span className="font-medium text-[#171717]">
+                  {fmt(price)}
                 </span>
               </div>
-              <div className="space-y-1.5">
-                {selectedData.processingFees.map((m) => (
-                  <div
-                    key={m.method}
-                    className="flex items-center justify-between text-sm text-gray-600"
-                  >
-                    <span>{t(m.method)}</span>
-                    <span className="font-medium text-[#171717]">
-                      {m.rate}
-                    </span>
-                  </div>
-                ))}
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-500">
+                  {t("platformFee")} ({platformFeePercent}%)
+                </span>
+                <span className="font-medium text-gray-400">
+                  -{fmt(breakdown.platformFee)}
+                </span>
+              </div>
+              {breakdown.hasPayoutFee && (
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-500">
+                    {t("payoutFee")} ({breakdown.payoutFeeLabel})
+                  </span>
+                  <span className="font-medium text-gray-400">
+                    -{fmt(breakdown.payoutFee)}
+                  </span>
+                </div>
+              )}
+              <div className="border-t border-gray-100 pt-3 flex items-center justify-between">
+                <span className="text-base font-bold text-[#171717]">
+                  {t("calcYouEarn")}
+                </span>
+                <span className="text-xl font-bold text-[#87E64B]">
+                  {fmt(breakdown.youEarn)}
+                </span>
               </div>
             </div>
-
-            {/* Payout fee - only show when available */}
-            {selectedData.payoutFees.length > 0 && (
-              <>
-                <div className="border-t border-gray-100" />
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-semibold text-[#171717]">
-                      {t("payoutFee")}
-                    </span>
-                    <span className="text-xs text-gray-400">
-                      {t("sellerPays")}
-                    </span>
-                  </div>
-                  <div className="space-y-1.5">
-                    {selectedData.payoutFees.map((m) => (
-                      <div
-                        key={m.method}
-                        className="flex items-center justify-between text-sm text-gray-600"
-                      >
-                        <span>{t(m.method)}</span>
-                        <span className="font-medium text-[#171717]">
-                          {m.rate}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
+          ) : (
+            <div className="border-t border-gray-100 pt-5 text-center text-sm text-gray-400">
+              {t("calcEnterPrice")}
+            </div>
+          )}
         </div>
       )}
     </div>

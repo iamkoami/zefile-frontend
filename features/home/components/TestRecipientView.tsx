@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useTranslations } from "next-intl";
+import { Download, Eye, CreditCard } from "iconoir-react";
 import { TestSimulationData } from "./TestResultPage";
 
 interface TestRecipientViewProps {
@@ -16,92 +17,109 @@ const formatFileSize = (bytes: number): string => {
   return `${Math.round((bytes / Math.pow(k, i)) * 100) / 100} ${sizes[i]}`;
 };
 
-const getFileExtension = (filename: string): string => {
-  const parts = filename.split(".");
-  return parts.length > 1 ? parts[parts.length - 1].toUpperCase() : "";
-};
-
 const TestRecipientView: React.FC<TestRecipientViewProps> = ({
   simulationData,
 }) => {
   const t = useTranslations("testResult");
-  const displayUrl = `https://${process.env.NEXT_PUBLIC_SHORT_LINK_DOMAIN || "zefile.co"}/${process.env.NEXT_PUBLIC_SHORT_CODE_PREFIX || "z-"}${simulationData.shortCode}`;
   const isPaid = simulationData.price > 0;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Explainer */}
       <p className="text-sm text-gray-500">{t("recipientExplainer")}</p>
 
-      {/* Email-style card */}
-      <div className="border border-gray-200 rounded bg-white p-6">
-        {/* "Preview before you pay" banner (paid only) */}
-        {/* email: 18px, 600, #5e53e0, margin-bottom 16px */}
+      {/* Section A: Compact email notification card */}
+      <div className="border border-gray-200 rounded bg-white p-5">
+        <p className="text-xs text-gray-400 uppercase tracking-wide mb-3">
+          {t("recipientEmailTitle")}
+        </p>
+        <h3 className="text-base font-bold leading-snug mb-1">
+          <span className="text-[#5E53E0]">
+            {simulationData.senderEmail}
+          </span>{" "}
+          {t("sentYou")}{" "}
+          <span className="text-[#171717]">
+            {simulationData.title || simulationData.filename}
+          </span>
+        </h3>
+        <p className="text-sm text-gray-500">
+          1 {t("filesCountLabel")},{" "}
+          {formatFileSize(simulationData.fileSize)} {t("totalLabel")}
+        </p>
+      </div>
+
+      {/* Section B: Simulated download panel (mirrors real download page) */}
+      <div className="border-2 border-[#171717] rounded-xl bg-white p-6">
+        <p className="text-xs text-gray-400 uppercase tracking-wide mb-4">
+          {t("simulatedDownloadPanel")}
+        </p>
+
+        {/* Download icon */}
+        <div className="flex flex-col items-center mb-4">
+          <Download className="w-16 h-16 text-gray-300" strokeWidth={1.5} />
+        </div>
+
+        {/* Title */}
+        <h3 className="text-lg font-bold text-[#171717] text-center mb-1">
+          {t("downloadFilesLabel")} !
+        </h3>
+
+        {/* Expiry */}
+        <p className="text-sm text-gray-500 text-center mb-1">
+          {t("expiresInLabel")}
+        </p>
+        <p className="text-sm font-bold text-[#171717] text-center mb-4">
+          {t("oneHour")}
+        </p>
+
+        {/* Transfer title */}
+        <h4 className="text-base font-bold text-[#171717] mb-1">
+          {simulationData.title || simulationData.filename}
+        </h4>
+
+        {/* Preview before you pay (paid only) */}
         {isPaid && (
-          <p className="text-[18px] font-semibold text-[#5E53E0] mb-4">
+          <p className="text-sm font-medium text-[#5E53E0] mb-3">
             {t("previewBeforeYouPay")}
           </p>
         )}
+        {!isPaid && <div className="mb-2" />}
 
-        {/* Title: {senderEmail} (purple) \n sent you {title} (dark) */}
-        {/* email: h1, 24px, 700, line-height 1.3, margin-bottom 8px */}
-        <h2
-          className="text-[24px] font-bold leading-[1.3] mb-2"
-        >
-          <span className="text-[#5E53E0]">
-            {simulationData.senderEmail}
-          </span>
-          <br />
-          <span className="text-[#171717]">
-            {t("sentYou")} {simulationData.title || simulationData.filename}
-          </span>
-        </h2>
-
-        {/* Transfer metadata */}
-        {/* email: 14px, #6b7280, line-height 1.6, margin-bottom 24px */}
-        <p className="text-[14px] text-[#6b7280] leading-[1.6] mb-6">
-          1 {t("filesCountLabel")}, {formatFileSize(simulationData.fileSize)}{" "}
-          {t("totalLabel")} - {t("expiresInLabel")} {t("oneHour")}
-        </p>
-
-        {/* CTA Button (green, centered) */}
-        {/* email: padding 14px 28px, 15px, 600, border-radius 4px, bg #87e64b, margin-bottom 30px */}
-        <div className="text-center mb-[30px]">
-          <span
-            className="inline-block bg-[#87E64B] text-[#171717] rounded px-[28px] py-[14px] font-semibold text-[15px]"
-          >
-            {isPaid ? t("ctaPaid") : t("ctaFree")}
-          </span>
-        </div>
-
-        {/* Download link section */}
-        {/* email: label 15px/700/#171717 mb-6px, link 14px/#5e53e0 underline, section mb-24px */}
-        <div className="mb-6">
-          <p className="text-[15px] font-bold text-[#171717] mb-[6px]">
-            {t("downloadLinkLabel")}
-          </p>
-          <p className="text-[14px] leading-[1.6]">
-            <span className="text-[#5E53E0] underline">
-              {displayUrl}
-            </span>
-          </p>
-        </div>
-
-        {/* Files section */}
-        {/* email: heading 15px/700/#171717 mb-12px, filename 14px/500/#171717 mb-2px, meta 12px/#6b7280 */}
-        <div>
-          <p className="text-[15px] font-bold text-[#171717] mb-3">
+        {/* File info bar */}
+        <div className="flex items-center justify-between py-4 px-4 bg-gray-100 rounded mb-4">
+          <p className="text-sm font-medium text-[#171717]">
             1 {t("filesCountLabel")}
           </p>
-          <div>
-            <p className="text-[14px] font-medium text-[#171717] mb-[2px]">
-              {simulationData.filename}
-            </p>
-            <p className="text-[12px] text-[#6b7280]">
-              {formatFileSize(simulationData.fileSize)} -{" "}
-              {getFileExtension(simulationData.filename)}
-            </p>
-          </div>
+          <p className="text-sm font-medium text-gray-400">
+            {formatFileSize(simulationData.fileSize)}
+          </p>
+        </div>
+
+        {/* Disabled action buttons (mirroring real download page) */}
+        <div className="space-y-3">
+          <button
+            disabled
+            className="w-full px-6 py-3.5 bg-[#87E64B] text-[#171717] font-bold rounded opacity-50 cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {isPaid ? (
+              <>
+                <CreditCard className="w-5 h-5" />
+                {t("ctaPaid")}
+              </>
+            ) : (
+              <>
+                <Download className="w-5 h-5" />
+                {t("ctaFree")}
+              </>
+            )}
+          </button>
+          <button
+            disabled
+            className="w-full px-6 py-3.5 border-2 border-gray-300 bg-white text-[#171717] font-medium rounded opacity-50 cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            <Eye className="w-5 h-5" />
+            {t("previewLabel")}
+          </button>
         </div>
       </div>
 

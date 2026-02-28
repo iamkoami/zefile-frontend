@@ -1978,27 +1978,6 @@ export default function TransferLandingPage() {
                   </p>
                 </div>
 
-                {/* File List */}
-                {transfer.files && transfer.files.length > 0 && (
-                  <div className="space-y-2 mb-6">
-                    {transfer.files.slice(0, 5).map((file, i) => (
-                      <div key={file.id || i} className="flex items-center justify-between py-2 px-3 bg-white border border-gray-100 rounded">
-                        <span className="text-sm text-[#171717] truncate flex-1 mr-2">
-                          {file.filename || file.fileName}
-                        </span>
-                        <span className="text-xs text-gray-400 flex-shrink-0">
-                          {formatSize(Number(file.fileSize || file.size || 0))}
-                        </span>
-                      </div>
-                    ))}
-                    {transfer.files.length > 5 && (
-                      <p className="text-xs text-gray-400 text-center">
-                        +{transfer.files.length - 5} {t("moreFiles")}
-                      </p>
-                    )}
-                  </div>
-                )}
-
                 {/* Report Link */}
                 <button
                   onClick={() => setShowDisputeModal(true)}

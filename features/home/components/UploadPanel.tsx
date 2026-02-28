@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { Plus, MediaImagePlus, Xmark, NavArrowLeft, ArrowRight } from "iconoir-react";
+import { Plus, MediaImagePlus, Xmark, NavArrowLeft, ArrowRight, NavArrowRight } from "iconoir-react";
 import { useTranslations } from "next-intl";
 import {
   getFileInputAccept,
@@ -23,7 +23,7 @@ import { useCurrentCurrency } from "@/stores/currency-store";
 import { TransferOptions } from "@/features/transfer/components/TransferOptionsPanel";
 import { storageApi } from "@/services/storage-api";
 import { getTierTranslationKey } from "@/hooks/useTierLimits";
-import TestResultPage from "./TestResultPage";
+import TestResultPage, { TestSimulationData } from "./TestResultPage";
 import { usePollEligibility } from "@/hooks/usePollEligibility";
 import { toast } from "@/components/shared/Toast";
 import Image from "next/image";
@@ -53,6 +53,9 @@ interface UploadPanelProps {
   selectedFilesSize: number;
   onPanelStateChange?: (state: PanelState) => void;
   onTransferModeChange?: (mode: "test" | "real" | null) => void;
+  onTestConvert?: (fn: () => void) => void;
+  onTestReset?: (fn: () => void) => void;
+  onTestSimulationDataChange?: (data: TestSimulationData | null) => void;
   reuseTransferData?: ReuseTransferData | null;
   onClearReuseData?: () => void;
   /** Transfer options from page-level state (accessControl, validityDuration, password) */
@@ -83,6 +86,9 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
   selectedFilesSize,
   onPanelStateChange,
   onTransferModeChange,
+  onTestConvert,
+  onTestReset,
+  onTestSimulationDataChange,
   reuseTransferData,
   onClearReuseData,
   transferOptions,
@@ -126,7 +132,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
   const [formView, setFormView] = useState<'main' | 'options'>('main');
   const [receivedAmount, setReceivedAmount] = useState<number>(0);
   const [serviceChargePercentage, setServiceChargePercentage] =
-    useState<number>(15);
+    useState<number>(7);
 
   // Upload progress state
   const [uploadProgress, setUploadProgress] = useState<number>(0);
@@ -164,6 +170,8 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
     filename: string;
     fileSize: number;
     mimeType: string;
+    previewBase64: string | null;
+    previewMimeType: string | null;
   } | null>(null);
 
   const tTest = useTranslations("testTransfer");
@@ -315,6 +323,14 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
     };
 
     syncAuth();
+
+    // Skip choice blocks if visitor has already completed 3+ test transfers
+    if (!authApi.getStoredUser()) {
+      const testCount = parseInt(localStorage.getItem("zefile_test_count") || "0", 10);
+      if (!isNaN(testCount) && testCount >= 3) {
+        setTransferMode("real");
+      }
+    }
 
     const handleAuthChange = (e: CustomEvent<{ isAuthenticated: boolean; user?: { email?: string } }>) => {
       if (e.detail.isAuthenticated && e.detail.user?.email) {
@@ -1133,7 +1149,20 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
 
       // Step 3: Show simulation
       setTestSimulationData(sessionResult.data);
+      onTestSimulationDataChange?.(sessionResult.data);
       setPanelState("test-result");
+
+      // Increment test count for auto-skip logic
+      const prev = parseInt(localStorage.getItem("zefile_test_count") || "0", 10);
+      localStorage.setItem("zefile_test_count", String((isNaN(prev) ? 0 : prev) + 1));
+
+      // Expose convert/reset actions to parent for side panel
+      onTestConvert?.(() => {
+        resetForm();
+        setTransferMode("real");
+        setPanelState("initial");
+      });
+      onTestReset?.(() => resetForm());
     } catch {
       setFileError(tTest("uploadFailed"));
       setPanelState("form");
@@ -1161,6 +1190,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
     // Reset test transfer state
     setTransferMode(null);
     setTestSimulationData(null);
+    onTestSimulationDataChange?.(null);
     setFileError("");
   };
 
@@ -1213,13 +1243,12 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
         return testSimulationData ? (
           <TestResultPage
             simulationData={testSimulationData}
-            onClose={() => {
-              // Switch to real mode to prompt sign-up
+            onConvert={() => {
               resetForm();
               setTransferMode("real");
               setPanelState("initial");
             }}
-            onSendAnother={resetForm}
+            onReset={resetForm}
           />
         ) : null;
 
@@ -1315,8 +1344,8 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
           // No mode selected yet: show the two choice blocks
           return (
             <>
-              <div className="space-y-3">
-                {/* Block 1: Send a test */}
+              <div className="space-y-2.5">
+                {/* Block 1: Try it first */}
                 <div
                   className="ze-choice-block flex items-center justify-between"
                   onClick={handleTestBlockClick}
@@ -1326,20 +1355,13 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                     e.key === "Enter" && handleTestBlockClick()
                   }
                 >
-                  <div>
-                    <p className="text-sm font-semibold">
-                      {t("blockSendTest")}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {t("blockSendTestSub")}
-                    </p>
-                  </div>
-                  <div className="w-10 h-10 rounded-full bg-[#5E53E0] flex items-center justify-center flex-shrink-0">
-                    <ArrowRight width={18} height={18} color="#ffffff" />
-                  </div>
+                  <p className="text-sm font-bold">
+                    {t("blockSendTest")}
+                  </p>
+                  <NavArrowRight width={18} height={18} color="#87E64B" strokeWidth={2} />
                 </div>
 
-                {/* Block 2: Send my project */}
+                {/* Block 2: Send for real */}
                 <div
                   className="ze-choice-block flex items-center justify-between"
                   onClick={handleRealBlockClick}
@@ -1349,24 +1371,15 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                     e.key === "Enter" && handleRealBlockClick()
                   }
                 >
-                  <div>
-                    <p className="text-sm font-semibold">
-                      {t("blockSendProject")}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {t("blockSendProjectSub", {
-                        maxSize: formatBytes(maxUploadSize),
-                      })}
-                    </p>
-                  </div>
-                  <div className="w-10 h-10 rounded-full bg-[#5E53E0] flex items-center justify-center flex-shrink-0">
-                    <ArrowRight width={18} height={18} color="#ffffff" />
-                  </div>
+                  <p className="text-sm font-bold">
+                    {t("blockSendProject")}
+                  </p>
+                  <NavArrowRight width={18} height={18} color="#87E64B" strokeWidth={2} />
                 </div>
               </div>
 
               {/* Drop files hint */}
-              <p className="text-xs text-gray-400 mt-4 text-center">
+              <p className="text-xs text-gray-400 mt-3 text-center">
                 {t("dropFilesOnPage")}
               </p>
             </>
@@ -1882,7 +1895,10 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
   };
 
   return (
-    <div id="ze-upload-panel" className="ze-upload-panel">
+    <div
+      id="ze-upload-panel"
+      className={`ze-upload-panel${panelState === "test-result" ? " ze-test-result" : ""}`}
+    >
       {renderPanel()}
     </div>
   );

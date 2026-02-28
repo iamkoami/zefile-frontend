@@ -18,18 +18,20 @@ export interface TestSimulationData {
   filename: string;
   fileSize: number;
   mimeType: string;
+  previewBase64: string | null;
+  previewMimeType: string | null;
 }
 
 interface TestResultPageProps {
   simulationData: TestSimulationData;
-  onClose?: () => void;
-  onSendAnother?: () => void;
+  onConvert?: () => void;
+  onReset?: () => void;
 }
 
 const TestResultPage: React.FC<TestResultPageProps> = ({
   simulationData,
-  onClose,
-  onSendAnother,
+  onConvert,
+  onReset,
 }) => {
   const t = useTranslations("testResult");
   const [activeTab, setActiveTab] = useState("sender");
@@ -40,46 +42,50 @@ const TestResultPage: React.FC<TestResultPageProps> = ({
   ];
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
+    <div className="w-full">
       {/* Header */}
-      <div className="text-center mb-6">
-        <h2 className="text-xl font-bold text-[#171717]">{t("title")}</h2>
-        <p className="text-sm text-gray-500 mt-1">{t("subtitle")}</p>
+      <div className="text-center mb-4">
+        <h2 className="text-lg font-bold text-[#171717]">{t("title")}</h2>
+        <p className="text-xs text-gray-500 mt-1">{t("subtitle")}</p>
       </div>
 
-      {/* Tabs */}
-      <div className="border-b border-gray-200 mb-6">
-        <Tabs
-          tabs={tabs}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          className="justify-center gap-12"
-        />
+      {/* Desktop: Sender view only (client view is in side panel) */}
+      <div className="hidden lg:block">
+        <TestSenderView simulationData={simulationData} />
       </div>
 
-      {/* Tab Content */}
-      <div className="pb-8">
-        {activeTab === "sender" && (
-          <TestSenderView simulationData={simulationData} />
-        )}
-
-        {activeTab === "client" && (
-          <TestRecipientView simulationData={simulationData} />
-        )}
+      {/* Mobile: Tabs (sender / client) */}
+      <div className="lg:hidden">
+        <div className="border-b border-gray-200 mb-4">
+          <Tabs
+            tabs={tabs}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            className="justify-center gap-12"
+          />
+        </div>
+        <div className="pb-4">
+          {activeTab === "sender" && (
+            <TestSenderView simulationData={simulationData} />
+          )}
+          {activeTab === "client" && (
+            <TestRecipientView simulationData={simulationData} />
+          )}
+        </div>
       </div>
 
-      {/* Conversion Prompt */}
-      <div className="bg-[#F3F2FD] rounded p-6 text-center mb-6">
-        <p className="text-sm font-medium text-[#171717] mb-2">
+      {/* Conversion CTA */}
+      <div className="bg-[#F3F2FD] rounded p-4 text-center mb-3 mt-4">
+        <p className="text-sm font-medium text-[#171717] mb-1">
           {t("conversionTitle")}
         </p>
-        <p className="text-xs text-gray-500 mb-4">
+        <p className="text-xs text-gray-500 mb-3">
           {t("conversionSubtitle")}
         </p>
         <button
           onClick={() => {
             trackTestTransferConversionClicked(simulationData.sessionId);
-            onClose?.();
+            onConvert?.();
           }}
           className="bg-[#87E64B] text-[#171717] rounded px-6 py-2.5 font-semibold text-sm hover:bg-[#78d43f] transition-colors"
         >
@@ -87,11 +93,11 @@ const TestResultPage: React.FC<TestResultPageProps> = ({
         </button>
       </div>
 
-      {/* Secondary Actions */}
-      <div className="flex items-center justify-center gap-4 pb-4">
-        {onSendAnother && (
+      {/* Try another */}
+      <div className="flex items-center justify-center">
+        {onReset && (
           <button
-            onClick={onSendAnother}
+            onClick={onReset}
             className="text-sm text-[#5E53E0] hover:underline"
           >
             {t("sendAnother")}

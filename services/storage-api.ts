@@ -523,6 +523,8 @@ export class StorageApi {
       filename: string;
       fileSize: number;
       mimeType: string;
+      previewBase64: string | null;
+      previewMimeType: string | null;
     }>
   > {
     const formData = new FormData();
