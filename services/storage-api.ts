@@ -525,6 +525,7 @@ export class StorageApi {
       mimeType: string;
       previewBase64: string | null;
       previewMimeType: string | null;
+      previewUrl: string | null;
     }>
   > {
     const formData = new FormData();

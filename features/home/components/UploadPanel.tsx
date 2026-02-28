@@ -172,6 +172,8 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
     mimeType: string;
     previewBase64: string | null;
     previewMimeType: string | null;
+    previewObjectUrl?: string;
+    previewUrl?: string | null;
   } | null>(null);
 
   const tTest = useTranslations("testTransfer");
@@ -1147,9 +1149,13 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
         return;
       }
 
-      // Step 3: Show simulation
-      setTestSimulationData(sessionResult.data);
-      onTestSimulationDataChange?.(sessionResult.data);
+      // Step 3: Show simulation with server-generated watermarked preview
+      const dataWithPreview = {
+        ...sessionResult.data,
+        previewObjectUrl: result.data.previewUrl || undefined,
+      };
+      setTestSimulationData(dataWithPreview);
+      onTestSimulationDataChange?.(dataWithPreview);
       setPanelState("test-result");
 
       // Increment test count for auto-skip logic

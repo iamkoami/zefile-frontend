@@ -54,9 +54,17 @@ const TestRecipientView: React.FC<TestRecipientViewProps> = ({
           {t("simulatedDownloadPanel")}
         </p>
 
-        {/* Download icon */}
+        {/* Preview thumbnail (watermarked server-side) or download icon */}
         <div className="flex flex-col items-center mb-4">
-          <Download className="w-16 h-16 text-gray-300" strokeWidth={1.5} />
+          {simulationData.previewObjectUrl ? (
+            <img
+              src={simulationData.previewObjectUrl}
+              alt={simulationData.filename}
+              className="max-h-[160px] w-auto object-contain"
+            />
+          ) : (
+            <Download className="w-16 h-16 text-gray-300" strokeWidth={1.5} />
+          )}
         </div>
 
         {/* Title */}

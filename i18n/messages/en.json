@@ -133,7 +133,7 @@
     "message": "Message",
     "customizeTransfer": "Add a message",
     "hideCustomize": "Hide message",
-    "shortExpiryWarning": "Heads up -- your transfer expires in 24 hours and can't be extended after sending.",
+    "shortExpiryWarning": "Heads up \u2014 your transfer expires in 24 hours and can't be extended after sending.",
     "unsupportedFileType": "\"{filename}\" isn't a supported file type. Try images, videos, PDFs, audio, documents, or archives.",
     "sendToRequired": "Who are you sending this to?",
     "yourEmailRequired": "We need your email to continue",
@@ -341,7 +341,7 @@
     "stepEmail": "Email",
     "stepCode": "Code",
     "stepPassword": "Password",
-    "previewBeforeYouPay": "Preview before you pay -- take a look first."
+    "previewBeforeYouPay": "Preview before you pay \u2014 take a look first."
   },
   "payment": {
     "paymentRequired": "Payment needed to download",
@@ -614,7 +614,7 @@
     "tags": "Tags",
     "linkCopied": "Link copied!",
     "relatedArticles": "Related Articles",
-    "tryZefileCta": "Sending files to clients? Try ZeFile -- it's free.",
+    "tryZefileCta": "Sending files to clients? Try ZeFile \u2014 it's free.",
     "getStarted": "Get started"
   },
   "pages": {
@@ -2453,7 +2453,7 @@
     "step1Title": "Your transfers live here",
     "step1Body": "Track downloads, manage files, and re-share from one place.",
     "step2Title": "Your account, one click away",
-    "step2Body": "Contacts, pricing, and settings -- all in the menu.",
+    "step2Body": "Contacts, pricing, and settings \u2014 all in the menu.",
     "step3Title": "Ready for your next one?",
     "step3Body": "Just drop files here anytime.",
     "next": "Next",
@@ -2478,11 +2478,11 @@
     "uploading": "Uploading...",
     "uploadFailed": "Upload didn't go through. Give it another try.",
     "completeTitle": "Your test transfer is ready!",
-    "completeSubtitle": "See what your recipients will experience -- and when you're ready, create a real one.",
+    "completeSubtitle": "See what your recipients will experience \u2014 and when you're ready, create a real one.",
     "sendAnother": "Try another test",
     "dismiss": "Maybe later",
     "sectionTitle": "See it in action",
-    "sectionSubtitle": "Upload a file (up to 10MB) and experience the full flow -- no account needed to start.",
+    "sectionSubtitle": "Upload a file (up to 10MB) and experience the full flow \u2014 no account needed to start.",
     "signupTitle": "Ready to send for real?",
     "signupSubtitle": "Enter your email to create an account and start transferring.",
     "claimFailed": "Something went wrong. Try again?",
@@ -2493,9 +2493,9 @@
     "heading": "Trusted by creators"
   },
   "firstFree": {
-    "bannerTitle": "Your first paid transfer is on us -- 0% fee, you keep 100%",
+    "bannerTitle": "Your first paid transfer is on us \u2014 0% fee, you keep 100%",
     "bannerSubtitle": "No platform fee on your very first paid transfer. Go ahead, set your price.",
-    "compactMessage": "First paid transfer is free -- 0% platform fee",
+    "compactMessage": "First paid transfer is free \u2014 0% platform fee",
     "celebrationTitle": "You kept 100% of this transfer",
     "celebrationSubtitle": "Your first one was on us. Welcome to ZeFile."
   },
@@ -2509,7 +2509,7 @@
     "filesLabel": "Files",
     "copyLink": "Copy link",
     "paymentReceived": "Payment received: 5,000 XOF",
-    "paymentSimulated": "This is a simulated notification -- real payments appear here.",
+    "paymentSimulated": "This is a simulated notification \u2014 real payments appear here.",
     "emailPreviewTitle": "Sender confirmation email",
     "emailPreviewSubtitle": "You'd receive this email after your transfer is sent.",
     "subject": "Subject",
@@ -2529,7 +2529,7 @@
     "recipientEmailTitle": "The email your client gets",
     "recipientEmailSubtitle": "Your client would receive this email with a preview-before-you-pay experience.",
     "conversionTitle": "Ready to send for real?",
-    "conversionSubtitle": "Your first paid transfer is on us -- 0% platform fee.",
+    "conversionSubtitle": "Your first paid transfer is on us \u2014 0% platform fee.",
     "conversionButton": "Send for real",
     "testExpired": "This test transfer has expired.",
     "testExpiredCta": "Create a real transfer",
@@ -2537,7 +2537,7 @@
     "priceLabel": "Price",
     "senderEmailNote": "Confirmation emails would be sent to {email}.",
     "fromLabel": "From",
-    "freeDownloadNote": "This file is free to download -- no payment needed.",
+    "freeDownloadNote": "This file is free to download \u2014 no payment needed.",
     "recipientEmailNote": "Your recipient ({email}) would receive an email notification with a link to this page.",
     "sentTo": "sent to",
     "sentYou": "sent you",

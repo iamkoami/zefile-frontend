@@ -20,6 +20,7 @@ export interface TestSimulationData {
   mimeType: string;
   previewBase64: string | null;
   previewMimeType: string | null;
+  previewObjectUrl?: string;
 }
 
 interface TestResultPageProps {

@@ -29,9 +29,17 @@ const TestDownloadSimulation: React.FC<TestDownloadSimulationProps> = ({
         {t("simulatedDownloadPanel")}
       </p>
 
-      {/* Download icon */}
+      {/* Preview thumbnail (watermarked server-side) or download icon */}
       <div className="flex flex-col items-center mb-3">
-        <Download className="w-16 h-16 text-gray-300" strokeWidth={1.5} />
+        {simulationData.previewObjectUrl ? (
+          <img
+            src={simulationData.previewObjectUrl}
+            alt={simulationData.filename}
+            className="max-h-[120px] w-auto object-contain"
+          />
+        ) : (
+          <Download className="w-16 h-16 text-gray-300" strokeWidth={1.5} />
+        )}
       </div>
 
       {/* Title */}
