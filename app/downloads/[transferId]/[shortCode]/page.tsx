@@ -47,6 +47,7 @@ import { TransferSummaryCard } from "@/components/shared/TransferSummaryCard";
 import { transferApi, TransferDto } from "@/services/transfer-api";
 import { apiClient } from "@/services/api-client";
 import { platformApi } from "@/services/platform-api";
+import FeaturedCreatorsSection from "@/features/home/components/FeaturedCreatorsSection";
 import { paymentApi } from "@/services/payment-api";
 import { storageApi } from "@/services/storage-api";
 import { authApi } from "@/services/auth-api";
@@ -62,6 +63,7 @@ import { useDrawerStore } from "@/stores/drawer-store";
 import FloatingPollWidget from "@/components/shared/FloatingPollWidget";
 import { usePollEligibility } from "@/hooks/usePollEligibility";
 import { useChatStore } from "@/stores/chat-store";
+import { trackPaymentPageViewed, trackPaymentPageAbandoned } from "@/lib/posthog";
 
 // Helper to extract sender email from senderId
 const getSenderEmail = (transfer: TransferDto): string | undefined => {
@@ -298,6 +300,10 @@ export default function TransferLandingPage() {
     return () => clearTimeout(timer);
   }, [otpResendCountdown, emailSubmitted]);
 
+  // Payment analytics tracking refs (must be before usePaymentStatus)
+  const paymentStartTimeRef = useRef<number | null>(null);
+  const paymentCompletedRef = useRef(false);
+
   // Payment status polling
   const {
     pollingStatus,
@@ -310,6 +316,8 @@ export default function TransferLandingPage() {
     timeout: 120000,
     onSuccess: () => {
       toast.success(tPayment("paymentSuccessful"));
+      // Mark payment completed for analytics (prevent abandonment tracking)
+      paymentCompletedRef.current = true;
       // Mark transfer as paid locally so UI reflects payment status
       setTransfer((prev) => prev ? { ...prev, isPaid: true } : prev);
       setTimeout(() => {
@@ -459,6 +467,30 @@ export default function TransferLandingPage() {
     }
     return () => stopPolling();
   }, [pageState, paymentReference, startPolling, stopPolling]);
+
+  // Track payment page viewed/abandoned (Epic 54 analytics)
+  useEffect(() => {
+    if (pageState === "payment" && transferId) {
+      paymentStartTimeRef.current = Date.now();
+      paymentCompletedRef.current = false;
+      trackPaymentPageViewed(transferId);
+    }
+
+    return () => {
+      if (
+        paymentStartTimeRef.current &&
+        !paymentCompletedRef.current &&
+        pageState === "payment" &&
+        transferId
+      ) {
+        const timeSpent = Math.round(
+          (Date.now() - paymentStartTimeRef.current) / 1000,
+        );
+        trackPaymentPageAbandoned(transferId, timeSpent);
+        paymentStartTimeRef.current = null;
+      }
+    };
+  }, [pageState, transferId]);
 
   const fetchProviders = async () => {
     setLoadingProviders(true);
@@ -1918,9 +1950,21 @@ export default function TransferLandingPage() {
                 )}
 
                 {/* Transfer Title */}
-                <h2 className="text-base font-bold text-[#171717] mb-4 break-all">
+                <h2 className="text-base font-bold text-[#171717] mb-1 break-all">
                   {transfer.title || t("untitled")}
                 </h2>
+
+                {/* Preview Before You Pay subtitle (paid transfers only) */}
+                {transfer.price && transfer.price > 0 && !transfer.isPaid && (
+                  <p className="text-sm font-medium text-[#5E53E0] mb-4">
+                    {t("previewBeforeYouPay")}
+                  </p>
+                )}
+
+                {/* Spacer when no preview subtitle */}
+                {(!transfer.price || transfer.price <= 0 || transfer.isPaid) && (
+                  <div className="mb-3" />
+                )}
 
                 {/* File Info Row */}
                 <div className="flex items-center justify-between py-5 px-4 bg-gray-100 rounded mb-4">
@@ -2015,6 +2059,9 @@ export default function TransferLandingPage() {
                     {t("preview")}
                   </button>
                 </div>
+
+                {/* Featured Creators - social proof */}
+                <FeaturedCreatorsSection variant="compact" />
               </div>
             </div>
           </div>

@@ -330,6 +330,29 @@
     background-color: #f9fafb;
   }
 
+  /* Choice Blocks (two-block upload selection for visitors) */
+  .ze-choice-block {
+    cursor: pointer;
+    background-color: #fff5ed;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 20px;
+    transition: all 0.2s;
+    pointer-events: auto;
+  }
+  .ze-choice-block:hover {
+    border-color: #5e53e0;
+    background-color: #f3f2fd;
+  }
+  .ze-time-night .ze-choice-block {
+    background-color: #1e1d2e;
+    border-color: #333;
+  }
+  .ze-time-night .ze-choice-block:hover {
+    border-color: #87e64b;
+    background-color: #252436;
+  }
+
   /* Form Controls */
   .ze-form-select,
   .ze-form-input {

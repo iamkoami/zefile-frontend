@@ -17,6 +17,7 @@ interface TransferCompletePanelProps {
   transfer: TransferDto;
   onSendAnother: () => void;
   isFirstTransfer?: boolean;
+  isFirstFreePaidTransfer?: boolean;
 }
 
 const TransferCompletePanel: React.FC<TransferCompletePanelProps> = ({
@@ -25,9 +26,11 @@ const TransferCompletePanel: React.FC<TransferCompletePanelProps> = ({
   transfer,
   onSendAnother,
   isFirstTransfer = false,
+  isFirstFreePaidTransfer = false,
 }) => {
   const t = useTranslations("upload");
   const tOnboarding = useTranslations("onboarding");
+  const tFirstFree = useTranslations("firstFree");
   const { openDrawerToView } = useDrawerStore();
   const [showSuccess, setShowSuccess] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -168,6 +171,14 @@ const TransferCompletePanel: React.FC<TransferCompletePanelProps> = ({
       <h2 className="text-xl font-bold text-black mb-2 text-center">
         {t("transferSent")}
       </h2>
+
+      {/* First-Free Paid Transfer Celebration */}
+      {isFirstFreePaidTransfer && (
+        <div className="bg-[#87E64B]/10 border border-[#87E64B]/30 rounded px-4 py-3 mb-4 w-full text-center">
+          <p className="text-sm font-medium text-[#171717]">{tFirstFree("celebrationTitle")}</p>
+          <p className="text-xs text-gray-600 mt-0.5">{tFirstFree("celebrationSubtitle")}</p>
+        </div>
+      )}
 
       {/* Description */}
       <p className="text-sm text-gray-600 text-center mb-1">

@@ -92,6 +92,25 @@ export interface FeatureMatrix {
 }
 
 /**
+ * Featured creator (public)
+ */
+export interface FeaturedCreatorSocialLinks {
+  instagram?: string;
+  behance?: string;
+  twitter?: string;
+  portfolio?: string;
+}
+
+export interface FeaturedCreator {
+  id: string;
+  name: string;
+  role?: string;
+  photoUrl?: string;
+  socialLinks?: FeaturedCreatorSocialLinks;
+  displayOrder: number;
+}
+
+/**
  * Pricing for a single tier in a region (from DB)
  */
 export interface TierRegionalPricing {
@@ -124,6 +143,7 @@ export interface UserPlatformConfig {
   serviceChargePercentage: number;
   tier: SubscriptionTier | 'free';
   maxUploadSize: number;
+  isFirstPaidTransferUsed?: boolean;
 }
 
 export class PlatformApi {
@@ -232,6 +252,13 @@ export class PlatformApi {
    */
   async getFeatureMatrix(): Promise<ApiResponse<FeatureMatrix>> {
     return apiClient.get<FeatureMatrix>('/public/features/matrix');
+  }
+
+  /**
+   * Get enabled featured creators (public, cached)
+   */
+  async getFeaturedCreators(): Promise<ApiResponse<FeaturedCreator[]>> {
+    return apiClient.get<FeaturedCreator[]>('/featured-creators');
   }
 }
 

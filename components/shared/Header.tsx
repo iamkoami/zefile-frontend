@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
@@ -147,10 +147,8 @@ const Header = () => {
     }
   };
 
-  // Phase 1: Set auth state from localStorage BEFORE browser paint.
-  // useLayoutEffect fires synchronously after DOM update but before paint,
-  // so the user never sees a blank header.
-  useLayoutEffect(() => {
+  // Phase 1: Set auth state from localStorage after hydration.
+  useEffect(() => {
     const authenticated = authApi.isAuthenticated();
     const userData = authApi.getStoredUser();
     setIsAuthenticated(authenticated);
@@ -422,8 +420,8 @@ const Header = () => {
 
   return (
     <>
-      {/* Full page loading overlay for logout */}
-      {isLoggingOut && <LoadingFullscreen />}
+      {/* Full page loading overlay — initial auth check + logout */}
+      {(!isAuthChecked || isLoggingOut) && <LoadingFullscreen />}
       {/* Spacer keeps layout stable when header becomes fixed */}
       {headerState !== "normal" && <div className="h-16" />}
       <header id="ze-header" className={`ze-header${headerState === "floating" ? " ze-header-floating" : ""}${headerState === "hidden" ? " ze-header-hidden" : ""}`}>
@@ -459,7 +457,7 @@ const Header = () => {
                 isAuthTransitioning ? "opacity-0" : "opacity-100"
               }`}
             >
-              {(!isAuthChecked || !isAuthenticated) &&
+              {!isAuthenticated &&
                 mainMenuItems.map((item) =>
                   item.action ? (
                     <button
@@ -481,7 +479,7 @@ const Header = () => {
                 )}
 
               {/* Logged in menu items */}
-              {isAuthChecked && isAuthenticated && (
+              {isAuthenticated && (
                 <div className="flex items-center space-x-1">
                   {loggedInMenuItems.map((item) => (
                     <button
@@ -547,7 +545,7 @@ const Header = () => {
             />
 
             {/* Connect Menu - Desktop only */}
-            {(!isAuthChecked || !isAuthenticated) && (
+            {!isAuthenticated && (
               <div
                 id="ze-connect-menu"
                 className={`ze-connect-menu hidden lg:flex items-center space-x-1 transition-opacity duration-300 ease-in-out ${
@@ -577,7 +575,7 @@ const Header = () => {
             )}
 
             {/* Mobile signup button */}
-            {(!isAuthChecked || !isAuthenticated) && (
+            {!isAuthenticated && (
               <button
                 onClick={() => {
                   setAuthMode("signup");
@@ -592,7 +590,7 @@ const Header = () => {
             )}
 
             {/* Mobile avatar - visible on mobile when authenticated */}
-            {isAuthChecked && isAuthenticated && user && (
+            {isAuthenticated && user && (
               <button
                 onClick={() => setIsMobileMenuOpen(true)}
                 className={`ml-2 lg:hidden w-10 h-10 rounded-lg bg-gradient-to-br from-orange-400 to-pink-400 flex items-center justify-center transition-opacity duration-300 ease-in-out ${
@@ -607,7 +605,7 @@ const Header = () => {
             )}
 
             {/* User Menu - Desktop only */}
-            {isAuthChecked && isAuthenticated && user && (
+            {isAuthenticated && user && (
               <div
                 className={`hidden lg:flex items-center gap-3 transition-opacity duration-300 ease-in-out ${
                   isAuthTransitioning ? "opacity-0" : "opacity-100"

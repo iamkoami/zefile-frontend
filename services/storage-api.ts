@@ -509,6 +509,65 @@ export class StorageApi {
       email,
     });
   }
+  /**
+   * Upload a file anonymously for the test transfer flow.
+   * No auth required. Returns a sessionId to claim later.
+   */
+  async testUpload(
+    file: File,
+    onProgress?: (percent: number, bytesUploaded: number) => void,
+  ): Promise<
+    ApiResponse<{
+      sessionId: string;
+      tempFileKey: string;
+      filename: string;
+      fileSize: number;
+      mimeType: string;
+    }>
+  > {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    return new Promise((resolve) => {
+      const baseUrl =
+        process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', `${baseUrl}/storage/test-upload`);
+
+      if (onProgress) {
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            onProgress(
+              Math.round((event.loaded / event.total) * 100),
+              event.loaded,
+            );
+          }
+        };
+      }
+
+      xhr.onload = () => {
+        try {
+          const data = JSON.parse(xhr.responseText);
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve({ data, status: xhr.status });
+          } else {
+            resolve({
+              error: { message: data.message || 'Upload failed', statusCode: xhr.status },
+              status: xhr.status,
+            });
+          }
+        } catch {
+          resolve({ error: { message: 'Upload failed', statusCode: xhr.status }, status: xhr.status });
+        }
+      };
+
+      xhr.onerror = () => {
+        resolve({ error: { message: 'Network error', statusCode: 0 }, status: 0 });
+      };
+
+      xhr.send(formData);
+    });
+  }
 }
 
 // Export singleton instance

@@ -4,54 +4,69 @@ import posthog from 'posthog-js';
 let _posthogInitialized = false;
 
 /**
- * Analytics Event Types (must match backend)
+ * Analytics Event Types
+ * Convention: snake_case with zefile_ prefix (must match backend)
  */
 export enum AnalyticsEventType {
   // Auth events
-  SIGNUP_STARTED = 'signup_started',
-  SIGNUP_COMPLETED = 'signup_completed',
-  LOGIN_SUCCESS = 'login_success',
-  LOGOUT = 'logout',
+  SIGNUP_STARTED = 'zefile_signup_started',
+  SIGNUP_COMPLETED = 'zefile_signup_completed',
+  LOGIN_SUCCESS = 'zefile_login_success',
+  LOGOUT = 'zefile_logout',
 
   // Transfer events
-  TRANSFER_STARTED = 'transfer_started',
-  FILES_SELECTED = 'files_selected',
-  DETAILS_FILLED = 'details_filled',
-  TRANSFER_COMPLETED = 'transfer_completed',
-  TRANSFER_VIEWED = 'transfer_viewed',
+  TRANSFER_STARTED = 'zefile_transfer_started',
+  FILES_SELECTED = 'zefile_files_selected',
+  DETAILS_FILLED = 'zefile_details_filled',
+  TRANSFER_COMPLETED = 'zefile_transfer_completed',
+  TRANSFER_VIEWED = 'zefile_transfer_viewed',
 
   // Download events
-  DOWNLOAD_STARTED = 'download_started',
-  DOWNLOAD_COMPLETED = 'download_completed',
+  DOWNLOAD_STARTED = 'zefile_download_started',
+  DOWNLOAD_COMPLETED = 'zefile_download_completed',
 
   // Payment events
-  PRICING_VIEWED = 'pricing_viewed',
-  PAYMENT_INITIATED = 'payment_initiated',
-  PAYMENT_METHOD_SELECTED = 'payment_method_selected',
-  PAYMENT_SUBMITTED = 'payment_submitted',
-  PAYMENT_SUCCESS = 'payment_success',
-  PAYMENT_FAILED = 'payment_failed',
+  PRICING_VIEWED = 'zefile_pricing_viewed',
+  PAYMENT_INITIATED = 'zefile_payment_initiated',
+  PAYMENT_METHOD_SELECTED = 'zefile_payment_method_selected',
+  PAYMENT_SUBMITTED = 'zefile_payment_submitted',
+  PAYMENT_SUCCESS = 'zefile_payment_success',
+  PAYMENT_FAILED = 'zefile_payment_failed',
 
   // Subscription events
-  PLAN_SELECTED = 'plan_selected',
-  SUBSCRIPTION_STARTED = 'subscription_started',
+  PLAN_SELECTED = 'zefile_plan_selected',
+  SUBSCRIPTION_STARTED = 'zefile_subscription_started',
 
   // Survey events
-  NPS_SURVEY_SHOWN = 'nps_survey_shown',
-  NPS_SURVEY_SUBMITTED = 'nps_survey_submitted',
-  NPS_SURVEY_DEFERRED = 'nps_survey_deferred',
-  NPS_SURVEY_DISMISSED = 'nps_survey_dismissed',
-  CHURN_SURVEY_SHOWN = 'churn_survey_shown',
-  CHURN_SURVEY_SUBMITTED = 'churn_survey_submitted',
-  CHURN_SURVEY_SKIPPED = 'churn_survey_skipped',
+  NPS_SURVEY_SHOWN = 'zefile_nps_survey_shown',
+  NPS_SURVEY_SUBMITTED = 'zefile_nps_survey_submitted',
+  NPS_SURVEY_DEFERRED = 'zefile_nps_survey_deferred',
+  NPS_SURVEY_DISMISSED = 'zefile_nps_survey_dismissed',
+  CHURN_SURVEY_SHOWN = 'zefile_churn_survey_shown',
+  CHURN_SURVEY_SUBMITTED = 'zefile_churn_survey_submitted',
+  CHURN_SURVEY_SKIPPED = 'zefile_churn_survey_skipped',
 
   // Upload events
-  FILE_UPLOADED = 'file_uploaded',
-  UPLOAD_FAILED = 'upload_failed',
+  FILE_UPLOADED = 'zefile_file_uploaded',
+  UPLOAD_FAILED = 'zefile_upload_failed',
 
   // Feature usage
-  CONTACT_ADDED = 'contact_added',
-  VERSION_CREATED = 'version_created',
+  CONTACT_ADDED = 'zefile_contact_added',
+  VERSION_CREATED = 'zefile_version_created',
+
+  // Test transfer conversion events (Epic 54)
+  TEST_TRANSFER_STARTED = 'zefile_test_transfer_started',
+  TEST_TRANSFER_COMPLETED = 'zefile_test_transfer_completed',
+  TEST_TRANSFER_CONVERSION_CLICKED = 'zefile_test_transfer_conversion_clicked',
+
+  // Payment funnel events (Epic 54)
+  PAYMENT_PAGE_VIEWED = 'zefile_payment_page_viewed',
+  PAYMENT_PAGE_ABANDONED = 'zefile_payment_page_abandoned',
+
+  // Social proof events (Epic 54)
+  CREATOR_SECTION_VIEWED = 'zefile_creator_section_viewed',
+  CREATOR_SOCIAL_LINK_CLICKED = 'zefile_creator_social_link_clicked',
+  TOOLKIT_DOWNLOADED = 'zefile_toolkit_downloaded',
 }
 
 /**
@@ -438,6 +453,82 @@ export function trackPaymentSubmitted(properties: {
     amount: properties.amount,
     currency: properties.currency,
   });
+}
+
+// ========================================
+// Test Transfer & Conversion Events (Epic 54)
+// ========================================
+
+/**
+ * Track test transfer started (homepage CTA click)
+ */
+export function trackTestTransferStarted(): void {
+  trackEvent(AnalyticsEventType.TEST_TRANSFER_STARTED);
+}
+
+/**
+ * Track test transfer completed (file uploaded + OTP verified)
+ */
+export function trackTestTransferCompleted(properties: {
+  fileType?: string;
+  fileSizeMb?: number;
+}): void {
+  trackEvent(AnalyticsEventType.TEST_TRANSFER_COMPLETED, {
+    file_type: properties.fileType,
+    file_size_mb: properties.fileSizeMb,
+  });
+}
+
+/**
+ * Track conversion prompt clicked
+ */
+export function trackTestTransferConversionClicked(testTransferId: string): void {
+  trackEvent(AnalyticsEventType.TEST_TRANSFER_CONVERSION_CLICKED, {
+    test_transfer_id: testTransferId,
+  });
+}
+
+/**
+ * Track payment page viewed
+ */
+export function trackPaymentPageViewed(transferId: string): void {
+  trackEvent(AnalyticsEventType.PAYMENT_PAGE_VIEWED, {
+    transfer_id: transferId,
+  });
+}
+
+/**
+ * Track payment page abandoned
+ */
+export function trackPaymentPageAbandoned(transferId: string, timeSpentSeconds: number): void {
+  trackEvent(AnalyticsEventType.PAYMENT_PAGE_ABANDONED, {
+    transfer_id: transferId,
+    time_spent_seconds: timeSpentSeconds,
+  });
+}
+
+/**
+ * Track creator section viewed (IntersectionObserver)
+ */
+export function trackCreatorSectionViewed(): void {
+  trackEvent(AnalyticsEventType.CREATOR_SECTION_VIEWED);
+}
+
+/**
+ * Track creator social link clicked
+ */
+export function trackCreatorSocialLinkClicked(creatorId: string, platform: string): void {
+  trackEvent(AnalyticsEventType.CREATOR_SOCIAL_LINK_CLICKED, {
+    creator_id: creatorId,
+    platform,
+  });
+}
+
+/**
+ * Track toolkit downloaded (user is already identified via posthog.identify)
+ */
+export function trackToolkitDownloaded(): void {
+  trackEvent(AnalyticsEventType.TOOLKIT_DOWNLOADED);
 }
 
 export default posthog;

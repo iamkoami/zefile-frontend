@@ -37,7 +37,7 @@ export interface TransferDto {
   currency?: string;
   currencyName?: string; // Localized currency name from backend
   message?: string;
-  status: 'pending' | 'active' | 'completed' | 'expired' | 'cancelled';
+  status: 'pending' | 'active' | 'completed' | 'expired' | 'cancelled' | 'test';
   // Backend uses expireAt, frontend may expect expiryDate
   expiryDate?: string;
   expireAt?: string;
@@ -264,6 +264,115 @@ export class TransferApi {
    */
   async createTransfer(data: CreateTransferDto): Promise<ApiResponse<TransferDto>> {
     return apiClient.post<TransferDto>('/transfers', data);
+  }
+
+  /**
+   * Create a test transfer (10MB cap, 1-hour TTL)
+   */
+  async createTestTransfer(title?: string): Promise<ApiResponse<{
+    id: string;
+    shortCode: string;
+    isTestTransfer: boolean;
+    expireAt: string;
+    title: string;
+  }>> {
+    return apiClient.post('/transfers/test', { title });
+  }
+
+  /**
+   * Get rendered email preview for a test transfer (no email is sent)
+   */
+  async getTestTransferEmailPreview(
+    transferId: string,
+    template: 'transfer-sender' | 'transfer-recipient',
+  ): Promise<ApiResponse<{ html: string; subject: string }>> {
+    return apiClient.get(`/transfers/test/${transferId}/email-preview/${template}`);
+  }
+
+  /**
+   * Claim a test upload session after authentication.
+   * Creates a test transfer from the anonymously uploaded file.
+   */
+  async claimTestTransfer(sessionId: string): Promise<
+    ApiResponse<{
+      id: string;
+      shortCode: string;
+      isTestTransfer: boolean;
+      expireAt: string;
+      title: string;
+    }>
+  > {
+    return apiClient.post('/transfers/test/claim', { sessionId });
+  }
+
+  /**
+   * Get anonymous preview data for a test upload session (no auth).
+   */
+  async getTestPreview(sessionId: string): Promise<
+    ApiResponse<{
+      sessionId: string;
+      filename: string;
+      fileSize: number;
+      mimeType: string;
+      title: string;
+      isTestTransfer: boolean;
+    }>
+  > {
+    const baseUrl =
+      process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    const response = await fetch(`${baseUrl}/transfers/test/preview`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId }),
+    });
+    const data = await response.json();
+    if (response.ok) {
+      return { data, status: response.status };
+    }
+    return { error: data.message || 'Failed to get preview', status: response.status };
+  }
+
+  /**
+   * Create a test transfer session with form metadata (anonymous, no auth).
+   * Called after the anonymous file upload completes.
+   */
+  async createTestSession(data: {
+    sessionId: string;
+    senderEmail: string;
+    recipientEmails: string[];
+    title: string;
+    price: number;
+    currency: string;
+  }): Promise<
+    ApiResponse<{
+      sessionId: string;
+      shortCode: string;
+      senderEmail: string;
+      recipientEmails: string[];
+      title: string;
+      price: number;
+      currency: string;
+      filename: string;
+      fileSize: number;
+      mimeType: string;
+      isTestTransfer: boolean;
+    }>
+  > {
+    const baseUrl =
+      process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    const response = await fetch(`${baseUrl}/transfers/test/create`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    const responseData = await response.json();
+    if (response.ok) {
+      return { data: responseData, status: response.status };
+    }
+    return {
+      error: { message: responseData.message || 'Failed to create test session', statusCode: response.status },
+      status: response.status,
+    };
   }
 
   /**

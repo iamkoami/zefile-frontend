@@ -21,6 +21,8 @@ interface FilePreviewPanelProps {
   transferOptions?: TransferOptions;
   /** Dynamic tier limits data from API for label lookups */
   tierLimitsData?: UseTierLimitsReturn;
+  /** Transfer mode — "test" restricts to single file, 10MB, 1h expiry */
+  transferMode?: "test" | "real" | null;
 }
 
 const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({
@@ -34,9 +36,12 @@ const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({
   onClearReuseData,
   transferOptions,
   tierLimitsData,
+  transferMode,
 }) => {
   const t = useTranslations('filePreview');
   const tUpload = useTranslations('upload');
+  const tTest = useTranslations('testTransfer');
+  const isTestMode = transferMode === 'test';
   const tOptions = useTranslations('transferOptions');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [fileError, setFileError] = useState<string>('');
@@ -210,39 +215,41 @@ const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({
           ))}
         </div>
 
-        {/* Add More Files Section */}
+        {/* Add More Files Section — hidden in test mode (single file only) */}
         <div>
-          <div className={`ze-add-more-section p-4 bg-primary-sub rounded-lg mb-3 ${selectedFilesSize >= maxUploadSize ? 'opacity-50 cursor-not-allowed' : ''}`}>
-            <div
-              className={`flex items-center gap-3 ${selectedFilesSize >= maxUploadSize ? 'cursor-not-allowed' : 'cursor-pointer'}`}
-              onClick={selectedFilesSize >= maxUploadSize ? undefined : handleClick}
-            >
-              <div className="w-12 h-12 flex items-center justify-center border-2 border-[#E1E1E1] rounded flex-shrink-0">
-                <Plus width={24} height={24} color="#171717" strokeWidth={2} />
+          {!isTestMode && (
+            <div className={`ze-add-more-section p-4 bg-primary-sub rounded-lg mb-3 ${selectedFilesSize >= maxUploadSize ? 'opacity-50 cursor-not-allowed' : ''}`}>
+              <div
+                className={`flex items-center gap-3 ${selectedFilesSize >= maxUploadSize ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                onClick={selectedFilesSize >= maxUploadSize ? undefined : handleClick}
+              >
+                <div className="w-12 h-12 flex items-center justify-center border-2 border-[#E1E1E1] rounded flex-shrink-0">
+                  <Plus width={24} height={24} color="#171717" strokeWidth={2} />
+                </div>
+                <div className="text-left">
+                  <p className="text-sm font-semibold text-black">
+                    {t('addMoreFiles')}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {selectedFilesSize >= maxUploadSize
+                      ? tUpload('uploadLimitReached')
+                      : `${tUpload('upTo')} ${formatBytes(maxUploadSize - selectedFilesSize)}`
+                    }
+                  </p>
+                </div>
               </div>
-              <div className="text-left">
-                <p className="text-sm font-semibold text-black">
-                  {t('addMoreFiles')}
-                </p>
-                <p className="text-xs text-gray-500">
-                  {selectedFilesSize >= maxUploadSize
-                    ? tUpload('uploadLimitReached')
-                    : `${tUpload('upTo')} ${formatBytes(maxUploadSize - selectedFilesSize)}`
-                  }
-                </p>
-              </div>
-            </div>
 
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              accept={getFileInputAccept()}
-              className="hidden"
-              onChange={handleFileSelect}
-              disabled={selectedFilesSize >= maxUploadSize}
-            />
-          </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept={getFileInputAccept()}
+                className="hidden"
+                onChange={handleFileSelect}
+                disabled={selectedFilesSize >= maxUploadSize}
+              />
+            </div>
+          )}
 
           {/* Error Message */}
           {fileError && (
@@ -251,12 +258,26 @@ const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({
             </div>
           )}
 
-          <p className="text-sm font-medium text-center text-gray-500">
-            {t('dropFilesToAdd')}
-          </p>
+          {!isTestMode && (
+            <p className="text-sm font-medium text-center text-gray-500">
+              {t('dropFilesToAdd')}
+            </p>
+          )}
 
           {/* Transfer Options Display - Inline */}
-          {transferOptions && transferOptions.accessControl && (
+          {isTestMode ? (
+            <div
+              className="mt-4 px-3 py-2 bg-gray-50 rounded-lg text-sm text-gray-600"
+              role="region"
+              aria-label={t('transferOptionsLabel')}
+            >
+              <span>{tTest('blockSubtitle')}</span>
+              <span className="mx-2">·</span>
+              <span>1 {tTest('hour')}</span>
+              <span className="mx-2">·</span>
+              <span>10 MB</span>
+            </div>
+          ) : transferOptions && transferOptions.accessControl ? (
             <div
               className="mt-4 px-3 py-2 bg-gray-50 rounded-lg text-sm text-gray-600"
               role="region"
@@ -280,7 +301,7 @@ const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({
                 </>
               )}
             </div>
-          )}
+          ) : null}
         </div>
       </div>
     </div>

@@ -112,6 +112,7 @@ const HeroText: React.FC<HeroTextProps> = ({
           </button>
         </div>
       )}
+
     </div>
   );
 };

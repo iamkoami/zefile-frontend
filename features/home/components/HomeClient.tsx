@@ -12,6 +12,7 @@ import PaperPlaneAnimation from "@/components/shared/PaperPlaneAnimation";
 import HeroText from "@/components/shared/HeroText";
 import TimeOfDayBackground from "@/components/shared/TimeOfDayBackground";
 import GlobalDragDropOverlay from "@/features/home/components/GlobalDragDropOverlay";
+import FeaturedCreatorsSection from "@/features/home/components/FeaturedCreatorsSection";
 import NPSSurveyModal from "@/components/shared/NPSSurveyModal";
 import FloatingPollWidget from "@/components/shared/FloatingPollWidget";
 import { usePollEligibility } from "@/hooks/usePollEligibility";
@@ -33,10 +34,10 @@ export default function HomeClient() {
   const [maxUploadSize, setMaxUploadSize] = useState<number>(2147483648); // Default 2GB
   const [uploadPanelState, setUploadPanelState] =
     useState<PanelState>("initial");
+  const [transferMode, setTransferMode] = useState<"test" | "real" | null>(null);
   const [reuseTransferData, setReuseTransferData] =
     useState<ReuseTransferData | null>(null);
   const [showNpsSurvey, setShowNpsSurvey] = useState(false);
-
   // Poll eligibility check — replaces FloatingPollWidget's former self-fetch
   const { checkForPoll } = usePollEligibility();
   useEffect(() => {
@@ -49,6 +50,7 @@ export default function HomeClient() {
   // User tier state (defaults to 'free' for unauthenticated users)
   const [userTier, setUserTier] = useState<SubscriptionTier>("free");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isFirstPaidTransferUsed, setIsFirstPaidTransferUsed] = useState(true);
 
   // Fetch tier limits from API (dynamic values from admin configuration)
   const tierLimitsData = useTierLimits();
@@ -135,6 +137,9 @@ export default function HomeClient() {
           const tier = (response.data.tier?.toLowerCase() ||
             "free") as SubscriptionTier;
           setUserTier(tier);
+          setIsFirstPaidTransferUsed(
+            response.data.isFirstPaidTransferUsed ?? true,
+          );
         }
       } catch (error) {
         console.error("Failed to fetch platform config:", error);
@@ -284,12 +289,14 @@ export default function HomeClient() {
                 maxUploadSize={maxUploadSize}
                 selectedFilesSize={selectedFilesSize}
                 onPanelStateChange={setUploadPanelState}
+                onTransferModeChange={setTransferMode}
                 reuseTransferData={reuseTransferData}
                 onClearReuseData={handleClearReuseData}
                 transferOptions={transferOptions}
                 onTransferOptionsChange={setTransferOptions}
                 tierLimitsData={tierLimitsData}
                 userTier={userTier}
+                isFirstPaidTransferUsed={isFirstPaidTransferUsed}
               />
 
               {/* File Preview Panel - Visible when files selected OR reuse files OR form is showing */}
@@ -305,7 +312,8 @@ export default function HomeClient() {
                   uploadPanelState !== "otp" &&
                   uploadPanelState !== "uploading" &&
                   uploadPanelState !== "cancel-confirm" &&
-                  uploadPanelState !== "complete"
+                  uploadPanelState !== "complete" &&
+                  uploadPanelState !== "test-result"
                 }
                 maxUploadSize={maxUploadSize}
                 selectedFilesSize={selectedFilesSize}
@@ -313,10 +321,14 @@ export default function HomeClient() {
                 onClearReuseData={handleClearReuseData}
                 transferOptions={transferOptions}
                 tierLimitsData={tierLimitsData}
+                transferMode={transferMode}
               />
 
             </div>
           </div>
+
+          {/* Featured Creators Section - outside content panel to avoid overflow:hidden clipping */}
+          <FeaturedCreatorsSection />
         </main>
       </div>
     </UploadProtectionProvider>

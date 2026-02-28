@@ -22,6 +22,8 @@ import Tabs, { Tab } from "@/components/shared/Tabs";
 import TransferItem from "./TransferItem";
 import Pagination from "@/components/shared/Pagination";
 import BulkActionBar from "@/components/shared/BulkActionBar";
+import FirstFreeBanner from "@/components/shared/FirstFreeBanner";
+import { platformApi } from "@/services/platform-api";
 
 // Filter options enum
 enum FilterBy {
@@ -125,6 +127,7 @@ const TransfersPanel: React.FC = () => {
   const [showPageSizeDropdown, setShowPageSizeDropdown] = useState(false);
   const filterDropdownRef = useRef<HTMLDivElement>(null);
   const pageSizeDropdownRef = useRef<HTMLDivElement>(null);
+  const [isFirstPaidTransferUsed, setIsFirstPaidTransferUsed] = useState(true);
 
   // Build tabs with translations
   const TABS: Tab[] = useMemo(
@@ -256,6 +259,19 @@ const TransfersPanel: React.FC = () => {
       fetchTransfers();
     }
   }, [isOpen, view, currentContentView, fetchTransfers]);
+
+  // Check first-free status when panel opens
+  useEffect(() => {
+    if (isOpen && view === "transfers") {
+      platformApi.getUserConfig().then((res) => {
+        if (res.data) {
+          setIsFirstPaidTransferUsed(res.data.isFirstPaidTransferUsed ?? true);
+        }
+      }).catch(() => {
+        // Non-critical, default to true (hidden)
+      });
+    }
+  }, [isOpen, view]);
 
   // Handle tab change - reset page to 1
   const handleTabChange = useCallback((tabId: string) => {
@@ -541,6 +557,11 @@ const TransfersPanel: React.FC = () => {
       <h1 className="text-4xl font-bold text-gray-900 mt-12 mb-18">
         {t("title")}
       </h1>
+
+      {/* First-Free Banner */}
+      {!isFirstPaidTransferUsed && (
+        <FirstFreeBanner variant="compact" className="mb-4" />
+      )}
 
       {/* Tabs and Sort - with full-width border below */}
       <div className="relative  mt-6 mb-10">
