@@ -5,6 +5,21 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.18.0] - 2026-02-28
+
+### Added
+
+- Interactive earnings calculator replacing static transaction fees table on pricing page
+- Auto-skip choice blocks after 3 completed test transfers (localStorage-based)
+- Test download simulation component for test transfer flow
+
+### Changed
+
+- Choice blocks modernized: "Try it first" / "Send for real" with NavArrowRight icon
+- Processing fee removed from pricing page (buyer's cost, not relevant to creators)
+- Choice block hover/active animations (scale 1.02 / 0.98)
+- Test transfer panel widths adjusted (420px main, 444px side offset)
+
 ## [1.17.0] - 2026-02-28
 
 ### Added
