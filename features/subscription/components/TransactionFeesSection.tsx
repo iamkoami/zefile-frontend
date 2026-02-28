@@ -75,10 +75,10 @@ interface TransactionFeesSectionProps {
 
 export function TransactionFeesSection({ compact = false }: TransactionFeesSectionProps) {
   const t = useTranslations("subscriptions");
-  const [selectedCountry, setSelectedCountry] = useState("CI");
+  const [selectedCountry, setSelectedCountry] = useState("NG");
   const [selectedTier, setSelectedTier] = useState<"free" | "starter" | "pro">("free");
   const [priceInput, setPriceInput] = useState(
-    String(DEFAULT_PRICES["XOF"] || 10000),
+    String(DEFAULT_PRICES["NGN"] || 10000),
   );
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
