@@ -5,6 +5,25 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.17.0] - 2026-02-28
+
+### Added
+
+- Unified test transfer upload flow with same progress bar as real transfers
+- Test simulation views (sender/recipient) matching actual email template format
+- Featured creators section on download page for social proof
+- "Preview before you pay" messaging on download page for paid transfers
+- First free transfer banner and tracking in TransferCompletePanel
+- Payment page analytics (view/abandon tracking)
+- Choice block styles for visitor upload mode selection
+- New API methods: testUpload, createTestSession, getFeaturedCreators
+- Extended PostHog tracking for test transfer and payment funnels
+- EN/FR translations for all new features
+
+### Changed
+
+- Header auth check shows loading overlay until resolved (prevents flash)
+
 ## [1.16.3] - 2026-02-27
 
 ### Fixed
