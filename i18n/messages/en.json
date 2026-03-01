@@ -172,7 +172,7 @@
     "transferTest": "Send test",
     "transferPaid": "Send & get paid",
     "transferFree": "Send files",
-    "earningsInline": "You'll receive {amount} {currency} after {percentage}% fee",
+    "earningsInline": "You'll receive <b>{formattedAmount}</b> after <b>{percentage}%</b> fee",
     "addDetails": "Add title & options",
     "justTrying": "Just exploring?",
     "sendTestLink": "Send yourself a test file",

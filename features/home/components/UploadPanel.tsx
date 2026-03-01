@@ -30,6 +30,7 @@ import { platformApi } from "@/services/platform-api";
 import { multipartUploadService } from "@/services/multipart-upload.service";
 import { useUploadStore } from "@/stores/upload-store";
 import { useCurrentCurrency } from "@/stores/currency-store";
+import { formatCurrencyAmount } from "@/lib/currency";
 import { TransferOptions } from "@/features/transfer/components/TransferOptionsPanel";
 import { storageApi } from "@/services/storage-api";
 import { getTierTranslationKey } from "@/hooks/useTierLimits";
@@ -476,19 +477,6 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
       onTransferModeChange(transferMode);
     }
   }, [transferMode, onTransferModeChange]);
-
-  // Helper function to get currency symbol
-  const getCurrencySymbol = (currencyCode: string): string => {
-    const symbols: { [key: string]: string } = {
-      NGN: "₦",
-      GHS: "₵",
-      ZAR: "R",
-      KES: "KSh",
-      XOF: "CFA",
-      USD: "$",
-    };
-    return symbols[currencyCode] || currencyCode;
-  };
 
   // Helper function to format bytes
   const formatBytes = (bytes: number): string => {
@@ -1620,19 +1608,17 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                 )}
                 {/* Service Charge — single-line inline */}
                 {price && parsePriceToNumber(price) > 0 && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    {t("earningsInline", {
-                      amount: new Intl.NumberFormat("fr-FR", {
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 0,
-                      }).format(
+                  <p className="text-xs  text-[#171717] mt-3">
+                    {t.rich("earningsInline", {
+                      formattedAmount: formatCurrencyAmount(
                         receivedAmount > 0
                           ? receivedAmount
                           : parsePriceToNumber(price) *
                               (1 - serviceChargePercentage / 100),
+                        currency,
                       ),
-                      currency: getCurrencySymbol(currency),
                       percentage: serviceChargePercentage,
+                      b: (chunks) => <span className="font-semibold">{chunks}</span>,
                     })}
                   </p>
                 )}

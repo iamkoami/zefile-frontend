@@ -173,7 +173,7 @@
     "transferTest": "Envoyer le test",
     "transferPaid": "Envoyer et recevoir",
     "transferFree": "Envoyer les fichiers",
-    "earningsInline": "Vous recevrez {amount} {currency} apres {percentage}% de frais",
+    "earningsInline": "Vous recevrez <b>{formattedAmount}</b> apres <b>{percentage}%</b> de frais",
     "addDetails": "Ajouter un titre et des options",
     "justTrying": "Juste pour essayer ?",
     "sendTestLink": "Envoyez-vous un fichier test",

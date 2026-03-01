@@ -6,13 +6,14 @@
 /**
  * Supported currency codes
  */
-export type CurrencyCode = "XOF" | "NGN" | "GHS" | "ZAR" | "KES" | "USD" | "EUR";
+export type CurrencyCode = "XOF" | "XAF" | "NGN" | "GHS" | "ZAR" | "KES" | "USD" | "EUR";
 
 /**
  * Currency symbols for display
  */
 export const CURRENCY_SYMBOLS: Record<CurrencyCode, string> = {
-  XOF: "CFA",
+  XOF: "XOF",
+  XAF: "XAF",
   NGN: "₦",
   GHS: "₵",
   ZAR: "R",
@@ -29,6 +30,7 @@ const FALLBACK_RATES_TO_USD: Record<CurrencyCode, number> = {
   USD: 1,
   EUR: 1.08,
   XOF: 0.0016,
+  XAF: 0.0016,
   NGN: 0.00063,
   GHS: 0.064,
   ZAR: 0.053,
@@ -206,8 +208,8 @@ export function formatCurrencyAmount(
   // Format number with appropriate decimal places
   let formattedAmount: string;
 
-  // For currencies with small unit values (XOF, NGN, KES), show no decimals
-  if (["XOF", "NGN", "KES"].includes(currency)) {
+  // For currencies with small unit values (XOF, XAF, NGN, KES), show no decimals
+  if (["XOF", "XAF", "NGN", "KES"].includes(currency)) {
     formattedAmount = Math.round(amount).toLocaleString(locale);
   } else {
     formattedAmount = amount.toLocaleString(locale, {
@@ -217,12 +219,15 @@ export function formatCurrencyAmount(
   }
 
   // Position symbol based on currency convention
-  if (["USD", "GHS"].includes(currency)) {
+  if (["XOF", "XAF"].includes(currency)) {
+    // CFA francs: amount then code (9,300 XOF)
+    return `${formattedAmount} ${symbol}`;
+  } else if (["USD", "GHS"].includes(currency)) {
     return `${symbol}${formattedAmount}`;
   } else if (["EUR"].includes(currency)) {
     return `${formattedAmount}${symbol}`;
   } else {
-    // For others, put symbol before with space
+    // For others (NGN, ZAR, KES), symbol before with space
     return `${symbol} ${formattedAmount}`;
   }
 }
