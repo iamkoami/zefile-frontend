@@ -35,11 +35,11 @@ const LoadingFullscreen: React.FC<LoadingFullscreenProps> = ({ message }) => {
           animationData={animationData}
           loop={true}
           autoplay={true}
-          style={{ width: 102, height: 102 }}
+          style={{ width: 160, height: 160 }}
         />
       ) : (
         <div className="animate-pulse">
-          <Image src="/load.svg" alt="ZeFile" width={50} height={50} priority />
+          <Image src="/load.svg" alt="ZeFile" width={92} height={92} priority />
         </div>
       )}
       {message && (

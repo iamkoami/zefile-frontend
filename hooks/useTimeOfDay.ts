@@ -25,18 +25,15 @@ function getTimeOfDay(hour: number): TimeOfDay {
  * Updates every minute to catch time changes
  */
 export function useTimeOfDay(): { timeOfDay: TimeOfDay } {
-  const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>(() => {
-    const hour = new Date().getHours();
-    return getTimeOfDay(hour);
-  });
+  const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>("day");
 
   useEffect(() => {
     const updateTimeOfDay = () => {
       const hour = new Date().getHours();
-      const newTimeOfDay = getTimeOfDay(hour);
-      setTimeOfDay(newTimeOfDay);
+      setTimeOfDay(getTimeOfDay(hour));
     };
 
+    updateTimeOfDay();
     const interval = setInterval(updateTimeOfDay, 60000);
 
     return () => clearInterval(interval);

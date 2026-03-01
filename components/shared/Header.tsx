@@ -45,7 +45,9 @@ const Header = () => {
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [upgradeBannerDismissed, setUpgradeBannerDismissed] = useState(true);
-  const [headerState, setHeaderState] = useState<"normal" | "hidden" | "floating">("normal");
+  const [headerState, setHeaderState] = useState<
+    "normal" | "hidden" | "floating"
+  >("normal");
   const lastScrollY = useRef(0);
 
   // Sticky header: normal at top, hidden on scroll down, floating on scroll up
@@ -87,7 +89,8 @@ const Header = () => {
     try {
       const dismissedAt = localStorage.getItem("upgrade_banner_dismissed");
       if (dismissedAt) {
-        const daysSince = (Date.now() - Number(dismissedAt)) / (1000 * 60 * 60 * 24);
+        const daysSince =
+          (Date.now() - Number(dismissedAt)) / (1000 * 60 * 60 * 24);
         setUpgradeBannerDismissed(daysSince < 7);
       } else {
         setUpgradeBannerDismissed(false);
@@ -424,7 +427,10 @@ const Header = () => {
       {(!isAuthChecked || isLoggingOut) && <LoadingFullscreen />}
       {/* Spacer keeps layout stable when header becomes fixed */}
       {headerState !== "normal" && <div className="h-16" />}
-      <header id="ze-header" className={`ze-header${headerState === "floating" ? " ze-header-floating" : ""}${headerState === "hidden" ? " ze-header-hidden" : ""}`}>
+      <header
+        id="ze-header"
+        className={`ze-header${headerState === "floating" ? " ze-header-floating" : ""}${headerState === "hidden" ? " ze-header-hidden" : ""}`}
+      >
         <div className="ze-header-container">
           {/* Left: Hamburger (mobile) + Logo */}
           <div id="ze-header-logo" className="ze-header-left">
@@ -441,10 +447,10 @@ const Header = () => {
               <Image
                 src="/zefile-logo.svg"
                 alt={tCommon("logoAlt")}
-                width={120}
+                width={100}
                 height={33}
                 priority
-                className="w-[90px] h-auto lg:w-[120px]"
+                className="w-[100px] h-auto"
               />
             </Link>
           </div>
@@ -716,33 +722,50 @@ const Header = () => {
       </header>
 
       {/* Mobile upgrade banner for free-tier users */}
-      {isAuthChecked && isAuthenticated && subscriptionTier === "free" && !upgradeBannerDismissed && (
-        <div className="lg:hidden flex items-center justify-center gap-2 py-1.5 px-4 bg-[#5E53E0]/5 border-b border-[#5E53E0]/10">
-          <span className="text-xs text-gray-500">{t("freePlan")}</span>
-          <button
-            onClick={() => handleOpenDrawer("subscriptions")}
-            className="text-xs font-semibold text-[#5E53E0] hover:text-[#4a42b8] transition-colors"
-          >
-            {t("upgrade")}
-          </button>
-          <button
-            onClick={() => {
-              setUpgradeBannerDismissed(true);
-              try {
-                localStorage.setItem("upgrade_banner_dismissed", String(Date.now()));
-              } catch {
-                // localStorage unavailable
-              }
-            }}
-            className="ml-auto text-gray-400 hover:text-gray-600 transition-colors p-0.5"
-            aria-label="Dismiss"
-          >
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M10.5 3.5L3.5 10.5M3.5 3.5L10.5 10.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-            </svg>
-          </button>
-        </div>
-      )}
+      {isAuthChecked &&
+        isAuthenticated &&
+        subscriptionTier === "free" &&
+        !upgradeBannerDismissed && (
+          <div className="lg:hidden flex items-center justify-center gap-2 py-1.5 px-4 bg-[#5E53E0]/5 border-b border-[#5E53E0]/10">
+            <span className="text-xs text-gray-500">{t("freePlan")}</span>
+            <button
+              onClick={() => handleOpenDrawer("subscriptions")}
+              className="text-xs font-semibold text-[#5E53E0] hover:text-[#4a42b8] transition-colors"
+            >
+              {t("upgrade")}
+            </button>
+            <button
+              onClick={() => {
+                setUpgradeBannerDismissed(true);
+                try {
+                  localStorage.setItem(
+                    "upgrade_banner_dismissed",
+                    String(Date.now()),
+                  );
+                } catch {
+                  // localStorage unavailable
+                }
+              }}
+              className="ml-auto text-gray-400 hover:text-gray-600 transition-colors p-0.5"
+              aria-label="Dismiss"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 14 14"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M10.5 3.5L3.5 10.5M3.5 3.5L10.5 10.5"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </button>
+          </div>
+        )}
 
       <AuthPanel
         isOpen={showAuthPanel}

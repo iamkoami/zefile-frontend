@@ -114,7 +114,11 @@ const Footer: React.FC = () => {
       label: "Instagram",
     },
     { icon: Threads, href: "https://threads.net/@zefilehq", label: "Threads" },
-    { icon: Facebook, href: "https://facebook.com/zefilehq", label: "Facebook" },
+    {
+      icon: Facebook,
+      href: "https://facebook.com/zefilehq",
+      label: "Facebook",
+    },
     {
       icon: Linkedin,
       href: "https://linkedin.com/company/zefilehq",
@@ -194,7 +198,7 @@ const Footer: React.FC = () => {
               <Image
                 src="/zefile-logo-white.svg"
                 alt={tCommon("logoAlt")}
-                width={100}
+                width={90}
                 height={28}
               />
             </Link>
