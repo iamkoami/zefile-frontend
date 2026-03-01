@@ -43,6 +43,7 @@ import { trackPricingViewed } from "@/lib/posthog";
 interface TierFeature {
   text: string;
   included: boolean;
+  shared?: boolean;
 }
 
 interface TierConfig {
@@ -178,10 +179,10 @@ export default function PricingPage() {
       transfersPerMonth: String(tierLimits.free.transfersPerMonth),
       expiry: `${tierLimits.free.expiryDays} ${t("days")}`,
       features: [
-        { text: t("features.basicUploads"), included: true },
-        { text: t("features.watermarkedPreviews"), included: true },
-        { text: t("features.emailNotifications"), included: true },
-        { text: t("features.passwordProtection"), included: true },
+        { text: t("features.basicUploads"), included: true, shared: true },
+        { text: t("features.watermarkedPreviews"), included: true, shared: true },
+        { text: t("features.emailNotifications"), included: true, shared: true },
+        { text: t("features.passwordProtection"), included: true, shared: true },
         {
           text:
             tierLimits.free.maxVersions === -1
@@ -219,10 +220,10 @@ export default function PricingPage() {
       expiry: `${tierLimits.starter.expiryDays} ${t("days")}`,
       highlighted: true,
       features: [
-        { text: t("features.basicUploads"), included: true },
-        { text: t("features.watermarkedPreviews"), included: true },
-        { text: t("features.emailNotifications"), included: true },
-        { text: t("features.passwordProtection"), included: true },
+        { text: t("features.basicUploads"), included: true, shared: true },
+        { text: t("features.watermarkedPreviews"), included: true, shared: true },
+        { text: t("features.emailNotifications"), included: true, shared: true },
+        { text: t("features.passwordProtection"), included: true, shared: true },
         {
           text:
             tierLimits.starter.maxVersions === -1
@@ -257,10 +258,10 @@ export default function PricingPage() {
       transfersPerMonth: t("tiers.pro.unlimited"),
       expiry: `${tierLimits.pro.expiryDays} ${t("days")}`,
       features: [
-        { text: t("features.basicUploads"), included: true },
-        { text: t("features.watermarkedPreviews"), included: true },
-        { text: t("features.emailNotifications"), included: true },
-        { text: t("features.passwordProtection"), included: true },
+        { text: t("features.basicUploads"), included: true, shared: true },
+        { text: t("features.watermarkedPreviews"), included: true, shared: true },
+        { text: t("features.emailNotifications"), included: true, shared: true },
+        { text: t("features.passwordProtection"), included: true, shared: true },
         {
           text:
             tierLimits.pro.maxVersions === -1
@@ -402,7 +403,15 @@ export default function PricingPage() {
             >
               {t("annual")}
               <span className="ml-2 text-xs text-[#5E53E0] font-semibold">
-                {t("save17")}
+                {(() => {
+                  const currency = getTierCurrency(countryCode);
+                  const starterSavings = (getApiTierPrice("starter", countryCode, "monthly") * 12) - getApiTierPrice("starter", countryCode, "annual");
+                  const proSavings = (getApiTierPrice("pro", countryCode, "monthly") * 12) - getApiTierPrice("pro", countryCode, "annual");
+                  const maxSavings = Math.max(starterSavings, proSavings);
+                  return maxSavings > 0
+                    ? t("saveAmount", { amount: formatSubscriptionPrice(maxSavings, currency) })
+                    : t("save17");
+                })()}
               </span>
             </button>
           </div>
@@ -443,7 +452,7 @@ export default function PricingPage() {
                       key={code}
                       onClick={() => handleCountryChange(code)}
                       className={`w-full px-4 py-3 text-left text-sm hover:bg-gray-50 transition-colors flex items-center gap-2 ${
-                        code === countryCode ? "bg-gray-50 font-medium" : ""
+                        code === countryCode ? "bg-gray-50 font-bold" : ""
                       }`}
                     >
                       {COUNTRY_CONFIG[code]?.flagCode ? (
@@ -541,6 +550,28 @@ export default function PricingPage() {
                       </span>
                     )}
                   </div>
+                  {billingPeriod === "annual" && (
+                    <p
+                      className={`text-xs mt-1 ${
+                        tier.id === "free"
+                          ? "invisible"
+                          : isPro && !isCurrentPlan
+                            ? "text-white/50"
+                            : "text-gray-400"
+                      }`}
+                    >
+                      {tier.id !== "free"
+                        ? t("monthlyEquivalent", {
+                            amount: formatSubscriptionPrice(
+                              Math.round(
+                                getApiTierPrice(tier.id, countryCode, "annual") / 12,
+                              ),
+                              getTierCurrency(countryCode),
+                            ),
+                          })
+                        : "\u00A0"}
+                    </p>
+                  )}
                 </div>
 
                 {/* CTA Button */}
@@ -602,10 +633,10 @@ export default function PricingPage() {
                   </div>
                 </div>
 
-                {/* Features */}
+                {/* Differentiating features (unique to this tier) */}
                 <ul className="space-y-3 mt-4">
                   {tier.features
-                    .filter((f) => f.included)
+                    .filter((f) => f.included && !f.shared)
                     .map((feature, index) => (
                       <li
                         key={index}
@@ -624,6 +655,17 @@ export default function PricingPage() {
                       </li>
                     ))}
                 </ul>
+
+                {/* Shared features summary */}
+                <p
+                  className={`text-xs mt-3 ${
+                    isPro && !isCurrentPlan
+                      ? "text-white/40"
+                      : "text-gray-400"
+                  }`}
+                >
+                  {t("includesBasics")}
+                </p>
               </div>
             );
           })}

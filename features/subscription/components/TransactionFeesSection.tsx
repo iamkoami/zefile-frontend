@@ -36,7 +36,6 @@ const COUNTRY_CALC_DATA: CountryCalcData[] = [
   { countryCode: "TZ", flagCode: "TZ", currency: "TZS", currencySymbol: "TSh", payoutFee: { type: "percent", value: 3 }, noDecimals: true },
   { countryCode: "UG", flagCode: "UG", currency: "UGX", currencySymbol: "USh", payoutFee: { type: "fixed", value: 1150 }, noDecimals: true },
   { countryCode: "RW", flagCode: "RW", currency: "RWF", currencySymbol: "RF", payoutFee: { type: "fixed", value: 400 }, noDecimals: true },
-  { countryCode: "INTL", flagCode: null, currency: "USD", currencySymbol: "$", payoutFee: null, noDecimals: false },
 ];
 
 const PLATFORM_FEE_TIERS = [
@@ -56,7 +55,6 @@ const DEFAULT_PRICES: Record<string, number> = {
   TZS: 50000,
   UGX: 100000,
   RWF: 50000,
-  USD: 50,
 };
 
 function formatAmount(amount: number, noDecimals: boolean): string {
@@ -211,7 +209,7 @@ export function TransactionFeesSection({ compact = false }: TransactionFeesSecti
     (amount: number) => {
       if (!selectedData) return "";
       const num = formatAmount(amount, selectedData.noDecimals);
-      if (selectedData.currency === "USD" || selectedData.currency === "GHS") {
+      if (selectedData.currency === "GHS") {
         return `${selectedData.currencySymbol}${num}`;
       }
       return `${num} ${selectedData.currencySymbol}`;

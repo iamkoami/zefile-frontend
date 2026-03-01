@@ -90,7 +90,7 @@ const CurrencySwitcher: React.FC<CurrencySwitcherProps> = ({
                 key={code}
                 onClick={() => handleSelect(code)}
                 className={`w-full px-4 py-2.5 text-left text-sm hover:bg-gray-50 transition-colors flex items-center gap-2 ${
-                  isSelected ? "bg-gray-50 font-medium text-[#5E53E0]" : "text-gray-700"
+                  isSelected ? "bg-gray-50 font-bold" : "text-gray-700"
                 }`}
               >
                 {config.flagCode ? (

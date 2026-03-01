@@ -1,7 +1,17 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { Plus, MediaImagePlus, Xmark, NavArrowLeft, ArrowRight, NavArrowRight } from "iconoir-react";
+import {
+  Plus,
+  MediaImagePlus,
+  Xmark,
+  NavArrowLeft,
+  ArrowRight,
+  NavArrowRight,
+  Lock,
+  Clock,
+  ShieldCheck,
+} from "iconoir-react";
 import { useTranslations } from "next-intl";
 import {
   getFileInputAccept,
@@ -129,7 +139,8 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
   const [fileError, setFileError] = useState<string>("");
   const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
   const [panelState, setPanelState] = useState<PanelState>("initial");
-  const [formView, setFormView] = useState<'main' | 'options'>('main');
+  const [formView, setFormView] = useState<"main" | "options">("main");
+  const [showDetails, setShowDetails] = useState(false);
   const [receivedAmount, setReceivedAmount] = useState<number>(0);
   const [serviceChargePercentage, setServiceChargePercentage] =
     useState<number>(7);
@@ -158,7 +169,9 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
   const wallpaperInputRef = useRef<HTMLInputElement>(null);
 
   // Test transfer state
-  const [transferMode, setTransferMode] = useState<"test" | "real" | null>(null);
+  const [transferMode, setTransferMode] = useState<"test" | "real" | null>(
+    null,
+  );
   const [testSimulationData, setTestSimulationData] = useState<{
     sessionId: string;
     shortCode: string;
@@ -180,20 +193,20 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
 
   // Wallpaper constants
   const MAX_WALLPAPER_SIZE = 5 * 1024 * 1024; // 5MB
-  const ALLOWED_WALLPAPER_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+  const ALLOWED_WALLPAPER_TYPES = ["image/jpeg", "image/png", "image/webp"];
   const MIN_PASSWORD_LENGTH = 8;
 
   // Wallpaper handlers
   const handleWallpaperSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    e.target.value = '';
+    e.target.value = "";
     if (!ALLOWED_WALLPAPER_TYPES.includes(file.type)) {
-      toast.error(tOptions('invalidFileType'));
+      toast.error(tOptions("invalidFileType"));
       return;
     }
     if (file.size > MAX_WALLPAPER_SIZE) {
-      toast.error(tOptions('fileTooLarge'));
+      toast.error(tOptions("fileTooLarge"));
       return;
     }
     if (transferOptions?.wallpaperPreview) {
@@ -221,11 +234,11 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
   // Access control handler — clears password when switching away from password mode
   const handleAccessControlChange = (value: string) => {
     if (!transferOptions || !onTransferOptionsChange) return;
-    const newAccessControl = value as TransferOptions['accessControl'];
+    const newAccessControl = value as TransferOptions["accessControl"];
     onTransferOptionsChange({
       ...transferOptions,
       accessControl: newAccessControl,
-      password: newAccessControl === 'password' ? transferOptions.password : '',
+      password: newAccessControl === "password" ? transferOptions.password : "",
     });
   };
 
@@ -236,7 +249,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
 
   // Password validation
   const isPasswordTooShort =
-    transferOptions?.accessControl === 'password' &&
+    transferOptions?.accessControl === "password" &&
     (transferOptions?.password?.length ?? 0) > 0 &&
     (transferOptions?.password?.length ?? 0) < MIN_PASSWORD_LENGTH;
 
@@ -244,7 +257,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
   const handleSizeLimitChange = (value: string) => {
     if (!transferOptions || !onTransferOptionsChange) return;
     if (!value) {
-      onTransferOptionsChange({ ...transferOptions, sizeLimit: '' });
+      onTransferOptionsChange({ ...transferOptions, sizeLimit: "" });
       return;
     }
     const sizeGB = parseInt(value, 10);
@@ -254,19 +267,28 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
     }
   };
 
-  const isWallpaperDisabled = userTier === 'free';
+  const isWallpaperDisabled = userTier === "free";
   const sizeLimitOptions = tierLimitsData?.allSizeLimitOptions ?? [];
 
   // Reset to valid defaults if current selections become unavailable (e.g., tier downgrade)
   useEffect(() => {
-    if (!tierLimitsData || tierLimitsData.isLoading || !transferOptions || !onTransferOptionsChange) return;
+    if (
+      !tierLimitsData ||
+      tierLimitsData.isLoading ||
+      !transferOptions ||
+      !onTransferOptionsChange
+    )
+      return;
 
     let needsUpdate = false;
     const updates: Partial<TransferOptions> = {};
 
     if (transferOptions.validityDuration) {
       const currentDays = parseInt(transferOptions.validityDuration, 10);
-      if (!isNaN(currentDays) && !tierLimitsData.isValidityAvailable(currentDays, userTier)) {
+      if (
+        !isNaN(currentDays) &&
+        !tierLimitsData.isValidityAvailable(currentDays, userTier)
+      ) {
         updates.validityDuration = tierLimitsData.getDefaultValidity(userTier);
         needsUpdate = true;
       }
@@ -274,7 +296,10 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
 
     if (transferOptions.sizeLimit) {
       const currentSizeGB = parseInt(transferOptions.sizeLimit, 10);
-      if (!isNaN(currentSizeGB) && !tierLimitsData.isSizeLimitAvailable(currentSizeGB, userTier)) {
+      if (
+        !isNaN(currentSizeGB) &&
+        !tierLimitsData.isSizeLimitAvailable(currentSizeGB, userTier)
+      ) {
         updates.sizeLimit = tierLimitsData.getDefaultSizeLimit(userTier);
         needsUpdate = true;
       }
@@ -306,9 +331,12 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
 
     fetchConfig();
 
-    const handleAuthChange = () => { fetchConfig(); };
+    const handleAuthChange = () => {
+      fetchConfig();
+    };
     window.addEventListener("auth-state-change", handleAuthChange);
-    return () => window.removeEventListener("auth-state-change", handleAuthChange);
+    return () =>
+      window.removeEventListener("auth-state-change", handleAuthChange);
   }, []);
 
   // Detect authenticated user — auto-fill email, hide email field
@@ -328,13 +356,18 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
 
     // Skip choice blocks if visitor has already completed 3+ test transfers
     if (!authApi.getStoredUser()) {
-      const testCount = parseInt(localStorage.getItem("zefile_test_count") || "0", 10);
+      const testCount = parseInt(
+        localStorage.getItem("zefile_test_count") || "0",
+        10,
+      );
       if (!isNaN(testCount) && testCount >= 3) {
         setTransferMode("real");
       }
     }
 
-    const handleAuthChange = (e: CustomEvent<{ isAuthenticated: boolean; user?: { email?: string } }>) => {
+    const handleAuthChange = (
+      e: CustomEvent<{ isAuthenticated: boolean; user?: { email?: string } }>,
+    ) => {
       if (e.detail.isAuthenticated && e.detail.user?.email) {
         setIsUserAuthenticated(true);
         setEmail(e.detail.user.email);
@@ -343,8 +376,15 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
       }
     };
 
-    window.addEventListener("auth-state-change", handleAuthChange as EventListener);
-    return () => window.removeEventListener("auth-state-change", handleAuthChange as EventListener);
+    window.addEventListener(
+      "auth-state-change",
+      handleAuthChange as EventListener,
+    );
+    return () =>
+      window.removeEventListener(
+        "auth-state-change",
+        handleAuthChange as EventListener,
+      );
   }, []);
 
   // Initialize local currency from global currency (one-time on mount)
@@ -378,8 +418,8 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
 
   // Reset formView to main when leaving form state
   useEffect(() => {
-    if (panelState !== 'form') {
-      setFormView('main');
+    if (panelState !== "form") {
+      setFormView("main");
     }
   }, [panelState]);
 
@@ -415,6 +455,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
     if (reuseTransferData && reuseTransferData.files.length > 0) {
       if (reuseTransferData.title) {
         setTitle(reuseTransferData.title);
+        setShowDetails(true);
       }
       if (panelState === "initial" || panelState === "complete") {
         setPanelState("form");
@@ -518,7 +559,10 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
 
     setFileError("");
     onFilesChange([...selectedFiles, ...files]);
-    trackFilesSelected(files.length, files.reduce((sum, f) => sum + f.size, 0));
+    trackFilesSelected(
+      files.length,
+      files.reduce((sum, f) => sum + f.size, 0),
+    );
     setPanelState("form");
   };
 
@@ -555,7 +599,10 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
 
       setFileError("");
       onFilesChange(files);
-      trackFilesSelected(files.length, files.reduce((sum, f) => sum + f.size, 0));
+      trackFilesSelected(
+        files.length,
+        files.reduce((sum, f) => sum + f.size, 0),
+      );
       setPanelState("form");
     }
   };
@@ -1117,15 +1164,18 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
 
     try {
       // Step 1: Anonymous upload with progress tracking
-      const result = await storageApi.testUpload(file, (percent, bytesUploaded) => {
-        setUploadProgress(percent);
-        setUploadedSize(bytesUploaded);
-        // Estimate time remaining
-        const elapsed = (Date.now() - startTime) / 1000;
-        const speed = bytesUploaded / elapsed;
-        const remaining = speed > 0 ? (file.size - bytesUploaded) / speed : 0;
-        setEstimatedTimeRemaining(Math.round(remaining));
-      });
+      const result = await storageApi.testUpload(
+        file,
+        (percent, bytesUploaded) => {
+          setUploadProgress(percent);
+          setUploadedSize(bytesUploaded);
+          // Estimate time remaining
+          const elapsed = (Date.now() - startTime) / 1000;
+          const speed = bytesUploaded / elapsed;
+          const remaining = speed > 0 ? (file.size - bytesUploaded) / speed : 0;
+          setEstimatedTimeRemaining(Math.round(remaining));
+        },
+      );
 
       if (result.error || !result.data) {
         setFileError(result.error?.message || tTest("uploadFailed"));
@@ -1159,8 +1209,14 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
       setPanelState("test-result");
 
       // Increment test count for auto-skip logic
-      const prev = parseInt(localStorage.getItem("zefile_test_count") || "0", 10);
-      localStorage.setItem("zefile_test_count", String((isNaN(prev) ? 0 : prev) + 1));
+      const prev = parseInt(
+        localStorage.getItem("zefile_test_count") || "0",
+        10,
+      );
+      localStorage.setItem(
+        "zefile_test_count",
+        String((isNaN(prev) ? 0 : prev) + 1),
+      );
 
       // Expose convert/reset actions to parent for side panel
       onTestConvert?.(() => {
@@ -1241,7 +1297,9 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
             transfer={transferResult.transfer}
             onSendAnother={handleSendAnother}
             isFirstTransfer={transferResult.isFirstTransfer}
-            isFirstFreePaidTransfer={!isFirstPaidTransferUsed && parsePriceToNumber(price) > 0}
+            isFirstFreePaidTransfer={
+              !isFirstPaidTransferUsed && parsePriceToNumber(price) > 0
+            }
           />
         ) : null;
 
@@ -1259,135 +1317,128 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
         ) : null;
 
       case "initial":
-        // Visitors see two blocks; authenticated users see the regular upload area
+        // Unified upload area for all users (authenticated or not)
         if (!isUserAuthenticated) {
-          // After clicking a block, show the exact same upload form as authenticated users
-          if (transferMode) {
-            const isTestMode = transferMode === "test";
-            return (
-              <>
-                {/* Upload Area */}
-                <div
-                  id="ze-upload-area"
-                  className={`ze-upload-area ${isDragging ? "dragging" : ""}`}
-                  onDragOver={isTestMode ? undefined : handleDragOver}
-                  onDragLeave={isTestMode ? undefined : handleDragLeave}
-                  onDrop={isTestMode ? undefined : handleDrop}
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  {/* Icon and Text - Horizontal Layout */}
-                  <div className="flex items-center gap-3">
-                    {/* Plus Icon */}
-                    <div
-                      id="ze-upload-icon"
-                      className="ze-upload-icon w-12 h-12 flex items-center justify-center border-2 border-[#171717] rounded flex-shrink-0"
-                    >
-                      <Plus
-                        width={24}
-                        height={24}
-                        color="#171717"
-                        strokeWidth={2}
-                      />
-                    </div>
-
-                    {/* Text */}
-                    <div id="ze-upload-text" className="ze-upload-text text-left">
-                      <p className="text-sm font-semibold text-black">
-                        {t("addFiles")}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {isTestMode
-                          ? t("blockSendTestSub")
-                          : `${t("upTo")} ${formatBytes(maxUploadSize)}`}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Hidden file input — single for test, multiple for real */}
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    multiple={!isTestMode}
-                    accept={getFileInputAccept()}
-                    className="hidden"
-                    onChange={handleFileSelect}
-                    disabled={!isTestMode && selectedFilesSize >= maxUploadSize}
-                  />
-                </div>
-
-                {/* Error Message */}
-                {fileError && (
-                  <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <p className="text-sm text-red-600">{fileError}</p>
-                  </div>
-                )}
-
-                {/* Description Text */}
-                <p
-                  id="ze-upload-description"
-                  className="ze-upload-description text-sm font-medium mt-5 mb-12 text-center text-gray-500"
-                >
-                  {t("dropFilesHere")}
-                </p>
-
-                {/* Buttons */}
-                <div
-                  id="ze-upload-actions"
-                  className="ze-upload-actions flex items-center gap-3"
-                >
-                  <button
-                    id="ze-transfer-button"
-                    className="ze-transfer-button"
-                    disabled={true}
-                  >
-                    {t("transfer")}
-                  </button>
-                </div>
-              </>
-            );
-          }
-
-          // No mode selected yet: show the two choice blocks
+          const isTestMode = transferMode === "test";
           return (
             <>
-              <div className="space-y-2.5">
-                {/* Block 1: Try it first */}
-                <div
-                  className="ze-choice-block flex items-center justify-between"
-                  onClick={handleTestBlockClick}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) =>
-                    e.key === "Enter" && handleTestBlockClick()
-                  }
-                >
-                  <p className="text-sm font-bold">
-                    {t("blockSendTest")}
-                  </p>
-                  <NavArrowRight width={18} height={18} color="#87E64B" strokeWidth={2} />
-                </div>
-
-                {/* Block 2: Send for real */}
-                <div
-                  className="ze-choice-block flex items-center justify-between"
-                  onClick={handleRealBlockClick}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) =>
-                    e.key === "Enter" && handleRealBlockClick()
-                  }
-                >
-                  <p className="text-sm font-bold">
-                    {t("blockSendProject")}
-                  </p>
-                  <NavArrowRight width={18} height={18} color="#87E64B" strokeWidth={2} />
-                </div>
+              {/* Trust strip */}
+              <div className="flex items-center justify-center gap-4 text-[10px] text-gray-400 mb-4 flex-wrap">
+                <span className="flex items-center gap-1">
+                  <Lock className="w-3 h-3" />
+                  {t("trustSecure")}
+                </span>
+                <span className="flex items-center gap-1">
+                  <Clock className="w-3 h-3" />
+                  {t("trustExpiry")}
+                </span>
+                <span className="flex items-center gap-1">
+                  <ShieldCheck className="w-3 h-3" />
+                  {t("trustPaywall")}
+                </span>
               </div>
 
-              {/* Drop files hint */}
-              <p className="text-xs text-gray-400 mt-3 text-center">
-                {t("dropFilesOnPage")}
+              {/* Upload Area */}
+              <div
+                id="ze-upload-area"
+                className={`ze-upload-area ${isDragging ? "dragging" : ""}`}
+                onDragOver={isTestMode ? undefined : handleDragOver}
+                onDragLeave={isTestMode ? undefined : handleDragLeave}
+                onDrop={isTestMode ? undefined : handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {/* Icon and Text - Horizontal Layout */}
+                <div className="flex items-center gap-3">
+                  {/* Plus Icon */}
+                  <div
+                    id="ze-upload-icon"
+                    className="ze-upload-icon w-12 h-12 flex items-center justify-center border-2 border-[#171717] rounded flex-shrink-0"
+                  >
+                    <Plus
+                      width={24}
+                      height={24}
+                      color="#171717"
+                      strokeWidth={2}
+                    />
+                  </div>
+
+                  {/* Text */}
+                  <div id="ze-upload-text" className="ze-upload-text text-left">
+                    <p className="text-sm font-semibold text-black">
+                      {t("addFiles")}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {isTestMode
+                        ? t("blockSendTestSub")
+                        : `${t("upTo")} ${formatBytes(maxUploadSize)}`}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Hidden file input — single for test, multiple for real */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple={!isTestMode}
+                  accept={getFileInputAccept()}
+                  className="hidden"
+                  onChange={handleFileSelect}
+                  disabled={!isTestMode && selectedFilesSize >= maxUploadSize}
+                />
+              </div>
+
+              {/* Error Message */}
+              {fileError && (
+                <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-sm text-red-600">{fileError}</p>
+                </div>
+              )}
+
+              {/* Description Text */}
+              <p
+                id="ze-upload-description"
+                className="ze-upload-description text-sm font-medium mt-5 mb-6 text-center text-gray-500"
+              >
+                {t("dropFilesHere")}
               </p>
+
+              {/* Test/Real mode toggle link */}
+              <p className="text-xs text-gray-400 mb-6 text-center">
+                {isTestMode ? (
+                  <button
+                    type="button"
+                    onClick={handleRealBlockClick}
+                    className="underline text-[#171717] hover:text-[#444444] transition-colors"
+                  >
+                    {t("switchToReal")}
+                  </button>
+                ) : (
+                  <>
+                    {t("justTrying")}{" "}
+                    <button
+                      type="button"
+                      onClick={handleTestBlockClick}
+                      className="underline text-[#171717] hover:text-[#444444] transition-colors"
+                    >
+                      {t("sendTestLink")}
+                    </button>
+                  </>
+                )}
+              </p>
+
+              {/* Buttons */}
+              <div
+                id="ze-upload-actions"
+                className="ze-upload-actions flex items-center gap-3"
+              >
+                <button
+                  id="ze-transfer-button"
+                  className="ze-transfer-button"
+                  disabled={true}
+                >
+                  {t("transfer")}
+                </button>
+              </div>
             </>
           );
         }
@@ -1491,7 +1542,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
         );
 
       case "form":
-        return formView === 'main' ? (
+        return formView === "main" ? (
           <div key="form-main" className="animate-slideInLeft">
             {/* Core Form Fields */}
             <div className="space-y-4 mb-6">
@@ -1525,17 +1576,6 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                   )}
                 </div>
               )}
-
-              {/* Title */}
-              <div>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder={t("title")}
-                  className="ze-form-input"
-                />
-              </div>
 
               {/* Currency & Price */}
               <div>
@@ -1578,76 +1618,67 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                     {formErrors.price}
                   </p>
                 )}
-              </div>
-
-              {/* Service Charge Breakdown (inline) */}
-              {price && parsePriceToNumber(price) > 0 && (
-                <div className="bg-gray-50 rounded p-3 space-y-1.5 text-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-500 text-xs">{t("price")}</span>
-                    <span className="text-[#171717] text-xs font-medium">
-                      {new Intl.NumberFormat("fr-FR", {
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 0,
-                      }).format(parsePriceToNumber(price))}{" "}
-                      {getCurrencySymbol(currency)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-500 text-xs">
-                      {t("serviceCharge", {
-                        percentage: serviceChargePercentage,
-                      })}
-                    </span>
-                    <span className="text-gray-500 text-xs">
-                      -
-                      {new Intl.NumberFormat("fr-FR", {
+                {/* Service Charge — single-line inline */}
+                {price && parsePriceToNumber(price) > 0 && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    {t("earningsInline", {
+                      amount: new Intl.NumberFormat("fr-FR", {
                         minimumFractionDigits: 0,
                         maximumFractionDigits: 0,
                       }).format(
-                        (parsePriceToNumber(price) * serviceChargePercentage) /
-                          100,
-                      )}{" "}
-                      {getCurrencySymbol(currency)}
-                    </span>
-                  </div>
-                  <div className="border-t border-gray-200 pt-1.5 flex items-center justify-between">
-                    <span className="text-[#171717] text-xs font-semibold">
-                      {t("youWillReceive")}
-                    </span>
-                    <span className="text-[#171717] text-xs font-semibold">
-                      {receivedAmount > 0
-                        ? new Intl.NumberFormat("fr-FR", {
-                            minimumFractionDigits: 0,
-                            maximumFractionDigits: 0,
-                          }).format(receivedAmount)
-                        : new Intl.NumberFormat("fr-FR", {
-                            minimumFractionDigits: 0,
-                            maximumFractionDigits: 0,
-                          }).format(
-                            parsePriceToNumber(price) *
+                        receivedAmount > 0
+                          ? receivedAmount
+                          : parsePriceToNumber(price) *
                               (1 - serviceChargePercentage / 100),
-                          )}{" "}
-                      {getCurrencySymbol(currency)}
-                    </span>
-                  </div>
-                </div>
-              )}
+                      ),
+                      currency: getCurrencySymbol(currency),
+                      percentage: serviceChargePercentage,
+                    })}
+                  </p>
+                )}
+              </div>
 
-              {/* First-Free Banner - shown when user hasn't used their first free transfer */}
-              {!isFirstPaidTransferUsed && price && parsePriceToNumber(price) > 0 && (
-                <FirstFreeBanner />
-              )}
-
-              {/* More options link — hidden in test mode */}
-              {transferMode !== "test" && (
+              {/* Expand trigger for optional fields */}
+              {!showDetails && (
                 <button
                   type="button"
-                  onClick={() => setFormView('options')}
+                  onClick={() => setShowDetails(true)}
                   className="text-sm text-[#171717] underline font-medium"
                 >
-                  {t("moreOptions")}
+                  {t("addDetails")}
                 </button>
+              )}
+
+              {/* Optional fields — Title, FirstFree, More options */}
+              {showDetails && (
+                <div className="space-y-4">
+                  {/* Title */}
+                  <div>
+                    <input
+                      type="text"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      placeholder={t("title")}
+                      className="ze-form-input"
+                    />
+                  </div>
+
+                  {/* First-Free Banner - shown when user hasn't used their first free transfer */}
+                  {!isFirstPaidTransferUsed &&
+                    price &&
+                    parsePriceToNumber(price) > 0 && <FirstFreeBanner />}
+
+                  {/* More options link — hidden in test mode */}
+                  {transferMode !== "test" && (
+                    <button
+                      type="button"
+                      onClick={() => setFormView("options")}
+                      className="text-sm text-[#171717] underline font-medium"
+                    >
+                      {t("moreOptions")}
+                    </button>
+                  )}
+                </div>
               )}
             </div>
 
@@ -1684,7 +1715,11 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                 }
                 onClick={handleTransfer}
               >
-                {t("transfer")}
+                {transferMode === "test"
+                  ? t("transferTest")
+                  : price && parsePriceToNumber(price) > 0
+                    ? t("transferPaid")
+                    : t("transferFree")}
               </button>
             </div>
           </div>
@@ -1693,7 +1728,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
             {/* Back button */}
             <button
               type="button"
-              onClick={() => setFormView('main')}
+              onClick={() => setFormView("main")}
               className="flex items-center gap-1 text-sm text-[#5E53E0] hover:text-[#4a42b3] mb-4 transition-colors"
             >
               <NavArrowLeft className="w-4 h-4" />
@@ -1777,7 +1812,9 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                   onChange={(e) => handleAccessControlChange(e.target.value)}
                   className="ze-form-select"
                 >
-                  <option value="" disabled>{tOptions("accessControl")}</option>
+                  <option value="" disabled>
+                    {tOptions("accessControl")}
+                  </option>
                   <option value="private">{tOptions("accessPrivate")}</option>
                   <option value="public">{tOptions("accessPublic")}</option>
                   <option value="password">{tOptions("accessPassword")}</option>
@@ -1797,7 +1834,9 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                   />
                   {isPasswordTooShort && (
                     <p className="text-red-500 text-xs mt-1">
-                      {tOptions("passwordMinLength", { min: MIN_PASSWORD_LENGTH })}
+                      {tOptions("passwordMinLength", {
+                        min: MIN_PASSWORD_LENGTH,
+                      })}
                     </p>
                   )}
                 </div>
@@ -1812,20 +1851,31 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                   disabled={tierLimitsData.isLoading}
                 >
                   <option value="" disabled>
-                    {tierLimitsData.isLoading ? tOptions("loading") : tOptions("sizeLimitLabel")}
+                    {tierLimitsData.isLoading
+                      ? tOptions("loading")
+                      : tOptions("sizeLimitLabel")}
                   </option>
                   {sizeLimitOptions.map((option) => {
-                    const isAvailable = tierLimitsData.isSizeLimitAvailable(option.sizeGB, userTier) ?? true;
-                    const requiredTier = !isAvailable ? tierLimitsData.getRequiredTierForSize(option.sizeGB) : null;
-                    const tierBadge = requiredTier ? ` (${tOptions(getTierTranslationKey(requiredTier))})` : '';
+                    const isAvailable =
+                      tierLimitsData.isSizeLimitAvailable(
+                        option.sizeGB,
+                        userTier,
+                      ) ?? true;
+                    const requiredTier = !isAvailable
+                      ? tierLimitsData.getRequiredTierForSize(option.sizeGB)
+                      : null;
+                    const tierBadge = requiredTier
+                      ? ` (${tOptions(getTierTranslationKey(requiredTier))})`
+                      : "";
                     return (
                       <option
                         key={option.value}
                         value={option.value}
                         disabled={!isAvailable}
-                        className={!isAvailable ? 'text-gray-400' : ''}
+                        className={!isAvailable ? "text-gray-400" : ""}
                       >
-                        {tOptions(option.labelKey)}{tierBadge}
+                        {tOptions(option.labelKey)}
+                        {tierBadge}
                       </option>
                     );
                   })}
@@ -1876,19 +1926,26 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                   ) : (
                     <button
                       type="button"
-                      onClick={() => !isWallpaperDisabled && wallpaperInputRef.current?.click()}
+                      onClick={() =>
+                        !isWallpaperDisabled &&
+                        wallpaperInputRef.current?.click()
+                      }
                       className={`w-full h-[60px] rounded border-2 border-dashed flex items-center justify-center gap-2 transition-colors ${
                         isWallpaperDisabled
-                          ? 'opacity-50 cursor-not-allowed border-gray-200 bg-gray-50'
-                          : 'cursor-pointer border-gray-300 bg-gray-50 hover:border-[#5E53E0] hover:bg-gray-100'
+                          ? "opacity-50 cursor-not-allowed border-gray-200 bg-gray-50"
+                          : "cursor-pointer border-gray-300 bg-gray-50 hover:border-[#5E53E0] hover:bg-gray-100"
                       }`}
                       disabled={isWallpaperDisabled}
                     >
                       <MediaImagePlus className="w-5 h-5 text-gray-400" />
-                      <span className="text-xs text-gray-400">{tOptions("uploadWallpaper")}</span>
+                      <span className="text-xs text-gray-400">
+                        {tOptions("uploadWallpaper")}
+                      </span>
                     </button>
                   )}
-                  <p className="text-[10px] text-gray-400 mt-1">{tOptions("wallpaperHint")}</p>
+                  <p className="text-[10px] text-gray-400 mt-1">
+                    {tOptions("wallpaperHint")}
+                  </p>
                 </div>
               )}
             </div>

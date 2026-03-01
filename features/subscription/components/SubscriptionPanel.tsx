@@ -26,6 +26,7 @@ import { trackPlanSelected } from "@/lib/posthog";
 interface TierFeature {
   text: string;
   included: boolean;
+  shared?: boolean;
 }
 
 interface TierConfig {
@@ -133,10 +134,10 @@ const SubscriptionPanel: React.FC = () => {
       transfersPerMonth: String(tierLimits.free.transfersPerMonth),
       expiry: `${tierLimits.free.expiryDays} ${t("days")}`,
       features: [
-        { text: t("features.basicUploads"), included: true },
-        { text: t("features.watermarkedPreviews"), included: true },
-        { text: t("features.emailNotifications"), included: true },
-        { text: t("features.passwordProtection"), included: true },
+        { text: t("features.basicUploads"), included: true, shared: true },
+        { text: t("features.watermarkedPreviews"), included: true, shared: true },
+        { text: t("features.emailNotifications"), included: true, shared: true },
+        { text: t("features.passwordProtection"), included: true, shared: true },
         {
           text: tierLimits.free.maxVersions === -1
             ? t("features.fileVersioningUnlimited")
@@ -165,10 +166,10 @@ const SubscriptionPanel: React.FC = () => {
       expiry: `${tierLimits.starter.expiryDays} ${t("days")}`,
       highlighted: true,
       features: [
-        { text: t("features.basicUploads"), included: true },
-        { text: t("features.watermarkedPreviews"), included: true },
-        { text: t("features.emailNotifications"), included: true },
-        { text: t("features.passwordProtection"), included: true },
+        { text: t("features.basicUploads"), included: true, shared: true },
+        { text: t("features.watermarkedPreviews"), included: true, shared: true },
+        { text: t("features.emailNotifications"), included: true, shared: true },
+        { text: t("features.passwordProtection"), included: true, shared: true },
         {
           text: tierLimits.starter.maxVersions === -1
             ? t("features.fileVersioningUnlimited")
@@ -195,10 +196,10 @@ const SubscriptionPanel: React.FC = () => {
       transfersPerMonth: t("tiers.pro.unlimited"),
       expiry: `${tierLimits.pro.expiryDays} ${t("days")}`,
       features: [
-        { text: t("features.basicUploads"), included: true },
-        { text: t("features.watermarkedPreviews"), included: true },
-        { text: t("features.emailNotifications"), included: true },
-        { text: t("features.passwordProtection"), included: true },
+        { text: t("features.basicUploads"), included: true, shared: true },
+        { text: t("features.watermarkedPreviews"), included: true, shared: true },
+        { text: t("features.emailNotifications"), included: true, shared: true },
+        { text: t("features.passwordProtection"), included: true, shared: true },
         {
           text: tierLimits.pro.maxVersions === -1
             ? t("features.fileVersioningUnlimited")
@@ -323,7 +324,15 @@ const SubscriptionPanel: React.FC = () => {
           >
             {t("annual")}
             <span className="ml-2 text-xs text-[#5E53E0] font-semibold">
-              {t("save17")}
+              {(() => {
+                const currency = getTierCurrency(countryCode);
+                const starterSavings = (getApiTierPrice("starter", countryCode, "monthly") * 12) - getApiTierPrice("starter", countryCode, "annual");
+                const proSavings = (getApiTierPrice("pro", countryCode, "monthly") * 12) - getApiTierPrice("pro", countryCode, "annual");
+                const maxSavings = Math.max(starterSavings, proSavings);
+                return maxSavings > 0
+                  ? t("saveAmount", { amount: formatSubscriptionPrice(maxSavings, currency) })
+                  : t("save17");
+              })()}
             </span>
           </button>
         </div>
@@ -360,7 +369,7 @@ const SubscriptionPanel: React.FC = () => {
                     key={code}
                     onClick={() => handleCountryChange(code)}
                     className={`w-full px-4 py-3 text-left text-sm hover:bg-gray-50 transition-colors flex items-center gap-2 ${
-                      code === countryCode ? "bg-gray-50 font-medium" : ""
+                      code === countryCode ? "bg-gray-50 font-bold" : ""
                     }`}
                   >
                     {COUNTRY_CONFIG[code]?.flagCode ? (
@@ -453,6 +462,28 @@ const SubscriptionPanel: React.FC = () => {
                     </span>
                   )}
                 </div>
+                {billingPeriod === "annual" && (
+                  <p
+                    className={`text-xs mt-1 ${
+                      tier.id === "free"
+                        ? "invisible"
+                        : isPro && !isCurrentPlan
+                          ? "text-white/50"
+                          : "text-gray-400"
+                    }`}
+                  >
+                    {tier.id !== "free"
+                      ? t("monthlyEquivalent", {
+                          amount: formatSubscriptionPrice(
+                            Math.round(
+                              getApiTierPrice(tier.id, countryCode, "annual") / 12,
+                            ),
+                            getTierCurrency(countryCode),
+                          ),
+                        })
+                      : "\u00A0"}
+                  </p>
+                )}
               </div>
 
               {/* CTA Button */}
@@ -512,10 +543,10 @@ const SubscriptionPanel: React.FC = () => {
                 </div>
               </div>
 
-              {/* Features */}
+              {/* Differentiating features (unique to this tier) */}
               <ul className="space-y-3 mt-4">
                 {tier.features
-                  .filter((f) => f.included)
+                  .filter((f) => f.included && !f.shared)
                   .map((feature, index) => (
                     <li key={index} className="flex items-center gap-2 text-sm">
                       <Check className="w-4 h-4 flex-shrink-0 text-[#87E64B]" />
@@ -531,6 +562,17 @@ const SubscriptionPanel: React.FC = () => {
                     </li>
                   ))}
               </ul>
+
+              {/* Shared features summary */}
+              <p
+                className={`text-xs mt-3 ${
+                  isPro && !isCurrentPlan
+                    ? "text-white/40"
+                    : "text-gray-400"
+                }`}
+              >
+                {t("includesBasics")}
+              </p>
             </div>
           );
         })}
