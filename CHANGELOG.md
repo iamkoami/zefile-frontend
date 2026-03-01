@@ -5,6 +5,15 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.20.1] - 2026-03-01
+
+### Fixed
+
+- Currency display now uses shared `formatCurrencyAmount` utility for correct symbol positioning (e.g., `₦ 9,300` not `9,300 ₦`)
+- Added XAF (Central African CFA franc) as supported currency
+- CFA currencies now display as `9,300 XOF` / `9,300 XAF` (ISO code after amount)
+- Earnings inline text bolds the amount and fee percentage for readability
+
 ## [1.20.0] - 2026-03-01
 
 ### Added
