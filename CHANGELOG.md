@@ -5,6 +5,25 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.20.0] - 2026-03-01
+
+### Added
+
+- Unified upload area with trust strip (secure, expiry, paywall indicators)
+- Context-aware transfer button labels: "Send test" / "Send & get paid" / "Send files"
+- Inline service charge display when setting a price
+- Progressive disclosure on upload form ("Add title & options" toggle)
+- Monthly equivalent line under annual prices ("That's X/month")
+- Test mode toggle: users can switch back to real mode after entering test mode
+
+### Changed
+
+- Pricing cards now bold tier-unique features and summarize shared features
+- Annual toggle shows real savings amount ("Save up to X") using highest tier savings
+- Selected country in all currency dropdowns now uses bold instead of purple
+- Removed International (USD) from the earnings calculator
+- Updated brand assets, logos, favicons, and styling
+
 ## [1.19.0] - 2026-02-28
 
 ### Added
