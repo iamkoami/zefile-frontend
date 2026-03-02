@@ -5,6 +5,23 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.21.0] - 2026-03-02
+
+### Added
+
+- Server-rendered sr-only SEO content section for search engine crawlers (What is ZeFile, How it works, Why creatives choose ZeFile)
+- FAQ schema (FAQJsonLd) on homepage with 6 Q&A items for Google rich snippets
+- Keyword-rich sr-only description block for improved search indexation
+- `homeSeo` translation namespace with 20 keys (EN + FR)
+
+### Changed
+
+- Homepage title tag: "ZeFile -- Send Files & Get Paid Before Download"
+- Meta description rewritten for freelancer/creative keyword targeting
+- Expanded keyword meta tags for niche positioning
+- Fixed hreflang: removed duplicate en/fr alternates pointing to same URL, kept x-default only
+- Homepage wrapped in `<main>` landmark for semantic HTML
+
 ## [1.20.2] - 2026-03-02
 
 ### Fixed
