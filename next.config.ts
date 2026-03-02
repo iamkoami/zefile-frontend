@@ -24,10 +24,7 @@ const nextConfig: NextConfig = {
             key: 'X-Frame-Options',
             value: 'DENY',
           },
-          {
-            key: 'X-XSS-Protection',
-            value: '1; mode=block',
-          },
+          // X-XSS-Protection intentionally removed — deprecated header, CSP covers this.
           {
             key: 'Referrer-Policy',
             value: 'strict-origin-when-cross-origin',

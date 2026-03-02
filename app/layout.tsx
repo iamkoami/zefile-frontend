@@ -28,19 +28,10 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// Metropolis font - Full weight pack
+// Metropolis font - Only weights actually used in the codebase (300-700)
+// Removed: Thin (100), ExtraLight (200), ExtraBold (800), Black (900)
 const metropolis = localFont({
   src: [
-    {
-      path: "../public/fonts/metropolis/Metropolis-Thin.woff2",
-      weight: "100",
-      style: "normal",
-    },
-    {
-      path: "../public/fonts/metropolis/Metropolis-ExtraLight.woff2",
-      weight: "200",
-      style: "normal",
-    },
     {
       path: "../public/fonts/metropolis/Metropolis-Light.woff2",
       weight: "300",
@@ -64,16 +55,6 @@ const metropolis = localFont({
     {
       path: "../public/fonts/metropolis/Metropolis-Bold.woff2",
       weight: "700",
-      style: "normal",
-    },
-    {
-      path: "../public/fonts/metropolis/Metropolis-ExtraBold.woff2",
-      weight: "800",
-      style: "normal",
-    },
-    {
-      path: "../public/fonts/metropolis/Metropolis-Black.woff2",
-      weight: "900",
       style: "normal",
     },
   ],
@@ -150,6 +131,8 @@ export async function generateMetadata(): Promise<Metadata> {
     alternates: {
       canonical: SITE_URL,
       languages: {
+        'en': SITE_URL,
+        'fr': SITE_URL,
         'x-default': SITE_URL,
       },
     },

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { getLocale } from "next-intl/server";
-import { BreadcrumbJsonLd } from "@/components/seo/JsonLd";
+import { BreadcrumbJsonLd, ContactPageJsonLd } from "@/components/seo/JsonLd";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://zefile.io';
 
@@ -54,6 +54,7 @@ export default function ContactLayout({
         { name: 'Home', url: SITE_URL },
         { name: 'Contact', url: `${SITE_URL}/contact-us` },
       ]} />
+      <ContactPageJsonLd />
       {children}
     </>
   );

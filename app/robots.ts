@@ -71,9 +71,14 @@ export default function robots(): MetadataRoute.Robots {
         userAgent: 'Bingbot',
         disallow: ['/download/', '/transfer/', '/dashboard/', '/z-'],
       },
-      // AI training crawlers are blocked by Cloudflare's managed robots.txt section.
-      // Only ChatGPT-User and anthropic-ai are not in Cloudflare's list, so keep them here.
-      { userAgent: 'ChatGPT-User', disallow: '/' },
+      // AI crawler policy:
+      // - Allow ChatGPT-User for search/citation (drives referral traffic)
+      // - Allow PerplexityBot for AI-powered search visibility
+      // - Training crawlers (GPTBot, CCBot, ClaudeBot, etc.) remain blocked by Cloudflare's
+      //   managed robots.txt section + Content-Signal: ai-train=no
+      { userAgent: 'ChatGPT-User', allow: ['/', '/about', '/pricing', '/how-it-works', '/help', '/blog'], disallow: ['/z-', '/download/', '/transfer/', '/dashboard/', '/account/'] },
+      { userAgent: 'PerplexityBot', allow: ['/', '/about', '/pricing', '/how-it-works', '/help', '/blog'], disallow: ['/z-', '/download/', '/transfer/', '/dashboard/', '/account/'] },
+      // anthropic-ai is for training only, keep blocked
       { userAgent: 'anthropic-ai', disallow: '/' },
     ],
     sitemap: `${SITE_URL}/sitemap.xml`,

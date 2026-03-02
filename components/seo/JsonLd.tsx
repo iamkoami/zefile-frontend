@@ -69,11 +69,11 @@ export function WebSiteJsonLd() {
   );
 }
 
-// WebApplication Schema - homepage only (replaces SoftwareApplication)
+// WebApplication + SoftwareApplication Schema — dual-typed for broader search coverage
 export function WebApplicationJsonLd() {
   const schema = {
     "@context": "https://schema.org",
-    "@type": "WebApplication",
+    "@type": ["WebApplication", "SoftwareApplication"],
     "@id": `${SITE_URL}/#app`,
     name: "ZeFile",
     url: SITE_URL,
@@ -207,6 +207,30 @@ export function OfferCatalogJsonLd({ tiers }: { tiers: PricingTier[] }) {
         },
       },
     })),
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      suppressHydrationWarning
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+    />
+  );
+}
+
+// ContactPage Schema - for contact page
+export function ContactPageJsonLd() {
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "ContactPage",
+    "@id": `${SITE_URL}/contact-us`,
+    name: "Contact ZeFile",
+    url: `${SITE_URL}/contact-us`,
+    description:
+      "Get in touch with the ZeFile team for support, partnerships, or feedback.",
+    mainEntity: {
+      "@id": `${SITE_URL}/#org`,
+    },
   };
 
   return (

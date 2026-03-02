@@ -6,11 +6,11 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://zefile.io';
 
 const seoContent = {
   en: {
-    title: 'Blog - ZeFile',
+    title: 'Blog - Tips & Guides for Creatives',
     description: 'Tips, comparisons, and guides for creative professionals. Learn about secure file transfer, getting paid for your work, and growing your creative business.',
   },
   fr: {
-    title: 'Blog - ZeFile',
+    title: 'Blog - Conseils et guides pour les cr\u00e9atifs',
     description: 'Conseils, comparaisons et guides pour les cr\u00e9atifs. Transfert de fichiers s\u00e9curis\u00e9, mon\u00e9tisation de votre travail et croissance de votre activit\u00e9.',
   },
 };

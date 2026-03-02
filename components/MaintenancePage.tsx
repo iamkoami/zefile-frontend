@@ -63,7 +63,11 @@ export default function MaintenancePage({
             style={{ animation: "fadeIn 0.3s ease-out both" }}
           />
           <Image
-            src="/zefile-logo.svg"
+            src={
+              timeOfDay === "night"
+                ? "/zefile-logo-white.svg"
+                : "/zefile-logo.svg"
+            }
             alt="ZeFile"
             width={100}
             height={24}
@@ -82,8 +86,8 @@ export default function MaintenancePage({
         style={{
           right: "5%",
           top: "15%",
-          width: "400px",
-          height: "400px",
+          width: "600px",
+          height: "600px",
           opacity: 0.15,
           animation: "fadeIn 1.5s ease-out 1.5s both",
         }}

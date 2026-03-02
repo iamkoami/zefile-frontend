@@ -3,6 +3,11 @@ import type { MetadataRoute } from 'next';
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://zefile.io';
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
+// Shared OG image for pages that use the default brand image
+const ogImage: MetadataRoute.Sitemap[number]['images'] = [
+  `${SITE_URL}/og-image.png`,
+];
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
 
@@ -12,36 +17,42 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: now,
       changeFrequency: 'weekly',
       priority: 1.0,
+      images: ogImage,
     },
     {
       url: `${SITE_URL}/pricing`,
       lastModified: now,
       changeFrequency: 'monthly',
       priority: 0.8,
+      images: ogImage,
     },
     {
       url: `${SITE_URL}/blog`,
       lastModified: now,
       changeFrequency: 'weekly',
       priority: 0.8,
+      images: ogImage,
     },
     {
       url: `${SITE_URL}/about`,
       lastModified: now,
       changeFrequency: 'monthly',
       priority: 0.7,
+      images: ogImage,
     },
     {
       url: `${SITE_URL}/how-it-works`,
       lastModified: now,
       changeFrequency: 'monthly',
       priority: 0.7,
+      images: ogImage,
     },
     {
       url: `${SITE_URL}/help`,
       lastModified: now,
       changeFrequency: 'monthly',
       priority: 0.6,
+      images: ogImage,
     },
     {
       url: `${SITE_URL}/terms`,
@@ -60,6 +71,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: now,
       changeFrequency: 'monthly',
       priority: 0.5,
+      images: ogImage,
     },
   ];
 

@@ -5,6 +5,29 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.23.0] - 2026-03-02
+
+### Added
+
+- ContactPage JSON-LD schema on contact-us page
+- SoftwareApplication type to WebApplication JSON-LD for broader search coverage
+- AI crawler policy: allow ChatGPT-User and PerplexityBot on public marketing pages
+- Image entries (og-image.png) in sitemap for Google Image Search indexing
+- CDN domain and Wasabi endpoint as configurable CSP env vars
+
+### Changed
+
+- Blog title tag: "Blog - Tips & Guides for Creatives" (EN/FR) to avoid redundant "ZeFile | ZeFile"
+- Reduced Metropolis font from 9 weights to 5 (removed unused 100, 200, 800, 900)
+- CSP: removed Wasabi S3 endpoint from img-src/media-src, added CDN domain instead
+- CSP: Wasabi endpoint kept only in connect-src (required for direct uploads)
+- Removed deprecated X-XSS-Protection header from middleware and next.config
+- Maintenance page: white logo variant for night mode, larger background element
+
+### Fixed
+
+- Hreflang: added explicit en/fr alternates alongside x-default in root layout
+
 ## [1.22.0] - 2026-03-02
 
 ### Added

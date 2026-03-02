@@ -17,6 +17,11 @@ function generateNonce(): string {
 function buildCsp(nonce: string): string {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
   const posthogHost = process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://app.posthog.com';
+  const cdnDomain = process.env.NEXT_PUBLIC_CDN_DOMAIN || '';
+  const cdnUrl = cdnDomain ? `https://${cdnDomain}` : '';
+  // Wasabi S3 endpoint — only in connect-src for direct presigned-URL uploads.
+  // Not exposed in img-src/media-src (thumbnails & previews route through API/CDN).
+  const wasabiEndpoint = process.env.NEXT_PUBLIC_WASABI_ENDPOINT || 'https://s3.eu-central-1.wasabisys.com';
 
   // Deduplicate PostHog domains (posthogHost may overlap with hardcoded ingest endpoints)
   const posthogDomains = [...new Set([
@@ -35,9 +40,9 @@ function buildCsp(nonce: string): string {
     // CSP Level 2 hashes/nonces for styles are not supported by Next.js's build pipeline.
     // Investigated in Epic 46-11: no viable alternative without breaking the UI.
     `style-src 'self' 'unsafe-inline'`,
-    `img-src 'self' data: blob: ${apiUrl} https://s3.eu-central-1.wasabisys.com`,
-    `media-src 'self' blob: ${apiUrl} https://s3.eu-central-1.wasabisys.com`,
-    `connect-src 'self' ${apiUrl} https://s3.eu-central-1.wasabisys.com ${posthogDomains} https://*.ingest.us.sentry.io https://*.ingest.de.sentry.io https://www.google.com`,
+    `img-src 'self' data: blob: ${apiUrl}${cdnUrl ? ` ${cdnUrl}` : ''}`,
+    `media-src 'self' blob: ${apiUrl}${cdnUrl ? ` ${cdnUrl}` : ''}`,
+    `connect-src 'self' ${apiUrl} ${wasabiEndpoint} ${posthogDomains} https://*.ingest.us.sentry.io https://*.ingest.de.sentry.io https://www.google.com`,
     `font-src 'self'`,
     `frame-src ${apiUrl} https://checkout.paystack.com https://www.google.com`,
     `worker-src 'self' blob:`,
@@ -121,7 +126,7 @@ export function middleware(request: NextRequest) {
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
-  response.headers.set('X-XSS-Protection', '1; mode=block');
+  // X-XSS-Protection intentionally removed — deprecated header, CSP covers this.
 
   // SEO: Signal language negotiation to search engines and CDN caches.
   // Content varies by Accept-Language (i18n fallback) and Cookie (NEXT_LOCALE).
