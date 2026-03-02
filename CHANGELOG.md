@@ -5,6 +5,17 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.22.0] - 2026-03-02
+
+### Added
+
+- Maintenance page with Lottie animation, logo, and estimated downtime display
+- Waitlist page with email signup form, styled checkbox, and consent flow
+- PlatformStatusGate provider for automatic maintenance/waitlist redirection
+- `usePlatformStatus` hook with polling for real-time platform status
+- `platform-api` service for status checks and waitlist signup
+- EN/FR translations for maintenance and waitlist pages
+
 ## [1.21.0] - 2026-03-02
 
 ### Added
