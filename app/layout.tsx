@@ -87,14 +87,14 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://zefile.io';
 // SEO metadata by locale
 const seoContent = {
   en: {
-    title: 'ZeFile - Secure File Transfer with Payment Protection',
-    description: 'Send large files securely with payment protection. ZeFile ensures your deliverables are paid for before download. Free up to 2GB. Start transferring now!',
-    keywords: 'secure file transfer, file sharing, payment protection, send large files, file delivery, WeTransfer alternative, secure file sharing platform',
+    title: 'ZeFile — Send Files & Get Paid Before Download',
+    description: 'The file transfer platform where freelancers get paid before download. Send large files with payment protection, watermarked previews, and automatic expiry. Free up to 2 GB.',
+    keywords: 'secure file transfer, send large files, payment protection, get paid before download, file sharing, sell files online, freelancer file delivery, file transfer for creatives, WeTransfer alternative, WeTransfer alternative for freelancers',
   },
   fr: {
-    title: 'ZeFile - Transfert de fichiers sécurisé avec protection de paiement',
-    description: 'Envoyez de gros fichiers en toute sécurité avec protection du paiement. ZeFile garantit que vos livrables sont payés avant le téléchargement. Gratuit jusqu\'à 2 Go!',
-    keywords: 'transfert de fichiers sécurisé, partage de fichiers, protection de paiement, envoyer gros fichiers, livraison de fichiers, alternative WeTransfer',
+    title: 'ZeFile — Envoyez vos fichiers, soyez payé avant le téléchargement',
+    description: 'La plateforme de transfert de fichiers où les freelances sont payés avant le téléchargement. Envoyez de gros fichiers avec protection de paiement, aperçus en filigrane et expiration automatique. Gratuit jusqu\'à 2 Go.',
+    keywords: 'transfert de fichiers sécurisé, envoyer gros fichiers, protection de paiement, payé avant téléchargement, partage de fichiers, vendre fichiers en ligne, livraison fichiers freelance, alternative WeTransfer',
   },
 };
 
@@ -149,8 +149,6 @@ export async function generateMetadata(): Promise<Metadata> {
     alternates: {
       canonical: SITE_URL,
       languages: {
-        'en': SITE_URL,
-        'fr': SITE_URL,
         'x-default': SITE_URL,
       },
     },
