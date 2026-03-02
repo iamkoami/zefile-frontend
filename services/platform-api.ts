@@ -128,6 +128,32 @@ export type AllRegionalPricing = Record<
   Record<string, TierRegionalPricing>
 >;
 
+/**
+ * Platform status response (maintenance/waitlist flags)
+ */
+export interface PlatformStatus {
+  maintenance: boolean;
+  maintenanceMessage?: string;
+  maintenanceEstimate?: string;
+  maintenanceAllowDownloads?: boolean;
+  waitlist: boolean;
+}
+
+/**
+ * Waitlist signup response
+ */
+export interface WaitlistSignupResponse {
+  message: string;
+  alreadySignedUp: boolean;
+}
+
+/**
+ * Waitlist count response
+ */
+export interface WaitlistCountResponse {
+  count: number;
+}
+
 // Legacy interface for backwards compatibility
 export interface PlatformConfig {
   maxUploadSize: number; // in bytes
@@ -259,6 +285,28 @@ export class PlatformApi {
    */
   async getFeaturedCreators(): Promise<ApiResponse<FeaturedCreator[]>> {
     return apiClient.get<FeaturedCreator[]>('/featured-creators');
+  }
+
+  /**
+   * Get platform status flags (maintenance/waitlist).
+   * No auth required. Used by frontend to detect maintenance/waitlist mode.
+   */
+  async getStatus(): Promise<ApiResponse<PlatformStatus>> {
+    return apiClient.get<PlatformStatus>('/platform-settings/status');
+  }
+
+  /**
+   * Sign up for the waitlist
+   */
+  async waitlistSignup(email: string, locale?: string): Promise<ApiResponse<WaitlistSignupResponse>> {
+    return apiClient.post<WaitlistSignupResponse>('/waitlist/signup', { email, locale });
+  }
+
+  /**
+   * Get total waitlist signup count (social proof)
+   */
+  async getWaitlistCount(): Promise<ApiResponse<WaitlistCountResponse>> {
+    return apiClient.get<WaitlistCountResponse>('/waitlist/count');
   }
 }
 

@@ -2567,5 +2567,37 @@
     "ctaFree": "T\u00e9l\u00e9charger les fichiers",
     "simulatedDownloadPanel": "Ce que votre client voit",
     "downloadFilesLabel": "Télécharger les fichiers"
+  },
+  "maintenance": {
+    "headline": "On fait quelques ajustements",
+    "subtitle": "Vos fichiers sont en securite - on revient dans quelques minutes.",
+    "estimatedReturn": "Retour estime",
+    "refresh": "Actualiser la page",
+    "contact": "Des questions ?"
+  },
+  "waitlist": {
+    "headline1": "Envoyez vos fichiers.",
+    "headline2": "Soyez paye.",
+    "headline3": "Gardez le controle.",
+    "subtitle": "La maniere la plus maline de partager et monetiser vos fichiers - bientot disponible.",
+    "consent": "Je veux un acces anticipe et les avantages reserves aux premiers inscrits.",
+    "emailPlaceholder": "Laissez votre email ici...",
+    "join": "Rejoindre",
+    "joining": "Inscription...",
+    "counter": "{count, plural, one {# personne deja inscrite} other {# personnes deja inscrites}}",
+    "successTitle": "Vous etes sur la liste !",
+    "successSubtitle": "On vous previent des que ZeFile est en ligne.",
+    "alreadyTitle": "Vous etes deja sur la liste",
+    "alreadySubtitle": "On a votre email - vous serez parmi les premiers informes.",
+    "errorGeneric": "Quelque chose n'a pas marche. Reessayez.",
+    "copyLink": "Copier le lien d'invitation",
+    "linkCopied": "Lien copie !",
+    "cardTitle": "Bientot disponible",
+    "pill": {
+      "fileTransfer": "Transfert de fichiers",
+      "monetization": "Monetisation",
+      "shortLinks": "Liens courts",
+      "fileSigning": "Signature de fichiers"
+    }
   }
 }

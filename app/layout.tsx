@@ -14,6 +14,7 @@ import GlobalSideDrawer from "@/components/providers/GlobalSideDrawer";
 import ToastContainer from "@/components/shared/Toast";
 import ChatWidget from "@/components/shared/ChatWidget";
 import CookieConsentBanner from "@/components/shared/CookieConsentBanner";
+import PlatformStatusGate from "@/components/providers/PlatformStatusGate";
 import "react-flagpack/dist/style.css";
 import "./globals.css";
 
@@ -200,7 +201,9 @@ export default async function RootLayout({
             <SentryProvider>
               <PostHogProvider>
                 <ToastContainer />
-                {children}
+                <PlatformStatusGate>
+                  {children}
+                </PlatformStatusGate>
                 <GlobalSideDrawer />
                 <ChatWidget />
                 <CookieConsentBanner />

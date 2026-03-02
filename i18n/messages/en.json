@@ -2596,5 +2596,37 @@
     "ctaFree": "Download files",
     "simulatedDownloadPanel": "What your client sees",
     "downloadFilesLabel": "Download Files"
+  },
+  "maintenance": {
+    "headline": "We're tuning things up",
+    "subtitle": "Your files are safe - we'll be back in a few minutes.",
+    "estimatedReturn": "Estimated return",
+    "refresh": "Refresh this page",
+    "contact": "Questions?"
+  },
+  "waitlist": {
+    "headline1": "Send files.",
+    "headline2": "Get paid.",
+    "headline3": "Stay in control.",
+    "subtitle": "The smartest way to share and monetize your files - launching soon.",
+    "consent": "I want early access and perks reserved for first signups.",
+    "emailPlaceholder": "Drop your email here...",
+    "join": "Join",
+    "joining": "Joining...",
+    "counter": "{count, plural, one {# person already on the list} other {# people already on the list}}",
+    "successTitle": "You're on the list!",
+    "successSubtitle": "We'll let you know the second ZeFile goes live.",
+    "alreadyTitle": "You're already on the list",
+    "alreadySubtitle": "We've got your email - you'll be among the first to know.",
+    "errorGeneric": "Something went wrong. Give it another try.",
+    "copyLink": "Copy invite link",
+    "linkCopied": "Link copied!",
+    "cardTitle": "Coming soon",
+    "pill": {
+      "fileTransfer": "File Transfer",
+      "monetization": "Monetization",
+      "shortLinks": "Short Links",
+      "fileSigning": "File Signing"
+    }
   }
 }
