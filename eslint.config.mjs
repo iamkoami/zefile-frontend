@@ -16,6 +16,7 @@ const eslintConfig = [
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_", destructuredArrayIgnorePattern: "^_" }],
       "react-hooks/exhaustive-deps": "warn",
+      "no-console": ["warn", { "allow": ["warn", "error"] }],
     },
   },
 ];

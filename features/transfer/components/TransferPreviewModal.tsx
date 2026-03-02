@@ -132,6 +132,7 @@ const TransferPreviewModal: React.FC<TransferPreviewModalProps> = ({
           {isPdf && previewUrl && (
             <iframe
               src={previewUrl}
+              title="PDF preview"
               className="w-full h-full"
               style={{ border: 'none', backgroundColor: '#fff' }}
               sandbox="allow-same-origin"

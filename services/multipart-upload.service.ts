@@ -221,11 +221,15 @@ class MultipartUploadService {
 
     encryptState(json).then((encrypted) => {
       try {
+        if (!encrypted) {
+          console.warn('[MultipartUpload] Encryption returned empty, falling back to plaintext');
+        }
         localStorage.setItem(key, encrypted || json);
       } catch {
         // Silently fail - state save is best-effort for resume capability
       }
     }).catch(() => {
+      console.warn('[MultipartUpload] Encryption failed, falling back to plaintext storage');
       try { localStorage.setItem(key, json); } catch { /* best-effort */ }
     });
   }

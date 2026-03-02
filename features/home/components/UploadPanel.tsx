@@ -429,7 +429,11 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
   useEffect(() => {
     const handleAddRecipient = (event: CustomEvent<{ email: string }>) => {
       const { email: recipientEmail } = event.detail;
-      if (recipientEmail && !recipientEmails.includes(recipientEmail)) {
+      // Validate email format before accepting
+      if (!recipientEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipientEmail)) {
+        return;
+      }
+      if (!recipientEmails.includes(recipientEmail)) {
         setRecipientEmails((prev) => [...prev, recipientEmail]);
       }
       // Show the form when adding a recipient

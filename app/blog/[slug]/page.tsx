@@ -74,6 +74,8 @@ const SANITIZE_CONFIG = {
     "height",
   ],
   ALLOW_DATA_ATTR: false,
+  ALLOWED_URI_REGEXP:
+    /^(?:(?:https?|mailto):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
 };
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL;

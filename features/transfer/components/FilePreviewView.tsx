@@ -356,6 +356,7 @@ const FilePreviewView: React.FC<FilePreviewViewProps> = ({
         link.href = response.data.url;
         link.download = file.name;
         link.target = "_blank";
+        link.rel = "noopener noreferrer";
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
