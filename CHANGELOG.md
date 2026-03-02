@@ -5,6 +5,22 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.20.2] - 2026-03-02
+
+### Fixed
+
+- Upgrade Next.js from 15.3.4 to 15.3.6 (CVE-2025-66478 RCE fix)
+- Add `rel="noopener noreferrer"` to download link in FilePreviewView
+- Restrict DOMPurify URI protocols in blog post renderer (block javascript:/data: URIs)
+- Add email format validation to CustomEvent recipient listener in UploadPanel
+
+### Added
+
+- ESLint `no-console` rule (warns on `console.log`, allows `warn`/`error`)
+- PDF iframe title attribute for accessibility
+- Encryption fallback logging in multipart upload service
+- Dependency override for tar (>=7.5.8)
+
 ## [1.20.1] - 2026-03-01
 
 ### Fixed
