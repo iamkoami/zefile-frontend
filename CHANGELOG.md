@@ -5,6 +5,21 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.25.0] - 2026-03-03
+
+### Added
+
+- CreatorsTrustStrip component on homepage hero (overlapping creator avatars with social proof text)
+- Auth-aware header navigation and mobile menu updates
+
+### Changed
+
+- Trust strip copy: confident statement instead of question ("Trusted by creators who don't compromise")
+- Download page: simplified "Preview before you pay" to "Take a look before you pay" (EN/FR)
+- About page trust pills: warmer passwordless auth copy
+- Footer trust features: shorter, more personal copy
+- FR translations: natural French equivalents instead of literal translations
+
 ## [1.24.0] - 2026-03-03
 
 ### Added
