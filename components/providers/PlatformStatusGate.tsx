@@ -12,7 +12,6 @@ import WaitlistPage from "@/components/WaitlistPage";
  *
  * Exemptions:
  * - Download pages (/downloads/*) bypass maintenance only if maintenanceAllowDownloads is true
- * - Download pages (/downloads/*) always bypass waitlist (existing recipients need access)
  */
 export default function PlatformStatusGate({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -37,8 +36,8 @@ export default function PlatformStatusGate({ children }: { children: React.React
     }
   }
 
-  // Waitlist mode — download pages are always exempt
-  if (status.waitlist && !isDownloadPage) {
+  // Waitlist mode — blocks all pages (same as maintenance)
+  if (status.waitlist) {
     return <WaitlistPage />;
   }
 

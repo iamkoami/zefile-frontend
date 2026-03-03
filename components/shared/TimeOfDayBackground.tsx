@@ -26,8 +26,12 @@ const TimeOfDayBackground: React.FC<TimeOfDayBackgroundProps> = ({
   const [starsAnimation, setStarsAnimation] = useState<object | null>(null);
 
   useEffect(() => {
-    import("@/public/lotties/birds.json").then((m) => setBirdsAnimation(m.default));
-    import("@/public/lotties/stars.json").then((m) => setStarsAnimation(m.default));
+    import("@/public/lotties/birds.json").then((m) =>
+      setBirdsAnimation(m.default),
+    );
+    import("@/public/lotties/stars.json").then((m) =>
+      setStarsAnimation(m.default),
+    );
   }, []);
 
   // White filter for day birds and night stars
@@ -73,7 +77,7 @@ const TimeOfDayBackground: React.FC<TimeOfDayBackgroundProps> = ({
         style={{
           position: "absolute",
           inset: 0,
-          opacity: showStars ? 1 : 0,
+          opacity: showStars ? 0.3 : 0,
           transition: "opacity 1.5s ease-in-out",
           filter: whiteFilter,
         }}

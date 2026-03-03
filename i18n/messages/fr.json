@@ -13,7 +13,8 @@
     "proofStat2": "102 heures/an passées à relancer des factures",
     "proofStat3": "ZeFile : soyez payé avant le téléchargement",
     "ctaText": "Gardez plus de vos revenus.",
-    "ctaButton": "Passer au Pro"
+    "ctaButton": "Passer au Pro",
+    "getStartedButton": "Commencer - c'est gratuit"
   },
   "homeSeo": {
     "description": "ZeFile est une plateforme de transfert de fichiers sécurisée, conçue pour les freelances et les créateurs. Envoyez des fichiers volumineux jusqu'à 2 Go gratuitement. Fixez votre prix et soyez payé avant que vos destinataires puissent télécharger. Chaque fichier est protégé par des aperçus en filigrane, un mot de passe et une expiration automatique. ZeFile prend en charge tous les types de fichiers — photos, vidéos, audio, fichiers de design et documents. Une alternative simple à WeTransfer avec protection de paiement et support Mobile Money.",
@@ -882,7 +883,7 @@
       "comingSoon": "Notre dossier de presse est en préparation. Revenez bientôt pour les actualités et ressources."
     },
     "terms": {
-      "title": "Conditions d'utilisation",
+      "title": "Conditions <highlight>d'utilisation</highlight>",
       "lastUpdated": "Derniere mise a jour : 22 fevrier 2026",
       "acceptanceTitle": "Acceptation des conditions",
       "acceptanceContent": "En accédant ou en utilisant ZeFile (« le Service »), vous acceptez d'être lié par ces conditions d'utilisation. Si vous n'acceptez pas ces conditions, veuillez ne pas utiliser le Service. ZeFile se réserve le droit de mettre à jour ces conditions à tout moment, et votre utilisation continue du Service constitue l'acceptation de toute modification.",
@@ -946,7 +947,7 @@
       "errorMessage": "Un souci est survenu. Essayez de nous écrire directement à hello@zefile.io."
     },
     "privacy": {
-      "title": "Politique de confidentialite",
+      "title": "Politique de <highlight>confidentialite</highlight>",
       "lastUpdated": "Derniere mise a jour : 22 fevrier 2026",
       "collectionTitle": "Informations que nous collectons",
       "collectionContent": "Nous collectons les informations que vous fournissez directement lors de la création d'un compte (adresse e-mail, numéro de téléphone, nom), de l'utilisation du Service (métadonnées de fichiers, détails de transfert, informations de paiement) et de l'interaction avec notre plateforme (données d'utilisation, informations sur l'appareil, adresses IP). Nous utilisons des cookies et des technologies similaires pour améliorer votre expérience.",

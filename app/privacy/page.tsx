@@ -29,7 +29,11 @@ export default function PrivacyPage() {
 
   return (
     <LegalPageLayout
-      title={t("title")}
+      title={t.rich("title", {
+        highlight: (chunks) => (
+          <span className="ze-highlight-purple">{chunks}</span>
+        ),
+      })}
       subtitle={t("lastUpdated")}
       sections={sections}
     />

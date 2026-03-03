@@ -6,23 +6,24 @@ import { useTranslations } from "next-intl";
 interface HeroTextProps {
   isVisible: boolean;
   timeOfDay?: "day" | "evening" | "night";
-  showProofStats?: boolean;
+  isAuthenticated?: boolean;
   showUpgradeCta?: boolean;
   onUpgradeClick?: () => void;
 }
 
 /**
  * HeroText - Marketing headline displayed on the home page
- * Positioned on the right side, visible only on desktop
+ * Centered in the right portion of the content panel, visible only on desktop
  */
 const HeroText: React.FC<HeroTextProps> = ({
   isVisible,
   timeOfDay = "evening",
-  showProofStats = false,
+  isAuthenticated = false,
   showUpgradeCta = false,
   onUpgradeClick,
 }) => {
   const t = useTranslations("hero");
+  const tHeader = useTranslations("header");
 
   if (!isVisible) return null;
 
@@ -46,21 +47,22 @@ const HeroText: React.FC<HeroTextProps> = ({
 
   return (
     <div
-      className="hidden lg:flex flex-col justify-center pointer-events-none select-none"
+      className="hidden lg:flex flex-col items-center justify-center pointer-events-none select-none"
       style={{
         position: "absolute",
-        right: "7rem",
-        top: "4rem",
+        left: "180px",
+        right: "2rem",
+        top: "42%",
+        transform: "translateY(-50%)",
         transition: "opacity 500ms ease-in-out, color 1.5s ease-in-out",
         zIndex: 5,
-        maxWidth: "600px",
-        textAlign: "right",
+        textAlign: "center",
       }}
     >
       {/* Title — visual duplicate; the semantic <h1> is server-rendered in app/page.tsx */}
       <div
         aria-hidden="true"
-        className={`text-4xl xl:text-4xl font-bold leading-tight mb-4 ${colors.title}`}
+        className={`text-5xl font-black leading-tight mb-3 ${colors.title}`}
         style={{
           transition: "color 1.5s ease-in-out",
         }}
@@ -70,7 +72,7 @@ const HeroText: React.FC<HeroTextProps> = ({
 
       {/* Subtitle */}
       <p
-        className={`text-lg xl:text-lg font-medium leading-relaxed ${colors.subtitle}`}
+        className={`text-lg xl:text-lg font-bold leading-relaxed ${colors.subtitle}`}
         style={{
           transition: "color 1.5s ease-in-out",
         }}
@@ -78,26 +80,23 @@ const HeroText: React.FC<HeroTextProps> = ({
         {t("subtitle")}
       </p>
 
-      {/* Social proof micro-bar */}
-      {showProofStats && (
-        <div className="flex items-center gap-3 mt-5 animate-[fadeIn_1s_ease-in-out_2s_both]">
-          <span className="text-xs font-medium text-gray-500">
-            {t("proofStat1")}
-          </span>
-          <span className="text-xs font-medium text-gray-600">|</span>
-          <span className="text-xs font-medium text-gray-500">
-            {t("proofStat2")}
-          </span>
-          <span className="text-xs font-medium text-gray-600">|</span>
-          <span className="text-xs font-medium text-gray-500">
-            {t("proofStat3")}
-          </span>
+      {/* Get Started CTA - for unauthenticated users (matches header CTA) */}
+      {!isAuthenticated && (
+        <div className="flex flex-col items-center mt-8 animate-[fadeIn_1s_ease-in-out_2s_both]">
+          <button
+            onClick={() => {
+              window.dispatchEvent(new CustomEvent("open-auth-panel"));
+            }}
+            className="pointer-events-auto ze-button-primary"
+          >
+            <span className="font-bold">{tHeader("signupBold")}</span>&nbsp;-&nbsp;{tHeader("signupSuffix")}
+          </button>
         </div>
       )}
 
-      {/* Upgrade CTA - right after stats */}
-      {showUpgradeCta && onUpgradeClick && (
-        <div className="flex flex-col items-end mt-6 animate-[fadeIn_1s_ease-in-out_3s_both]">
+      {/* Upgrade CTA - for authenticated free-tier users */}
+      {isAuthenticated && showUpgradeCta && onUpgradeClick && (
+        <div className="flex flex-col items-center mt-6 animate-[fadeIn_1s_ease-in-out_3s_both]">
           <p
             className={`text-sm font-medium mb-3 ${colors.subtitle}`}
             style={{ transition: "color 1.5s ease-in-out" }}
@@ -112,7 +111,6 @@ const HeroText: React.FC<HeroTextProps> = ({
           </button>
         </div>
       )}
-
     </div>
   );
 };

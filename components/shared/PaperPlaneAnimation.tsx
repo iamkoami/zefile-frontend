@@ -1,8 +1,7 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Lottie, { LottieRefCurrentProps } from "lottie-react";
-import paperPlaneAnimation from "@/public/lotties/zefile-paper-plane-loading.json";
 
 interface PaperPlaneAnimationProps {
   isVisible: boolean;
@@ -12,6 +11,13 @@ const PaperPlaneAnimation: React.FC<PaperPlaneAnimationProps> = ({
   isVisible,
 }) => {
   const lottieRef = React.useRef<LottieRefCurrentProps>(null);
+  const [logoAnimation, setLogoAnimation] = useState<object | null>(null);
+
+  useEffect(() => {
+    import("@/public/lotties/zefile_logo.json").then((m) =>
+      setLogoAnimation(m.default),
+    );
+  }, []);
 
   React.useEffect(() => {
     if (lottieRef.current) {
@@ -19,27 +25,28 @@ const PaperPlaneAnimation: React.FC<PaperPlaneAnimationProps> = ({
     }
   }, []);
 
-  if (!isVisible) return null;
+  if (!isVisible || !logoAnimation) return null;
 
   return (
     <div
-      className="hidden lg:flex flex-col items-center justify-center pointer-events-none"
+      className="hidden lg:flex items-center justify-center pointer-events-none"
       style={{
         position: "absolute",
-        right: "1rem",
-        top: "60%",
-        transform: "translateY(-50%)",
+        right: "-25rem",
+        top: "34%",
+        transform: "translateY(-50%) rotate(19deg)",
         transition: "opacity 300ms ease-in-out",
         zIndex: 1,
+        opacity: 0.2,
       }}
     >
       <Lottie
         lottieRef={lottieRef}
-        animationData={paperPlaneAnimation}
+        animationData={logoAnimation}
         loop={true}
         autoplay={true}
         style={{
-          width: "700px",
+          width: "1400px",
           height: "auto",
         }}
       />

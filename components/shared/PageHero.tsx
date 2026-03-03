@@ -18,11 +18,11 @@ export default function PageHero({
       }}
     >
       <div className="max-w-4xl mx-auto px-6 py-24 md:py-36 text-center relative z-10">
-        <h1 className="text-5xl md:text-7xl font-bold text-[#171717] animate-[slideUp_0.8s_ease_0.1s_both]">
+        <h1 className="text-5xl md:text-7xl font-black text-[#171717] animate-[slideUp_0.8s_ease_0.1s_both]">
           {title}
         </h1>
         {subtitle && (
-          <p className="text-lg md:text-xl text-gray-500 mt-6 max-w-2xl mx-auto animate-[slideUp_0.8s_ease_0.3s_both]">
+          <p className="text-lg font-medium md:text-xl text-gray-500 mt-6 max-w-2xl mx-auto animate-[slideUp_0.8s_ease_0.3s_both]">
             {subtitle}
           </p>
         )}

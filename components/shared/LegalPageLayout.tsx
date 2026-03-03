@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useCallback } from "react";
+import { useMemo, useRef, useCallback, type ReactNode } from "react";
 import Header from "@/components/shared/Header";
 import Footer from "@/components/shared/Footer";
 import PageHero from "@/components/shared/PageHero";
@@ -14,7 +14,7 @@ interface LegalSection {
 }
 
 interface LegalPageLayoutProps {
-  title: string;
+  title: string | ReactNode;
   subtitle?: string;
   sections: LegalSection[];
 }

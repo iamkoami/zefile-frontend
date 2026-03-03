@@ -271,6 +271,7 @@
     position: relative;
     z-index: 2;
     overflow: hidden;
+    pointer-events: auto;
   }
 
   .ze-upload-panel.ze-test-result {
@@ -480,6 +481,7 @@
     z-index: 1;
     opacity: 0;
     transition-duration: 800ms;
+    pointer-events: auto;
   }
 
   .ze-file-preview-panel.visible {

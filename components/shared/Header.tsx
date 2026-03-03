@@ -447,10 +447,10 @@ const Header = () => {
               <Image
                 src="/zefile-logo.svg"
                 alt={tCommon("logoAlt")}
-                width={100}
+                width={130}
                 height={33}
                 priority
-                className="w-[100px] h-auto"
+                className="w-[130px] h-auto"
               />
             </Link>
           </div>

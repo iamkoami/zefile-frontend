@@ -21,16 +21,10 @@ export default function MaintenancePage({
   const t = useTranslations("maintenance");
   const { timeOfDay } = useTimeOfDay();
   const [logoAnimation, setLogoAnimation] = useState<object | null>(null);
-  const [paperPlaneAnimation, setPaperPlaneAnimation] = useState<object | null>(
-    null,
-  );
 
   useEffect(() => {
     import("@/public/lotties/zefile_logo.json").then((m) =>
       setLogoAnimation(m.default),
-    );
-    import("@/public/lotties/zefile-paper-plane-loading.json").then((m) =>
-      setPaperPlaneAnimation(m.default),
     );
   }, []);
 
@@ -56,20 +50,13 @@ export default function MaintenancePage({
       >
         <div className="flex items-center gap-2">
           <Image
-            src="/favicon.png"
-            alt="ZeFile"
-            width={28}
-            height={28}
-            style={{ animation: "fadeIn 0.3s ease-out both" }}
-          />
-          <Image
             src={
               timeOfDay === "night"
                 ? "/zefile-logo-white.svg"
                 : "/zefile-logo.svg"
             }
             alt="ZeFile"
-            width={100}
+            width={125}
             height={24}
             className="pt-1"
             style={{ animation: "fadeIn 0.3s ease-out both" }}
@@ -80,21 +67,21 @@ export default function MaintenancePage({
         </div>
       </header>
 
-      {/* Background paper plane (desktop only, decorative) */}
+      {/* Background logo (desktop only, decorative) */}
       <div
         className="hidden lg:block absolute pointer-events-none select-none"
         style={{
-          right: "5%",
-          top: "15%",
-          width: "600px",
-          height: "600px",
-          opacity: 0.15,
-          animation: "fadeIn 1.5s ease-out 1.5s both",
+          right: "-35%",
+          top: "-50%",
+          width: "1200px",
+          height: "1200px",
+          opacity: 0.2,
+          transform: "rotate(19deg)",
         }}
       >
-        {paperPlaneAnimation && (
+        {logoAnimation && (
           <Lottie
-            animationData={paperPlaneAnimation}
+            animationData={logoAnimation}
             loop={true}
             autoplay={true}
             style={{ width: "100%", height: "100%" }}

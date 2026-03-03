@@ -5,6 +5,32 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.24.0] - 2026-03-03
+
+### Added
+
+- Auth-aware HeroText CTA on download page: hides "Get started" for logged-in users, shows upgrade CTA for free-tier users
+- Trust strip on upload panel (secure transfer, auto-expiry, paywall badges)
+- Metropolis ExtraBold (800) and Black (900) font weights
+- Rich text highlight support on legal page titles (Terms, Privacy)
+
+### Changed
+
+- Updated logo assets (SVG, PNG) with new design including icon + wordmark
+- Logo size increased across Header, WaitlistPage, and MaintenancePage
+- HeroText redesigned: centered layout, larger title (font-black), auth-aware CTAs replacing proof stats
+- PaperPlaneAnimation replaced with logo watermark animation (decorative background)
+- MaintenancePage background uses logo animation instead of paper plane
+- WaitlistPage removed duplicate favicon from header
+- Stars opacity reduced in night mode TimeOfDayBackground
+- Blog reading progress bar repositioned to top of viewport
+- Panel pointer-events adjustments for proper click-through on download and home pages
+
+### Fixed
+
+- Waitlist mode now blocks download pages (previously exempted)
+- Download page HeroText CTA now correctly adapts to authentication state
+
 ## [1.23.0] - 2026-03-02
 
 ### Added

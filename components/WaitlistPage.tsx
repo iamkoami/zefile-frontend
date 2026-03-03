@@ -95,12 +95,11 @@ export default function WaitlistPage() {
           style={{ animation: "fadeIn 0.3s ease-out both" }}
         >
           <div className="flex items-center gap-2">
-            <Image src="/favicon.png" alt="ZeFile" width={28} height={28} />
             <Image
               src="/zefile-logo.svg"
               className="pt-1"
               alt="ZeFile"
-              width={100}
+              width={125}
               height={24}
             />
           </div>

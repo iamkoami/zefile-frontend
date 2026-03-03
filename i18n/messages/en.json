@@ -13,7 +13,8 @@
     "proofStat2": "102 hours/year spent chasing invoices",
     "proofStat3": "ZeFile: get paid before they download",
     "ctaText": "Keep more of what you earn.",
-    "ctaButton": "Upgrade Now"
+    "ctaButton": "Upgrade Now",
+    "getStartedButton": "Get Started - it's free"
   },
   "homeSeo": {
     "description": "ZeFile is a secure file transfer platform built for freelancers and creatives. Send large files up to 2 GB for free. Set a price on your work and get paid before recipients can download. Every file is protected with watermarked previews, password protection, and automatic expiry. ZeFile supports all file types — photos, videos, audio, design files, and documents. A simple alternative to WeTransfer with built-in payment protection and Mobile Money support.",
@@ -881,7 +882,7 @@
       "comingSoon": "Our press kit is on the way. Check back soon for news and resources."
     },
     "terms": {
-      "title": "Terms of Service",
+      "title": "Terms of <highlight>Service</highlight>",
       "lastUpdated": "Last updated: February 22, 2026",
       "acceptanceTitle": "Acceptance of Terms",
       "acceptanceContent": "By accessing or using ZeFile (\"the Service\"), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Service. ZeFile reserves the right to update these terms at any time, and your continued use of the Service constitutes acceptance of any changes.",
@@ -945,7 +946,7 @@
       "errorMessage": "Something went wrong. Try emailing us directly at hello@zefile.io."
     },
     "privacy": {
-      "title": "Privacy Policy",
+      "title": "Privacy <highlight>Policy</highlight>",
       "lastUpdated": "Last updated: February 22, 2026",
       "collectionTitle": "Information We Collect",
       "collectionContent": "We collect information you provide directly when creating an account (email address, phone number, name), using the Service (file metadata, transfer details, payment information), and interacting with our platform (usage data, device information, IP addresses). We use cookies and similar technologies to improve your experience.",

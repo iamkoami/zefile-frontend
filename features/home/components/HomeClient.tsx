@@ -273,7 +273,7 @@ export default function HomeClient() {
             <HeroText
               isVisible={true}
               timeOfDay={timeOfDay}
-              showProofStats
+              isAuthenticated={isAuthenticated}
               showUpgradeCta={isAuthenticated && userTier === "free"}
               onUpgradeClick={() => openDrawer("subscriptions")}
             />
@@ -287,6 +287,7 @@ export default function HomeClient() {
                 position: "relative",
                 transition: "all 800ms ease-in-out",
                 zIndex: 10,
+                pointerEvents: "none",
               }}
             >
               {/* Upload Panel */}

@@ -108,7 +108,7 @@ type PageState =
   | "ready"
   | "error";
 
-function ContentPanelBackground({ wallpaperUrl, timeOfDay }: { wallpaperUrl?: string; timeOfDay: TimeOfDay }) {
+function ContentPanelBackground({ wallpaperUrl, timeOfDay, isAuthenticated, showUpgradeCta, onUpgradeClick }: { wallpaperUrl?: string; timeOfDay: TimeOfDay; isAuthenticated?: boolean; showUpgradeCta?: boolean; onUpgradeClick?: () => void }) {
   if (wallpaperUrl) {
     return (
       <div className="absolute inset-0 bg-cover bg-center bg-no-repeat rounded-2xl"
@@ -118,7 +118,7 @@ function ContentPanelBackground({ wallpaperUrl, timeOfDay }: { wallpaperUrl?: st
   return (
     <>
       <TimeOfDayBackground timeOfDay={timeOfDay} />
-      <HeroText isVisible={true} timeOfDay={timeOfDay} />
+      <HeroText isVisible={true} timeOfDay={timeOfDay} isAuthenticated={isAuthenticated} showUpgradeCta={showUpgradeCta} onUpgradeClick={onUpgradeClick} />
       <PaperPlaneAnimation isVisible={true} />
     </>
   );
@@ -151,7 +151,7 @@ export default function TransferLandingPage() {
     [searchParams],
   );
 
-  const { openDrawerToView } = useDrawerStore();
+  const { openDrawer, openDrawerToView } = useDrawerStore();
 
   // Store original page title on mount
   const originalTitleRef = useRef<string>(
@@ -188,6 +188,25 @@ export default function TransferLandingPage() {
     Array<{ provider: MobileMoneyProvider; name: string; icon: string }>
   >([]);
   const [loadingProviders, setLoadingProviders] = useState(false);
+
+  // Auth state — controls HeroText CTA visibility
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userTier, setUserTier] = useState<"free" | "starter" | "pro">("free");
+  useEffect(() => {
+    const user = authApi.getStoredUser();
+    if (!user) {
+      setIsAuthenticated(false);
+      setUserTier("free");
+      return;
+    }
+    setIsAuthenticated(true);
+    platformApi.getUserConfig().then((response) => {
+      if (response.data) {
+        const tier = (response.data.tier?.toLowerCase() || "free") as "free" | "starter" | "pro";
+        setUserTier(tier);
+      }
+    });
+  }, []);
 
   // Dynamic import for Lottie animation (F-4.1: reduce bundle size)
   const [catAnimationData, setCatAnimationData] = useState<any>(null);
@@ -970,10 +989,10 @@ export default function TransferLandingPage() {
             className={`ze-content-panel ${transfer?.wallpaperUrl ? 'ze-wallpaper-mode' : `ze-time-${timeOfDay}`}`}
             style={{ position: "relative", overflow: "hidden" }}
           >
-            <ContentPanelBackground wallpaperUrl={transfer?.wallpaperUrl} timeOfDay={timeOfDay} />
+            <ContentPanelBackground wallpaperUrl={transfer?.wallpaperUrl} timeOfDay={timeOfDay} isAuthenticated={isAuthenticated} showUpgradeCta={isAuthenticated && userTier === "free"} onUpgradeClick={() => openDrawer("subscriptions")} />
             <div
               className="ze-panels-container"
-              style={{ position: "relative", zIndex: 10 }}
+              style={{ position: "relative", zIndex: 10, pointerEvents: "none" }}
             >
               <div className="ze-upload-panel text-center py-8">
                 <div className="align-center mx-auto mb-3">
@@ -1023,10 +1042,10 @@ export default function TransferLandingPage() {
             className={`ze-content-panel ${transfer?.wallpaperUrl ? 'ze-wallpaper-mode' : `ze-time-${timeOfDay}`}`}
             style={{ position: "relative", overflow: "hidden" }}
           >
-            <ContentPanelBackground wallpaperUrl={transfer?.wallpaperUrl} timeOfDay={timeOfDay} />
+            <ContentPanelBackground wallpaperUrl={transfer?.wallpaperUrl} timeOfDay={timeOfDay} isAuthenticated={isAuthenticated} showUpgradeCta={isAuthenticated && userTier === "free"} onUpgradeClick={() => openDrawer("subscriptions")} />
             <div
               className="ze-panels-container"
-              style={{ position: "relative", zIndex: 10 }}
+              style={{ position: "relative", zIndex: 10, pointerEvents: "none" }}
             >
               <div className="ze-upload-panel">
                 {/* Step indicator for multi-gate flow */}
@@ -1100,10 +1119,10 @@ export default function TransferLandingPage() {
             className={`ze-content-panel ${transfer?.wallpaperUrl ? 'ze-wallpaper-mode' : `ze-time-${timeOfDay}`}`}
             style={{ position: "relative", overflow: "hidden" }}
           >
-            <ContentPanelBackground wallpaperUrl={transfer?.wallpaperUrl} timeOfDay={timeOfDay} />
+            <ContentPanelBackground wallpaperUrl={transfer?.wallpaperUrl} timeOfDay={timeOfDay} isAuthenticated={isAuthenticated} showUpgradeCta={isAuthenticated && userTier === "free"} onUpgradeClick={() => openDrawer("subscriptions")} />
             <div
               className="ze-panels-container flex-col lg:flex-row gap-6"
-              style={{ position: "relative", zIndex: 10 }}
+              style={{ position: "relative", zIndex: 10, pointerEvents: "none" }}
             >
               {/* Payment Form Panel */}
               <div className="ze-upload-panel" style={{ maxWidth: "400px" }}>
@@ -1238,10 +1257,10 @@ export default function TransferLandingPage() {
             className={`ze-content-panel ${transfer?.wallpaperUrl ? 'ze-wallpaper-mode' : `ze-time-${timeOfDay}`}`}
             style={{ position: "relative", overflow: "hidden" }}
           >
-            <ContentPanelBackground wallpaperUrl={transfer?.wallpaperUrl} timeOfDay={timeOfDay} />
+            <ContentPanelBackground wallpaperUrl={transfer?.wallpaperUrl} timeOfDay={timeOfDay} isAuthenticated={isAuthenticated} showUpgradeCta={isAuthenticated && userTier === "free"} onUpgradeClick={() => openDrawer("subscriptions")} />
             <div
               className="ze-panels-container flex-col lg:flex-row gap-6"
-              style={{ position: "relative", zIndex: 10 }}
+              style={{ position: "relative", zIndex: 10, pointerEvents: "none" }}
             >
               <div className="ze-upload-panel" style={{ maxWidth: "400px" }}>
                 <h1 className="text-xl font-bold text-[#171717] mb-1">
@@ -1350,10 +1369,10 @@ export default function TransferLandingPage() {
             className={`ze-content-panel ${transfer?.wallpaperUrl ? 'ze-wallpaper-mode' : `ze-time-${timeOfDay}`}`}
             style={{ position: "relative", overflow: "hidden" }}
           >
-            <ContentPanelBackground wallpaperUrl={transfer?.wallpaperUrl} timeOfDay={timeOfDay} />
+            <ContentPanelBackground wallpaperUrl={transfer?.wallpaperUrl} timeOfDay={timeOfDay} isAuthenticated={isAuthenticated} showUpgradeCta={isAuthenticated && userTier === "free"} onUpgradeClick={() => openDrawer("subscriptions")} />
             <div
               className="ze-panels-container flex-col lg:flex-row gap-6"
-              style={{ position: "relative", zIndex: 10 }}
+              style={{ position: "relative", zIndex: 10, pointerEvents: "none" }}
             >
               <div className="ze-upload-panel" style={{ maxWidth: "400px" }}>
                 {/* Status Icon */}
@@ -1565,10 +1584,10 @@ export default function TransferLandingPage() {
             className={`ze-content-panel ${transfer?.wallpaperUrl ? 'ze-wallpaper-mode' : `ze-time-${timeOfDay}`}`}
             style={{ position: "relative", overflow: "hidden" }}
           >
-            <ContentPanelBackground wallpaperUrl={transfer?.wallpaperUrl} timeOfDay={timeOfDay} />
+            <ContentPanelBackground wallpaperUrl={transfer?.wallpaperUrl} timeOfDay={timeOfDay} isAuthenticated={isAuthenticated} showUpgradeCta={isAuthenticated && userTier === "free"} onUpgradeClick={() => openDrawer("subscriptions")} />
             <div
               className="ze-panels-container"
-              style={{ position: "relative", zIndex: 10 }}
+              style={{ position: "relative", zIndex: 10, pointerEvents: "none" }}
             >
               <div className="ze-upload-panel">
                 {/* Step indicator for multi-gate flow */}
@@ -1811,10 +1830,10 @@ export default function TransferLandingPage() {
             className={`ze-content-panel ${transfer?.wallpaperUrl ? 'ze-wallpaper-mode' : `ze-time-${timeOfDay}`}`}
             style={{ position: "relative", overflow: "hidden" }}
           >
-            <ContentPanelBackground wallpaperUrl={transfer?.wallpaperUrl} timeOfDay={timeOfDay} />
+            <ContentPanelBackground wallpaperUrl={transfer?.wallpaperUrl} timeOfDay={timeOfDay} isAuthenticated={isAuthenticated} showUpgradeCta={isAuthenticated && userTier === "free"} onUpgradeClick={() => openDrawer("subscriptions")} />
             <div
               className="ze-panels-container"
-              style={{ position: "relative", zIndex: 10 }}
+              style={{ position: "relative", zIndex: 10, pointerEvents: "none" }}
             >
               <div className="ze-upload-panel">
                 {/* Preview Active Info */}
@@ -1918,10 +1937,10 @@ export default function TransferLandingPage() {
             className={`ze-content-panel ${transfer?.wallpaperUrl ? 'ze-wallpaper-mode' : `ze-time-${timeOfDay}`}`}
             style={{ position: "relative", overflow: "hidden" }}
           >
-            <ContentPanelBackground wallpaperUrl={transfer?.wallpaperUrl} timeOfDay={timeOfDay} />
+            <ContentPanelBackground wallpaperUrl={transfer?.wallpaperUrl} timeOfDay={timeOfDay} isAuthenticated={isAuthenticated} showUpgradeCta={isAuthenticated && userTier === "free"} onUpgradeClick={() => openDrawer("subscriptions")} />
             <div
               className="ze-panels-container"
-              style={{ position: "relative", zIndex: 10 }}
+              style={{ position: "relative", zIndex: 10, pointerEvents: "none" }}
             >
               <div className="ze-upload-panel">
                 {/* Download Arrow Icon */}
