@@ -599,14 +599,27 @@ const Header = () => {
             {isAuthenticated && user && (
               <button
                 onClick={() => setIsMobileMenuOpen(true)}
-                className={`ml-2 lg:hidden w-10 h-10 rounded-lg bg-gradient-to-br from-orange-400 to-pink-400 flex items-center justify-center transition-opacity duration-300 ease-in-out ${
+                className={`ml-2 lg:hidden w-10 h-10 rounded-lg overflow-hidden ${
+                  !user.profilePictureUrl ? "bg-gradient-to-br from-orange-400 to-pink-400" : ""
+                } flex items-center justify-center transition-opacity duration-300 ease-in-out ${
                   isAuthTransitioning ? "opacity-0" : "opacity-100"
                 }`}
                 aria-label={t("openMenu")}
               >
-                <span className="text-white font-bold text-sm">
-                  {user.email?.[0]?.toUpperCase() || "U"}
-                </span>
+                {user.profilePictureUrl ? (
+                  <Image
+                    src={user.profilePictureUrl}
+                    alt={user.name || user.email || "Avatar"}
+                    className="w-full h-full object-cover"
+                    width={40}
+                    height={40}
+                    unoptimized
+                  />
+                ) : (
+                  <span className="text-white font-bold text-sm">
+                    {user.email?.[0]?.toUpperCase() || "U"}
+                  </span>
+                )}
               </button>
             )}
 
@@ -644,10 +657,23 @@ const Header = () => {
                     <span className="text-sm font-bold text-gray-900">
                       {user.email}
                     </span>
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-400 to-pink-400 flex items-center justify-center">
-                      <span className="text-white font-bold text-sm">
-                        {user.email?.[0]?.toUpperCase() || "U"}
-                      </span>
+                    <div className={`w-10 h-10 rounded-lg overflow-hidden ${
+                      !user.profilePictureUrl ? "bg-gradient-to-br from-orange-400 to-pink-400" : ""
+                    } flex items-center justify-center`}>
+                      {user.profilePictureUrl ? (
+                        <Image
+                          src={user.profilePictureUrl}
+                          alt={user.name || user.email || "Avatar"}
+                          className="w-full h-full object-cover"
+                          width={40}
+                          height={40}
+                          unoptimized
+                        />
+                      ) : (
+                        <span className="text-white font-bold text-sm">
+                          {user.email?.[0]?.toUpperCase() || "U"}
+                        </span>
+                      )}
                     </div>
                   </button>
 
@@ -661,10 +687,23 @@ const Header = () => {
                       {/* User Info Header */}
                       <div className="px-4 py-3 border-b border-gray-100">
                         <div className="flex items-center space-x-3">
-                          <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-orange-400 to-pink-400 flex items-center justify-center">
-                            <span className="text-white font-bold">
-                              {user.email?.[0]?.toUpperCase() || "U"}
-                            </span>
+                          <div className={`w-12 h-12 rounded-lg overflow-hidden ${
+                            !user.profilePictureUrl ? "bg-gradient-to-br from-orange-400 to-pink-400" : ""
+                          } flex items-center justify-center`}>
+                            {user.profilePictureUrl ? (
+                              <Image
+                                src={user.profilePictureUrl}
+                                alt={user.name || user.email || "Avatar"}
+                                className="w-full h-full object-cover"
+                                width={48}
+                                height={48}
+                                unoptimized
+                              />
+                            ) : (
+                              <span className="text-white font-bold">
+                                {user.email?.[0]?.toUpperCase() || "U"}
+                              </span>
+                            )}
                           </div>
                           <div className="flex-1">
                             <p className="text-sm font-bold text-gray-900">

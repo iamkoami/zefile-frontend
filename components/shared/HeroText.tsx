@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useTranslations } from "next-intl";
+import CreatorsTrustStrip from "@/components/shared/CreatorsTrustStrip";
 
 interface HeroTextProps {
   isVisible: boolean;
@@ -59,6 +60,11 @@ const HeroText: React.FC<HeroTextProps> = ({
         textAlign: "center",
       }}
     >
+      {/* Creators trust strip — overlapping avatars + social proof text */}
+      <div className="mb-5 animate-[fadeIn_1s_ease-in-out_0.5s_both]">
+        <CreatorsTrustStrip timeOfDay={timeOfDay} />
+      </div>
+
       {/* Title — visual duplicate; the semantic <h1> is server-rendered in app/page.tsx */}
       <div
         aria-hidden="true"

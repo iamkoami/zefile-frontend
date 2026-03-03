@@ -176,10 +176,23 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
         {isAuthenticated && user && (
           <div className="px-6 py-6">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-orange-400 to-pink-400 flex items-center justify-center flex-shrink-0">
-                <span className="text-white font-bold">
-                  {user.email?.[0]?.toUpperCase() || "U"}
-                </span>
+              <div className={`w-12 h-12 rounded-lg overflow-hidden ${
+                !user.profilePictureUrl ? "bg-gradient-to-br from-orange-400 to-pink-400" : ""
+              } flex items-center justify-center flex-shrink-0`}>
+                {user.profilePictureUrl ? (
+                  <Image
+                    src={user.profilePictureUrl}
+                    alt={user.name || user.email || "Avatar"}
+                    className="w-full h-full object-cover"
+                    width={48}
+                    height={48}
+                    unoptimized
+                  />
+                ) : (
+                  <span className="text-white font-bold">
+                    {user.email?.[0]?.toUpperCase() || "U"}
+                  </span>
+                )}
               </div>
               <div>
                 <p className="text-sm font-bold text-[#171717]">{user.email}</p>

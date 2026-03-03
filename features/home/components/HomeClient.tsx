@@ -12,7 +12,6 @@ import PaperPlaneAnimation from "@/components/shared/PaperPlaneAnimation";
 import HeroText from "@/components/shared/HeroText";
 import TimeOfDayBackground from "@/components/shared/TimeOfDayBackground";
 import GlobalDragDropOverlay from "@/features/home/components/GlobalDragDropOverlay";
-import FeaturedCreatorsSection from "@/features/home/components/FeaturedCreatorsSection";
 import NPSSurveyModal from "@/components/shared/NPSSurveyModal";
 import FloatingPollWidget from "@/components/shared/FloatingPollWidget";
 import { usePollEligibility } from "@/hooks/usePollEligibility";
@@ -347,8 +346,6 @@ export default function HomeClient() {
             </div>
           </div>
 
-          {/* Featured Creators Section - outside content panel to avoid overflow:hidden clipping */}
-          <FeaturedCreatorsSection />
         </main>
       </div>
     </UploadProtectionProvider>

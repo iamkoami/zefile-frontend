@@ -47,7 +47,6 @@ import { TransferSummaryCard } from "@/components/shared/TransferSummaryCard";
 import { transferApi, TransferDto } from "@/services/transfer-api";
 import { apiClient } from "@/services/api-client";
 import { platformApi } from "@/services/platform-api";
-import FeaturedCreatorsSection from "@/features/home/components/FeaturedCreatorsSection";
 import { paymentApi } from "@/services/payment-api";
 import { storageApi } from "@/services/storage-api";
 import { authApi } from "@/services/auth-api";
@@ -2058,8 +2057,6 @@ export default function TransferLandingPage() {
                   </button>
                 </div>
 
-                {/* Featured Creators - social proof */}
-                <FeaturedCreatorsSection variant="compact" />
               </div>
             </div>
           </div>
