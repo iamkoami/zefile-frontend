@@ -118,7 +118,7 @@ function ContentPanelBackground({ wallpaperUrl, timeOfDay, isAuthenticated, show
     <>
       <TimeOfDayBackground timeOfDay={timeOfDay} />
       <HeroText isVisible={true} timeOfDay={timeOfDay} isAuthenticated={isAuthenticated} showUpgradeCta={showUpgradeCta} onUpgradeClick={onUpgradeClick} />
-      <PaperPlaneAnimation isVisible={true} />
+      <PaperPlaneAnimation isVisible={true} timeOfDay={timeOfDay} />
     </>
   );
 }

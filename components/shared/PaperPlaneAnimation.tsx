@@ -3,12 +3,25 @@
 import React, { useState, useEffect } from "react";
 import Lottie, { LottieRefCurrentProps } from "lottie-react";
 
+type TimeOfDay = "day" | "evening" | "night";
+
 interface PaperPlaneAnimationProps {
   isVisible: boolean;
+  timeOfDay?: TimeOfDay;
 }
+
+// CSS filters to colorize the Lottie animation per time of day
+const colorFilters: Record<TimeOfDay, string> = {
+  day: "brightness(0) invert(1)", // #FFFFFF
+  evening:
+    "brightness(0) saturate(100%) invert(80%) sepia(50%) saturate(600%) hue-rotate(60deg) brightness(95%) contrast(87%)", // #87E64B
+  night:
+    "brightness(0) invert(1) sepia(4%) saturate(400%) hue-rotate(326deg)", // #FFF5ED
+};
 
 const PaperPlaneAnimation: React.FC<PaperPlaneAnimationProps> = ({
   isVisible,
+  timeOfDay = "evening",
 }) => {
   const lottieRef = React.useRef<LottieRefCurrentProps>(null);
   const [logoAnimation, setLogoAnimation] = useState<object | null>(null);
@@ -35,9 +48,10 @@ const PaperPlaneAnimation: React.FC<PaperPlaneAnimationProps> = ({
         right: "-25rem",
         top: "34%",
         transform: "translateY(-50%) rotate(19deg)",
-        transition: "opacity 300ms ease-in-out",
+        transition: "opacity 300ms ease-in-out, filter 1.5s ease-in-out",
         zIndex: 1,
         opacity: 0.2,
+        filter: colorFilters[timeOfDay],
       }}
     >
       <Lottie

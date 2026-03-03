@@ -277,7 +277,7 @@ export default function HomeClient() {
               onUpgradeClick={() => openDrawer("subscriptions")}
             />
 
-            <PaperPlaneAnimation isVisible={true} />
+            <PaperPlaneAnimation isVisible={true} timeOfDay={timeOfDay} />
 
             <div
               id="ze-panels-container"

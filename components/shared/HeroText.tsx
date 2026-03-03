@@ -40,7 +40,7 @@ const HeroText: React.FC<HeroTextProps> = ({
     },
     night: {
       title: "text-white",
-      subtitle: "text-gray-300",
+      subtitle: "text-white",
     },
   };
 

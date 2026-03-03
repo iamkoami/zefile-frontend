@@ -106,7 +106,7 @@ function DownloadRedirect() {
           >
             <TimeOfDayBackground timeOfDay={timeOfDay} />
             <HeroText isVisible={true} timeOfDay={timeOfDay} />
-            <PaperPlaneAnimation isVisible={true} />
+            <PaperPlaneAnimation isVisible={true} timeOfDay={timeOfDay} />
             <div
               className="ze-panels-container"
               style={{ position: 'relative', zIndex: 10 }}
