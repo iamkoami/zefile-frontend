@@ -47,10 +47,9 @@ const PaperPlaneAnimation: React.FC<PaperPlaneAnimationProps> = ({
         position: "absolute",
         right: "-25rem",
         top: "34%",
-        transform: "translateY(-50%) rotate(19deg)",
-        transition: "opacity 300ms ease-in-out, filter 1.5s ease-in-out",
+        animation: "revealPlane 1s ease-out 0.5s both",
+        transition: "filter 1.5s ease-in-out",
         zIndex: 1,
-        opacity: 0.2,
         filter: colorFilters[timeOfDay],
       }}
     >

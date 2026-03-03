@@ -50,8 +50,11 @@ const CreatorsTrustStrip: React.FC<CreatorsTrustStripProps> = ({
     <div className="flex flex-col items-center gap-4">
       {/* Overlapping avatars row */}
       <div className="flex -space-x-3 pointer-events-auto">
-        {displayCreators.map((creator) => {
+        {displayCreators.map((creator, i) => {
           const link = getCreatorLink(creator);
+          const avatarStyle = {
+            animation: `scaleIn 0.4s ease-out ${0.5 + i * 0.15}s both`,
+          };
           const avatar = (
             <img
               src={creator.photoUrl!}
@@ -70,6 +73,7 @@ const CreatorsTrustStrip: React.FC<CreatorsTrustStripProps> = ({
                 rel="noopener noreferrer"
                 title={creator.name}
                 className="relative z-0 hover:z-10"
+                style={avatarStyle}
               >
                 {avatar}
               </a>
@@ -77,7 +81,7 @@ const CreatorsTrustStrip: React.FC<CreatorsTrustStripProps> = ({
           }
 
           return (
-            <div key={creator.id} className="relative z-0 hover:z-10">
+            <div key={creator.id} className="relative z-0 hover:z-10" style={avatarStyle}>
               {avatar}
             </div>
           );
@@ -89,7 +93,10 @@ const CreatorsTrustStrip: React.FC<CreatorsTrustStripProps> = ({
         className={`text-sm font-medium ${
           isNight ? "text-gray-300" : "text-[#4B5563]"
         }`}
-        style={{ transition: "color 1.5s ease-in-out" }}
+        style={{
+          animation: "fadeIn 0.6s ease-out 1.0s both",
+          transition: "color 1.5s ease-in-out",
+        }}
       >
         {t("trustStripText")}
       </p>

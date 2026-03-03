@@ -70,6 +70,7 @@ const HeroText: React.FC<HeroTextProps> = ({
         aria-hidden="true"
         className={`text-5xl font-black leading-tight mb-3 ${colors.title}`}
         style={{
+          animation: "slideUp 0.6s ease-out 0.5s both",
           transition: "color 1.5s ease-in-out",
         }}
       >
@@ -80,6 +81,7 @@ const HeroText: React.FC<HeroTextProps> = ({
       <p
         className={`text-lg xl:text-lg font-bold leading-relaxed ${colors.subtitle}`}
         style={{
+          animation: "fadeIn 0.8s ease-out 0.8s both",
           transition: "color 1.5s ease-in-out",
         }}
       >
