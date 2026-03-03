@@ -207,9 +207,9 @@
     "justTrying": "Juste pour essayer ?",
     "sendTestLink": "Envoyez-vous un fichier test",
     "switchToReal": "Passer au vrai transfert",
-    "trustSecure": "Securise et chiffre",
+    "trustSecure": "Chiffr\u00e9, toujours",
     "trustExpiry": "Expiration automatique",
-    "trustPaywall": "Fichiers bloques jusqu'au paiement"
+    "trustPaywall": "Vos fichiers restent verrouill\u00e9s jusqu'au paiement"
   },
   "celebration": {
     "title": "Votre premier transfert est prêt !",
@@ -384,7 +384,7 @@
     "stepEmail": "E-mail",
     "stepCode": "Code",
     "stepPassword": "Mot de passe",
-    "previewBeforeYouPay": "Regardez avant de payer \u2014 jetez un oeil d'abord."
+    "previewBeforeYouPay": "Jetez un oeil avant de payer."
   },
   "payment": {
     "paymentRequired": "Paiement nécessaire pour télécharger",
@@ -844,13 +844,13 @@
       "trustIntro": "Nous avons con\u00e7u ZeFile en partant du principe que chaque fichier a de la valeur. Voici exactement comment nous prot\u00e9geons les v\u00f4tres.",
       "trustPill1": "Transferts chiffr\u00e9s",
       "trustPill2": "Aper\u00e7us filigran\u00e9s",
-      "trustPill3": "Sans mot de passe",
+      "trustPill3": "Aucun mot de passe \u00e0 retenir",
       "trustPill4": "Liens sign\u00e9s",
       "trustPill5": "Contr\u00f4le de propri\u00e9t\u00e9",
       "trustPill6": "Certificats de fichiers",
       "trust1": "Chaque fichier est chiffr\u00e9 pendant le transfert \u2014 sans exception.",
       "trust2": "Les aper\u00e7us sont filigran\u00e9s pour prot\u00e9ger vos originaux avant le paiement.",
-      "trust3": "Connexion sans mot de passe via codes uniques \u2014 rien \u00e0 deviner, rien \u00e0 voler.",
+      "trust3": "Vous vous connectez avec un code unique. Rien \u00e0 retenir, rien \u00e0 voler.",
       "trust4": "Les liens de t\u00e9l\u00e9chargement sont temporaires et sign\u00e9s cryptographiquement. Impossibles \u00e0 falsifier ou r\u00e9utiliser.",
       "trust5": "Chaque action est v\u00e9rifi\u00e9e par propri\u00e9t\u00e9. Personne n'acc\u00e8de \u00e0 vos fichiers sans autorisation.",
       "trust6": "Les certificats de fichiers offrent une preuve v\u00e9rifiable de livraison et d'authenticit\u00e9.",
@@ -2506,7 +2506,8 @@
     "hour": "heure"
   },
   "featuredCreators": {
-    "heading": "Choisis par les createurs"
+    "heading": "Les cr\u00e9ateurs nous font confiance",
+    "trustStripText": "Adopt\u00e9 par des cr\u00e9ateurs qui ne font pas de compromis."
   },
   "firstFree": {
     "bannerTitle": "Votre premier transfert payant est offert \u2014 0% de frais, vous gardez 100%",
@@ -2563,7 +2564,7 @@
     "expiresInLabel": "Expire dans",
     "totalLabel": "au total",
     "oneHour": "1 heure",
-    "previewBeforeYouPay": "Regardez avant de payer",
+    "previewBeforeYouPay": "Jetez un oeil avant de payer",
     "ctaPaid": "Voir et payer",
     "ctaFree": "T\u00e9l\u00e9charger les fichiers",
     "simulatedDownloadPanel": "Ce que votre client voit",

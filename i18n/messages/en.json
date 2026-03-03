@@ -206,9 +206,9 @@
     "justTrying": "Just exploring?",
     "sendTestLink": "Send yourself a test file",
     "switchToReal": "Ready to send for real? Switch back",
-    "trustSecure": "Secure & encrypted",
+    "trustSecure": "Encrypted, always",
     "trustExpiry": "Files expire automatically",
-    "trustPaywall": "Lock files until paid"
+    "trustPaywall": "Files stay locked until you're paid"
   },
   "celebration": {
     "title": "Your first transfer is ready!",
@@ -383,7 +383,7 @@
     "stepEmail": "Email",
     "stepCode": "Code",
     "stepPassword": "Password",
-    "previewBeforeYouPay": "Preview before you pay \u2014 take a look first."
+    "previewBeforeYouPay": "Take a look before you pay."
   },
   "payment": {
     "paymentRequired": "Payment needed to download",
@@ -843,13 +843,13 @@
       "trustIntro": "We built ZeFile with the assumption that every file is valuable. Here's exactly how we protect yours.",
       "trustPill1": "Encrypted transfers",
       "trustPill2": "Watermarked previews",
-      "trustPill3": "No passwords needed",
+      "trustPill3": "No passwords to worry about",
       "trustPill4": "Signed links",
       "trustPill5": "Ownership checks",
       "trustPill6": "File certificates",
       "trust1": "Every file is encrypted during transfer — no exceptions.",
       "trust2": "Previews are watermarked so your originals stay safe before payment.",
-      "trust3": "Passwordless login via one-time codes — no passwords to leak or guess.",
+      "trust3": "You log in with a one-time code. Nothing to remember, nothing to steal.",
       "trust4": "Download links are time-limited and cryptographically signed. They can't be forged or reused.",
       "trust5": "Every action is ownership-verified. Nobody accesses your files without authorization.",
       "trust6": "File certificates provide verifiable proof of delivery and authenticity.",
@@ -2535,7 +2535,8 @@
     "hour": "hour"
   },
   "featuredCreators": {
-    "heading": "Trusted by creators"
+    "heading": "Trusted by creators",
+    "trustStripText": "Trusted by creators who don't compromise."
   },
   "firstFree": {
     "bannerTitle": "Your first paid transfer is on us \u2014 0% fee, you keep 100%",
@@ -2592,7 +2593,7 @@
     "expiresInLabel": "Expires in",
     "totalLabel": "total",
     "oneHour": "1 hour",
-    "previewBeforeYouPay": "Preview before you pay",
+    "previewBeforeYouPay": "Take a look before you pay",
     "ctaPaid": "Preview & Pay",
     "ctaFree": "Download files",
     "simulatedDownloadPanel": "What your client sees",
