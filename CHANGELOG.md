@@ -5,6 +5,13 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.26.0] - 2026-03-03
+
+### Added
+
+- Time-of-day Lottie logo colorization: white (day), green (evening), cream (night)
+- Night mode subtitle now renders in white for better contrast
+
 ## [1.25.0] - 2026-03-03
 
 ### Added
