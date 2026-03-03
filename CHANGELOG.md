@@ -5,6 +5,15 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.27.0] - 2026-03-03
+
+### Added
+
+- Staggered entrance animations on home and download pages (waitlist-style reveal)
+- Upload panel slides up, hero title slides up, subtitle fades in
+- Paper plane Lottie scales in with custom revealPlane keyframe
+- Creator avatars pop in with staggered scaleIn, trust text fades in
+
 ## [1.26.0] - 2026-03-03
 
 ### Added
