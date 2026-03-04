@@ -164,7 +164,7 @@
     "message": "Message",
     "customizeTransfer": "Add a message",
     "hideCustomize": "Hide message",
-    "shortExpiryWarning": "Heads up \u2014 your transfer expires in 24 hours and can't be extended after sending.",
+    "shortExpiryWarning": "Heads up — your transfer expires in 24 hours and can't be extended after sending.",
     "unsupportedFileType": "\"{filename}\" isn't a supported file type. Try images, videos, PDFs, audio, documents, or archives.",
     "sendToRequired": "Who are you sending this to?",
     "yourEmailRequired": "We need your email to continue",
@@ -679,7 +679,7 @@
     "tags": "Tags",
     "linkCopied": "Link copied!",
     "relatedArticles": "Related Articles",
-    "tryZefileCta": "Sending files to clients? Try ZeFile \u2014 it's free.",
+    "tryZefileCta": "Sending files to clients? Try ZeFile — it's free.",
     "getStarted": "Get started"
   },
   "pages": {
@@ -732,7 +732,6 @@
       "step2Content": "Your recipients get a secure link by email. They can browse watermarked previews of every file before paying. Originals stay locked. Your work, your terms.",
       "step3Title": "Payment in, files out",
       "step3Content": "Card, Mobile Money, or bank transfer —once they pay, the download unlocks. 85% of freelancers deal with late payments. With ZeFile, that's not your story anymore. No invoicing. No chasing.",
-
       "perspectiveTitle": "Two sides of <highlight>every transfer</highlight>",
       "perspectiveSubtitle": "Your perspective shapes the experience. Pick a side.",
       "perspectiveSender": "I share my work",
@@ -753,7 +752,6 @@
       "receiverStep3Desc": "Card, Mobile Money, or bank transfer. Pick what works for you.",
       "receiverStep4Title": "Download instantly",
       "receiverStep4Desc": "Once paid, download individual files or everything as a ZIP. Fast, CDN-powered delivery.",
-
       "bentoTitle": "Everything you need, <highlight>nothing you don't</highlight>",
       "bentoSubtitle": "Built-in tools that protect your files and simplify every transfer.",
       "bento1Title": "Watermarked previews",
@@ -770,7 +768,6 @@
       "bento6Desc": "Every transfer generates a verifiable certificate proving delivery, timing, and file integrity.",
       "bento7Title": "Payment-gated delivery",
       "bento7Desc": "Files stay locked until you're paid. No more sending work and chasing invoices. 65% of freelancers wait over 30 days —not anymore.",
-
       "fileTypesTitle": "Send <highlight>any file type</highlight>",
       "fileTypeImages": "Images",
       "fileTypeVideo": "Video",
@@ -787,7 +784,6 @@
       "fileTypeSpecAudio": "Waveform + 20s clip",
       "fileTypeSpecDocs": "First page preview",
       "fileTypeSpecArchives": "File listing",
-
       "statsTitleLine1": "The real cost of",
       "statsTitleLine2": "<highlight>unpaid work</highlight>",
       "stat1Suffix": "h",
@@ -799,7 +795,6 @@
       "stat3Suffix": "%",
       "stat3Label": "of clients leave over poor delivery",
       "stat3Sublabel": "professional file galleries change that",
-
       "faqTitle": "Got <highlight>questions</highlight>? We've got answers",
       "faq1Q": "Is ZeFile free to use?",
       "faq1A": "Yes! The free plan lets you send up to 2 GB per transfer. Starter and Pro plans unlock higher limits and lower platform fees.",
@@ -821,7 +816,6 @@
       "faq9A": "Your files are locked until the payment clears. Clients can preview everything with watermarks, but they can't download the originals without paying. The moment they pay, the download unlocks automatically. No back-and-forth, no invoicing, no chasing.",
       "faq10Q": "My current delivery setup works fine. Why should I switch?",
       "faq10A": "71% of consumers have ended relationships due to poor service experiences. A WeTransfer link or Google Drive folder gets the job done, but it doesn't present your work professionally. ZeFile gives your clients a branded preview gallery with watermarks, which makes you look like the pro you are —and keeps them coming back.",
-
       "ctaTitle": "Tired of chasing? <highlight>Let's fix that.</highlight>",
       "ctaSubtext": "No subscription needed to start. Files stay locked until you're paid. That's the deal.",
       "ctaButton": "Send your first file",
@@ -830,12 +824,10 @@
     "about": {
       "title": "Get paid before they <highlight>download</highlight>.",
       "subtitle": "ZeFile is a secure file delivery platform where creatives share their work, set a price, and get paid before the download.",
-
       "problemTitle": "The <highlight>problem</highlight>",
       "problemP1": "You finish the project. You send the files. Then you wait. 72% of freelancers are sitting on unpaid invoices right now —some totaling over $50,000. That's not a hiccup. That's a crisis.",
       "problemP2": "Meanwhile, the follow-up emails start. \"Just checking in.\" \"Any update on payment?\" Freelancers spend 102 hours a year chasing late payments. That's almost three full work weeks —not creating, just asking to be paid.",
       "problemP3": "And here's the thing: 71% of clients have ended relationships over poor delivery experiences. Messy file sharing doesn't just cost you time —it costs you clients. There's no standard workflow for \"send files, get paid.\" So we built one.",
-
       "painStatsTagline": "These aren't made-up numbers.",
       "painStat1Value": "85%",
       "painStat1Label": "of freelancers have dealt with late payments",
@@ -843,13 +835,11 @@
       "painStat2Label": "spent chasing invoices every year",
       "painStat3Value": "71%",
       "painStat3Label": "of clients leave over poor delivery",
-
       "storyTitle": "How it <highlight>started</highlight>",
       "storyTagline": "Born from a real problem. Built for real creatives.",
       "storyP1": "ZeFile started from a frustration we kept seeing: talented creatives across Africa sending their best work to clients — and waiting weeks to get paid. Photographers, designers, filmmakers. Same story, every time. And 65% of a freelancer's income comes from repeat clients. Lose them to messy delivery, and you lose your business.",
       "storyP2": "The insight was simple: what if the file transfer itself was the payment moment? What if you could share a link and know — with certainty — that your work wouldn't be downloaded until it was paid for?",
       "storyP3": "That's what we built. A platform where delivery and payment happen together, in one clean flow. No chasing. No guessing. Just your work, paid for, on your terms.",
-
       "capabilitiesTitle": "What ZeFile brings to <highlight>your workflow</highlight>",
       "cap1Title": "Deliver and get paid",
       "cap1Content": "Upload your files, set a price, share a link. Your recipient pays, then downloads. No invoicing, no awkward follow-ups. No more 102 hours a year wasted on chasing.",
@@ -861,7 +851,6 @@
       "cap4Content": "Card, Mobile Money, bank transfer. Works with the payment methods your clients actually use.",
       "cap5Title": "Track everything",
       "cap5Content": "Know when files are viewed, downloaded, and paid for. File certificates give you proof of delivery.",
-
       "trustTitle": "Security is not a feature. It's the <highlight>foundation</highlight>.",
       "trustIntro": "We built ZeFile with the assumption that every file is valuable. Here's exactly how we protect yours.",
       "trustPill1": "Encrypted transfers",
@@ -876,11 +865,9 @@
       "trust4": "Download links are time-limited and cryptographically signed. They can't be forged or reused.",
       "trust5": "Every action is ownership-verified. Nobody accesses your files without authorization.",
       "trust6": "File certificates provide verifiable proof of delivery and authenticity.",
-
       "africaTitle": "Built where it <highlight>matters</highlight>.",
       "africaP1": "ZeFile was built in Africa — not as a limitation, but as a starting point. Mobile Money, Orange Money, Wave, XOF. These aren't add-ons we bolted on later. They're core to how the platform works, because they're core to how you work.",
       "africaP2": "And because we built for the hardest use cases first, ZeFile works just as well for your clients in Paris, London, or New York. Great tools don't need borders.",
-
       "valuesTitle": "What we <highlight>believe</highlight>",
       "value1Title": "Getting you paid comes first",
       "value1Content": "Every design decision starts with: does this help the creator get paid? If not, it waits.",
@@ -890,7 +877,6 @@
       "value3Content": "No dark patterns. No hidden fees. Pricing is transparent. Cancellation is clean. We'd rather lose a user than trick one.",
       "value4Title": "Built to last",
       "value4Content": "We're building infrastructure, not a hype product. Security, reliability, and simplicity over flashy features.",
-
       "ctaTitle": "Done chasing payments? <highlight>Start here.</highlight>",
       "ctaSubtext": "No subscription needed to start. Your files stay locked until you're paid.",
       "ctaButton": "Send your first file",
@@ -1012,19 +998,19 @@
       "introTitle": "Vulnerability Disclosure",
       "introContent": "We take the security of ZeFile seriously. If you discover a vulnerability, we want to hear about it so we can fix it quickly and keep our users safe.\n\nThis policy describes how to report security issues and what to expect from us.",
       "scopeTitle": "Scope",
-      "scopeContent": "The following assets are in scope for security research:\n\n- zefile.io (frontend application)\n- api.zefile.io (backend API)\n- cdn.zefile.io (CDN worker)\n- admin.zefile.io (admin panel)\n- zefile.co (short link redirector)",
+      "scopeContent": "ZeFile is built with security at its core. Here's what we protect:\n\n- File encryption: All files are encrypted during transfer and at rest, ensuring your data stays private from upload to download.\n- CDN-powered delivery: Files are served through our content delivery network, adding an extra layer of protection between storage and end users.\n- Password-protected transfers: Senders can lock their transfers with a password, so only intended recipients can access the files.\n- Early threat detection: We actively monitor for suspicious activity and unusual access patterns to catch potential issues before they become problems.\n- Breach prevention: Our infrastructure is designed to limit exposure, with strict access controls and isolated services to reduce the impact of any single point of failure.",
       "outOfScopeTitle": "Out of Scope",
-      "outOfScopeContent": "The following are out of scope:\n\n- Third-party services we use (Paystack, Brevo, Wasabi S3)\n- Social engineering attacks against ZeFile employees or users\n- Denial of service (DoS/DDoS) attacks\n- Physical attacks against ZeFile infrastructure\n- Automated scanning that generates excessive traffic",
+      "outOfScopeContent": "The following are out of scope:\n\n- Third-party services operated by our partners\n- Social engineering attacks against ZeFile employees or users\n- Denial of service (DoS/DDoS) attacks\n- Physical attacks against ZeFile infrastructure\n- Automated scanning that generates excessive traffic",
       "rulesTitle": "Rules of Engagement",
       "rulesContent": "When researching, please follow these guidelines:\n\n- Do not access, modify, or delete other users' data\n- Do not perform destructive testing on production systems\n- Do not exploit vulnerabilities beyond a minimal proof of concept\n- Report findings promptly and do not disclose them publicly before we've had a chance to fix them\n- Use test accounts you create yourself for testing",
       "reportingTitle": "How to Report",
-      "reportingContent": "Send your findings to security@zefile.io. Please include:\n\n- A clear description of the vulnerability\n- Step-by-step instructions to reproduce the issue\n- The potential impact of the vulnerability\n- Any screenshots or proof-of-concept code\n\nYou may encrypt your report using our PGP key (available on request).",
+      "reportingContent": "Send your findings to hello@zefile.io. Please include:\n\n- A clear description of the vulnerability\n- Step-by-step instructions to reproduce the issue\n- The potential impact of the vulnerability\n- Any screenshots or proof-of-concept code\n\nYou may encrypt your report using our PGP key (available on request).",
       "timelineTitle": "Response Timeline",
       "timelineContent": "Here's what to expect after you submit a report:\n\n- Acknowledgment: within 48 hours\n- Initial assessment: within 5 business days\n- Resolution target: within 30 days (depending on severity)\n\nWe'll keep you updated on our progress and let you know when the issue has been resolved.",
       "safeHarborTitle": "Safe Harbor",
       "safeHarborContent": "We will not take legal action against security researchers who:\n\n- Act in good faith and follow this policy\n- Avoid privacy violations, data destruction, and service disruption\n- Report vulnerabilities to us before disclosing them publicly\n\nWe consider security research conducted in accordance with this policy to be authorized and will not pursue legal action for it.",
       "contactTitle": "Questions",
-      "contactContent": "If you have questions about this policy or need to report a security issue, reach out to security@zefile.io."
+      "contactContent": "If you have questions about this policy or need to report a security issue, reach out to hello@zefile.io."
     }
   },
   "transferItem": {
@@ -2526,7 +2512,7 @@
     "dnsValue": "Value",
     "copyHost": "Copy host",
     "copyValue": "Copy value",
-    "dnsNote": "DNS changes can take 5\u201310 minutes to propagate.",
+    "dnsNote": "DNS changes can take 5–10 minutes to propagate.",
     "status": {
       "pending_verification": "Pending verification",
       "dns_verified": "DNS verified",
@@ -2541,7 +2527,7 @@
     "step1Title": "Your transfers live here",
     "step1Body": "Track downloads, manage files, and re-share from one place.",
     "step2Title": "Your account, one click away",
-    "step2Body": "Contacts, pricing, and settings \u2014 all in the menu.",
+    "step2Body": "Contacts, pricing, and settings — all in the menu.",
     "step3Title": "Ready for your next one?",
     "step3Body": "Just drop files here anytime.",
     "next": "Next",
@@ -2566,11 +2552,11 @@
     "uploading": "Uploading...",
     "uploadFailed": "Upload didn't go through. Give it another try.",
     "completeTitle": "Your test transfer is ready!",
-    "completeSubtitle": "See what your recipients will experience \u2014 and when you're ready, create a real one.",
+    "completeSubtitle": "See what your recipients will experience — and when you're ready, create a real one.",
     "sendAnother": "Try another test",
     "dismiss": "Maybe later",
     "sectionTitle": "See it in action",
-    "sectionSubtitle": "Upload a file (up to 10MB) and experience the full flow \u2014 no account needed to start.",
+    "sectionSubtitle": "Upload a file (up to 10MB) and experience the full flow — no account needed to start.",
     "signupTitle": "Ready to send for real?",
     "signupSubtitle": "Enter your email to create an account and start transferring.",
     "claimFailed": "Something went wrong. Try again?",
@@ -2582,9 +2568,9 @@
     "trustStripText": "Trusted by creators who don't compromise."
   },
   "firstFree": {
-    "bannerTitle": "Your first paid transfer is on us \u2014 0% fee, you keep 100%",
+    "bannerTitle": "Your first paid transfer is on us — 0% fee, you keep 100%",
     "bannerSubtitle": "No platform fee on your very first paid transfer. Go ahead, set your price.",
-    "compactMessage": "First paid transfer is free \u2014 0% platform fee",
+    "compactMessage": "First paid transfer is free — 0% platform fee",
     "celebrationTitle": "You kept 100% of this transfer",
     "celebrationSubtitle": "Your first one was on us. Welcome to ZeFile."
   },
@@ -2598,7 +2584,7 @@
     "filesLabel": "Files",
     "copyLink": "Copy link",
     "paymentReceived": "Payment received: 5,000 XOF",
-    "paymentSimulated": "This is a simulated notification \u2014 real payments appear here.",
+    "paymentSimulated": "This is a simulated notification — real payments appear here.",
     "emailPreviewTitle": "Sender confirmation email",
     "emailPreviewSubtitle": "You'd receive this email after your transfer is sent.",
     "subject": "Subject",
@@ -2618,7 +2604,7 @@
     "recipientEmailTitle": "The email your client gets",
     "recipientEmailSubtitle": "Your client would receive this email with a preview-before-you-pay experience.",
     "conversionTitle": "Ready to send for real?",
-    "conversionSubtitle": "Your first paid transfer is on us \u2014 0% platform fee.",
+    "conversionSubtitle": "Your first paid transfer is on us — 0% platform fee.",
     "conversionButton": "Send for real",
     "testExpired": "This test transfer has expired.",
     "testExpiredCta": "Create a real transfer",
@@ -2626,7 +2612,7 @@
     "priceLabel": "Price",
     "senderEmailNote": "Confirmation emails would be sent to {email}.",
     "fromLabel": "From",
-    "freeDownloadNote": "This file is free to download \u2014 no payment needed.",
+    "freeDownloadNote": "This file is free to download — no payment needed.",
     "recipientEmailNote": "Your recipient ({email}) would receive an email notification with a link to this page.",
     "sentTo": "sent to",
     "sentYou": "sent you",
