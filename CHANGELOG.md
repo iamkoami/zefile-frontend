@@ -5,6 +5,28 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.28.0] - 2026-03-04
+
+### Added
+
+- Post-download CTA page for unauthenticated recipients with back-to-transfer link
+- New user welcome banner on download page after OTP verification (auto-dismisses after 5s)
+- Inline upsell hints on gated features (wallpaper, size limit) for free-tier authenticated users
+- Onboarding checklist card in Transfers drawer with per-user localStorage dismiss
+- Transfer list empty state redesign with icons and CTAs per tab (Sent, Received, Paid)
+- Onboarding status API integration (`GET /users/me/onboarding-status`)
+
+### Changed
+
+- Checkbox style consistency: green bg with dark check icon, dark hover border
+- WaitlistPage checkbox hover border updated to match design system
+
+### Fixed
+
+- Bulk action bar now hides when drawer closes (transfers selection cleared on close)
+- CSS injection protection for wallpaper URL in download page background
+- Onboarding checklist dismiss key is now per-user (prevents cross-account dismissal)
+
 ## [1.27.0] - 2026-03-03
 
 ### Added
