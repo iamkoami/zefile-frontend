@@ -105,13 +105,16 @@ type PageState =
   | "payment-prompt"
   | "preview"
   | "ready"
+  | "downloaded"
   | "error";
 
 function ContentPanelBackground({ wallpaperUrl, timeOfDay, isAuthenticated, showUpgradeCta, onUpgradeClick }: { wallpaperUrl?: string; timeOfDay: TimeOfDay; isAuthenticated?: boolean; showUpgradeCta?: boolean; onUpgradeClick?: () => void }) {
   if (wallpaperUrl) {
+    // Sanitize URL to prevent CSS injection via url() breakout
+    const safeUrl = wallpaperUrl.replace(/['"()]/g, encodeURIComponent);
     return (
       <div className="absolute inset-0 bg-cover bg-center bg-no-repeat rounded-2xl"
-           style={{ backgroundImage: `url('${wallpaperUrl}')` }} />
+           style={{ backgroundImage: `url('${safeUrl}')` }} />
     );
   }
   return (
@@ -269,11 +272,20 @@ export default function TransferLandingPage() {
 
   // OTP verification
   const [otpValue, setOtpValue] = useState("");
-  const [_isNewUser, setIsNewUser] = useState(false);
+  const [isNewUser, setIsNewUser] = useState(false);
+  const [showNewUserBanner, setShowNewUserBanner] = useState(false);
   const [_otpExpiresIn, setOtpExpiresIn] = useState(0);
   const [canResendOtp, setCanResendOtp] = useState(false);
   const [otpResendCountdown, setOtpResendCountdown] = useState(0);
   const otpInputRef = useRef<HTMLInputElement>(null);
+  const bannerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Clean up banner timer on unmount
+  useEffect(() => {
+    return () => {
+      if (bannerTimerRef.current) clearTimeout(bannerTimerRef.current);
+    };
+  }, []);
 
   // Focus OTP input when email is submitted and section slides in
   useEffect(() => {
@@ -673,6 +685,13 @@ export default function TransferLandingPage() {
 
       setEmailConfirmed(true);
 
+      // Show welcome banner for brand-new recipients
+      if (isNewUser) {
+        setShowNewUserBanner(true);
+        if (bannerTimerRef.current) clearTimeout(bannerTimerRef.current);
+        bannerTimerRef.current = setTimeout(() => setShowNewUserBanner(false), 5000);
+      }
+
       // For password-protected transfers, go to password state
       // Otherwise, go directly to ready state and open preview
       if (transfer?.accessControl === "password") {
@@ -898,6 +917,10 @@ export default function TransferLandingPage() {
         toast.error(response.error.message || t("downloadFailed"));
       } else {
         checkForPoll('after_download', 3000);
+        // Show conversion CTA for non-authenticated, non-custom-domain recipients
+        if (!isCustomDomain && !isAuthenticated) {
+          setPageState("downloaded");
+        }
       }
     } catch {
       toast.error(t("downloadFailed"));
@@ -1942,6 +1965,26 @@ export default function TransferLandingPage() {
               style={{ position: "relative", zIndex: 10, pointerEvents: "none" }}
             >
               <div className="ze-upload-panel">
+                {/* New User Welcome Banner */}
+                {showNewUserBanner && (
+                  <div
+                    className="mb-4 bg-[#87E64B]/10 border border-[#87E64B] rounded p-3 flex items-start justify-between gap-3 animate-[fadeIn_0.3s_ease-out]"
+                    role="status"
+                    aria-live="polite"
+                  >
+                    <p className="text-sm font-medium text-[#171717] leading-relaxed">
+                      {t("newUserWelcomeBanner")}
+                    </p>
+                    <button
+                      onClick={() => setShowNewUserBanner(false)}
+                      className="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0 mt-0.5 pointer-events-auto"
+                      aria-label={t("dismissBanner")}
+                    >
+                      <Xmark className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+
                 {/* Download Arrow Icon */}
                 <div className="flex flex-col items-center mb-6">
                   <Download
@@ -2079,6 +2122,56 @@ export default function TransferLandingPage() {
 
         {/* Floating Poll Widget */}
         {!isCustomDomain && <FloatingPollWidget />}
+      </div>
+    );
+  }
+
+  // Post-download conversion CTA state
+  if (pageState === "downloaded" && transfer) {
+    const frontendUrl = process.env.NEXT_PUBLIC_FRONTEND_URL || "https://zefile.io";
+    return (
+      <div className="min-h-screen bg-white">
+        <ToastContainer />
+        {pageHeader}
+        <main style={{ minHeight: "calc(100vh - 64px)", position: "relative" }}>
+          <div
+            className={`ze-content-panel ${transfer?.wallpaperUrl ? 'ze-wallpaper-mode' : `ze-time-${timeOfDay}`}`}
+            style={{ position: "relative", overflow: "hidden" }}
+          >
+            <ContentPanelBackground wallpaperUrl={transfer?.wallpaperUrl} timeOfDay={timeOfDay} />
+            <div
+              className="ze-panels-container"
+              style={{ position: "relative", zIndex: 10, pointerEvents: "none" }}
+            >
+              <div className="ze-upload-panel text-center">
+                <div className="flex flex-col items-center mb-6">
+                  <Download className="w-16 h-16 text-[#87E64B]" strokeWidth={1.5} />
+                </div>
+                <h1 className="text-xl font-bold text-[#171717] mb-2">
+                  {t("downloadedTitle")}
+                </h1>
+                <p className="text-sm text-gray-500 mb-1">
+                  {transfer.title || t("untitled")}
+                </p>
+                <p className="text-sm text-gray-500 mb-8">
+                  {t("downloadedSubtitle")}
+                </p>
+                <a
+                  href={frontendUrl}
+                  className="pointer-events-auto inline-flex items-center justify-center w-full px-6 py-3.5 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors"
+                >
+                  {t("downloadedCtaButton")}
+                </a>
+                <button
+                  onClick={() => setPageState("ready")}
+                  className="pointer-events-auto mt-3 text-sm text-[#5E53E0] hover:underline"
+                >
+                  {t("backToTransfer")}
+                </button>
+              </div>
+            </div>
+          </div>
+        </main>
       </div>
     );
   }

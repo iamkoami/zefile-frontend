@@ -29,6 +29,7 @@ import { getAnalyticsConsent } from "@/components/shared/CookieConsentBanner";
 import { platformApi } from "@/services/platform-api";
 import { multipartUploadService } from "@/services/multipart-upload.service";
 import { useUploadStore } from "@/stores/upload-store";
+import { useDrawerStore } from "@/stores/drawer-store";
 import { useCurrentCurrency } from "@/stores/currency-store";
 import { formatCurrencyAmount } from "@/lib/currency";
 import { TransferOptions } from "@/features/transfer/components/TransferOptionsPanel";
@@ -139,6 +140,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
   const [showInfoTooltip, setShowInfoTooltip] = useState(false);
   const [fileError, setFileError] = useState<string>("");
   const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
+  const { openDrawer } = useDrawerStore();
   const [panelState, setPanelState] = useState<PanelState>("initial");
   const [formView, setFormView] = useState<"main" | "options">("main");
   const [showDetails, setShowDetails] = useState(false);
@@ -1850,42 +1852,53 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
 
               {/* Size Limit */}
               {tierLimitsData && transferOptions && (
-                <select
-                  value={transferOptions.sizeLimit}
-                  onChange={(e) => handleSizeLimitChange(e.target.value)}
-                  className="ze-form-select"
-                  disabled={tierLimitsData.isLoading}
-                >
-                  <option value="" disabled>
-                    {tierLimitsData.isLoading
-                      ? tOptions("loading")
-                      : tOptions("sizeLimitLabel")}
-                  </option>
-                  {sizeLimitOptions.map((option) => {
-                    const isAvailable =
-                      tierLimitsData.isSizeLimitAvailable(
-                        option.sizeGB,
-                        userTier,
-                      ) ?? true;
-                    const requiredTier = !isAvailable
-                      ? tierLimitsData.getRequiredTierForSize(option.sizeGB)
-                      : null;
-                    const tierBadge = requiredTier
-                      ? ` (${tOptions(getTierTranslationKey(requiredTier))})`
-                      : "";
-                    return (
-                      <option
-                        key={option.value}
-                        value={option.value}
-                        disabled={!isAvailable}
-                        className={!isAvailable ? "text-gray-400" : ""}
-                      >
-                        {tOptions(option.labelKey)}
-                        {tierBadge}
-                      </option>
-                    );
-                  })}
-                </select>
+                <div>
+                  <select
+                    value={transferOptions.sizeLimit}
+                    onChange={(e) => handleSizeLimitChange(e.target.value)}
+                    className="ze-form-select"
+                    disabled={tierLimitsData.isLoading}
+                  >
+                    <option value="" disabled>
+                      {tierLimitsData.isLoading
+                        ? tOptions("loading")
+                        : tOptions("sizeLimitLabel")}
+                    </option>
+                    {sizeLimitOptions.map((option) => {
+                      const isAvailable =
+                        tierLimitsData.isSizeLimitAvailable(
+                          option.sizeGB,
+                          userTier,
+                        ) ?? true;
+                      const requiredTier = !isAvailable
+                        ? tierLimitsData.getRequiredTierForSize(option.sizeGB)
+                        : null;
+                      const tierBadge = requiredTier
+                        ? ` (${tOptions(getTierTranslationKey(requiredTier))})`
+                        : "";
+                      return (
+                        <option
+                          key={option.value}
+                          value={option.value}
+                          disabled={!isAvailable}
+                          className={!isAvailable ? "text-gray-400" : ""}
+                        >
+                          {tOptions(option.labelKey)}
+                          {tierBadge}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  {isUserAuthenticated && userTier === "free" && !tierLimitsData?.isLoading && (
+                    <button
+                      type="button"
+                      onClick={() => openDrawer("subscriptions")}
+                      className="text-xs text-[#5E53E0] mt-1 underline hover:no-underline"
+                    >
+                      {tOptions("sizeLimitUpsell")}
+                    </button>
+                  )}
+                </div>
               )}
 
               {/* Wallpaper Upload */}
@@ -1952,6 +1965,15 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                   <p className="text-[10px] text-gray-400 mt-1">
                     {tOptions("wallpaperHint")}
                   </p>
+                  {isUserAuthenticated && isWallpaperDisabled && (
+                    <button
+                      type="button"
+                      onClick={() => openDrawer("subscriptions")}
+                      className="text-xs text-[#5E53E0] mt-1 underline hover:no-underline"
+                    >
+                      {tOptions("wallpaperUpsell")}
+                    </button>
+                  )}
                 </div>
               )}
             </div>

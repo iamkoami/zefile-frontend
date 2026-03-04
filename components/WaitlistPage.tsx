@@ -153,7 +153,7 @@ export default function WaitlistPage() {
                   className={`mt-0.5 w-5 h-5 shrink-0 rounded border-2 flex items-center justify-center transition-colors ${
                     consent
                       ? "bg-[#87E64B] border-[#87E64B]"
-                      : "border-gray-300 bg-white"
+                      : "border-gray-300 bg-white hover:border-[#171717]"
                   }`}
                 >
                   {consent && (

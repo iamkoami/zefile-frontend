@@ -311,7 +311,9 @@
     "wallpaperPreview": "Aperçu du fond d'écran",
     "removeWallpaper": "Supprimer le fond d'écran",
     "invalidFileType": "Type de fichier invalide. Seuls JPEG, PNG et WebP sont autorisés.",
-    "fileTooLarge": "Fichier trop volumineux. Maximum 5 Mo."
+    "fileTooLarge": "Fichier trop volumineux. Maximum 5 Mo.",
+    "wallpaperUpsell": "D\u00e9bloquez les fonds personnalis\u00e9s avec Starter",
+    "sizeLimitUpsell": "Besoin de plus d'espace ? Passez \u00e0 un plan sup\u00e9rieur"
   },
   "fileTypes": {
     "images": "Images (JPG, PNG, GIF, WebP, BMP, TIFF, SVG)",
@@ -384,7 +386,13 @@
     "stepEmail": "E-mail",
     "stepCode": "Code",
     "stepPassword": "Mot de passe",
-    "previewBeforeYouPay": "Jetez un oeil avant de payer."
+    "previewBeforeYouPay": "Jetez un \u0153il avant de payer.",
+    "newUserWelcomeBanner": "Vous \u00eates maintenant sur ZeFile. La prochaine fois, vos t\u00e9l\u00e9chargements seront \u00e0 port\u00e9e de main.",
+    "dismissBanner": "Fermer",
+    "downloadedTitle": "Vos fichiers sont en cours de t\u00e9l\u00e9chargement",
+    "downloadedSubtitle": "Vous voulez envoyer des fichiers comme \u00e7a ?",
+    "downloadedCtaButton": "Commencer gratuitement sur ZeFile",
+    "backToTransfer": "Retour au transfert"
   },
   "payment": {
     "paymentRequired": "Paiement nécessaire pour télécharger",
@@ -555,6 +563,21 @@
     "noSentTransfers": "Vous n'avez pas encore envoyé de transfert",
     "noReceivedTransfers": "Rien de reçu pour l'instant",
     "noPaidTransfers": "Aucun transfert payé pour le moment",
+    "emptyState": {
+      "sent": {
+        "title": "Aucun transfert pour le moment",
+        "subtitle": "Vos transferts envoy\u00e9s appara\u00eetront ici.",
+        "cta": "Envoyer votre premier fichier"
+      },
+      "received": {
+        "title": "Rien reçu pour le moment",
+        "subtitle": "Les fichiers que d'autres vous envoient appara\u00eetront ici."
+      },
+      "paid": {
+        "title": "Aucun transfert payant",
+        "subtitle": "Fixez un prix sur votre prochain transfert pour gagner de l'argent."
+      }
+    },
     "linkCopied": "Lien copié dans le presse-papiers",
     "linkCopyFailed": "On n'a pas pu copier le lien",
     "noLinkAvailable": "Aucun lien disponible pour ce transfert",
@@ -983,6 +1006,26 @@
       "automatedDecisionsContent": "ZeFile utilise des processus automatises dans des cas limites :\n\n- Limitation de debit : Restrictions temporaires automatiques lorsqu'une activite inhabituelle est detectee sur votre compte ou votre adresse IP.\n- Blocage de compte : Suspension automatique en cas de violations repetees de nos conditions d'utilisation.\n\nCes mesures sont necessaires a la securite et au bon fonctionnement du Service. Vous pouvez nous contacter a hello@zefile.io pour contester toute decision automatisee.",
       "contactTitle": "Nous contacter",
       "contactContent": "Si vous avez des questions sur cette politique de confidentialite ou vos donnees personnelles, veuillez nous contacter a hello@zefile.io."
+    },
+    "security": {
+      "title": "Politique de <highlight>securite</highlight>",
+      "lastUpdated": "Derniere mise a jour : 3 mars 2026",
+      "introTitle": "Divulgation de vulnerabilites",
+      "introContent": "Nous prenons la securite de ZeFile au serieux. Si vous decouvrez une vulnerabilite, nous souhaitons en etre informes afin de pouvoir la corriger rapidement et proteger nos utilisateurs.\n\nCette politique decrit comment signaler les problemes de securite et ce que vous pouvez attendre de notre part.",
+      "scopeTitle": "Perimetre",
+      "scopeContent": "Les ressources suivantes sont dans le perimetre de la recherche en securite :\n\n- zefile.io (application frontend)\n- api.zefile.io (API backend)\n- cdn.zefile.io (worker CDN)\n- admin.zefile.io (panneau d'administration)\n- zefile.co (redirecteur de liens courts)",
+      "outOfScopeTitle": "Hors perimetre",
+      "outOfScopeContent": "Les elements suivants sont hors perimetre :\n\n- Les services tiers que nous utilisons (Paystack, Brevo, Wasabi S3)\n- Les attaques d'ingenierie sociale contre les employes ou utilisateurs de ZeFile\n- Les attaques par deni de service (DoS/DDoS)\n- Les attaques physiques contre l'infrastructure de ZeFile\n- Les scans automatises generant un trafic excessif",
+      "rulesTitle": "Regles de conduite",
+      "rulesContent": "Lors de vos recherches, veuillez respecter les regles suivantes :\n\n- Ne pas acceder, modifier ou supprimer les donnees d'autres utilisateurs\n- Ne pas effectuer de tests destructifs sur les systemes de production\n- Ne pas exploiter les vulnerabilites au-dela d'une preuve de concept minimale\n- Signaler les decouvertes rapidement et ne pas les divulguer publiquement avant que nous ayons eu l'occasion de les corriger\n- Utiliser des comptes de test que vous avez crees vous-meme",
+      "reportingTitle": "Comment signaler",
+      "reportingContent": "Envoyez vos decouvertes a security@zefile.io. Veuillez inclure :\n\n- Une description claire de la vulnerabilite\n- Les etapes detaillees pour reproduire le probleme\n- L'impact potentiel de la vulnerabilite\n- Toute capture d'ecran ou code de preuve de concept\n\nVous pouvez chiffrer votre rapport avec notre cle PGP (disponible sur demande).",
+      "timelineTitle": "Delais de reponse",
+      "timelineContent": "Voici ce que vous pouvez attendre apres l'envoi d'un signalement :\n\n- Accusation de reception : sous 48 heures\n- Evaluation initiale : sous 5 jours ouvrables\n- Objectif de resolution : sous 30 jours (selon la gravite)\n\nNous vous tiendrons informe de notre progression et vous avertirons lorsque le probleme sera resolu.",
+      "safeHarborTitle": "Protection juridique",
+      "safeHarborContent": "Nous ne prendrons aucune action en justice contre les chercheurs en securite qui :\n\n- Agissent de bonne foi et respectent cette politique\n- Evitent les violations de la vie privee, la destruction de donnees et les interruptions de service\n- Nous signalent les vulnerabilites avant de les divulguer publiquement\n\nNous considerons la recherche en securite menee conformement a cette politique comme autorisee et ne poursuivrons pas de recours juridique.",
+      "contactTitle": "Questions",
+      "contactContent": "Si vous avez des questions sur cette politique ou si vous devez signaler un probleme de securite, contactez-nous a security@zefile.io."
     }
   },
   "transferItem": {
@@ -2600,6 +2643,17 @@
       "monetization": "Monetisation",
       "shortLinks": "Liens courts",
       "fileSigning": "Signature de fichiers"
+    }
+  },
+  "onboardingChecklist": {
+    "title": "Premiers pas avec ZeFile",
+    "progress": "{done} sur {total} fait",
+    "dismiss": "Fermer",
+    "milestones": {
+      "firstTransfer": "Envoyez votre premier fichier",
+      "firstDownload": "Obtenez votre premier t\u00e9l\u00e9chargement",
+      "addedContact": "Enregistrez un contact",
+      "firstPaidTransfer": "Fixez un prix sur un transfert"
     }
   }
 }

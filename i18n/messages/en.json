@@ -310,7 +310,9 @@
     "wallpaperPreview": "Wallpaper preview",
     "removeWallpaper": "Remove wallpaper",
     "invalidFileType": "Invalid file type. Only JPEG, PNG, and WebP are allowed.",
-    "fileTooLarge": "File too large. Maximum 5MB."
+    "fileTooLarge": "File too large. Maximum 5MB.",
+    "wallpaperUpsell": "Unlock custom wallpapers with Starter",
+    "sizeLimitUpsell": "Need more space? Upgrade your plan"
   },
   "fileTypes": {
     "images": "Images (JPG, PNG, GIF, WebP, BMP, TIFF, SVG)",
@@ -383,7 +385,13 @@
     "stepEmail": "Email",
     "stepCode": "Code",
     "stepPassword": "Password",
-    "previewBeforeYouPay": "Take a look before you pay."
+    "previewBeforeYouPay": "Take a look before you pay.",
+    "newUserWelcomeBanner": "You're on ZeFile now. Next time, your downloads are just a click away.",
+    "dismissBanner": "Dismiss",
+    "downloadedTitle": "Your files are downloading",
+    "downloadedSubtitle": "Want to send files like this?",
+    "downloadedCtaButton": "Start free on ZeFile",
+    "backToTransfer": "Back to transfer"
   },
   "payment": {
     "paymentRequired": "Payment needed to download",
@@ -554,6 +562,21 @@
     "noSentTransfers": "You haven't sent any transfers yet",
     "noReceivedTransfers": "Nothing received yet",
     "noPaidTransfers": "No paid transfers yet",
+    "emptyState": {
+      "sent": {
+        "title": "No transfers yet",
+        "subtitle": "Your sent transfers will appear here.",
+        "cta": "Send your first file"
+      },
+      "received": {
+        "title": "Nothing received yet",
+        "subtitle": "Files others send you will show up here."
+      },
+      "paid": {
+        "title": "No paid transfers",
+        "subtitle": "Set a price on your next transfer to earn from your work."
+      }
+    },
     "linkCopied": "Link copied to clipboard",
     "linkCopyFailed": "Couldn't copy the link",
     "noLinkAvailable": "No link available for this transfer",
@@ -982,6 +1005,26 @@
       "automatedDecisionsContent": "ZeFile uses automated processes in limited cases:\n\n- Rate limiting: Automatic temporary restrictions when unusual activity is detected on your account or IP address.\n- Account blocking: Automated suspension for repeated violations of our Terms of Service.\n\nThese measures are necessary for the security and proper functioning of the Service. You can contact us at hello@zefile.io to contest any automated decision.",
       "contactTitle": "Contact Us",
       "contactContent": "If you have questions about this Privacy Policy or your personal data, please contact us at hello@zefile.io."
+    },
+    "security": {
+      "title": "Security <highlight>Policy</highlight>",
+      "lastUpdated": "Last updated: March 3, 2026",
+      "introTitle": "Vulnerability Disclosure",
+      "introContent": "We take the security of ZeFile seriously. If you discover a vulnerability, we want to hear about it so we can fix it quickly and keep our users safe.\n\nThis policy describes how to report security issues and what to expect from us.",
+      "scopeTitle": "Scope",
+      "scopeContent": "The following assets are in scope for security research:\n\n- zefile.io (frontend application)\n- api.zefile.io (backend API)\n- cdn.zefile.io (CDN worker)\n- admin.zefile.io (admin panel)\n- zefile.co (short link redirector)",
+      "outOfScopeTitle": "Out of Scope",
+      "outOfScopeContent": "The following are out of scope:\n\n- Third-party services we use (Paystack, Brevo, Wasabi S3)\n- Social engineering attacks against ZeFile employees or users\n- Denial of service (DoS/DDoS) attacks\n- Physical attacks against ZeFile infrastructure\n- Automated scanning that generates excessive traffic",
+      "rulesTitle": "Rules of Engagement",
+      "rulesContent": "When researching, please follow these guidelines:\n\n- Do not access, modify, or delete other users' data\n- Do not perform destructive testing on production systems\n- Do not exploit vulnerabilities beyond a minimal proof of concept\n- Report findings promptly and do not disclose them publicly before we've had a chance to fix them\n- Use test accounts you create yourself for testing",
+      "reportingTitle": "How to Report",
+      "reportingContent": "Send your findings to security@zefile.io. Please include:\n\n- A clear description of the vulnerability\n- Step-by-step instructions to reproduce the issue\n- The potential impact of the vulnerability\n- Any screenshots or proof-of-concept code\n\nYou may encrypt your report using our PGP key (available on request).",
+      "timelineTitle": "Response Timeline",
+      "timelineContent": "Here's what to expect after you submit a report:\n\n- Acknowledgment: within 48 hours\n- Initial assessment: within 5 business days\n- Resolution target: within 30 days (depending on severity)\n\nWe'll keep you updated on our progress and let you know when the issue has been resolved.",
+      "safeHarborTitle": "Safe Harbor",
+      "safeHarborContent": "We will not take legal action against security researchers who:\n\n- Act in good faith and follow this policy\n- Avoid privacy violations, data destruction, and service disruption\n- Report vulnerabilities to us before disclosing them publicly\n\nWe consider security research conducted in accordance with this policy to be authorized and will not pursue legal action for it.",
+      "contactTitle": "Questions",
+      "contactContent": "If you have questions about this policy or need to report a security issue, reach out to security@zefile.io."
     }
   },
   "transferItem": {
@@ -2629,6 +2672,17 @@
       "monetization": "Monetization",
       "shortLinks": "Short Links",
       "fileSigning": "File Signing"
+    }
+  },
+  "onboardingChecklist": {
+    "title": "Get started with ZeFile",
+    "progress": "{done} of {total} done",
+    "dismiss": "Dismiss",
+    "milestones": {
+      "firstTransfer": "Send your first file",
+      "firstDownload": "Get your first download",
+      "addedContact": "Save a contact",
+      "firstPaidTransfer": "Set a price on a transfer"
     }
   }
 }

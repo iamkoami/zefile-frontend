@@ -106,6 +106,18 @@ export interface DeletionRequestResponse {
   cancelUrl: string;
 }
 
+// Onboarding Status Types
+export interface OnboardingStatus {
+  milestones: {
+    firstTransfer: boolean;
+    firstDownload: boolean;
+    addedContact: boolean;
+    firstPaidTransfer: boolean;
+  };
+  completedCount: number;
+  totalCount: number;
+}
+
 export class UsersApi {
   /**
    * Get current user profile
@@ -210,6 +222,13 @@ export class UsersApi {
    */
   async deleteAvatar(): Promise<ApiResponse<{ success: boolean; message: string }>> {
     return apiClient.delete<{ success: boolean; message: string }>('/users/me/avatar');
+  }
+
+  /**
+   * Get onboarding checklist milestone status
+   */
+  async getOnboardingStatus(): Promise<ApiResponse<OnboardingStatus>> {
+    return apiClient.get<OnboardingStatus>('/users/me/onboarding-status');
   }
 }
 

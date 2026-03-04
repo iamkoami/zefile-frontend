@@ -7,7 +7,7 @@ import React, {
   useCallback,
   useRef,
 } from "react";
-import { SortUp, SortDown } from "iconoir-react";
+import { SortUp, SortDown, SendDiagonal, Download, HandCash } from "iconoir-react";
 import { useTranslations } from "next-intl";
 import LoadingPanel from "@/components/LoadingPanel";
 import { transferApi, TransferDto } from "@/services/transfer-api";
@@ -23,6 +23,7 @@ import TransferItem from "./TransferItem";
 import Pagination from "@/components/shared/Pagination";
 import BulkActionBar from "@/components/shared/BulkActionBar";
 import FirstFreeBanner from "@/components/shared/FirstFreeBanner";
+import OnboardingChecklistCard from "./OnboardingChecklistCard";
 import { platformApi } from "@/services/platform-api";
 
 // Filter options enum
@@ -100,7 +101,7 @@ const deduplicateTransfers = (transfers: TransferDto[]): TransferDto[] => {
 const TransfersPanel: React.FC = () => {
   const t = useTranslations("transfers");
   const tBulk = useTranslations("bulkActions");
-  const { isOpen, view, payload, pushView, currentContentView } = useDrawerStore();
+  const { isOpen, view, payload, pushView, currentContentView, closeDrawer } = useDrawerStore();
   const {
     isSelectionMode,
     toggleSelection,
@@ -514,6 +515,13 @@ const TransfersPanel: React.FC = () => {
     deselectAll();
   }, [activeTab, deselectAll]);
 
+  // Clear selection when drawer closes
+  useEffect(() => {
+    if (!isOpen) {
+      deselectAll();
+    }
+  }, [isOpen, deselectAll]);
+
   // Get empty state message based on active tab
   const getEmptyMessage = useCallback(() => {
     if (searchQuery) {
@@ -557,6 +565,9 @@ const TransfersPanel: React.FC = () => {
       <h1 className="text-4xl font-bold text-gray-900 mt-12 mb-18">
         {t("title")}
       </h1>
+
+      {/* Onboarding Checklist */}
+      <OnboardingChecklistCard />
 
       {/* First-Free Banner */}
       {!isFirstPaidTransferUsed && (
@@ -693,9 +704,39 @@ const TransfersPanel: React.FC = () => {
             />
           ))}
         </div>
-      ) : (
+      ) : searchQuery ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
-          <p className="text-gray-500">{getEmptyMessage()}</p>
+          <p className="text-gray-500">{t("noResults")}</p>
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center py-16 text-center px-4">
+          {activeTab === "sent" && (
+            <>
+              <SendDiagonal className="w-12 h-12 text-gray-200 mb-4" strokeWidth={1.5} />
+              <p className="text-base font-semibold text-[#171717] mb-1">{t("emptyState.sent.title")}</p>
+              <p className="text-sm text-gray-500 mb-6">{t("emptyState.sent.subtitle")}</p>
+              <button
+                onClick={closeDrawer}
+                className="px-6 py-2.5 bg-[#87E64B] text-[#171717] font-semibold rounded hover:bg-[#78d43f] transition-colors text-sm"
+              >
+                {t("emptyState.sent.cta")}
+              </button>
+            </>
+          )}
+          {activeTab === "received" && (
+            <>
+              <Download className="w-12 h-12 text-gray-200 mb-4" strokeWidth={1.5} />
+              <p className="text-base font-semibold text-[#171717] mb-1">{t("emptyState.received.title")}</p>
+              <p className="text-sm text-gray-500">{t("emptyState.received.subtitle")}</p>
+            </>
+          )}
+          {activeTab === "paid" && (
+            <>
+              <HandCash className="w-12 h-12 text-gray-200 mb-4" strokeWidth={1.5} />
+              <p className="text-base font-semibold text-[#171717] mb-1">{t("emptyState.paid.title")}</p>
+              <p className="text-sm text-gray-500">{t("emptyState.paid.subtitle")}</p>
+            </>
+          )}
         </div>
       )}
 
