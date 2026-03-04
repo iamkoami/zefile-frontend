@@ -5,6 +5,14 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.30.2] - 2026-03-04
+
+### Fixed
+
+- Clear all Zustand stores on logout via `clear-all-stores` event dispatch
+- Fix logo Image dimensions warning (set explicit height in CSS)
+- Fix FOUC: add fade-in animation to content panel to prevent beige flash on page refresh
+
 ## [1.30.1] - 2026-03-04
 
 ### Changed

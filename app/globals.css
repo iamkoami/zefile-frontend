@@ -212,6 +212,7 @@
     transition:
       background-color 1.5s ease-in-out,
       color 1.5s ease-in-out;
+    animation: fadeIn 0.3s ease-out;
   }
 
   /* Time of day themes */

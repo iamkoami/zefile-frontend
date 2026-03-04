@@ -15,6 +15,8 @@ import LoadingFullscreen from "@/components/LoadingFullscreen";
 import { useDrawerStore } from "@/stores/drawer-store";
 import { useUploadStore } from "@/stores/upload-store";
 import { useTransferSelectionStore } from "@/stores/transfer-selection-store";
+import { usePollStore } from "@/stores/poll-store";
+import { useChatStore } from "@/stores/chat-store";
 import { useTranslations as useUploadTranslations } from "next-intl";
 import ConfirmationModal from "@/components/shared/ConfirmationModal";
 import LegalConsentModal from "@/components/shared/LegalConsentModal";
@@ -289,6 +291,8 @@ const Header = () => {
       useDrawerStore.getState().closeDrawer();
       useUploadStore.getState().reset();
       useTransferSelectionStore.getState().deselectAll();
+      usePollStore.getState().reset();
+      useChatStore.getState().clearChat();
     };
     window.addEventListener("clear-all-stores", handleClearStores);
 
@@ -450,7 +454,7 @@ const Header = () => {
                 width={130}
                 height={33}
                 priority
-                className="w-[130px] h-auto"
+                className="w-[130px] h-[33px]"
               />
             </Link>
           </div>

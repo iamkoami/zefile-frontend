@@ -107,6 +107,11 @@ export class AuthApi {
     }
     apiClient.setCsrfToken(null);
 
+    // Notify all stores to clear their state
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('clear-all-stores'));
+    }
+
     return response;
   }
 
