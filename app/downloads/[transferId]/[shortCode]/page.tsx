@@ -134,12 +134,6 @@ export default function TransferLandingPage() {
   const tPayment = useTranslations("payment");
   const tNotFound = useTranslations("notFound");
   const { timeOfDay } = useTimeOfDay();
-  const { isCustomDomain, branding } = useCustomBranding();
-
-  // Render branded or standard header
-  const pageHeader = isCustomDomain && branding
-    ? <BrandedHeader branding={branding} />
-    : <Header />;
 
   // Parse tracking params from URL query string (memoized to prevent useEffect re-runs)
   const trackingParams: TrackingParams = useMemo(
@@ -153,7 +147,7 @@ export default function TransferLandingPage() {
     [searchParams],
   );
 
-  const { openDrawer, openDrawerToView } = useDrawerStore();
+  const { openDrawer, openDrawerToView, setRecipientEmail } = useDrawerStore();
 
   // Store original page title on mount
   const originalTitleRef = useRef<string>(
@@ -163,6 +157,14 @@ export default function TransferLandingPage() {
   // Page state
   const [pageState, setPageState] = useState<PageState>("loading");
   const [transfer, setTransfer] = useState<TransferDto | null>(null);
+
+  // Unified branding: cookie (custom domain) > API senderBranding > default
+  const { isBranded, activeBranding } = useCustomBranding(transfer?.senderBranding);
+
+  // Render branded or standard header
+  const pageHeader = isBranded && activeBranding
+    ? <BrandedHeader branding={activeBranding} />
+    : <Header />;
   const [error, setError] = useState<string>("");
   const [errorType, setErrorType] = useState<"not-found" | "expired" | "cancelled" | "not-ready" | "generic" | null>(null);
 
@@ -582,6 +584,7 @@ export default function TransferLandingPage() {
         // Password verified - store session token and open preview drawer
         const token = response.data.sessionToken;
         setPasswordSessionToken(token);
+        setRecipientEmail(customerEmail || null);
         setPassword(""); // Clear plaintext password from memory
         setPageState("ready");
         openDrawerToView("transfers", "transfer-preview", transfer, "receiver", token);
@@ -700,6 +703,7 @@ export default function TransferLandingPage() {
         setPageState("ready");
         // Open SideDrawer with TransferPreviewPanel
         if (transfer) {
+          setRecipientEmail(customerEmail || null);
           openDrawerToView("transfers", "transfer-preview", transfer, "receiver");
         }
       }
@@ -760,6 +764,7 @@ export default function TransferLandingPage() {
 
     // Public transfers - anyone can preview without authentication
     if (transfer.accessControl === "public") {
+      setRecipientEmail(customerEmail || null);
       openDrawerToView("transfers", "transfer-preview", transfer, "receiver");
       return;
     }
@@ -790,6 +795,7 @@ export default function TransferLandingPage() {
           setPageState("password");
         } else {
           // Authorized - open SideDrawer with TransferPreviewPanel
+          setRecipientEmail(user.email);
           openDrawerToView("transfers", "transfer-preview", transfer, "receiver");
         }
       } else {
@@ -918,7 +924,7 @@ export default function TransferLandingPage() {
       } else {
         checkForPoll('after_download', 3000);
         // Show conversion CTA for non-authenticated, non-custom-domain recipients
-        if (!isCustomDomain && !isAuthenticated) {
+        if (!isBranded && !isAuthenticated) {
           setPageState("downloaded");
         }
       }
@@ -1055,7 +1061,7 @@ export default function TransferLandingPage() {
     return (
       <div
         className="min-h-screen bg-white"
-        style={isCustomDomain && branding?.backgroundColor ? { backgroundColor: branding.backgroundColor } : undefined}
+        style={isBranded && activeBranding?.backgroundColor ? { backgroundColor: activeBranding.backgroundColor } : undefined}
       >
         <ToastContainer />
         {pageHeader}
@@ -1114,9 +1120,9 @@ export default function TransferLandingPage() {
                     type="submit"
                     disabled={isLoading || !password.trim()}
                     className="w-full px-6 py-3.5 bg-[#87E64B] text-[#171717] font-medium rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    style={isCustomDomain && branding?.primaryColor ? {
-                      backgroundColor: branding.primaryColor,
-                      color: branding.buttonTextColor || branding.textColor || "#171717",
+                    style={isBranded && activeBranding?.primaryColor ? {
+                      backgroundColor: activeBranding.primaryColor,
+                      color: activeBranding.buttonTextColor || activeBranding.textColor || "#171717",
                     } : undefined}
                   >
                     {t("unlockTransfer")}
@@ -1939,7 +1945,7 @@ export default function TransferLandingPage() {
     return (
       <div
         className="min-h-screen bg-white"
-        style={isCustomDomain && branding?.backgroundColor ? { backgroundColor: branding.backgroundColor } : undefined}
+        style={isBranded && activeBranding?.backgroundColor ? { backgroundColor: activeBranding.backgroundColor } : undefined}
       >
         <ToastContainer />
         {pageHeader}
@@ -2073,9 +2079,9 @@ export default function TransferLandingPage() {
                     }
                     disabled={isDownloading || (paymentsDisabled !== false && !!transfer.price && transfer.price > 0 && !transfer.isPaid)}
                     className="w-full px-6 py-3.5 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                    style={isCustomDomain && branding?.primaryColor ? {
-                      backgroundColor: branding.primaryColor,
-                      color: branding.buttonTextColor || branding.textColor || "#171717",
+                    style={isBranded && activeBranding?.primaryColor ? {
+                      backgroundColor: activeBranding.primaryColor,
+                      color: activeBranding.buttonTextColor || activeBranding.textColor || "#171717",
                     } : undefined}
                   >
                     {transfer.price && transfer.price > 0 && !transfer.isPaid ? (
@@ -2106,7 +2112,7 @@ export default function TransferLandingPage() {
         </main>
 
         {/* Powered by ZeFile footer for custom domains */}
-        {isCustomDomain && branding?.showPoweredByZefile && (
+        {isBranded && activeBranding?.showPoweredByZefile && (
           <footer className="py-4 text-center">
             <a
               href="https://zefile.io"
@@ -2121,7 +2127,7 @@ export default function TransferLandingPage() {
         )}
 
         {/* Floating Poll Widget */}
-        {!isCustomDomain && <FloatingPollWidget />}
+        {!isBranded && <FloatingPollWidget />}
       </div>
     );
   }

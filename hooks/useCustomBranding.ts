@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import type { SenderBrandingDto } from "@/services/transfer-api";
 
 /**
  * Branding configuration set by the Cloudflare Worker
@@ -19,7 +20,15 @@ export interface BrandingConfig {
 }
 
 export interface CustomBrandingResult {
+  /** true if ANY branding source is active (cookie or API) */
+  isBranded: boolean;
+  /** The active branding config from whichever source won */
+  activeBranding: BrandingConfig | null;
+  /** Which source provided the branding */
+  brandingSource: "cookie" | "api" | null;
+  /** @deprecated Use isBranded + activeBranding instead */
   isCustomDomain: boolean;
+  /** @deprecated Use activeBranding instead */
   branding: BrandingConfig | null;
 }
 
@@ -47,7 +56,7 @@ const ALLOWED_URL_DOMAINS = [
  * Validate a hex color value. Returns the value if valid, fallback otherwise.
  */
 function sanitizeColor(
-  value: string | undefined,
+  value: string | null | undefined,
   fallback: string,
 ): string {
   if (!value) return fallback;
@@ -86,16 +95,50 @@ function sanitizeCompanyName(name: string): string {
 }
 
 /**
- * Read and parse the __zefile_branding cookie set by the custom domain Worker.
- * Returns { isCustomDomain: false } when no cookie is present (standard zefile.io).
- *
- * All values from the cookie are validated/sanitized to prevent:
- * - CSS injection via color values
- * - URL injection via logo/favicon URLs
- * - HTML injection via company name
+ * Convert API SenderBrandingDto to BrandingConfig.
+ * Sanitizes all values the same way as the cookie path.
  */
-export function useCustomBranding(): CustomBrandingResult {
-  const [branding, setBranding] = useState<BrandingConfig | null>(null);
+function apiToBrandingConfig(
+  sender: SenderBrandingDto,
+): BrandingConfig | null {
+  // Need at least a company name or colors to be useful
+  if (
+    !sender.companyName &&
+    !sender.primaryColor &&
+    !sender.logoUrl
+  ) {
+    return null;
+  }
+
+  return {
+    companyName: sender.companyName
+      ? sanitizeCompanyName(sender.companyName)
+      : "",
+    primaryColor: sanitizeColor(sender.primaryColor, "#5E53E0"),
+    backgroundColor: sanitizeColor(sender.backgroundColor, "#FFFFFF"),
+    textColor: sanitizeColor(sender.textColor, "#171717"),
+    buttonTextColor: sanitizeColor(sender.buttonTextColor, "#171717"),
+    showPoweredByZefile: sender.showPoweredByZefile,
+    logoUrl: sanitizeUrl(sender.logoUrl),
+    faviconUrl: sanitizeUrl(sender.faviconUrl),
+    domain: "",
+  };
+}
+
+/**
+ * Unified branding hook supporting both cookie-based (custom domain) and
+ * API-based (senderBranding from transfer response) branding sources.
+ *
+ * Priority: cookie > API > no branding
+ *
+ * @param senderBranding Optional API branding from GET /transfers/code/:shortCode
+ */
+export function useCustomBranding(
+  senderBranding?: SenderBrandingDto | null,
+): CustomBrandingResult {
+  const [cookieBranding, setCookieBranding] = useState<BrandingConfig | null>(
+    null,
+  );
   const originalFaviconRef = useRef<string | null>(null);
 
   const parseBrandingCookie = useCallback((): BrandingConfig | null => {
@@ -135,24 +178,40 @@ export function useCustomBranding(): CustomBrandingResult {
 
   useEffect(() => {
     const config = parseBrandingCookie();
-    setBranding(config);
+    setCookieBranding(config);
   }, [parseBrandingCookie]);
+
+  // Resolve active branding: cookie wins over API (memoized to avoid useEffect churn)
+  const activeBranding = useMemo(
+    () =>
+      cookieBranding ??
+      (senderBranding ? apiToBrandingConfig(senderBranding) : null),
+    [cookieBranding, senderBranding],
+  );
+  const brandingSource: "cookie" | "api" | null = cookieBranding
+    ? "cookie"
+    : activeBranding
+      ? "api"
+      : null;
 
   // Apply CSS custom properties and page metadata when branding is active
   useEffect(() => {
-    if (!branding) return;
+    if (!activeBranding) return;
 
     // Set CSS custom properties on :root (already validated as hex)
     const root = document.documentElement;
-    root.style.setProperty("--brand-primary", branding.primaryColor);
-    if (branding.backgroundColor) {
-      root.style.setProperty("--brand-bg", branding.backgroundColor);
+    root.style.setProperty("--brand-primary", activeBranding.primaryColor);
+    if (activeBranding.backgroundColor) {
+      root.style.setProperty("--brand-bg", activeBranding.backgroundColor);
     }
-    if (branding.textColor) {
-      root.style.setProperty("--brand-text", branding.textColor);
+    if (activeBranding.textColor) {
+      root.style.setProperty("--brand-text", activeBranding.textColor);
     }
-    if (branding.buttonTextColor) {
-      root.style.setProperty("--brand-button-text", branding.buttonTextColor);
+    if (activeBranding.buttonTextColor) {
+      root.style.setProperty(
+        "--brand-button-text",
+        activeBranding.buttonTextColor,
+      );
     }
 
     // Save original favicon for cleanup
@@ -164,14 +223,14 @@ export function useCustomBranding(): CustomBrandingResult {
     }
 
     // Set favicon dynamically (URL already validated)
-    if (branding.faviconUrl) {
+    if (activeBranding.faviconUrl) {
       let link = existingFavicon;
       if (!link) {
         link = document.createElement("link");
         link.rel = "icon";
         document.head.appendChild(link);
       }
-      link.href = branding.faviconUrl;
+      link.href = activeBranding.faviconUrl;
     }
 
     return () => {
@@ -191,11 +250,15 @@ export function useCustomBranding(): CustomBrandingResult {
         }
       }
     };
-  }, [branding]);
+  }, [activeBranding]);
 
   return {
-    isCustomDomain: branding !== null,
-    branding,
+    isBranded: activeBranding !== null,
+    activeBranding,
+    brandingSource,
+    // Backward compat
+    isCustomDomain: cookieBranding !== null,
+    branding: activeBranding,
   };
 }
 

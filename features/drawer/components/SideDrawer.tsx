@@ -29,7 +29,6 @@ import {
   PaymentFailedPanel,
 } from '@/features/payment/components/PaymentPanels';
 import AccountPanel from '@/features/account/components/AccountPanel';
-import AnalyticsPanel from '@/features/analytics/components/AnalyticsPanel';
 import PollPanel from '@/features/poll/components/PollPanel';
 import DrawerFooter from './DrawerFooter';
 
@@ -102,6 +101,7 @@ const SideDrawer: React.FC = () => {
     selectedTransfer,
     transferRole,
     passwordSessionToken,
+    recipientEmail,
     popView,
     canGoBack,
     onBeforeBack,
@@ -304,7 +304,7 @@ const SideDrawer: React.FC = () => {
         id="ze-drawer-panel"
         role="dialog"
         aria-modal="true"
-        aria-label={view === 'transfers' ? 'Transfers' : view === 'contacts' ? 'Contacts' : view === 'analytics' ? 'Analytics' : view === 'payment' ? 'Payment' : view === 'account' ? 'Account' : view === 'poll' ? 'Poll' : 'Subscriptions'}
+        aria-label={view === 'transfers' ? 'Transfers' : view === 'contacts' ? 'Contacts' : view === 'payment' ? 'Payment' : view === 'account' ? 'Account' : view === 'poll' ? 'Poll' : 'Subscriptions'}
         className={`ze-drawer-panel fixed top-0 right-0 h-full bg-white z-[9999] shadow-2xl transition-all duration-500 ease-in-out flex flex-col ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         } ${
@@ -344,14 +344,6 @@ const SideDrawer: React.FC = () => {
               direction={animationDirection}
             >
               <ContactsPanel />
-            </AnimatedView>
-
-            {/* Analytics view with animation */}
-            <AnimatedView
-              isActive={currentContentView === 'list' && view === 'analytics'}
-              direction={animationDirection}
-            >
-              <AnalyticsPanel />
             </AnimatedView>
 
             {/* Subscriptions view with animation */}
@@ -442,7 +434,7 @@ const SideDrawer: React.FC = () => {
               direction={animationDirection}
             >
               {selectedTransfer && (
-                <TransferPreviewPanel transfer={selectedTransfer} role={transferRole || undefined} sessionToken={passwordSessionToken || undefined} />
+                <TransferPreviewPanel transfer={selectedTransfer} role={transferRole || undefined} sessionToken={passwordSessionToken || undefined} recipientEmail={recipientEmail || undefined} />
               )}
             </AnimatedView>
 

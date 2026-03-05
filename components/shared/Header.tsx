@@ -328,7 +328,7 @@ const Header = () => {
 
   // Helper to open drawer - drawer is now globally available on all pages
   const handleOpenDrawer = (
-    drawerType: "transfers" | "contacts" | "subscriptions" | "analytics",
+    drawerType: "transfers" | "contacts" | "subscriptions",
   ) => {
     openDrawer(drawerType);
   };
@@ -347,8 +347,6 @@ const Header = () => {
 
   const loggedInMenuItems = [
     { label: t("transfers"), action: () => handleOpenDrawer("transfers") },
-    /*   { label: t("analytics"), action: () => handleOpenDrawer("analytics") },
-    {label: t("accountSettings"), action: () => handleOpenAccountView("settings")}, */
     { label: t("contacts"), action: () => handleOpenDrawer("contacts") },
     {
       label: t("subscription"),

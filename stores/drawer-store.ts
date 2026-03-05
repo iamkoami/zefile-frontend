@@ -13,7 +13,7 @@ import type { SubscriptionTier, BillingPeriod } from '@/services/subscription-ap
 export type { SubscriptionTier, BillingPeriod };
 
 // Base drawer views
-export type DrawerView = 'transfers' | 'contacts' | 'subscriptions' | 'payment' | 'account' | 'analytics' | 'poll';
+export type DrawerView = 'transfers' | 'contacts' | 'subscriptions' | 'payment' | 'account' | 'poll';
 
 // Account sidebar menu items (sidebar navigation, not stack-based)
 export type AccountMenuItem =
@@ -21,6 +21,8 @@ export type AccountMenuItem =
   | 'subscription'   // Subscription settings with auto-renewal (Epic 15)
   | 'transactions'   // Transaction history (Story 1-7)
   | 'payouts'        // Payout status (Story 1-8)
+  | 'branding'       // Branding profile (Epic 57, STARTER+ only)
+  | 'analytics'      // Analytics dashboard (Epic 62, STARTER+ only)
   | 'verification'   // Identity verification
   | 'custom-domain'  // Custom domain management (Epic 42)
   | 'help';          // Help center
@@ -129,6 +131,9 @@ interface DrawerState {
   // Session token for password-protected transfers (set after password verification on landing page)
   passwordSessionToken: string | null;
 
+  // Verified recipient email (set from download page after OTP/session verification)
+  recipientEmail: string | null;
+
   // Account view sidebar navigation (non-stack based)
   activeAccountMenu: AccountMenuItem;
 
@@ -157,6 +162,9 @@ interface DrawerState {
 
   // Set session token for password-protected transfers
   setPasswordSessionToken: (token: string | null) => void;
+
+  // Set verified recipient email (for preview analytics attribution)
+  setRecipientEmail: (email: string | null) => void;
 
   // Payment flow actions
   setPaymentMethod: (method: PaymentMethodInfo | null) => void;
@@ -188,6 +196,7 @@ export const useDrawerStore = create<DrawerState>((set, get) => ({
   selectedTransfer: null,
   transferRole: null,
   passwordSessionToken: null,
+  recipientEmail: null,
   activeAccountMenu: 'settings',
   onBeforeBack: null,
 
@@ -201,6 +210,7 @@ export const useDrawerStore = create<DrawerState>((set, get) => ({
       selectedTransfer: null,
       transferRole: null,
       passwordSessionToken: null,
+      recipientEmail: null,
       onBeforeBack: null,
     }),
 
@@ -213,6 +223,7 @@ export const useDrawerStore = create<DrawerState>((set, get) => ({
       selectedTransfer: null,
       transferRole: null,
       passwordSessionToken: null,
+      recipientEmail: null,
       onBeforeBack: null,
     }),
 
@@ -280,6 +291,8 @@ export const useDrawerStore = create<DrawerState>((set, get) => ({
   setOnBeforeBack: (handler) => set({ onBeforeBack: handler }),
 
   setPasswordSessionToken: (token) => set({ passwordSessionToken: token }),
+
+  setRecipientEmail: (email) => set({ recipientEmail: email }),
 
   // Open drawer directly to a specific content view without navigation stack
   // Used when opening from outside the drawer (e.g., TransferCompletePanel)

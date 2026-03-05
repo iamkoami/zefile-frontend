@@ -26,6 +26,17 @@ export interface CreateTransferWithFilesDto extends CreateTransferDto {
   files: File[];
 }
 
+export interface SenderBrandingDto {
+  companyName: string | null;
+  primaryColor: string | null;
+  backgroundColor: string | null;
+  textColor: string | null;
+  buttonTextColor: string | null;
+  showPoweredByZefile: boolean;
+  logoUrl: string | null;
+  faviconUrl: string | null;
+}
+
 export interface TransferDto {
   id: string;
   shortCode: string;
@@ -81,6 +92,8 @@ export interface TransferDto {
   wallpaperUrl?: string;
   // Custom domain URL when sender has an active custom domain
   customDomainUrl?: string;
+  // Sender branding from BrandingProfile (STARTER+ only, story 57.3)
+  senderBranding?: SenderBrandingDto | null;
 }
 
 export interface UpdateTransferDto {

@@ -211,9 +211,9 @@ export interface TierLimits {
  */
 export const TIER_LIMITS: Record<SubscriptionTier, TierLimits> = {
   free: {
-    storagePerTransferGB: 2,
-    transfersPerMonth: 5,
-    expiryDays: 7,
+    storagePerTransferGB: 5,
+    transfersPerMonth: 10,
+    expiryDays: 14,
     maxVersions: 1,
     platformFeePercent: 7,
     manualPreviewRegen: false,
@@ -222,7 +222,7 @@ export const TIER_LIMITS: Record<SubscriptionTier, TierLimits> = {
     customWallpaper: false,
   },
   starter: {
-    storagePerTransferGB: 10,
+    storagePerTransferGB: 20,
     transfersPerMonth: 50,
     expiryDays: 30,
     maxVersions: 3,

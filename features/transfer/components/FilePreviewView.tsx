@@ -284,7 +284,7 @@ const FilePreviewView: React.FC<FilePreviewViewProps> = ({
         const response = await storageApi.getFilePreviewUrl(
           shortCode,
           file.id,
-          { sessionToken, requestOriginal: canViewOriginal },
+          { sessionToken, requestOriginal: canViewOriginal, email: userEmail },
         );
 
         if (response.error) {
@@ -326,6 +326,7 @@ const FilePreviewView: React.FC<FilePreviewViewProps> = ({
     file.id,
     shortCode,
     sessionToken,
+    userEmail,
     canPreview,
     canViewOriginal,
     t,
@@ -342,7 +343,7 @@ const FilePreviewView: React.FC<FilePreviewViewProps> = ({
       const response = await storageApi.getFilePreviewUrl(
         shortCode,
         file.id,
-        { sessionToken },
+        { sessionToken, email: userEmail },
       );
 
       if (response.error) {

@@ -433,7 +433,7 @@ export class StorageApi {
   async getFilePreviewUrl(
     shortCode: string,
     fileId: string,
-    options?: { password?: string; sessionToken?: string; requestOriginal?: boolean }
+    options?: { password?: string; sessionToken?: string; requestOriginal?: boolean; email?: string }
   ): Promise<ApiResponse<{
     url: string;
     filename: string;
@@ -453,7 +453,7 @@ export class StorageApi {
       previewType?: 'thumbnail' | 'previewClip' | 'waveform' | 'original';
     }>(
       '/storage/preview/url',
-      { shortCode, fileId, password: options?.password, sessionToken: options?.sessionToken, requestOriginal: options?.requestOriginal }
+      { shortCode, fileId, password: options?.password, sessionToken: options?.sessionToken, requestOriginal: options?.requestOriginal, email: options?.email }
     );
   }
 

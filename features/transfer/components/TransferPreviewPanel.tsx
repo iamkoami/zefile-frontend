@@ -48,6 +48,8 @@ interface TransferPreviewPanelProps {
   role?: "sender" | "receiver";
   /** Session token for password-protected transfers (from verify-password endpoint) */
   sessionToken?: string;
+  /** Verified recipient email for preview analytics attribution */
+  recipientEmail?: string;
 }
 
 type FilePreviewType =
@@ -122,6 +124,7 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
   transfer: transferProp,
   role,
   sessionToken,
+  recipientEmail,
 }) => {
   const t = useTranslations("transferPreview");
   const locale = useLocale();
@@ -417,7 +420,7 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
             const response = await storageApi.getFilePreviewUrl(
               transfer.shortCode,
               file.id,
-              { sessionToken, requestOriginal: canViewOriginal },
+              { sessionToken, requestOriginal: canViewOriginal, email: recipientEmail },
             );
             if (response.data?.url) {
               return {
@@ -898,7 +901,7 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
         shortCode={transfer.shortCode}
         transferId={transfer.id}
         role={role === "sender" ? "sender" : "recipient"}
-        userEmail={senderEmail || undefined}
+        userEmail={role === "receiver" ? recipientEmail : senderEmail || undefined}
         sessionToken={sessionToken}
         allFiles={allFilesForNav}
         currentIndex={selectedFileIndex}

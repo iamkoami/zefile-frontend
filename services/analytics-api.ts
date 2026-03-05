@@ -81,13 +81,24 @@ export interface DeviceStats {
   unknown: number;
 }
 
+export interface RecipientView {
+  email: string;
+  firstViewedAt: string | null;
+  lastViewedAt: string | null;
+  viewCount: number;
+  previewCount: number;
+  hasPaid: boolean;
+}
+
 export interface TransferInsights {
   transferId: string;
   totalViews: number;
   totalDownloads: number;
+  totalPreviews: number;
   uniqueVisitors: number;
   timeline: TimelineEvent[];
   recipientDownloads: RecipientDownload[];
+  recipientViews: RecipientView[];
   geography: GeographyStats[];
   devices: DeviceStats;
 }

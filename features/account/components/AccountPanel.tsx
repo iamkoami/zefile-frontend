@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import {
   Settings,
@@ -10,6 +10,8 @@ import {
   InfoCircle,
   RefreshDouble,
   Globe,
+  GraphUp,
+  Palette,
 } from "iconoir-react";
 import AccordionItem from "@/components/shared/AccordionItem";
 import { useDrawerStore, AccountMenuItem } from "@/stores/drawer-store";
@@ -19,12 +21,29 @@ import SubscriptionSettingsPanel from "./SubscriptionSettingsPanel";
 import AccountSettingsContent from "./AccountSettingsContent";
 import { KYCFlowPanel } from "@/features/kyc/components/KYCFlowPanel";
 import CustomDomainPanel from "./CustomDomainPanel";
+import BrandingPanel from "./BrandingPanel";
+import AnalyticsPanel from "@/features/analytics/components/AnalyticsPanel";
+import LoadingPanel from "@/components/LoadingPanel";
+import { subscriptionApi } from "@/services/subscription-api";
 
 interface MenuItem {
   id: AccountMenuItem;
   icon: React.ReactNode;
   labelKey: string;
 }
+
+/** Menu item definitions — stable across renders (icons are stateless) */
+const MENU_ITEMS: MenuItem[] = [
+  { id: "settings", icon: <Settings className="w-5 h-5" />, labelKey: "settings" },
+  { id: "subscription", icon: <RefreshDouble className="w-5 h-5" />, labelKey: "subscription" },
+  { id: "transactions", icon: <Page className="w-5 h-5" />, labelKey: "transactions" },
+  { id: "payouts", icon: <Wallet className="w-5 h-5" />, labelKey: "payouts" },
+  { id: "branding", icon: <Palette className="w-5 h-5" />, labelKey: "branding" },
+  { id: "analytics", icon: <GraphUp className="w-5 h-5" />, labelKey: "analytics" },
+  { id: "verification", icon: <ShieldCheck className="w-5 h-5" />, labelKey: "verification" },
+  { id: "custom-domain", icon: <Globe className="w-5 h-5" />, labelKey: "customDomain" },
+  { id: "help", icon: <InfoCircle className="w-5 h-5" />, labelKey: "help" },
+];
 
 /**
  * AccountPanel - Main account/settings panel with sidebar navigation
@@ -34,40 +53,33 @@ interface MenuItem {
 const AccountPanel: React.FC = () => {
   const t = useTranslations("account");
   const { activeAccountMenu, setActiveAccountMenu } = useDrawerStore();
+  const [userTier, setUserTier] = useState<string>("free");
+  const [tierLoading, setTierLoading] = useState(true);
 
-  const menuItems: MenuItem[] = [
-    {
-      id: "settings",
-      icon: <Settings className="w-5 h-5" />,
-      labelKey: "settings",
-    },
-    {
-      id: "subscription",
-      icon: <RefreshDouble className="w-5 h-5" />,
-      labelKey: "subscription",
-    },
-    {
-      id: "transactions",
-      icon: <Page className="w-5 h-5" />,
-      labelKey: "transactions",
-    },
-    {
-      id: "payouts",
-      icon: <Wallet className="w-5 h-5" />,
-      labelKey: "payouts",
-    },
-    {
-      id: "verification",
-      icon: <ShieldCheck className="w-5 h-5" />,
-      labelKey: "verification",
-    },
-    {
-      id: "custom-domain",
-      icon: <Globe className="w-5 h-5" />,
-      labelKey: "customDomain",
-    },
-    { id: "help", icon: <InfoCircle className="w-5 h-5" />, labelKey: "help" },
-  ];
+  // Fetch user tier on mount for menu filtering
+  const loadUserTier = useCallback(async () => {
+    try {
+      const res = await subscriptionApi.getCurrentSubscription();
+      setUserTier(res.data?.tier || "free");
+    } catch {
+      setUserTier("free");
+    } finally {
+      setTierLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadUserTier();
+  }, [loadUserTier]);
+
+  // Hide analytics for FREE users
+  const menuItems = useMemo(() => {
+    return MENU_ITEMS.filter((item) => {
+      if (item.id === "branding" && userTier === "free") return false;
+      if (item.id === "analytics" && userTier === "free") return false;
+      return true;
+    });
+  }, [userTier]);
 
   const renderContent = () => {
     switch (activeAccountMenu) {
@@ -79,6 +91,14 @@ const AccountPanel: React.FC = () => {
         return <TransactionsPanel />;
       case "payouts":
         return <PayoutsPanel />;
+      case "branding":
+        return <BrandingPanel />;
+      case "analytics":
+        // Tier-gate: FREE users see upgrade prompt instead of AnalyticsPanel
+        if (userTier === "free") {
+          return <AnalyticsUpgradePrompt />;
+        }
+        return <AnalyticsPanel />;
       case "verification":
         return <VerificationContent />;
       case "custom-domain":
@@ -89,6 +109,10 @@ const AccountPanel: React.FC = () => {
         return <AccountSettingsContent />;
     }
   };
+
+  if (tierLoading) {
+    return <LoadingPanel className="py-12" />;
+  }
 
   return (
     <div className="flex h-full -mx-16 -my-8">
@@ -131,6 +155,38 @@ const AccountPanel: React.FC = () => {
       <main className="flex-1 overflow-y-auto py-8 px-12">
         {renderContent()}
       </main>
+    </div>
+  );
+};
+
+/**
+ * AnalyticsUpgradePrompt - Shown to FREE users who navigate to analytics
+ * Follows the CustomDomainPanel tier-gate pattern
+ */
+const AnalyticsUpgradePrompt: React.FC = () => {
+  const t = useTranslations("account");
+  const { setActiveAccountMenu } = useDrawerStore();
+
+  return (
+    <div className="mb-10">
+      <h3 className="text-2xl font-semibold text-[#171717] mb-6">
+        {t("analytics")}
+      </h3>
+      <div className="bg-gray-50 rounded-lg p-8 text-center">
+        <GraphUp className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+        <h4 className="text-lg font-bold text-[#171717] mb-2">
+          {t("analyticsUpgradeTitle")}
+        </h4>
+        <p className="text-sm text-gray-500 mb-6 max-w-md mx-auto">
+          {t("analyticsUpgradeDescription")}
+        </p>
+        <button
+          onClick={() => setActiveAccountMenu("subscription")}
+          className="px-6 py-3 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors"
+        >
+          {t("analyticsUpgradeCta")}
+        </button>
+      </div>
     </div>
   );
 };
