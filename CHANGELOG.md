@@ -5,6 +5,16 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.31.1] - 2026-03-05
+
+### Fixed
+
+- Align all user-facing translations with ZeFile Voice Guide
+- Remove "successfully" from 14 EN success toasts
+- Replace 42 French "Veuillez" instances with direct imperatives
+- Fix missing French accents in security content
+- Update OG image
+
 ## [1.31.0] - 2026-03-05
 
 ### Added
