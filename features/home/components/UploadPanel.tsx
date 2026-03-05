@@ -881,6 +881,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
       if (transferResponse.error) {
         resetGlobalUpload();
         setPanelState("form");
+        toast.error(transferResponse.error.message);
         setFormErrors({ email: transferResponse.error.message });
         return;
       }
@@ -1316,22 +1317,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
           const isTestMode = transferMode === "test";
           return (
             <>
-              {/* Trust strip */}
-              <div className="flex items-center justify-center gap-4 text-[10px] text-gray-400 mb-4 flex-wrap">
-                <span className="flex items-center gap-1">
-                  <Lock className="w-3 h-3" />
-                  {t("trustSecure")}
-                </span>
-                <span className="flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
-                  {t("trustExpiry")}
-                </span>
-                <span className="flex items-center gap-1">
-                  <ShieldCheck className="w-3 h-3" />
-                  {t("trustPaywall")}
-                </span>
-              </div>
-
+            
               {/* Upload Area */}
               <div
                 id="ze-upload-area"
@@ -1358,7 +1344,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
 
                   {/* Text */}
                   <div id="ze-upload-text" className="ze-upload-text text-left">
-                    <p className="text-sm font-semibold text-black">
+                    <p className="text-sm font-semibold">
                       {t("addFiles")}
                     </p>
                     <p className="text-xs text-gray-500">
@@ -1391,7 +1377,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
               {/* Description Text */}
               <p
                 id="ze-upload-description"
-                className="ze-upload-description text-sm font-medium mt-5 mb-6 text-center text-gray-500"
+                className="ze-upload-description text-sm font-medium mt-5 mb-6 text-center text-[#171717]"
               >
                 {t("dropFilesHere")}
               </p>
@@ -1433,6 +1419,23 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                   {t("transfer")}
                 </button>
               </div>
+
+                {/* Trust strip */}
+              <div className="flex items-center justify-center gap-3 text-[10px] text-gray-400 mt-4 flex-wrap">
+                <span className="flex font-medium items-center  gap-1">
+                  <Lock className="w-3 h-3" />
+                  {t("trustSecure")}
+                </span>
+                <span className="flex font-medium items-center gap-1">
+                  <Clock className="w-3 h-3" />
+                  {t("trustExpiry")}
+                </span>
+                <span className="flex font-medium items-center gap-1">
+                  <ShieldCheck className="w-3 h-3" />
+                  {t("trustPaywall")}
+                </span>
+              </div>
+
             </>
           );
         }

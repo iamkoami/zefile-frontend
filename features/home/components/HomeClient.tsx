@@ -27,12 +27,15 @@ import { useTierLimits, SubscriptionTier } from "@/hooks/useTierLimits";
 import { TransferOptions } from "@/features/transfer/components/TransferOptionsPanel";
 import { TestSimulationData } from "@/features/home/components/TestResultPage";
 import TestDownloadSimulation from "@/features/home/components/TestDownloadSimulation";
+import FileRequestPanel from "@/features/file-request/components/FileRequestPanel";
 
 export default function HomeClient() {
   const router = useRouter();
   const { openDrawer, openAccountView } = useDrawerStore();
   const { timeOfDay } = useTimeOfDay();
   const tTest = useTranslations("testResult");
+  const tUpload = useTranslations("upload");
+  const [activeTab, setActiveTab] = useState<"send" | "request">("send");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [maxUploadSize, setMaxUploadSize] = useState<number>(2147483648); // Default 2GB
   const [uploadPanelState, setUploadPanelState] =
@@ -81,6 +84,17 @@ export default function HomeClient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Read URL hash for active tab on mount
+  useEffect(() => {
+    const hash = window.location.hash.replace("#", "");
+    if (hash === "request") setActiveTab("request");
+  }, []);
+
+  const handleTabChange = useCallback((tabId: string) => {
+    setActiveTab(tabId as "send" | "request");
+    history.replaceState(null, "", `#${tabId}`);
+  }, []);
+
   // Handle drawer/account query params from navigation (read once on mount)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -88,29 +102,25 @@ export default function HomeClient() {
     const accountParam = params.get("account");
 
     if (drawerParam) {
-      const validDrawers = [
-        "transfers",
-        "contacts",
-        "subscriptions",
-        "analytics",
-      ];
-      if (validDrawers.includes(drawerParam)) {
-        openDrawer(
-          drawerParam as
-            | "transfers"
-            | "contacts"
-            | "subscriptions"
-            | "analytics",
-        );
+      if (drawerParam === "analytics") {
+        // Migration: analytics moved from standalone drawer to account panel (Epic 62)
+        openAccountView("analytics");
+      } else {
+        const validDrawers = ["transfers", "contacts", "subscriptions"];
+        if (validDrawers.includes(drawerParam)) {
+          openDrawer(
+            drawerParam as "transfers" | "contacts" | "subscriptions",
+          );
+        }
       }
       // Clean up URL
       router.replace("/", { scroll: false });
     }
 
     if (accountParam) {
-      const validViews = ["settings", "help"];
+      const validViews = ["settings", "help", "analytics"];
       if (validViews.includes(accountParam)) {
-        openAccountView(accountParam as "settings" | "help");
+        openAccountView(accountParam as "settings" | "help" | "analytics");
       }
       // Clean up URL
       router.replace("/", { scroll: false });
@@ -289,6 +299,24 @@ export default function HomeClient() {
                 pointerEvents: "none",
               }}
             >
+              {/* Tab stack: inactive pill peeks behind active card */}
+              <div className="ze-tab-stack">
+                <button
+                  className="ze-tab-inactive-pill"
+                  onClick={() => handleTabChange(activeTab === "send" ? "request" : "send")}
+                >
+                  {activeTab === "send" ? tUpload("requestFilesTab") : tUpload("sendFilesTab")}
+                </button>
+
+              {activeTab === "request" ? (
+                <div key="request-panel" className="ze-upload-panel ze-request-panel ze-tab-animate-in">
+                  <FileRequestPanel
+                    isAuthenticated={isAuthenticated}
+                    userTier={userTier}
+                  />
+                </div>
+              ) : (
+              <div key="send-panel" className="ze-tab-animate-in">
               {/* Upload Panel */}
               <UploadPanel
                 selectedFiles={selectedFiles}
@@ -342,6 +370,9 @@ export default function HomeClient() {
                   </div>
                 </div>
               )}
+              </div>
+              )}
+              </div>
 
             </div>
           </div>

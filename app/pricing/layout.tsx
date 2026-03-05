@@ -8,10 +8,10 @@ const pricingTiers = {
   en: [
     {
       name: 'Free',
-      description: 'Send files up to 2GB with payment protection. No credit card required.',
+      description: 'Send files up to 5GB with payment protection. No credit card required.',
       price: '0',
       priceCurrency: 'EUR',
-      features: ['2GB per transfer', 'Up to 10 recipients', 'Payment protection', '7-day expiry', 'File preview with watermarks'],
+      features: ['5GB per transfer', 'Up to 10 recipients', 'Payment protection', '14-day expiry', 'File preview with watermarks'],
     },
     {
       name: 'Starter',
@@ -19,7 +19,7 @@ const pricingTiers = {
       price: '4.99',
       priceCurrency: 'EUR',
       billingPeriod: 'P1M',
-      features: ['10GB per transfer', 'Up to 10 recipients', '30-day expiry', '7% platform fee', 'Priority email support'],
+      features: ['20GB per transfer', 'Up to 10 recipients', '30-day expiry', '5% platform fee', 'Priority email support'],
     },
     {
       name: 'Pro',
@@ -33,10 +33,10 @@ const pricingTiers = {
   fr: [
     {
       name: 'Gratuit',
-      description: 'Envoyez des fichiers jusqu\'a 2 Go avec protection du paiement. Sans carte bancaire.',
+      description: 'Envoyez des fichiers jusqu\'a 5 Go avec protection du paiement. Sans carte bancaire.',
       price: '0',
       priceCurrency: 'EUR',
-      features: ['2 Go par transfert', 'Jusqu\'a 10 destinataires', 'Protection du paiement', 'Expiration 7 jours', 'Apercu avec filigrane'],
+      features: ['5 Go par transfert', 'Jusqu\'a 10 destinataires', 'Protection du paiement', 'Expiration 14 jours', 'Apercu avec filigrane'],
     },
     {
       name: 'Starter',
@@ -44,7 +44,7 @@ const pricingTiers = {
       price: '4.99',
       priceCurrency: 'EUR',
       billingPeriod: 'P1M',
-      features: ['10 Go par transfert', 'Jusqu\'a 10 destinataires', 'Expiration 30 jours', 'Frais de plateforme 7%', 'Support email prioritaire'],
+      features: ['20 Go par transfert', 'Jusqu\'a 10 destinataires', 'Expiration 30 jours', 'Frais de plateforme 5%', 'Support email prioritaire'],
     },
     {
       name: 'Pro',
@@ -60,11 +60,11 @@ const pricingTiers = {
 const seoContent = {
   en: {
     title: 'Pricing Plans - Choose Your Perfect Plan',
-    description: 'Compare ZeFile plans: Free, Starter, and Pro. Secure file transfers with payment protection. Free plan includes 2GB. No credit card required.',
+    description: 'Compare ZeFile plans: Free, Starter, and Pro. Secure file transfers with payment protection. Free plan includes 5GB. No credit card required.',
     faqs: [
       {
         question: 'How much does ZeFile cost?',
-        answer: 'ZeFile offers a free plan with 2GB file transfers. Paid plans start at \u20ac4.99/month for Starter (10GB) and \u20ac9.99/month for Pro (50GB) with additional features like custom branding and priority support.',
+        answer: 'ZeFile offers a free plan with 5GB file transfers. Paid plans start at \u20ac4.99/month for Starter (20GB) and \u20ac9.99/month for Pro (50GB) with additional features like custom branding and priority support.',
       },
       {
         question: 'Can I change my plan at any time?',
@@ -84,17 +84,17 @@ const seoContent = {
       },
       {
         question: 'What is the maximum file size?',
-        answer: 'The maximum transfer size depends on your plan: 2GB on the Free plan, 10GB on Starter, and 50GB on Pro. Each transfer can include multiple files up to your plan limit.',
+        answer: 'The maximum transfer size depends on your plan: 5GB on the Free plan, 20GB on Starter, and 50GB on Pro. Each transfer can include multiple files up to your plan limit.',
       },
     ],
   },
   fr: {
     title: 'Tarifs - Choisissez votre forfait id\u00e9al',
-    description: 'Comparez les forfaits ZeFile : Gratuit, Starter et Pro. Transferts s\u00e9curis\u00e9s avec protection du paiement. Forfait gratuit 2 Go. Sans carte bancaire.',
+    description: 'Comparez les forfaits ZeFile : Gratuit, Starter et Pro. Transferts s\u00e9curis\u00e9s avec protection du paiement. Forfait gratuit 5 Go. Sans carte bancaire.',
     faqs: [
       {
         question: 'Combien co\u00fbte ZeFile ?',
-        answer: 'ZeFile propose un forfait gratuit avec des transferts de 2 Go. Les forfaits payants commencent \u00e0 4,99 \u20ac/mois pour Starter (10 Go) et 9,99 \u20ac/mois pour Pro (50 Go) avec des fonctionnalit\u00e9s suppl\u00e9mentaires.',
+        answer: 'ZeFile propose un forfait gratuit avec des transferts de 5 Go. Les forfaits payants commencent \u00e0 4,99 \u20ac/mois pour Starter (20 Go) et 9,99 \u20ac/mois pour Pro (50 Go) avec des fonctionnalit\u00e9s suppl\u00e9mentaires.',
       },
       {
         question: 'Puis-je changer de forfait \u00e0 tout moment ?',
@@ -114,7 +114,7 @@ const seoContent = {
       },
       {
         question: 'Quelle est la taille maximale des fichiers ?',
-        answer: 'La taille maximale d\u00e9pend de votre forfait : 2 Go sur le forfait Gratuit, 10 Go sur Starter et 50 Go sur Pro. Chaque transfert peut inclure plusieurs fichiers jusqu\'\u00e0 la limite de votre forfait.',
+        answer: 'La taille maximale d\u00e9pend de votre forfait : 5 Go sur le forfait Gratuit, 20 Go sur Starter et 50 Go sur Pro. Chaque transfert peut inclure plusieurs fichiers jusqu\'\u00e0 la limite de votre forfait.',
       },
     ],
   },
