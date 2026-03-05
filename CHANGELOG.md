@@ -5,6 +5,29 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.31.0] - 2026-03-05
+
+### Added
+
+- BrandingPanel in account settings: logo/favicon upload, color theming, company name (STARTER+)
+- Unified branding hook: custom domain cookie > API senderBranding > default
+- Download page renders sender branding from BrandingProfile API
+- FileRequestPanel on home page with send/request tab stack UI
+- /deliver/[shortCode] page for creative file delivery
+- /review/[shortCode] page for client review and approval
+- File request API service for all CRUD operations
+- Tab stack animation (WeTransfer-style inactive pill peek)
+- Analytics moved from standalone drawer to account panel (STARTER+)
+- AccountPanel filters menu items by user tier (hides branding/analytics for FREE)
+- EN/FR translations for file requests, branding, analytics upgrade prompt
+- TransferPreviewPanel passes recipientEmail for preview access
+
+### Changed
+
+- Free tier limits: 5GB storage (was 2GB), 10 transfers/month (was 5), 14-day expiry (was 7)
+- Starter tier storage: 20GB (was 10GB)
+- Pricing page updated with new tier limits
+
 ## [1.30.2] - 2026-03-04
 
 ### Fixed
