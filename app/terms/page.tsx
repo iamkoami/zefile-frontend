@@ -1,12 +1,10 @@
-"use client";
-
 export const runtime = "edge";
 
 import LegalPageLayout from "@/components/shared/LegalPageLayout";
-import { useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
 
-export default function TermsPage() {
-  const t = useTranslations("pages.terms");
+export default async function TermsPage() {
+  const t = await getTranslations("pages.terms");
 
   const sections = [
     { title: t("acceptanceTitle"), content: t("acceptanceContent") },

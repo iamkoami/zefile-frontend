@@ -1,14 +1,12 @@
-"use client";
-
 export const runtime = "edge";
 
 import Header from "@/components/shared/Header";
 import Footer from "@/components/shared/Footer";
 import PageHero from "@/components/shared/PageHero";
-import { useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
 
-export default function PressPage() {
-  const t = useTranslations("pages.press");
+export default async function PressPage() {
+  const t = await getTranslations("pages.press");
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F5F5F0]">
