@@ -81,7 +81,7 @@ export interface VerifyAccountRequest {
 
 /**
  * Supported countries with their currencies and mobile money providers
- * Only includes countries supported by Paystack for transfers/payouts
+ * Supported countries for transfers/payouts (via active payment gateway)
  */
 export const SUPPORTED_COUNTRIES = [
   {
@@ -123,6 +123,22 @@ export const SUPPORTED_COUNTRIES = [
     supportsBankTransfer: false,
     supportsMobileMoney: true,
     mobileProviders: ['mtn', 'orange', 'wave'],
+  },
+  {
+    code: 'TG',
+    name: 'Togo',
+    currency: 'XOF',
+    supportsBankTransfer: false,
+    supportsMobileMoney: true,
+    mobileProviders: ['mtn'],
+  },
+  {
+    code: 'BJ',
+    name: 'Benin',
+    currency: 'XOF',
+    supportsBankTransfer: false,
+    supportsMobileMoney: true,
+    mobileProviders: ['mtn'],
   },
 ];
 

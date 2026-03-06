@@ -1444,22 +1444,6 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                 </button>
               </div>
 
-                {/* Trust strip */}
-              <div className="flex items-center justify-center gap-3 text-[10px] text-gray-400 mt-4 flex-wrap">
-                <span className="flex font-medium items-center  gap-1">
-                  <Lock className="w-3 h-3" />
-                  {t("trustSecure")}
-                </span>
-                <span className="flex font-medium items-center gap-1">
-                  <Clock className="w-3 h-3" />
-                  {t("trustExpiry")}
-                </span>
-                <span className="flex font-medium items-center gap-1">
-                  <ShieldCheck className="w-3 h-3" />
-                  {t("trustPaywall")}
-                </span>
-              </div>
-
             </>
           );
         }
@@ -1467,22 +1451,6 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
         // Authenticated users: standard upload area
         return (
           <>
-            {/* Trust strip */}
-            <div className="flex items-center justify-center gap-4 text-[10px] text-gray-400 mb-4 flex-wrap">
-              <span className="flex items-center gap-1">
-                <Lock className="w-3 h-3" />
-                {t("trustSecure")}
-              </span>
-              <span className="flex items-center gap-1">
-                <Clock className="w-3 h-3" />
-                {t("trustExpiry")}
-              </span>
-              <span className="flex items-center gap-1">
-                <ShieldCheck className="w-3 h-3" />
-                {t("trustPaywall")}
-              </span>
-            </div>
-
             {/* Upload Area */}
             <div
               id="ze-upload-area"
@@ -1575,6 +1543,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                 {t("transfer")}
               </button>
             </div>
+
           </>
         );
 
@@ -2058,6 +2027,22 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
       className={`ze-upload-panel${panelState === "test-result" ? " ze-test-result" : ""}`}
     >
       {renderPanel()}
+      {panelState === "initial" && (
+        <div className="flex items-center justify-center gap-3 text-[10px] text-gray-400 mt-4 flex-wrap">
+          <span className="flex items-center gap-1">
+            <Lock className="w-3 h-3" />
+            {t("trustSecure")}
+          </span>
+          <span className="flex items-center gap-1">
+            <Clock className="w-3 h-3" />
+            {t("trustExpiry")}
+          </span>
+          <span className="flex items-center gap-1">
+            <ShieldCheck className="w-3 h-3" />
+            {t("trustPaywall")}
+          </span>
+        </div>
+      )}
     </div>
   );
 };

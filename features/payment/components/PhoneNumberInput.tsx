@@ -22,14 +22,16 @@ interface CountryConfig {
 }
 
 /**
- * Supported countries for Paystack payments
- * Includes all Paystack-covered countries (GH, KE, CI, NG)
+ * Supported countries for payments
+ * Includes all supported payment gateway countries
  */
 const SUPPORTED_COUNTRIES: CountryConfig[] = [
   { code: 'GH', name: 'Ghana', dialCode: '+233', flagCode: 'GH' },
   { code: 'KE', name: 'Kenya', dialCode: '+254', flagCode: 'KE' },
   { code: 'CI', name: "Côte d'Ivoire", dialCode: '+225', flagCode: 'CI' },
   { code: 'NG', name: 'Nigeria', dialCode: '+234', flagCode: 'NG' },
+  { code: 'TG', name: 'Togo', dialCode: '+228', flagCode: 'TG' },
+  { code: 'BJ', name: 'Benin', dialCode: '+229', flagCode: 'BJ' },
 ];
 
 /**
@@ -51,10 +53,13 @@ interface PhoneNumberInputProps {
  * PhoneNumberInput - Phone number input with country selector and validation
  *
  * Features:
- * - Country prefix dropdown for Ghana, Kenya, Côte d'Ivoire
+ * - Country prefix dropdown for Ghana, Kenya, Côte d'Ivoire, Nigeria, Togo, Benin
  * - Real-time phone number validation using libphonenumber-js
  * - Auto-format phone number as user types
  * - Visual validation feedback
+ *
+ * Note: Benin (+229) transitioned to 10-digit numbers in 2024-2025.
+ * Verify libphonenumber-js handles BJ numbers correctly during manual testing.
  */
 export function PhoneNumberInput({
   value,

@@ -11,12 +11,13 @@ export default function PaymentCallbackPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Get payment reference from Paystack callback
+    // Get payment reference from gateway callback
+    // Paystack uses 'reference' or 'trxref', Startbutton uses 'reference' or 'transactionReference'
     const reference = searchParams.get('reference');
     const trxref = searchParams.get('trxref');
+    const transactionReference = searchParams.get('transactionReference');
 
-    // Use either reference or trxref (Paystack may use either)
-    const paymentReference = reference || trxref;
+    const paymentReference = reference || trxref || transactionReference;
 
     if (paymentReference) {
       // Redirect to processing page with reference

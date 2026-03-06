@@ -7,10 +7,15 @@
  * Add new payment provider domains here as they are integrated
  */
 const ALLOWED_PAYMENT_DOMAINS = [
+  // Paystack
   "checkout.paystack.com",
   "api.paystack.com",
   "standard.paystack.co",
   "paystack.com",
+  // Startbutton
+  "app.startbutton.io",
+  "startbutton.africa",
+  "checkout.startbutton.africa",
 ];
 
 /**

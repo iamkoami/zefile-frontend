@@ -17,7 +17,7 @@ export default function PaymentProcessingPage() {
   useEffect(() => {
     const verifyPayment = async (reference: string) => {
       try {
-        // Wait a bit before verifying to allow Paystack to process
+        // Wait a bit before verifying to allow the payment gateway to process
         await new Promise(resolve => setTimeout(resolve, 3000));
 
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/payments/verify`, {

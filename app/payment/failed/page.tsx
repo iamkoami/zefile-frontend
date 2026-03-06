@@ -56,7 +56,7 @@ export default function PaymentFailedPage() {
   }, [searchParams]);
 
   /**
-   * Map Paystack failure reason to our error codes
+   * Map payment gateway failure reason to our error codes
    */
   const getErrorCode = (): PaymentErrorCode => {
     const reason = paymentInfo?.failureReason?.toLowerCase() || '';

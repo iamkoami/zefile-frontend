@@ -18,8 +18,8 @@ import { ApiResponse, apiClient } from './api-client';
 /** Standardized localStorage key for detected country */
 export const STORAGE_KEY_COUNTRY = 'zefile_user_country';
 
-/** Supported country codes for regional pricing */
-export const SUPPORTED_COUNTRIES = ['NG', 'GH', 'KE', 'CI'] as const;
+/** Supported country codes for regional pricing (NG/GH/KE via Paystack; CI/TG/BJ via Startbutton) */
+export const SUPPORTED_COUNTRIES = ['NG', 'GH', 'KE', 'CI', 'TG', 'BJ'] as const;
 export type SupportedCountry = typeof SUPPORTED_COUNTRIES[number] | 'DEFAULT';
 
 // ============================================
@@ -288,6 +288,20 @@ export const REGIONAL_PRICING: Record<SupportedCountry, RegionalPricing> = {
     currencySymbol: '',
     currencyName: 'West African CFA Franc',
     starter: { monthly: 420000, annual: 4200000 }, // in centimes
+    pro: { monthly: 850000, annual: 8500000 },
+  },
+  TG: {
+    currency: 'XOF',
+    currencySymbol: '',
+    currencyName: 'West African CFA Franc',
+    starter: { monthly: 420000, annual: 4200000 },
+    pro: { monthly: 850000, annual: 8500000 },
+  },
+  BJ: {
+    currency: 'XOF',
+    currencySymbol: '',
+    currencyName: 'West African CFA Franc',
+    starter: { monthly: 420000, annual: 4200000 },
     pro: { monthly: 850000, annual: 8500000 },
   },
   DEFAULT: {

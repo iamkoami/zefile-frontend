@@ -23,6 +23,8 @@ export const COUNTRY_CONFIG: Record<string, { name: string; nameFr: string; flag
   GH: { name: 'Ghana (GHS)', nameFr: 'Ghana (GHS)', flagCode: 'GH' },
   KE: { name: 'Kenya (KES)', nameFr: 'Kenya (KES)', flagCode: 'KE' },
   CI: { name: "Côte d'Ivoire (XOF)", nameFr: "Côte d'Ivoire (XOF)", flagCode: 'CI' },
+  TG: { name: 'Togo (XOF)', nameFr: 'Togo (XOF)', flagCode: 'TG' },
+  BJ: { name: 'Benin (XOF)', nameFr: 'Benin (XOF)', flagCode: 'BJ' },
   DEFAULT: { name: 'International (USD)', nameFr: 'International (USD)', flagCode: null },
 };
 

@@ -424,7 +424,7 @@ export function PaymentMethodPanel() {
         setIsLoading(false);
       }
     } else if (selectedMethodType === "card") {
-      // Card payments use Paystack popup (Epic 19, Story 19.5)
+      // Card payments use popup or hosted checkout (Epic 19, Story 19.5)
       trackPaymentSubmitted({ method: "card", currency: transfer.currency });
       setPaymentMethod({ type: "card" });
       setPaymentFlowData({
@@ -433,7 +433,7 @@ export function PaymentMethodPanel() {
       });
       pushView("payment-card");
     } else {
-      // For bank_transfer, ussd, and opay_wallet - redirect to Paystack checkout
+      // For bank_transfer, ussd, and opay_wallet - redirect to payment gateway checkout
       setIsLoading(true);
       try {
         // Map method type to Paystack channel preference
@@ -1465,7 +1465,7 @@ export function PaymentPromptPanel() {
 }
 
 // ============================================
-// CardPaymentPanel - Card payment with Paystack popup (Epic 19, Story 19.5)
+// CardPaymentPanel - Card payment via popup or hosted checkout (Epic 19, Story 19.5)
 // ============================================
 
 export function CardPaymentPanel() {
@@ -1519,7 +1519,15 @@ export function CardPaymentPanel() {
           lastPaymentMethod: "card",
         });
 
-        // Dynamically import and use Paystack InlineJS
+        // Dual-flow: prefer hosted checkout redirect when authorizationUrl is present
+        if (response.data.authorizationUrl) {
+          // Hosted checkout redirect (Startbutton or similar gateway)
+          setIsInitializing(false);
+          safePaymentRedirect(response.data.authorizationUrl);
+          return;
+        }
+
+        // Paystack popup flow (accessCode present, no authorizationUrl)
         const PaystackPop = (await import("@paystack/inline-js")).default;
         const paystack = new PaystackPop();
 

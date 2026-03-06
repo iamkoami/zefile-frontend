@@ -36,14 +36,14 @@ export type DrawerContentView =
   | 'subscription-upgrade-preview' // Subscription upgrade - proration preview (Epic 24)
   | 'subscription-method'   // Subscription checkout - payment method
   | 'subscription-phone'    // Subscription checkout - phone input
-  | 'subscription-card'     // Subscription checkout - card payment with Paystack popup
+  | 'subscription-card'     // Subscription checkout - card payment
   | 'subscription-processing' // Subscription checkout - processing/polling
   | 'subscription-success'  // Subscription checkout - success
   | 'subscription-failed'   // Subscription checkout - failed
   | 'payment-method'  // Payment method selection
   | 'payment-phone'   // Phone number input for mobile money
   | 'payment-prompt'  // Mobile money STK push prompt
-  | 'payment-card'    // Card payment with Paystack popup (Epic 19)
+  | 'payment-card'    // Card payment (Epic 19)
   | 'payment-processing' // Payment processing/polling (Epic 19)
   | 'payment-success' // Payment success panel (Epic 19)
   | 'payment-failed'; // Payment failed panel (Epic 19)

@@ -114,7 +114,7 @@ export interface InitializePaymentV2Request {
   mobileMoneyProvider?: MobileMoneyProviderCode;
   /** Phone number in E.164 format (required for mobile_money) */
   phoneNumber?: string;
-  /** Preferred Paystack channel for checkout (card, bank_transfer, ussd) */
+  /** Preferred payment channel for checkout (card, bank_transfer, ussd) */
   preferredChannel?: 'card' | 'bank_transfer' | 'ussd' | 'bank' | 'qr';
   /** Buyer's country code (ISO 3166-1 alpha-2) for processing fee lookup */
   countryCode?: string;
@@ -292,7 +292,7 @@ export const paymentApi = {
   },
 
   /**
-   * Get Paystack public key
+   * Get payment gateway public key
    */
   async getPublicKey(): Promise<ApiResponse<PublicKeyResponse>> {
     return apiClient.get<PublicKeyResponse>('/payments/public-key');

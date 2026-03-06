@@ -58,10 +58,19 @@ function getSizeLabelKey(gb: number): string {
 }
 
 /**
- * Map frontend country codes to backend region codes
+ * Map frontend country codes to backend region codes.
+ * All XOF-zone countries share the same XOF pricing region on the backend.
  */
 const COUNTRY_TO_REGION: Record<string, string> = {
-  CI: 'XOF',
+  // West Africa CFA franc zone (XOF)
+  BJ: 'XOF', // Benin
+  BF: 'XOF', // Burkina Faso
+  CI: 'XOF', // Côte d'Ivoire
+  GW: 'XOF', // Guinea-Bissau
+  ML: 'XOF', // Mali
+  NE: 'XOF', // Niger
+  SN: 'XOF', // Senegal
+  TG: 'XOF', // Togo
   DEFAULT: 'US',
 };
 

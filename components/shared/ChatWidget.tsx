@@ -11,6 +11,7 @@ import {
   Lock,
   Clock,
   HelpCircle,
+  LightBulb,
   NavArrowLeft,
   ThumbsUp,
   ThumbsDown,
@@ -108,6 +109,7 @@ const DEFAULT_STARTERS: StarterOption[] = [
   { icon: Download, labelKey: "starter.download", category: "download" },
   { icon: CreditCard, labelKey: "starter.payment", category: "payment" },
   { icon: Lock, labelKey: "starter.access", category: "download" },
+  { icon: LightBulb, labelKey: "starter.suggestion", category: "general", messageKey: "starter.suggestionMessage" },
   { icon: HelpCircle, labelKey: "starter.other", category: "general" },
 ];
 
@@ -137,6 +139,7 @@ function getStarters(context?: ChatContext): StarterOption[] {
   starters.push(
     { icon: Download, labelKey: "starter.download", category: "download" },
     { icon: CreditCard, labelKey: "starter.payment", category: "payment" },
+    { icon: LightBulb, labelKey: "starter.suggestion", category: "general", messageKey: "starter.suggestionMessage" },
     { icon: HelpCircle, labelKey: "starter.other", category: "general" },
   );
 

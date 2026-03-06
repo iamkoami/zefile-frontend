@@ -31,8 +31,8 @@ type KycFlowStep =
   | "success"
   | "pending";
 
-// Paystack-supported countries only (no International option)
-// BVN verification available for Nigeria only
+// Supported countries for KYC identity verification (no International option)
+// BVN verification available for Nigeria only; TG and BJ route to manual verification via Startbutton
 const COUNTRIES: {
   code: IdentityCountry;
   name: string;
@@ -50,6 +50,8 @@ const COUNTRIES: {
     flagCode: "CI",
     hasBvn: false,
   },
+  { code: "TG", name: "Togo", nameFr: "Togo", flagCode: "TG", hasBvn: false },
+  { code: "BJ", name: "Benin", nameFr: "Benin", flagCode: "BJ", hasBvn: false },
 ];
 
 interface KYCFlowPanelProps {

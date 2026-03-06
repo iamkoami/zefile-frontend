@@ -234,7 +234,7 @@ export function SubscriptionCheckoutPanel() {
     if (selectedMethod.type === "mobile_money") {
       setStep("phone");
     } else {
-      // Card payment - redirect to Paystack
+      // Card payment - initialize checkout
       setIsLoading(true);
       try {
         const response = await subscriptionApi.initializeSubscription({

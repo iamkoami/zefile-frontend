@@ -39,6 +39,7 @@ import type { MobileMoneyProvider } from "@/features/payment/components/PaymentM
 import type { CountryCode } from "libphonenumber-js";
 import { authApi } from "@/services/auth-api";
 import { usePollEligibility } from "@/hooks/usePollEligibility";
+import { safePaymentRedirect } from "@/utils/security";
 
 /**
  * Mobile money provider info from API
@@ -324,7 +325,7 @@ export function SubscriptionMethodPanel() {
       setPaymentMethod({ type: "mobile_money", provider: selectedProvider });
       pushView("subscription-phone");
     } else {
-      // Card payment - navigate to card panel with Paystack popup
+      // Card payment - navigate to card panel
       setPaymentMethod({ type: "card" });
       pushView("subscription-card");
     }
@@ -705,7 +706,7 @@ export function SubscriptionPhonePanel() {
 }
 
 // ============================================
-// SubscriptionCardPanel - Card payment with Paystack popup
+// SubscriptionCardPanel - Card payment via popup or hosted checkout
 // ============================================
 
 export function SubscriptionCardPanel() {
@@ -765,7 +766,15 @@ export function SubscriptionCardPanel() {
           lastPaymentMethod: "card",
         });
 
-        // Dynamically import and use Paystack InlineJS
+        // Dual-flow: prefer hosted checkout redirect when authorizationUrl is present
+        if (response.data.authorizationUrl) {
+          // Hosted checkout redirect (Startbutton or similar gateway)
+          setIsInitializing(false);
+          safePaymentRedirect(response.data.authorizationUrl);
+          return;
+        }
+
+        // Paystack popup flow (accessCode present, no authorizationUrl)
         const PaystackPop = (await import("@paystack/inline-js")).default;
         const paystack = new PaystackPop();
 

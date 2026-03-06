@@ -20,14 +20,16 @@ interface KYCUploadPanelProps {
   className?: string;
 }
 
-// Supported countries for KYC
+// Supported countries for KYC (sorted alphabetically by name)
 const COUNTRIES = [
+  { code: 'BJ', name: 'Benin', nameFr: 'Benin', flagCode: 'BJ' },
   { code: 'CI', name: 'Côte d\'Ivoire', nameFr: 'Côte d\'Ivoire', flagCode: 'CI' },
   { code: 'GH', name: 'Ghana', nameFr: 'Ghana', flagCode: 'GH' },
   { code: 'KE', name: 'Kenya', nameFr: 'Kenya', flagCode: 'KE' },
   { code: 'NG', name: 'Nigeria', nameFr: 'Nigeria', flagCode: 'NG' },
   { code: 'SN', name: 'Senegal', nameFr: 'Sénégal', flagCode: 'SN' },
   { code: 'ZA', name: 'South Africa', nameFr: 'Afrique du Sud', flagCode: 'ZA' },
+  { code: 'TG', name: 'Togo', nameFr: 'Togo', flagCode: 'TG' },
 ];
 
 // Document types for KYC

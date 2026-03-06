@@ -386,7 +386,7 @@ const SideDrawer: React.FC = () => {
               <SubscriptionPhonePanel />
             </AnimatedView>
 
-            {/* Subscription checkout: card payment with Paystack popup */}
+            {/* Subscription checkout: card payment */}
             <AnimatedView
               isActive={currentContentView === 'subscription-card' && view === 'subscriptions'}
               direction={animationDirection}
