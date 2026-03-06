@@ -5,6 +5,14 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.34.0] - 2026-03-06
+
+### Added
+
+- Free transfer toggle for STARTER and PRO tiers (send files without requiring payment)
+- Minimum transfer price validation with automatic currency conversion from NGN base rate
+- Price input placeholder shows minimum amount per selected currency
+
 ## [1.33.0] - 2026-03-06
 
 ### Changed
