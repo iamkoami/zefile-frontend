@@ -1,19 +1,47 @@
 import type { Metadata } from "next";
+import { getLocale } from "next-intl/server";
 import { BreadcrumbJsonLd } from "@/components/seo/JsonLd";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://zefile.io';
 
-export const metadata: Metadata = {
-  title: 'Press',
-  description: 'ZeFile press kit, news, and media resources. Get the latest updates on our secure file transfer platform.',
-  robots: {
-    index: false,
-    follow: false,
+const seoContent = {
+  en: {
+    title: 'Press - News & Media Resources',
+    description: 'ZeFile press kit, news, and media resources. Get the latest updates on our secure file transfer platform built in Africa for creatives worldwide.',
   },
-  alternates: {
-    canonical: `${SITE_URL}/press`,
+  fr: {
+    title: 'Presse - Actualites & Ressources medias',
+    description: 'Kit presse, actualites et ressources medias de ZeFile. Les dernieres informations sur notre plateforme de transfert de fichiers securise.',
   },
 };
+
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  const content = seoContent[locale as keyof typeof seoContent] || seoContent.en;
+
+  return {
+    title: content.title,
+    description: content.description,
+    openGraph: {
+      title: content.title,
+      description: content.description,
+      url: `${SITE_URL}/press`,
+      type: 'website',
+    },
+    twitter: {
+      title: content.title,
+      description: content.description,
+    },
+    alternates: {
+      canonical: `${SITE_URL}/press`,
+      languages: {
+        'en': `${SITE_URL}/press`,
+        'fr': `${SITE_URL}/press`,
+        'x-default': `${SITE_URL}/press`,
+      },
+    },
+  };
+}
 
 export default function PressLayout({
   children,

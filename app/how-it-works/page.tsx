@@ -4,6 +4,7 @@ export const runtime = "edge";
 
 import Header from "@/components/shared/Header";
 import Footer from "@/components/shared/Footer";
+import CrossLinks from "@/components/shared/CrossLinks";
 import SectionIndicator from "@/components/shared/SectionIndicator";
 import PageHero from "@/components/shared/PageHero";
 import Image from "next/image";
@@ -1466,6 +1467,11 @@ export default function HowItWorksPage() {
             className="absolute bottom-[15%] left-[5%] hidden lg:block"
           />
           <FAQSection title={t.rich("faqTitle", { highlight })} faqs={faqs} />
+        </div>
+
+        {/* Cross-links */}
+        <div className="pt-4">
+          <CrossLinks exclude="howItWorks" />
         </div>
 
         {/* 8. CTA — green card + interior shapes (same as About) */}

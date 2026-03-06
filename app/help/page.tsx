@@ -6,6 +6,7 @@ import { useState, useMemo, useEffect, type ReactNode } from "react";
 import Link from "next/link";
 import Header from "@/components/shared/Header";
 import Footer from "@/components/shared/Footer";
+import CrossLinks from "@/components/shared/CrossLinks";
 import PageHero from "@/components/shared/PageHero";
 import LoadingFullscreen from "@/components/LoadingFullscreen";
 import AccordionItem from "@/components/shared/AccordionItem";
@@ -229,6 +230,9 @@ export default function HelpCenterPage() {
           </section>
         </div>
       </main>
+
+      {/* Cross-links */}
+      <CrossLinks exclude="help" />
 
       {/* CTA */}
       <section className="w-full max-w-6xl mx-auto px-6 pb-20 md:pb-28 pt-4">

@@ -8,6 +8,20 @@ const ogImage: MetadataRoute.Sitemap[number]['images'] = [
   `${SITE_URL}/og-image.png`,
 ];
 
+/**
+ * Helper to add hreflang alternates for EN/FR.
+ * Since ZeFile uses cookie-based locale (same URL serves both languages),
+ * alternates point to the same URL but signal language support to crawlers.
+ */
+function withAlternates(url: string) {
+  return {
+    languages: {
+      en: url,
+      fr: url,
+    } as Record<string, string>,
+  };
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
 
@@ -18,6 +32,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'weekly',
       priority: 1.0,
       images: ogImage,
+      alternates: withAlternates(`${SITE_URL}/`),
     },
     {
       url: `${SITE_URL}/pricing`,
@@ -25,6 +40,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'monthly',
       priority: 0.8,
       images: ogImage,
+      alternates: withAlternates(`${SITE_URL}/pricing`),
     },
     {
       url: `${SITE_URL}/blog`,
@@ -32,6 +48,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'weekly',
       priority: 0.8,
       images: ogImage,
+      alternates: withAlternates(`${SITE_URL}/blog`),
     },
     {
       url: `${SITE_URL}/about`,
@@ -39,6 +56,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'monthly',
       priority: 0.7,
       images: ogImage,
+      alternates: withAlternates(`${SITE_URL}/about`),
     },
     {
       url: `${SITE_URL}/how-it-works`,
@@ -46,6 +64,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'monthly',
       priority: 0.7,
       images: ogImage,
+      alternates: withAlternates(`${SITE_URL}/how-it-works`),
     },
     {
       url: `${SITE_URL}/help`,
@@ -53,18 +72,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'monthly',
       priority: 0.6,
       images: ogImage,
+      alternates: withAlternates(`${SITE_URL}/help`),
     },
     {
       url: `${SITE_URL}/terms`,
       lastModified: new Date('2026-01-15'),
       changeFrequency: 'yearly',
       priority: 0.3,
+      alternates: withAlternates(`${SITE_URL}/terms`),
     },
     {
       url: `${SITE_URL}/privacy`,
       lastModified: new Date('2026-01-15'),
       changeFrequency: 'yearly',
       priority: 0.3,
+      alternates: withAlternates(`${SITE_URL}/privacy`),
     },
     {
       url: `${SITE_URL}/contact-us`,
@@ -72,6 +94,28 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'monthly',
       priority: 0.5,
       images: ogImage,
+      alternates: withAlternates(`${SITE_URL}/contact-us`),
+    },
+    {
+      url: `${SITE_URL}/security`,
+      lastModified: new Date('2026-01-15'),
+      changeFrequency: 'yearly',
+      priority: 0.4,
+      alternates: withAlternates(`${SITE_URL}/security`),
+    },
+    {
+      url: `${SITE_URL}/press`,
+      lastModified: now,
+      changeFrequency: 'monthly',
+      priority: 0.4,
+      alternates: withAlternates(`${SITE_URL}/press`),
+    },
+    {
+      url: `${SITE_URL}/jobs`,
+      lastModified: now,
+      changeFrequency: 'monthly',
+      priority: 0.4,
+      alternates: withAlternates(`${SITE_URL}/jobs`),
     },
   ];
 
@@ -93,6 +137,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         lastModified: post.updatedAt ? new Date(post.updatedAt) : new Date(),
         changeFrequency: 'weekly' as const,
         priority: 0.7,
+        alternates: withAlternates(`${SITE_URL}/blog/${post.slug}`),
       }));
     }
   } catch {

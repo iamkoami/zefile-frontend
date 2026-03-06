@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { getLocale } from "next-intl/server";
-import { BreadcrumbJsonLd } from "@/components/seo/JsonLd";
+import { getLocale, getTranslations } from "next-intl/server";
+import { BreadcrumbJsonLd, FAQJsonLd } from "@/components/seo/JsonLd";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://zefile.io';
 
@@ -43,17 +43,34 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default function HelpLayout({
+export default async function HelpLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const t = await getTranslations("pages.help");
+
+  const faqs = [
+    { question: t("faq1Q"), answer: t("faq1A") },
+    { question: t("faq2Q"), answer: t("faq2A") },
+    { question: t("faq3Q"), answer: t("faq3A") },
+    { question: t("faq4Q"), answer: t("faq4A") },
+    { question: t("faq5Q"), answer: t("faq5A") },
+    { question: t("faq6Q"), answer: t("faq6A") },
+    { question: t("faq7Q"), answer: t("faq7A") },
+    { question: t("faq8Q"), answer: t("faq8A") },
+    { question: t("faq9Q"), answer: t("faq9A") },
+    { question: t("faq10Q"), answer: t("faq10A") },
+    { question: t("faq11Q"), answer: t("faq11A") },
+  ];
+
   return (
     <>
       <BreadcrumbJsonLd items={[
         { name: 'Home', url: SITE_URL },
         { name: 'Help Center', url: `${SITE_URL}/help` },
       ]} />
+      <FAQJsonLd faqs={faqs} />
       {children}
     </>
   );

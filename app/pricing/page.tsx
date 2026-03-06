@@ -16,6 +16,7 @@ import {
 import Link from "next/link";
 import Header from "@/components/shared/Header";
 import Footer from "@/components/shared/Footer";
+import CrossLinks from "@/components/shared/CrossLinks";
 import PageHero from "@/components/shared/PageHero";
 import LoadingFullscreen from "@/components/LoadingFullscreen";
 import { safePaymentRedirect } from "@/utils/security";
@@ -793,6 +794,9 @@ export default function PricingPage() {
           </div>
         </div>
       </section>
+
+      {/* Cross-links */}
+      <CrossLinks exclude="pricing" />
 
       {/* CTA */}
       <section className="max-w-6xl mx-auto px-6 pb-20 md:pb-28 pt-4">

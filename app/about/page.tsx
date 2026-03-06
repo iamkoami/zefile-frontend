@@ -4,6 +4,7 @@ export const runtime = "edge";
 
 import Header from "@/components/shared/Header";
 import Footer from "@/components/shared/Footer";
+import CrossLinks from "@/components/shared/CrossLinks";
 import PageHero from "@/components/shared/PageHero";
 import SectionIndicator from "@/components/shared/SectionIndicator";
 import Image from "next/image";
@@ -936,6 +937,11 @@ export default function AboutPage() {
             </div>
           </div>
         </section>
+
+        {/* Cross-links */}
+        <div className="pt-4">
+          <CrossLinks exclude="about" />
+        </div>
 
         {/* ── 8. CTA — green card + interior shapes ────────────── */}
         <Reveal>

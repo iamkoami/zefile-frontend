@@ -16,6 +16,20 @@ interface BlogPostMeta {
   authorName?: string;
 }
 
+async function fetchPostMeta(slug: string, locale: string): Promise<BlogPostMeta | null> {
+  try {
+    const response = await fetch(`${API_URL}/blog/${slug}?locale=${locale}`, {
+      next: { revalidate: 3600 },
+    });
+    if (response.ok) {
+      return await response.json();
+    }
+  } catch {
+    // Graceful fallback
+  }
+  return null;
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -24,64 +38,71 @@ export async function generateMetadata({
   const { slug } = await params;
   const locale = await getLocale();
 
-  try {
-    const response = await fetch(`${API_URL}/blog/${slug}?locale=${locale}`, {
-      next: { revalidate: 3600 },
-    });
-
-    if (!response.ok) {
-      return { title: "Blog - ZeFile" };
-    }
-
-    const post: BlogPostMeta = await response.json();
-    const title = post.metaTitle || post.title;
-    const description = post.metaDescription || post.excerpt || "";
-    const url = `${SITE_URL}/blog/${post.slug}`;
-
-    return {
-      title: `${title} - ZeFile Blog`,
-      description,
-      openGraph: {
-        title,
-        description,
-        url,
-        type: "article",
-        ...(post.publishedAt && { publishedTime: post.publishedAt }),
-        ...(post.coverImageUrl && {
-          images: [{ url: post.coverImageUrl, alt: post.title }],
-        }),
-      },
-      twitter: {
-        card: post.coverImageUrl ? "summary_large_image" : "summary",
-        title,
-        description,
-        ...(post.coverImageUrl && { images: [post.coverImageUrl] }),
-      },
-      alternates: {
-        canonical: url,
-        languages: {
-          'en': url,
-          'fr': url,
-          'x-default': url,
-        },
-      },
-    };
-  } catch {
+  const post = await fetchPostMeta(slug, locale);
+  if (!post) {
     return { title: "Blog - ZeFile" };
   }
+
+  const title = post.metaTitle || post.title;
+  const description = post.metaDescription || post.excerpt || "";
+  const url = `${SITE_URL}/blog/${post.slug}`;
+
+  return {
+    title: `${title} - ZeFile Blog`,
+    description,
+    openGraph: {
+      title,
+      description,
+      url,
+      type: "article",
+      ...(post.publishedAt && { publishedTime: post.publishedAt }),
+      ...(post.coverImageUrl && {
+        images: [{ url: post.coverImageUrl, alt: post.title }],
+      }),
+    },
+    twitter: {
+      card: post.coverImageUrl ? "summary_large_image" : "summary",
+      title,
+      description,
+      ...(post.coverImageUrl && { images: [post.coverImageUrl] }),
+    },
+    alternates: {
+      canonical: url,
+      languages: {
+        'en': url,
+        'fr': url,
+        'x-default': url,
+      },
+    },
+  };
 }
 
-export default function BlogPostLayout({
+export default async function BlogPostLayout({
   children,
+  params,
 }: {
   children: React.ReactNode;
+  params: Promise<{ slug: string }>;
 }) {
+  const { slug } = await params;
+  const locale = await getLocale();
+  const post = await fetchPostMeta(slug, locale);
+
+  const breadcrumbItems = [
+    { name: 'Home', url: SITE_URL },
+    { name: 'Blog', url: `${SITE_URL}/blog` },
+  ];
+
+  if (post) {
+    breadcrumbItems.push({
+      name: post.title,
+      url: `${SITE_URL}/blog/${post.slug}`,
+    });
+  }
+
   return (
     <>
-      <BreadcrumbJsonLd items={[
-        { name: 'Home', url: SITE_URL },
-        { name: 'Blog', url: `${SITE_URL}/blog` },
-      ]} />
+      <BreadcrumbJsonLd items={breadcrumbItems} />
       {children}
     </>
   );

@@ -2763,5 +2763,27 @@
       "addedContact": "Enregistrez un contact",
       "firstPaidTransfer": "Fixez un prix sur un transfert"
     }
+  },
+  "crossLinks": {
+    "howItWorks": {
+      "label": "Comment ca marche",
+      "description": "Decouvrez le processus en 3 etapes : envoyez, partagez, soyez paye."
+    },
+    "pricing": {
+      "label": "Nos tarifs",
+      "description": "Comparez les forfaits Gratuit, Starter et Pro."
+    },
+    "help": {
+      "label": "Centre d'aide",
+      "description": "Reponses aux questions sur les transferts et paiements."
+    },
+    "about": {
+      "label": "A propos de ZeFile",
+      "description": "Notre histoire, notre mission et l'equipe derriere ZeFile."
+    },
+    "blog": {
+      "label": "Blog",
+      "description": "Conseils, guides et actualites pour les creatifs."
+    }
   }
 }

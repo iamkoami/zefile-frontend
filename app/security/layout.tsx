@@ -1,17 +1,17 @@
 import type { Metadata } from "next";
 import { getLocale } from "next-intl/server";
-import { BreadcrumbJsonLd, ContactPageJsonLd } from "@/components/seo/JsonLd";
+import { BreadcrumbJsonLd } from "@/components/seo/JsonLd";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://zefile.io';
 
 const seoContent = {
   en: {
-    title: 'Contact Us - Get in Touch',
-    description: 'Have a question or need help? Reach out to the ZeFile team. We\'re here to help with file transfers, payments, partnerships, and more.',
+    title: 'Security - Responsible Disclosure Policy',
+    description: 'ZeFile takes security seriously. Learn about our responsible disclosure policy, how to report vulnerabilities, and our commitment to keeping your files safe.',
   },
   fr: {
-    title: 'Contactez-nous - ZeFile',
-    description: 'Une question ou besoin d\'aide ? Contactez l\'\u00e9quipe ZeFile. Nous sommes l\u00e0 pour vous aider avec vos transferts de fichiers, paiements, partenariats et plus.',
+    title: 'Securite - Politique de divulgation responsable',
+    description: 'ZeFile prend la securite au serieux. Decouvrez notre politique de divulgation responsable, comment signaler des vulnerabilites, et notre engagement a proteger vos fichiers.',
   },
 };
 
@@ -25,7 +25,7 @@ export async function generateMetadata(): Promise<Metadata> {
     openGraph: {
       title: content.title,
       description: content.description,
-      url: `${SITE_URL}/contact-us`,
+      url: `${SITE_URL}/security`,
       type: 'website',
     },
     twitter: {
@@ -33,17 +33,17 @@ export async function generateMetadata(): Promise<Metadata> {
       description: content.description,
     },
     alternates: {
-      canonical: `${SITE_URL}/contact-us`,
+      canonical: `${SITE_URL}/security`,
       languages: {
-        'en': `${SITE_URL}/contact-us`,
-        'fr': `${SITE_URL}/contact-us`,
-        'x-default': `${SITE_URL}/contact-us`,
+        'en': `${SITE_URL}/security`,
+        'fr': `${SITE_URL}/security`,
+        'x-default': `${SITE_URL}/security`,
       },
     },
   };
 }
 
-export default function ContactLayout({
+export default function SecurityLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -52,9 +52,8 @@ export default function ContactLayout({
     <>
       <BreadcrumbJsonLd items={[
         { name: 'Home', url: SITE_URL },
-        { name: 'Contact', url: `${SITE_URL}/contact-us` },
+        { name: 'Security', url: `${SITE_URL}/security` },
       ]} />
-      <ContactPageJsonLd />
       {children}
     </>
   );

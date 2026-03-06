@@ -13,6 +13,7 @@ import { OrganizationJsonLd, WebSiteJsonLd, WebApplicationJsonLd } from "@/compo
 import GlobalSideDrawer from "@/components/providers/GlobalSideDrawer";
 import ToastContainer from "@/components/shared/Toast";
 import ChatWidget from "@/components/shared/ChatWidget";
+import WebVitals from "@/components/shared/WebVitals";
 import CookieConsentBanner from "@/components/shared/CookieConsentBanner";
 import PlatformStatusGate from "@/components/providers/PlatformStatusGate";
 import "react-flagpack/dist/style.css";
@@ -192,6 +193,7 @@ export default async function RootLayout({
           <Suspense fallback={null}>
             <SentryProvider>
               <PostHogProvider>
+                <WebVitals />
                 <ToastContainer />
                 <PlatformStatusGate>
                   {children}

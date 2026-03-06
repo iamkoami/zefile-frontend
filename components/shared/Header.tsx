@@ -341,7 +341,7 @@ const Header = () => {
   const mainMenuItems = [
     { label: t("helpCenter"), href: "/help" },
     { label: t("howItWorks"), href: "/how-it-works" },
-    { label: t("pricing"), action: () => handleOpenDrawer("subscriptions") },
+    { label: t("pricing"), href: "/pricing" },
     { label: t("about"), href: "/about" },
   ];
 
@@ -466,25 +466,15 @@ const Header = () => {
               }`}
             >
               {!isAuthenticated &&
-                mainMenuItems.map((item) =>
-                  item.action ? (
-                    <button
-                      key={item.label}
-                      onClick={item.action}
-                      className="ze-menu-item"
-                    >
-                      {item.label}
-                    </button>
-                  ) : (
-                    <Link
-                      key={item.label}
-                      href={item.href!}
-                      className="ze-menu-item"
-                    >
-                      {item.label}
-                    </Link>
-                  ),
-                )}
+                mainMenuItems.map((item) => (
+                  <Link
+                    key={item.label}
+                    href={item.href}
+                    className="ze-menu-item"
+                  >
+                    {item.label}
+                  </Link>
+                ))}
 
               {/* Logged in menu items */}
               {isAuthenticated && (

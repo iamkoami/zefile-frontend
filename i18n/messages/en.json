@@ -2792,5 +2792,27 @@
       "addedContact": "Save a contact",
       "firstPaidTransfer": "Set a price on a transfer"
     }
+  },
+  "crossLinks": {
+    "howItWorks": {
+      "label": "How it works",
+      "description": "See the 3-step process: upload, share, get paid."
+    },
+    "pricing": {
+      "label": "Pricing plans",
+      "description": "Compare Free, Starter, and Pro plans."
+    },
+    "help": {
+      "label": "Help center",
+      "description": "Answers to common questions about transfers and payments."
+    },
+    "about": {
+      "label": "About ZeFile",
+      "description": "Our story, mission, and the team behind ZeFile."
+    },
+    "blog": {
+      "label": "Blog",
+      "description": "Tips, guides, and updates for creatives."
+    }
   }
 }
