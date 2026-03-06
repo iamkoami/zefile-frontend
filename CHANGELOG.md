@@ -5,6 +5,15 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.33.0] - 2026-03-06
+
+### Changed
+
+- Convert 10 public pages from client-side to server-rendered for SEO crawlability (about, pricing, how-it-works, contact-us, help, security, press, jobs, terms, privacy)
+- Extract client interactivity into separate Client components (AboutClient, PricingClient, HowItWorksClient, ContactForm, HelpContent, ChatButton)
+- Server-render sr-only SEO text blocks for complex pages (about, pricing, how-it-works)
+- Header "Pricing" link now opens SubscriptionPanel drawer instead of navigating to /pricing
+
 ## [1.32.0] - 2026-03-06
 
 ### Added
