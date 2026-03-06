@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import {
   Plus,
   MediaImagePlus,
@@ -31,7 +31,7 @@ import { multipartUploadService } from "@/services/multipart-upload.service";
 import { useUploadStore } from "@/stores/upload-store";
 import { useDrawerStore } from "@/stores/drawer-store";
 import { useCurrentCurrency } from "@/stores/currency-store";
-import { formatCurrencyAmount } from "@/lib/currency";
+import { formatCurrencyAmount, convertCurrency } from "@/lib/currency";
 import { TransferOptions } from "@/features/transfer/components/TransferOptionsPanel";
 import { storageApi } from "@/services/storage-api";
 import { getTierTranslationKey } from "@/hooks/useTierLimits";
@@ -147,6 +147,20 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
   const [receivedAmount, setReceivedAmount] = useState<number>(0);
   const [serviceChargePercentage, setServiceChargePercentage] =
     useState<number>(7);
+
+  // Free transfer & minimum price state
+  const [isFreeTransfer, setIsFreeTransfer] = useState(false);
+  const [minimumTransferPriceNGN, setMinimumTransferPriceNGN] =
+    useState<number>(300);
+  const [canCreateFreeTransfers, setCanCreateFreeTransfers] = useState(false);
+
+  // Minimum price converted to selected currency
+  const minimumPriceInCurrency = useMemo(() => {
+    if (currency === "NGN") return minimumTransferPriceNGN;
+    return Math.ceil(
+      convertCurrency(minimumTransferPriceNGN, "NGN", currency),
+    );
+  }, [minimumTransferPriceNGN, currency]);
 
   // Upload progress state
   const [uploadProgress, setUploadProgress] = useState<number>(0);
@@ -323,6 +337,8 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
         const response = await platformApi.getUserConfig();
         if (response.data) {
           setServiceChargePercentage(response.data.serviceChargePercentage);
+          setMinimumTransferPriceNGN(response.data.minimumTransferPriceNGN);
+          setCanCreateFreeTransfers(response.data.canCreateFreeTransfers);
           return;
         }
       }
@@ -658,8 +674,14 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
       errors.email = t("invalidEmail");
     }
 
-    if (!price.trim()) {
-      errors.price = t("priceRequired");
+    if (!isFreeTransfer) {
+      if (!price.trim()) {
+        errors.price = t("priceRequired");
+      } else if (parsePriceToNumber(price) < minimumPriceInCurrency) {
+        errors.price = t("priceBelowMinimum", {
+          amount: formatCurrencyAmount(minimumPriceInCurrency, currency),
+        });
+      }
     }
 
     // Validate password when access control is 'password'
@@ -863,8 +885,9 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
         senderId: userId,
         recipientEmails: recipientEmails,
         title: transferTitle,
-        price: parsePriceToNumber(price),
+        price: isFreeTransfer ? 0 : parsePriceToNumber(price),
         currency: currency,
+        paymentRequired: isFreeTransfer ? false : undefined,
         message: message || undefined,
         // Include transfer options if provided
         accessControl: transferOptions?.accessControl,
@@ -1232,6 +1255,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
     setEmail("");
     setTitle("");
     setPrice("");
+    setIsFreeTransfer(false);
     setCurrency(globalCurrency || "XOF"); // Reset to global currency
     setMessage("");
     setFormErrors({});
@@ -1344,7 +1368,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
 
                   {/* Text */}
                   <div id="ze-upload-text" className="ze-upload-text text-left">
-                    <p className="text-sm font-semibold">
+                    <p className="text-sm font-semibold text-[#171717]">
                       {t("addFiles")}
                     </p>
                     <p className="text-xs text-gray-500">
@@ -1590,64 +1614,102 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                 </div>
               )}
 
-              {/* Currency & Price */}
-              <div>
-                <div className="grid grid-cols-[110px_1fr] gap-3">
-                  {/* Currency Selector */}
-                  <div>
-                    <select
-                      value={currency}
-                      onChange={(e) => setCurrency(e.target.value)}
-                      className={`ze-form-select h-full ${
-                        formErrors.price ? "border-red-500" : ""
+              {/* Free Transfer Toggle — STARTER and PRO only */}
+              {canCreateFreeTransfers && (
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium text-[#171717]">
+                    {t("freeTransfer")}
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsFreeTransfer(!isFreeTransfer);
+                      if (!isFreeTransfer) {
+                        setPrice("");
+                      }
+                    }}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      isFreeTransfer ? "bg-[#87E64B]" : "bg-gray-300"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        isFreeTransfer
+                          ? "translate-x-6"
+                          : "translate-x-1"
                       }`}
-                    >
-                      <option value="XOF">XOF</option>
-                      <option value="NGN">NGN</option>
-                      <option value="GHS">GHS</option>
-                      <option value="KES">KES</option>
-                      <option value="ZAR">ZAR</option>
-                      <option value="USD">USD</option>
-                    </select>
-                  </div>
-
-                  {/* Price Input */}
-                  <div>
-                    <input
-                      type="text"
-                      value={price}
-                      onChange={handlePriceChange}
-                      placeholder={t("setPrice")}
-                      className={`ze-form-input ${
-                        formErrors.price ? "border-red-500" : ""
-                      }`}
-                      inputMode="numeric"
                     />
-                  </div>
+                  </button>
                 </div>
-                {/* Error message under both fields */}
-                {formErrors.price && (
-                  <p className="text-sm text-red-600 mt-1">
-                    {formErrors.price}
-                  </p>
-                )}
-                {/* Service Charge — single-line inline */}
-                {price && parsePriceToNumber(price) > 0 && (
-                  <p className="text-xs  text-[#171717] mt-3">
-                    {t.rich("earningsInline", {
-                      formattedAmount: formatCurrencyAmount(
-                        receivedAmount > 0
-                          ? receivedAmount
-                          : parsePriceToNumber(price) *
-                              (1 - serviceChargePercentage / 100),
-                        currency,
-                      ),
-                      percentage: serviceChargePercentage,
-                      b: (chunks) => <span className="font-semibold">{chunks}</span>,
-                    })}
-                  </p>
-                )}
-              </div>
+              )}
+
+              {/* Currency & Price — hidden when free transfer is on */}
+              {!isFreeTransfer && (
+                <div>
+                  <div className="grid grid-cols-[110px_1fr] gap-3">
+                    {/* Currency Selector */}
+                    <div>
+                      <select
+                        value={currency}
+                        onChange={(e) => setCurrency(e.target.value)}
+                        className={`ze-form-select h-full ${
+                          formErrors.price ? "border-red-500" : ""
+                        }`}
+                      >
+                        <option value="XOF">XOF</option>
+                        <option value="NGN">NGN</option>
+                        <option value="GHS">GHS</option>
+                        <option value="KES">KES</option>
+                        <option value="ZAR">ZAR</option>
+                        <option value="USD">USD</option>
+                      </select>
+                    </div>
+
+                    {/* Price Input */}
+                    <div>
+                      <input
+                        type="text"
+                        value={price}
+                        onChange={handlePriceChange}
+                        placeholder={t("setPriceMin", {
+                          amount: formatCurrencyAmount(
+                            minimumPriceInCurrency,
+                            currency,
+                          ),
+                        })}
+                        className={`ze-form-input ${
+                          formErrors.price ? "border-red-500" : ""
+                        }`}
+                        inputMode="numeric"
+                      />
+                    </div>
+                  </div>
+                  {/* Error message under both fields */}
+                  {formErrors.price && (
+                    <p className="text-sm text-red-600 mt-1">
+                      {formErrors.price}
+                    </p>
+                  )}
+                  {/* Service Charge — single-line inline */}
+                  {price && parsePriceToNumber(price) > 0 && (
+                    <p className="text-xs  text-[#171717] mt-3">
+                      {t.rich("earningsInline", {
+                        formattedAmount: formatCurrencyAmount(
+                          receivedAmount > 0
+                            ? receivedAmount
+                            : parsePriceToNumber(price) *
+                                (1 - serviceChargePercentage / 100),
+                          currency,
+                        ),
+                        percentage: serviceChargePercentage,
+                        b: (chunks) => (
+                          <span className="font-semibold">{chunks}</span>
+                        ),
+                      })}
+                    </p>
+                  )}
+                </div>
+              )}
 
               {/* Expand trigger for optional fields */}
               {!showDetails && (
@@ -1728,9 +1790,11 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
               >
                 {transferMode === "test"
                   ? t("transferTest")
-                  : price && parsePriceToNumber(price) > 0
-                    ? t("transferPaid")
-                    : t("transferFree")}
+                  : isFreeTransfer
+                    ? t("transferFree")
+                    : price && parsePriceToNumber(price) > 0
+                      ? t("transferPaid")
+                      : t("transferFree")}
               </button>
             </div>
           </div>

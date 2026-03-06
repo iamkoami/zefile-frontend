@@ -170,6 +170,8 @@ export interface UserPlatformConfig {
   tier: SubscriptionTier | 'free';
   maxUploadSize: number;
   isFirstPaidTransferUsed?: boolean;
+  minimumTransferPriceNGN: number;
+  canCreateFreeTransfers: boolean;
 }
 
 export class PlatformApi {
