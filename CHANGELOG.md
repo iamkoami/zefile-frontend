@@ -5,6 +5,30 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.32.0] - 2026-03-06
+
+### Added
+
+- Convert blog post page to SSR for search engine crawlability
+- Dynamic OG images for /pricing, /about, /how-it-works pages
+- Hreflang alternates in sitemap.xml for all pages (EN/FR)
+- Metadata (generateMetadata, OG tags, breadcrumbs) for /security, /press, /jobs
+- CrossLinks component for internal page navigation on pricing, how-it-works, about, help
+- Core Web Vitals monitoring via PostHog (LCP, CLS, INP, FCP, TTFB)
+- manifest.json for PWA support
+- FAQ schema on /help layout
+- Blog post breadcrumb now includes post title
+
+### Changed
+
+- Blog post page split into server component + client interactive parts
+- Pricing header link now crawlable (href="/pricing" instead of drawer action)
+- Press and Jobs layouts upgraded from static metadata to dynamic generateMetadata
+
+### Fixed
+
+- Contact page title duplication ("ZeFile" appeared twice)
+
 ## [1.31.1] - 2026-03-05
 
 ### Fixed
