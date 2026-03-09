@@ -501,7 +501,7 @@ export default function PricingClient() {
             return (
               <div
                 key={tier.id}
-                className={`relative rounded-2xl p-6 transition-all ${cardBgClass} ${borderClass} ${
+                className={`relative rounded-2xl p-6 transition-all flex flex-col ${cardBgClass} ${borderClass} ${
                   isPro && !isCurrentPlan
                     ? "shadow-xl"
                     : isHighlighted && !isCurrentPlan
@@ -533,7 +533,7 @@ export default function PricingClient() {
                     {tier.name}
                   </h3>
                   <p
-                    className={`text-sm font-medium mt-1 ${subtextColorClass}`}
+                    className={`text-sm font-medium mt-1 min-h-[2.75rem] ${subtextColorClass}`}
                   >
                     {tier.description}
                   </p>
@@ -545,11 +545,9 @@ export default function PricingClient() {
                     <span className={`text-4xl font-bold ${textColorClass}`}>
                       {getTierPrice(tier.id)}
                     </span>
-                    {tier.id !== "free" && (
-                      <span className={`font-medium ${subtextColorClass}`}>
-                        {getBillingSuffix()}
-                      </span>
-                    )}
+                    <span className={`font-medium ${tier.id === "free" ? "invisible" : subtextColorClass}`}>
+                      {getBillingSuffix()}
+                    </span>
                   </div>
                   {billingPeriod === "annual" && (
                     <p

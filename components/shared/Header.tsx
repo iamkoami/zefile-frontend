@@ -267,8 +267,11 @@ const Header = () => {
 
     // Handle open-auth-panel event (from SubscriptionPanel)
     const handleOpenAuthPanel = (event: Event) => {
-      const customEvent = event as CustomEvent<{ returnTo?: string }>;
+      const customEvent = event as CustomEvent<{ returnTo?: string; mode?: "login" | "signup" }>;
       setPendingAction(customEvent.detail?.returnTo ?? null);
+      if (customEvent.detail?.mode) {
+        setAuthMode(customEvent.detail.mode);
+      }
       setShowAuthPanel(true);
     };
 
@@ -643,11 +646,13 @@ const Header = () => {
                   </button>
                 )}
 
-                {/* Separator */}
-                <div
-                  id="ze-menu-separator"
-                  className="ze-menu-separator h-6 mx-3 w-px bg-gray-300"
-                />
+                {/* Separator - only show when upgrade button is visible */}
+                {subscriptionTier === "free" && (
+                  <div
+                    id="ze-menu-separator"
+                    className="ze-menu-separator h-6 mx-3 w-px bg-gray-300"
+                  />
+                )}
 
                 {/* User dropdown */}
                 <div

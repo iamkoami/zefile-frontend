@@ -15,6 +15,8 @@ export default async function Home() {
     { question: seo("faq4Question"), answer: seo("faq4Answer") },
     { question: seo("faq5Question"), answer: seo("faq5Answer") },
     { question: seo("faq6Question"), answer: seo("faq6Answer") },
+    { question: seo("faq7Question"), answer: seo("faq7Answer") },
+    { question: seo("faq8Question"), answer: seo("faq8Answer") },
   ];
 
   return (
@@ -25,7 +27,7 @@ export default async function Home() {
           HeroText (client component) provides the styled visual version on desktop.
           This ensures the H1 is in the server response before JS hydration. */}
       <h1 className="sr-only">{t("title")}</h1>
-      <p className="sr-only">{t("subtitle")}</p>
+      <p className="sr-only">{t("subtitle")} {t("subtitle2")}</p>
 
       {/* Keyword-rich SEO description for search engines — invisible to users */}
       <div className="sr-only" role="doc-subtitle">
@@ -52,6 +54,8 @@ export default async function Home() {
           <li>{seo("feature2")}</li>
           <li>{seo("feature3")}</li>
           <li>{seo("feature4")}</li>
+          <li>{seo("feature5")}</li>
+          <li>{seo("feature6")}</li>
         </ul>
 
         <h2>{seo("faqTitle")}</h2>

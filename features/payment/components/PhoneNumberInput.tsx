@@ -219,12 +219,12 @@ export function PhoneNumberInput({
         {t('phoneNumber')}
       </label>
 
-      <div className="relative flex">
+      <div className="relative flex items-stretch">
         {/* Country Selector - disabled when hideCountrySelector is true */}
-        <div className="relative">
+        <div className="relative flex">
           {hideCountrySelector ? (
             // Static display when country is controlled externally
-            <div className="flex items-center gap-2 px-3 py-3 border border-r-0 border-gray-300 rounded-l bg-gray-100 min-w-[110px]">
+            <div className="flex items-center gap-2 px-3 border border-r-0 border-[#171717] rounded-l bg-gray-50 min-w-[110px]">
               <Flag code={selectedCountry.flagCode} size="s" hasBorder={false} />
               <span className="text-sm font-medium text-gray-700">{selectedCountry.dialCode}</span>
             </div>
@@ -233,7 +233,7 @@ export function PhoneNumberInput({
               type="button"
               onClick={() => !disabled && setIsDropdownOpen(!isDropdownOpen)}
               disabled={disabled}
-              className="flex items-center gap-2 px-3 py-3 border border-r-0 border-gray-300 rounded-l bg-gray-50 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed min-w-[110px]"
+              className="flex items-center gap-2 px-3 border border-r-0 border-[#171717] rounded-l bg-gray-50 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed min-w-[110px]"
             >
               <Flag code={selectedCountry.flagCode} size="s" hasBorder={false} />
               <span className="text-sm font-medium text-gray-700">{selectedCountry.dialCode}</span>
@@ -270,10 +270,10 @@ export function PhoneNumberInput({
             onChange={handleInputChange}
             disabled={disabled}
             placeholder={t('enterPhoneNumber')}
-            className={`w-full px-4 py-3 border rounded-r text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#171717] disabled:opacity-50 disabled:cursor-not-allowed ${
+            className={`w-full px-4 py-3 border rounded-r text-gray-900 placeholder-[#e1e1e1] focus:outline-none focus:border-[#87e64b] focus:shadow-[0_0_0_2px_rgba(135,230,75,0.1)] disabled:opacity-50 disabled:cursor-not-allowed transition-all ${
               displayError
-                ? 'border-red-500 focus:ring-red-500'
-                : 'border-gray-300'
+                ? 'border-red-500 focus:border-red-500'
+                : 'border-[#171717]'
             }`}
           />
           <Phone className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />

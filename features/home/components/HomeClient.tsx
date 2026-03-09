@@ -40,8 +40,11 @@ export default function HomeClient() {
   const [maxUploadSize, setMaxUploadSize] = useState<number>(2147483648); // Default 2GB
   const [uploadPanelState, setUploadPanelState] =
     useState<PanelState>("initial");
-  const [transferMode, setTransferMode] = useState<"test" | "real" | null>(null);
-  const [testSimulationData, setTestSimulationData] = useState<TestSimulationData | null>(null);
+  const [transferMode, setTransferMode] = useState<"test" | "real" | null>(
+    null,
+  );
+  const [testSimulationData, setTestSimulationData] =
+    useState<TestSimulationData | null>(null);
   const [testConvertFn, setTestConvertFn] = useState<(() => void) | null>(null);
   const [testResetFn, setTestResetFn] = useState<(() => void) | null>(null);
   const [reuseTransferData, setReuseTransferData] =
@@ -59,6 +62,7 @@ export default function HomeClient() {
   // User tier state (defaults to 'free' for unauthenticated users)
   const [userTier, setUserTier] = useState<SubscriptionTier>("free");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthChecked, setIsAuthChecked] = useState(false);
   const [isFirstPaidTransferUsed, setIsFirstPaidTransferUsed] = useState(true);
 
   // Fetch tier limits from API (dynamic values from admin configuration)
@@ -108,9 +112,7 @@ export default function HomeClient() {
       } else {
         const validDrawers = ["transfers", "contacts", "subscriptions"];
         if (validDrawers.includes(drawerParam)) {
-          openDrawer(
-            drawerParam as "transfers" | "contacts" | "subscriptions",
-          );
+          openDrawer(drawerParam as "transfers" | "contacts" | "subscriptions");
         }
       }
       // Clean up URL
@@ -143,6 +145,7 @@ export default function HomeClient() {
         setUserTier("free");
         setIsAuthenticated(false);
         setMaxUploadSize(2147483648);
+        setIsAuthChecked(true);
         return;
       }
       setIsAuthenticated(true);
@@ -150,15 +153,18 @@ export default function HomeClient() {
         const response = await platformApi.getUserConfig();
         if (response.data) {
           setMaxUploadSize(response.data.maxUploadSize);
-          const tier = (response.data.tier?.toLowerCase() ||
-            "free") as SubscriptionTier;
-          setUserTier(tier);
+          if (response.data.tier) {
+            setUserTier(response.data.tier.toLowerCase() as SubscriptionTier);
+          }
           setIsFirstPaidTransferUsed(
             response.data.isFirstPaidTransferUsed ?? true,
           );
         }
       } catch (error) {
+        // On API failure (e.g. token refresh), keep existing tier — don't reset to "free"
         console.error("Failed to fetch platform config:", error);
+      } finally {
+        setIsAuthChecked(true);
       }
     };
 
@@ -303,80 +309,89 @@ export default function HomeClient() {
               <div className="ze-tab-stack">
                 <button
                   className="ze-tab-inactive-pill"
-                  onClick={() => handleTabChange(activeTab === "send" ? "request" : "send")}
+                  onClick={() =>
+                    handleTabChange(activeTab === "send" ? "request" : "send")
+                  }
                 >
-                  {activeTab === "send" ? tUpload("requestFilesTab") : tUpload("sendFilesTab")}
+                  {activeTab === "send"
+                    ? tUpload("requestFilesTab")
+                    : tUpload("sendFilesTab")}
                 </button>
 
-              {activeTab === "request" ? (
-                <div key="request-panel" className="ze-upload-panel ze-request-panel ze-tab-animate-in">
-                  <FileRequestPanel
-                    isAuthenticated={isAuthenticated}
-                    userTier={userTier}
-                  />
-                </div>
-              ) : (
-              <div key="send-panel" className="ze-tab-animate-in">
-              {/* Upload Panel */}
-              <UploadPanel
-                selectedFiles={selectedFiles}
-                onFilesChange={handleFilesChange}
-                maxUploadSize={maxUploadSize}
-                selectedFilesSize={selectedFilesSize}
-                onPanelStateChange={setUploadPanelState}
-                onTransferModeChange={setTransferMode}
-                onTestConvert={(fn) => setTestConvertFn(() => fn)}
-                onTestReset={(fn) => setTestResetFn(() => fn)}
-                onTestSimulationDataChange={setTestSimulationData}
-                reuseTransferData={reuseTransferData}
-                onClearReuseData={handleClearReuseData}
-                transferOptions={transferOptions}
-                onTransferOptionsChange={setTransferOptions}
-                tierLimitsData={tierLimitsData}
-                userTier={userTier}
-                isFirstPaidTransferUsed={isFirstPaidTransferUsed}
-              />
-
-              {/* File Preview Panel - Visible when files selected OR reuse files OR form is showing */}
-              {/* Hidden during OTP, uploading, cancel-confirm, and complete states */}
-              <FilePreviewPanel
-                files={selectedFiles}
-                onRemoveFile={handleRemoveFile}
-                onAddMoreFiles={handleAddMoreFiles}
-                isVisible={
-                  (selectedFiles.length > 0 ||
-                    reuseTransferData !== null ||
-                    uploadPanelState === "form") &&
-                  uploadPanelState !== "otp" &&
-                  uploadPanelState !== "uploading" &&
-                  uploadPanelState !== "cancel-confirm" &&
-                  uploadPanelState !== "complete" &&
-                  uploadPanelState !== "test-result"
-                }
-                maxUploadSize={maxUploadSize}
-                selectedFilesSize={selectedFilesSize}
-                reuseTransferData={reuseTransferData}
-                onClearReuseData={handleClearReuseData}
-                transferOptions={transferOptions}
-                tierLimitsData={tierLimitsData}
-                transferMode={transferMode}
-              />
-
-              {/* Test Result Side Panel - simulated download page */}
-              {uploadPanelState === "test-result" && testSimulationData && (
-                <div className="ze-file-preview-panel ze-test-result-side visible">
-                  <div className="ze-file-preview-content">
-                    <TestDownloadSimulation simulationData={testSimulationData} />
+                {activeTab === "request" ? (
+                  <div
+                    key="request-panel"
+                    className="ze-upload-panel ze-request-panel ze-tab-animate-in"
+                  >
+                    <FileRequestPanel
+                      isAuthenticated={isAuthenticated}
+                      isAuthChecked={isAuthChecked}
+                      userTier={userTier}
+                    />
                   </div>
-                </div>
-              )}
-              </div>
-              )}
-              </div>
+                ) : (
+                  <div key="send-panel" className="ze-tab-animate-in">
+                    {/* Upload Panel */}
+                    <UploadPanel
+                      selectedFiles={selectedFiles}
+                      onFilesChange={handleFilesChange}
+                      maxUploadSize={maxUploadSize}
+                      selectedFilesSize={selectedFilesSize}
+                      onPanelStateChange={setUploadPanelState}
+                      onTransferModeChange={setTransferMode}
+                      onTestConvert={(fn) => setTestConvertFn(() => fn)}
+                      onTestReset={(fn) => setTestResetFn(() => fn)}
+                      onTestSimulationDataChange={setTestSimulationData}
+                      reuseTransferData={reuseTransferData}
+                      onClearReuseData={handleClearReuseData}
+                      transferOptions={transferOptions}
+                      onTransferOptionsChange={setTransferOptions}
+                      tierLimitsData={tierLimitsData}
+                      userTier={userTier}
+                      isFirstPaidTransferUsed={isFirstPaidTransferUsed}
+                    />
 
+                    {/* File Preview Panel - Visible when files selected OR reuse files OR form is showing */}
+                    {/* Hidden during OTP, uploading, cancel-confirm, and complete states */}
+                    <FilePreviewPanel
+                      files={selectedFiles}
+                      onRemoveFile={handleRemoveFile}
+                      onAddMoreFiles={handleAddMoreFiles}
+                      isVisible={
+                        (selectedFiles.length > 0 ||
+                          reuseTransferData !== null ||
+                          uploadPanelState === "form") &&
+                        uploadPanelState !== "otp" &&
+                        uploadPanelState !== "uploading" &&
+                        uploadPanelState !== "cancel-confirm" &&
+                        uploadPanelState !== "complete" &&
+                        uploadPanelState !== "test-result"
+                      }
+                      maxUploadSize={maxUploadSize}
+                      selectedFilesSize={selectedFilesSize}
+                      reuseTransferData={reuseTransferData}
+                      onClearReuseData={handleClearReuseData}
+                      transferOptions={transferOptions}
+                      tierLimitsData={tierLimitsData}
+                      transferMode={transferMode}
+                    />
+
+                    {/* Test Result Side Panel - simulated download page */}
+                    {uploadPanelState === "test-result" &&
+                      testSimulationData && (
+                        <div className="ze-file-preview-panel ze-test-result-side visible">
+                          <div className="ze-file-preview-content">
+                            <TestDownloadSimulation
+                              simulationData={testSimulationData}
+                            />
+                          </div>
+                        </div>
+                      )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-
         </main>
       </div>
     </UploadProtectionProvider>

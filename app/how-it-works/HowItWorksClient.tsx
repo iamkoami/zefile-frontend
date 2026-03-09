@@ -33,6 +33,8 @@ import {
   Page,
   Archive,
   PageStar,
+  RefreshDouble,
+  HandCash,
 } from "iconoir-react";
 
 /* ------------------------------------------------------------------ */
@@ -668,7 +670,7 @@ function FeatureCarousel({
         >
           <div
             ref={scrollRef}
-            className="flex gap-5 overflow-x-auto scrollbar-hide scroll-smooth [mask-image:linear-gradient(to_right,transparent,black_3%,black_97%,transparent)] cursor-grab active:cursor-grabbing"
+            className="flex gap-5 px-6 overflow-x-auto scrollbar-hide scroll-smooth [mask-image:linear-gradient(to_right,transparent,black_1%,black_99%,transparent)] cursor-grab active:cursor-grabbing"
             style={{ scrollbarWidth: "none" }}
             onScroll={onScroll}
             onMouseDown={onDragStart}
@@ -1255,9 +1257,19 @@ export default function HowItWorksClient() {
       description: t("bento6Desc"),
     },
     {
-      icon: null,
+      icon: <Lock width={22} height={22} strokeWidth={1.5} />,
       title: t("bento7Title"),
       description: t("bento7Desc"),
+    },
+    {
+      icon: <RefreshDouble width={22} height={22} strokeWidth={1.5} />,
+      title: t("bento8Title"),
+      description: t("bento8Desc"),
+    },
+    {
+      icon: <HandCash width={22} height={22} strokeWidth={1.5} />,
+      title: t("bento9Title"),
+      description: t("bento9Desc"),
     },
   ];
 

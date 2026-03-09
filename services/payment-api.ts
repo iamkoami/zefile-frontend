@@ -195,14 +195,27 @@ export interface MobileMoneyProviderDto {
 }
 
 /**
+ * Payment method info from backend (matches PaymentMethodInfoDto)
+ */
+export interface PaymentMethodInfo {
+  type: 'card' | 'mobile_money' | 'bank_transfer' | 'ussd';
+  provider: string;
+  name: string;
+  icon: string;
+}
+
+/**
  * Payment Methods Response
+ * Backend returns { countryCode, methods }.
+ * We transform to include legacy `mobileMoney` + `card` fields for backward compat.
  */
 export interface PaymentMethodsResponse {
   countryCode: string;
+  methods: PaymentMethodInfo[];
+  /** @deprecated Use methods.filter(m => m.type === 'mobile_money') */
   mobileMoney: MobileMoneyProviderDto[];
   card: {
     enabled: boolean;
-    providers: string[];
   };
 }
 
@@ -347,7 +360,24 @@ export const paymentApi = {
     const url = countryCode
       ? `/v2/payments/methods/${countryCode.toUpperCase()}`
       : '/v2/payments/methods';
-    return apiClient.get<PaymentMethodsResponse>(url);
+    const raw = await apiClient.get<{ countryCode: string; methods: PaymentMethodInfo[] }>(url);
+    if (raw.error || !raw.data) {
+      return raw as ApiResponse<PaymentMethodsResponse>;
+    }
+    const methods = raw.data.methods || [];
+    return {
+      ...raw,
+      data: {
+        countryCode: raw.data.countryCode,
+        methods,
+        mobileMoney: methods
+          .filter((m) => m.type === 'mobile_money')
+          .map((m) => ({ provider: m.provider, name: m.name, icon: m.icon })),
+        card: {
+          enabled: methods.some((m) => m.type === 'card'),
+        },
+      },
+    };
   },
 
   /**

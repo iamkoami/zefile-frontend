@@ -150,6 +150,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
 
   // Free transfer & minimum price state
   const [isFreeTransfer, setIsFreeTransfer] = useState(false);
+  const savedPriceRef = React.useRef("");
   const [minimumTransferPriceNGN, setMinimumTransferPriceNGN] =
     useState<number>(300);
   const [canCreateFreeTransfers, setCanCreateFreeTransfers] = useState(false);
@@ -1592,10 +1593,15 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                   <button
                     type="button"
                     onClick={() => {
-                      setIsFreeTransfer(!isFreeTransfer);
                       if (!isFreeTransfer) {
+                        // Toggling ON: save current price, then clear
+                        savedPriceRef.current = price;
                         setPrice("");
+                      } else {
+                        // Toggling OFF: restore saved price
+                        setPrice(savedPriceRef.current);
                       }
+                      setIsFreeTransfer(!isFreeTransfer);
                     }}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                       isFreeTransfer ? "bg-[#87E64B]" : "bg-gray-300"

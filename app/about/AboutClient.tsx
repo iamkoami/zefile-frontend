@@ -22,6 +22,7 @@ import {
   Settings,
   CreditCard,
   StatsReport,
+  RefreshDouble,
 } from "iconoir-react";
 
 /* ------------------------------------------------------------------ */
@@ -469,7 +470,7 @@ function TrustCarousel({ items }: { items: { pill: string; desc: string }[] }) {
     >
       <div
         ref={scrollRef}
-        className="flex gap-5 overflow-x-auto scrollbar-hide scroll-smooth [mask-image:linear-gradient(to_right,transparent,black_3%,black_97%,transparent)] cursor-grab active:cursor-grabbing"
+        className="flex gap-5 px-6 overflow-x-auto scrollbar-hide scroll-smooth [mask-image:linear-gradient(to_right,transparent,black_1%,black_99%,transparent)] cursor-grab active:cursor-grabbing"
         style={{ scrollbarWidth: "none" }}
         onScroll={onScroll}
         onMouseDown={onDragStart}
@@ -572,6 +573,11 @@ export default function AboutClient() {
       titleKey: "cap5Title",
       contentKey: "cap5Content",
     },
+    {
+      icon: <RefreshDouble width={20} height={20} strokeWidth={1.5} />,
+      titleKey: "cap6Title",
+      contentKey: "cap6Content",
+    },
   ];
 
   const trustItems = [
@@ -626,7 +632,7 @@ export default function AboutClient() {
         {/* ── 2. The Problem — text left, image right ───────────── */}
         <section
           id="about-problem"
-          className="max-w-6xl mx-auto px-6 pt-36 pb-30 md:pb-36"
+          className="max-w-7xl mx-auto px-6 pt-36 pb-30 md:pb-36"
         >
           <Reveal>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-center">
@@ -653,6 +659,7 @@ export default function AboutClient() {
               <Reveal delay={200}>
                 <div className="relative">
                   <ImageZone
+                    src="/images/about-the-problem.png"
                     alt="Creative freelancer working on a project"
                     aspect="aspect-[4/3]"
                   />
@@ -691,7 +698,7 @@ export default function AboutClient() {
             className="absolute bottom-[10%] right-[8%] hidden md:block"
           />
 
-          <div className="max-w-6xl mx-auto px-6 py-20 md:py-32 relative z-10">
+          <div className="max-w-7xl mx-auto px-6 py-20 md:py-32 relative z-10">
             <Reveal>
               <div className="mb-20 md:mb-28">
                 <p className="text-2xl md:text-4xl text-[#171717]/50 font-light leading-snug">
@@ -771,6 +778,7 @@ export default function AboutClient() {
                 </div>
                 <div className="relative min-h-[300px] lg:min-h-0">
                   <ImageZone
+                    src="/images/about-how-it-started.png"
                     alt="African creatives collaborating"
                     aspect="aspect-auto"
                     className="h-full rounded-none lg:rounded-none"
@@ -797,7 +805,7 @@ export default function AboutClient() {
         </div>
 
         {/* Section separator: Capabilities → Security */}
-        <div className="relative max-w-6xl mx-auto h-16 z-20">
+        <div className="relative max-w-7xl mx-auto h-16 z-20">
           <BrandCross
             size={100}
             color="#5E53E0"
@@ -834,7 +842,7 @@ export default function AboutClient() {
             className="absolute top-1/3 right-[8%] hidden lg:block"
           />
 
-          <div className="max-w-6xl mx-auto px-6 py-32 md:py-40 relative z-10">
+          <div className="max-w-7xl mx-auto px-6 py-32 md:py-40 relative z-10">
             <Reveal>
               <div className="text-center mb-12">
                 <h2 className="text-3xl md:text-5xl font-bold text-[#171717] mb-3">
@@ -870,10 +878,11 @@ export default function AboutClient() {
           <div className="absolute bottom-16 left-8 w-28 h-28 rounded-full border-[3px] border-[#F59E0B]/10 pointer-events-none" />
 
           <Reveal>
-            <div className="max-w-6xl mx-auto px-6 py-20 md:py-28 relative z-10">
+            <div className="max-w-7xl mx-auto px-6 py-20 md:py-28 relative z-10">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 md:gap-16 items-center">
                 <Reveal delay={100}>
                   <ImageZone
+                    src="/images/about-build-where-matters.png"
                     alt="African creative professionals at work"
                     aspect="aspect-[4/3]"
                   />
@@ -902,7 +911,7 @@ export default function AboutClient() {
 
         {/* ── 7. Values — colorful cards + watermark numbers ──── */}
         <section id="about-values">
-          <div className="max-w-6xl mx-auto px-6 pb-22 pt-8 md:pt-8 md:pb-22">
+          <div className="max-w-7xl mx-auto px-6 pb-22 pt-8 md:pt-8 md:pb-22">
             <Reveal>
               <h2 className="text-3xl md:text-5xl font-bold text-[#171717] mb-14 text-center">
                 {t.rich("valuesTitle", {

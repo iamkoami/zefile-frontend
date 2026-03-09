@@ -16,6 +16,8 @@ const ALLOWED_PAYMENT_DOMAINS = [
   "app.startbutton.io",
   "startbutton.africa",
   "checkout.startbutton.africa",
+  "startbutton.tech",
+  "pay-sandbox.startbutton.tech",
 ];
 
 /**

@@ -52,11 +52,38 @@ export interface PublicFileRequestDto {
   createdAt: string;
 }
 
+export interface InitializeEscrowPaymentDto {
+  customerEmail: string;
+  paymentMethod?: "card" | "mobile_money";
+  mobileMoneyProvider?: string;
+  phoneNumber?: string;
+  countryCode?: string;
+  callbackUrl?: string;
+}
+
+export interface EscrowPaymentResponse {
+  reference: string;
+  authorizationUrl?: string;
+  status: string;
+  requiresPolling?: boolean;
+  isMobileMoney?: boolean;
+}
+
 class FileRequestApi {
   async createFileRequest(
     dto: CreateFileRequestDto
   ): Promise<ApiResponse<FileRequestDto>> {
     return apiClient.post<FileRequestDto>("/file-requests", dto);
+  }
+
+  async payFileRequest(
+    id: string,
+    dto: InitializeEscrowPaymentDto
+  ): Promise<ApiResponse<EscrowPaymentResponse>> {
+    return apiClient.post<EscrowPaymentResponse>(
+      `/file-requests/${id}/pay`,
+      dto
+    );
   }
 
   async getMyRequests(

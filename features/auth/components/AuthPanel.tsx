@@ -133,7 +133,7 @@ const AuthPanel: React.FC<AuthPanelProps> = ({
               </label>
             ) : (
               <p className="text-sm text-gray-500 mt-10 max-w-xl">
-                {t("termsAgreement")}{" "}
+                {t("termsNotice")}{" "}
                 <Link
                   href="/terms"
                   target="_blank"
