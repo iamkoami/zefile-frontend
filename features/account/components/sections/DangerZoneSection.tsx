@@ -156,7 +156,7 @@ const DangerZoneSection: React.FC = () => {
   if (deletionStatus?.hasPendingDeletion) {
     return (
       <section className="border-t-2 border-red-200 pt-6 mt-6">
-        <h3 className="text-lg font-semibold text-red-600 mb-4 flex items-center gap-2">
+        <h3 className="text-lg font-bold text-red-600 mb-4 flex items-center gap-2">
           <WarningTriangle className="w-5 h-5" />
           {t("dangerZoneSection")}
         </h3>
@@ -168,7 +168,7 @@ const DangerZoneSection: React.FC = () => {
               <Trash className="w-6 h-6 text-red-500" />
             </div>
             <div className="flex-1">
-              <h4 className="font-semibold text-red-800">
+              <h4 className="font-bold text-red-800">
                 {t("deletionPendingTitle")}
               </h4>
               <p className="text-sm text-red-700 mt-1">
@@ -214,7 +214,7 @@ const DangerZoneSection: React.FC = () => {
   // Render delete account section
   return (
     <section className="border-t-2 border-red-200 pt-6 mt-6">
-      <h3 className="text-lg font-semibold text-red-600 mb-4 flex items-center gap-2">
+      <h3 className="text-lg font-bold text-red-600 mb-4 flex items-center gap-2">
         <WarningTriangle className="w-5 h-5" />
         {t("dangerZoneSection")}
       </h3>
@@ -286,7 +286,7 @@ const DangerZoneSection: React.FC = () => {
                 {/* Title */}
                 <h2
                   id="delete-account-title"
-                  className="text-xl font-semibold text-gray-900 text-center mb-4"
+                  className="text-xl font-bold text-gray-900 text-center mb-4"
                 >
                   {t("deleteAccountModalTitle")}
                 </h2>

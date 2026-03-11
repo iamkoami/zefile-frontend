@@ -331,7 +331,7 @@ const CustomDomainPanel: React.FC = () => {
   if (view === "tier-gate") {
     return (
       <div className="mb-10">
-        <h3 className="text-2xl font-semibold text-[#171717] mb-6">
+        <h3 className="text-2xl font-bold text-[#171717] mb-6">
           {t("title")}
         </h3>
         <div className="bg-gray-50 rounded-lg p-8 text-center">
@@ -357,7 +357,7 @@ const CustomDomainPanel: React.FC = () => {
   if (view === "add-domain") {
     return (
       <div className="mb-10">
-        <h3 className="text-2xl font-semibold text-[#171717] mb-6">
+        <h3 className="text-2xl font-bold text-[#171717] mb-6">
           {t("title")}
         </h3>
         <p className="text-sm text-gray-500 mb-6">{t("addDescription")}</p>
@@ -398,7 +398,7 @@ const CustomDomainPanel: React.FC = () => {
   // Manage domain view (verify, brand, remove)
   return (
     <div className="mb-10">
-      <h3 className="text-2xl font-semibold text-[#171717] mb-6">
+      <h3 className="text-2xl font-bold text-[#171717] mb-6">
         {t("title")}
       </h3>
 

@@ -97,7 +97,7 @@ export default function HelpContent({
 
       {/* Contact */}
       <section className="mt-16 text-center">
-        <h2 className="text-xl font-semibold text-[#171717] mb-3">
+        <h2 className="text-xl font-bold text-[#171717] mb-3">
           {contactTitle}
         </h2>
         <p className="text-gray-600">

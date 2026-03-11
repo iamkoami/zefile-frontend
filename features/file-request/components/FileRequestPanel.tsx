@@ -26,6 +26,7 @@ import {
   SmartphoneDevice,
   CreditCard,
   Globe,
+  Lock,
 } from "iconoir-react";
 import Image from "next/image";
 import Flag from "react-flagpack";
@@ -34,6 +35,7 @@ interface FileRequestPanelProps {
   isAuthenticated: boolean;
   isAuthChecked: boolean;
   userTier: string;
+  onStepChange?: (step: "info" | "checkout") => void;
 }
 
 /** Countries matching the currency switcher (Paystack + StartButton + International) */
@@ -56,22 +58,21 @@ const FileRequestPanel: React.FC<FileRequestPanelProps> = ({
   isAuthenticated,
   isAuthChecked,
   userTier,
+  onStepChange,
 }) => {
   const t = useTranslations("fileRequests");
 
   if (!isAuthChecked) return null;
   if (!isAuthenticated) return <NotLoggedInState t={t} />;
   if (userTier === "free") return <FreeTierState t={t} />;
-  return <RequestForm t={t} />;
+  return <RequestForm t={t} onStepChange={onStepChange} />;
 };
 
-function NotLoggedInState({
-  t,
-}: {
-  t: ReturnType<typeof useTranslations>;
-}) {
+function NotLoggedInState({ t }: { t: ReturnType<typeof useTranslations> }) {
   const openAuth = (mode: "login" | "signup") => {
-    window.dispatchEvent(new CustomEvent("open-auth-panel", { detail: { mode } }));
+    window.dispatchEvent(
+      new CustomEvent("open-auth-panel", { detail: { mode } }),
+    );
   };
 
   return (
@@ -84,13 +85,13 @@ function NotLoggedInState({
       </p>
       <button
         onClick={() => openAuth("login")}
-        className="w-full bg-[#5E53E0] text-white py-3 rounded font-semibold hover:bg-[#4e45c8] transition-colors mb-3"
+        className="w-full bg-[#5E53E0] text-white py-3 rounded font-bold hover:bg-[#4e45c8] transition-colors mb-3"
       >
         {t("loginCta")}
       </button>
       <button
         onClick={() => openAuth("signup")}
-        className="text-[#5E53E0] font-semibold text-sm hover:underline"
+        className="text-[#5E53E0] font-bold text-sm hover:underline"
       >
         {t("signUpLink")}
       </button>
@@ -106,10 +107,12 @@ function FreeTierState({ t }: { t: ReturnType<typeof useTranslations> }) {
       <h2 className="text-xl font-bold text-[#171717] mb-2">
         {t("freeTierTitle")}
       </h2>
-      <p className="text-sm font-medium text-gray-500 mb-8">{t("freeTierDesc")}</p>
+      <p className="text-sm font-medium text-gray-500 mb-8">
+        {t("freeTierDesc")}
+      </p>
       <button
         onClick={() => openDrawer("subscriptions")}
-        className="w-full bg-[#5E53E0] text-white py-3 rounded font-semibold hover:bg-[#4e45c8] transition-colors"
+        className="w-full bg-[#5E53E0] text-white py-3 rounded font-bold hover:bg-[#4e45c8] transition-colors"
       >
         {t("upgradeToStarter")}
       </button>
@@ -117,7 +120,7 @@ function FreeTierState({ t }: { t: ReturnType<typeof useTranslations> }) {
   );
 }
 
-function RequestForm({ t }: { t: ReturnType<typeof useTranslations> }) {
+function RequestForm({ t, onStepChange }: { t: ReturnType<typeof useTranslations>; onStepChange?: (step: "info" | "checkout") => void }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [budget, setBudget] = useState("");
@@ -136,16 +139,18 @@ function RequestForm({ t }: { t: ReturnType<typeof useTranslations> }) {
 
   // Country & payment method state
   const [selectedCountry, setSelectedCountry] = useState<string>(() => {
-    const cached = typeof window !== "undefined"
-      ? localStorage.getItem("zefile_detected_country")
-      : null;
+    const cached =
+      typeof window !== "undefined"
+        ? localStorage.getItem("zefile_detected_country")
+        : null;
     return cached && SUPPORTED_COUNTRIES.some((c) => c.code === cached)
       ? cached
       : "CI";
   });
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethodInfo[]>([]);
   const [loadingMethods, setLoadingMethods] = useState(false);
-  const [selectedMethod, setSelectedMethod] = useState<PaymentMethodInfo | null>(null);
+  const [selectedMethod, setSelectedMethod] =
+    useState<PaymentMethodInfo | null>(null);
   const [failedIcons, setFailedIcons] = useState<Set<string>>(new Set());
 
   // Phone input state (for mobile money)
@@ -160,7 +165,11 @@ function RequestForm({ t }: { t: ReturnType<typeof useTranslations> }) {
     shortCode: string;
   } | null>(null);
 
-  const { pollingStatus, startPolling, reset: resetPolling } = usePaymentStatus({
+  const {
+    pollingStatus,
+    startPolling,
+    reset: resetPolling,
+  } = usePaymentStatus({
     interval: 3000,
     timeout: 120000,
     onSuccess: () => {
@@ -213,7 +222,9 @@ function RequestForm({ t }: { t: ReturnType<typeof useTranslations> }) {
 
     // International: card only, no API call needed
     if (selectedCountry === "DEFAULT") {
-      setPaymentMethods([{ type: "card", name: "Card", provider: "paystack", icon: "card" }]);
+      setPaymentMethods([
+        { type: "card", name: "Card", provider: "paystack", icon: "card" },
+      ]);
       setLoadingMethods(false);
       return;
     }
@@ -297,10 +308,7 @@ function RequestForm({ t }: { t: ReturnType<typeof useTranslations> }) {
     }
     if (!creativeEmail.trim())
       newErrors.creativeEmail = t("creativeEmailRequired");
-    if (
-      creativeEmail &&
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(creativeEmail)
-    ) {
+    if (creativeEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(creativeEmail)) {
       newErrors.creativeEmail = t("creativeEmailInvalid");
     }
     if (deadline) {
@@ -328,6 +336,7 @@ function RequestForm({ t }: { t: ReturnType<typeof useTranslations> }) {
   const handleContinue = () => {
     if (validateInfo()) {
       setFormStep("checkout");
+      onStepChange?.("checkout");
     }
   };
 
@@ -365,9 +374,10 @@ function RequestForm({ t }: { t: ReturnType<typeof useTranslations> }) {
         ? `${origin}/file-requests/${fileRequest.shortCode}`
         : undefined;
 
-      const paymentMethod = selectedMethod.type === "mobile_money"
-        ? "mobile_money" as const
-        : "card" as const;
+      const paymentMethod =
+        selectedMethod.type === "mobile_money"
+          ? ("mobile_money" as const)
+          : ("card" as const);
 
       const payResponse = await fileRequestApi.payFileRequest(fileRequest.id, {
         customerEmail: user?.email || fileRequest.clientEmail,
@@ -389,7 +399,8 @@ function RequestForm({ t }: { t: ReturnType<typeof useTranslations> }) {
         return;
       }
 
-      const { authorizationUrl, requiresPolling, reference } = payResponse.data || {};
+      const { authorizationUrl, requiresPolling, reference } =
+        payResponse.data || {};
 
       if (requiresPolling && reference) {
         setPollingFileRequest({
@@ -467,7 +478,7 @@ function RequestForm({ t }: { t: ReturnType<typeof useTranslations> }) {
             </h2>
             <button
               onClick={handleRetryPayment}
-              className="mt-4 w-full bg-[#5E53E0] text-white py-3 rounded font-semibold hover:bg-[#4e45c8] transition-colors"
+              className="mt-4 w-full bg-[#5E53E0] text-white py-3 rounded font-bold hover:bg-[#4e45c8] transition-colors"
             >
               {t("tryAgain")}
             </button>
@@ -496,7 +507,7 @@ function RequestForm({ t }: { t: ReturnType<typeof useTranslations> }) {
         </p>
         <button
           onClick={() => setSuccess(null)}
-          className="w-full bg-[#5E53E0] text-white py-3 rounded font-semibold hover:bg-[#4e45c8] transition-colors"
+          className="w-full bg-[#5E53E0] text-white py-3 rounded font-bold hover:bg-[#4e45c8] transition-colors"
         >
           {t("sendAnother")}
         </button>
@@ -524,9 +535,7 @@ function RequestForm({ t }: { t: ReturnType<typeof useTranslations> }) {
             className={`ze-form-input ${errors.creativeEmail ? "border-red-500" : ""}`}
           />
           {errors.creativeEmail && (
-            <p className="text-sm text-red-600 mt-1">
-              {errors.creativeEmail}
-            </p>
+            <p className="text-sm text-red-600 mt-1">{errors.creativeEmail}</p>
           )}
         </div>
 
@@ -585,7 +594,9 @@ function RequestForm({ t }: { t: ReturnType<typeof useTranslations> }) {
                   setBudget(numericValue);
                   setErrors((prev) => ({ ...prev, budget: "" }));
                 }}
-                placeholder={t("budgetMin", { amount: formatCurrencyAmount(minimumBudget, currency) })}
+                placeholder={t("budgetMin", {
+                  amount: formatCurrencyAmount(minimumBudget, currency),
+                })}
                 className={`ze-form-input ${errors.budget ? "border-red-500" : ""}`}
                 inputMode="numeric"
               />
@@ -600,7 +611,7 @@ function RequestForm({ t }: { t: ReturnType<typeof useTranslations> }) {
       <div className="ze-upload-actions flex items-center gap-3">
         <button
           onClick={handleContinue}
-          className="flex-1 py-3 px-4 bg-[#5E53E0] text-white rounded font-semibold hover:bg-[#4e45c8] transition-colors"
+          className="flex-1 py-3 px-4 bg-[#5E53E0] text-white rounded font-bold hover:bg-[#4e45c8] transition-colors"
         >
           {t("continue")}
         </button>
@@ -610,7 +621,7 @@ function RequestForm({ t }: { t: ReturnType<typeof useTranslations> }) {
     <div key="request-checkout" className="animate-slideInRight">
       <button
         type="button"
-        onClick={() => setFormStep("info")}
+        onClick={() => { setFormStep("info"); onStepChange?.("info"); }}
         className="flex items-center gap-1 text-sm text-[#5E53E0] hover:text-[#4a42b3] mb-4 transition-colors"
       >
         <NavArrowLeft className="w-4 h-4" />
@@ -620,7 +631,9 @@ function RequestForm({ t }: { t: ReturnType<typeof useTranslations> }) {
       <div className="space-y-4 mb-6">
         {/* Country Selector */}
         <div>
-          <p className="text-sm font-medium text-gray-700 mb-2">{t("paymentCountry")}</p>
+          <p className="text-sm font-medium text-gray-700 mb-2">
+            {t("paymentCountry")}
+          </p>
           <div className="relative" ref={countryDropdownRef}>
             <button
               type="button"
@@ -628,11 +641,17 @@ function RequestForm({ t }: { t: ReturnType<typeof useTranslations> }) {
               className="ze-form-input w-full flex items-center gap-2 cursor-pointer pr-10"
             >
               {selectedCountryInfo?.flagCode ? (
-                <Flag code={selectedCountryInfo.flagCode} size="s" hasBorder={false} />
+                <Flag
+                  code={selectedCountryInfo.flagCode}
+                  size="s"
+                  hasBorder={false}
+                />
               ) : (
                 <Globe className="w-5 h-5 text-gray-500" />
               )}
-              <span className="text-sm text-[#171717]">{selectedCountryInfo?.name}</span>
+              <span className="text-sm text-[#171717]">
+                {selectedCountryInfo?.name}
+              </span>
               <NavArrowDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             </button>
 
@@ -666,7 +685,9 @@ function RequestForm({ t }: { t: ReturnType<typeof useTranslations> }) {
 
         {/* Payment Methods */}
         <div>
-          <p className="text-sm font-medium text-gray-700 mb-2">{t("paymentMethod")}</p>
+          <p className="text-sm font-medium text-gray-700 mb-2">
+            {t("paymentMethod")}
+          </p>
 
           {loadingMethods ? (
             <div className="flex items-center justify-center py-6">
@@ -707,7 +728,9 @@ function RequestForm({ t }: { t: ReturnType<typeof useTranslations> }) {
                           width={16}
                           height={16}
                           onError={() => {
-                            setFailedIcons((prev) => new Set(prev).add(method.icon));
+                            setFailedIcons((prev) =>
+                              new Set(prev).add(method.icon),
+                            );
                           }}
                         />
                       )}
@@ -773,7 +796,7 @@ function RequestForm({ t }: { t: ReturnType<typeof useTranslations> }) {
         <div className="bg-yellow-50 border border-yellow-200 rounded p-4 mb-4 flex items-start gap-3">
           <WarningCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-semibold text-yellow-800">
+            <p className="text-sm font-bold text-yellow-800">
               {t("paymentsUnavailable")}
             </p>
             <p className="text-xs text-yellow-700 mt-1">
@@ -787,10 +810,16 @@ function RequestForm({ t }: { t: ReturnType<typeof useTranslations> }) {
         <button
           onClick={handleSubmit}
           disabled={isSubmitting || paymentsDisabled}
-          className="flex-1 py-3 px-4 bg-[#5E53E0] text-white rounded font-semibold hover:bg-[#4e45c8] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 py-3 px-4 bg-[#5E53E0] text-white rounded font-bold hover:bg-[#4e45c8] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isSubmitting ? t("processingPayment") : t("sendRequest")}
         </button>
+      </div>
+
+      {/* Security Notice */}
+      <div className="flex items-center gap-2 mt-4 text-xs text-gray-500">
+        <Lock className="w-4 h-4 flex-shrink-0" />
+        <p>{t("securityGuarantee")}</p>
       </div>
     </div>
   );

@@ -229,7 +229,29 @@ export function ContactPageJsonLd() {
     description:
       "Get in touch with the ZeFile team for support, partnerships, or feedback.",
     mainEntity: {
+      "@type": "Organization",
       "@id": `${SITE_URL}/#org`,
+      name: "ZeFile",
+      email: "hello@zefile.io",
+      url: SITE_URL,
+      contactPoint: [
+        {
+          "@type": "ContactPoint",
+          contactType: "customer support",
+          email: "hello@zefile.io",
+          url: `${SITE_URL}/contact-us`,
+          availableLanguage: ["English", "French"],
+        },
+      ],
+      sameAs: [
+        "https://x.com/zefilehq",
+        "https://linkedin.com/company/zefilehq",
+        "https://facebook.com/zefilehq",
+        "https://instagram.com/zefilehq",
+        "https://threads.net/@zefilehq",
+        "https://tiktok.com/@zefilehq",
+        "https://youtube.com/@zefilehq",
+      ],
     },
   };
 

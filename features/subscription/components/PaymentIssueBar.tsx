@@ -38,7 +38,7 @@ export function PaymentIssueBar({ daysRemaining, onDismiss }: PaymentIssueBarPro
         <div className="flex items-center gap-3">
           <Link
             href="/account-settings?tab=billing"
-            className="rounded bg-white px-3 py-1.5 text-sm font-semibold text-[#171717] hover:bg-gray-100"
+            className="rounded bg-white px-3 py-1.5 text-sm font-bold text-[#171717] hover:bg-gray-100"
           >
             {t('updatePayment')}
           </Link>

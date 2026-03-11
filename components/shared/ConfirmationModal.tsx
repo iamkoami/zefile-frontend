@@ -135,7 +135,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
           {/* Title */}
           <h2
             id="confirmation-title"
-            className="text-xl font-semibold text-gray-900 text-center mb-2"
+            className="text-xl font-bold text-gray-900 text-center mb-2"
           >
             {title}
           </h2>

@@ -639,7 +639,7 @@ const Header = () => {
                 {subscriptionTier === "free" && (
                   <button
                     onClick={() => handleOpenDrawer("subscriptions")}
-                    className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold text-[#5E53E0] hover:text-[#4a42b8] transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-2 text-sm font-bold text-[#5E53E0] hover:text-[#4a42b8] transition-colors"
                   >
                     <Sparks className="w-4 h-4" />
                     {t("upgrade")}
@@ -776,7 +776,7 @@ const Header = () => {
             <span className="text-xs text-gray-500">{t("freePlan")}</span>
             <button
               onClick={() => handleOpenDrawer("subscriptions")}
-              className="text-xs font-semibold text-[#5E53E0] hover:text-[#4a42b8] transition-colors"
+              className="text-xs font-bold text-[#5E53E0] hover:text-[#4a42b8] transition-colors"
             >
               {t("upgrade")}
             </button>

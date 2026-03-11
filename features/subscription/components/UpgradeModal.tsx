@@ -74,7 +74,7 @@ export function UpgradeModal({
 
         {/* Billing Summary */}
         <div className="mt-6 rounded bg-gray-50 p-4">
-          <h3 className="text-sm font-semibold text-gray-600">{t('billingSummary')}</h3>
+          <h3 className="text-sm font-bold text-gray-600">{t('billingSummary')}</h3>
           <div className="mt-3 space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">{tierNames[targetTier]}</span>
@@ -107,7 +107,7 @@ export function UpgradeModal({
 
         {/* Payment Method Selection */}
         <div className="mt-6">
-          <h3 className="text-sm font-semibold text-gray-600">{t('paymentMethod')}</h3>
+          <h3 className="text-sm font-bold text-gray-600">{t('paymentMethod')}</h3>
           <div className="mt-3 space-y-2">
             <button
               onClick={() => setSelectedMethod('mobile_money')}
@@ -147,14 +147,14 @@ export function UpgradeModal({
           <button
             onClick={onClose}
             disabled={isLoading}
-            className="flex-1 rounded border-2 border-gray-300 py-3 text-sm font-semibold text-[#171717] hover:bg-gray-50"
+            className="flex-1 rounded border-2 border-gray-300 py-3 text-sm font-bold text-[#171717] hover:bg-gray-50"
           >
             {t('cancel')}
           </button>
           <button
             onClick={handleConfirm}
             disabled={isLoading}
-            className="flex flex-1 items-center justify-center gap-2 rounded bg-[#87E64B] py-3 text-sm font-semibold text-[#171717] hover:bg-[#78d43f]"
+            className="flex flex-1 items-center justify-center gap-2 rounded bg-[#87E64B] py-3 text-sm font-bold text-[#171717] hover:bg-[#78d43f]"
           >
             {isLoading ? t('processing') : t('confirmPayment')}
           </button>

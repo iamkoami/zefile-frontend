@@ -197,7 +197,7 @@ const RefundRequestPanel: React.FC<RefundRequestPanelProps> = ({
   if (step === 'check') {
     return (
       <div>
-        <h3 className="text-lg font-semibold text-[#171717] mb-2">{t('requestRefund')}</h3>
+        <h3 className="text-lg font-bold text-[#171717] mb-2">{t('requestRefund')}</h3>
         {transferTitle && (
           <p className="text-sm text-gray-500 mb-6">
             {t('forTransfer')}: <strong>{transferTitle}</strong>
@@ -261,7 +261,7 @@ const RefundRequestPanel: React.FC<RefundRequestPanelProps> = ({
           ← {t('back')}
         </button>
 
-        <h3 className="text-lg font-semibold text-[#171717] mb-2">{t('refundDetails')}</h3>
+        <h3 className="text-lg font-bold text-[#171717] mb-2">{t('refundDetails')}</h3>
 
         {eligibility && (
           <div className="bg-gray-50 rounded-lg p-3 mb-6">
@@ -393,7 +393,7 @@ const RefundRequestPanel: React.FC<RefundRequestPanelProps> = ({
           ← {t('back')}
         </button>
 
-        <h3 className="text-lg font-semibold text-[#171717] mb-4">{t('confirmRequest')}</h3>
+        <h3 className="text-lg font-bold text-[#171717] mb-4">{t('confirmRequest')}</h3>
 
         {error && (
           <div className="mb-4 p-3 bg-red-50 text-red-700 rounded text-sm flex items-center gap-2">
@@ -455,7 +455,7 @@ const RefundRequestPanel: React.FC<RefundRequestPanelProps> = ({
         <div className="w-16 h-16 bg-[#87E64B]/20 rounded-full flex items-center justify-center mx-auto mb-4">
           <Check className="w-8 h-8 text-[#87E64B]" />
         </div>
-        <h3 className="text-xl font-semibold text-[#171717] mb-2">{t('requestSubmitted')}</h3>
+        <h3 className="text-xl font-bold text-[#171717] mb-2">{t('requestSubmitted')}</h3>
         <p className="text-gray-500 mb-2">{t('requestSubmittedMessage')}</p>
         <p className="text-sm text-gray-400 mb-6">
           {t('referenceNumber')}: <strong>{refundReference}</strong>

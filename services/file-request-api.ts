@@ -143,6 +143,13 @@ class FileRequestApi {
     );
   }
 
+  async cancel(id: string): Promise<ApiResponse<FileRequestDto>> {
+    return apiClient.post<FileRequestDto>(
+      `/file-requests/${id}/cancel`,
+      {}
+    );
+  }
+
   async requestRevision(
     id: string,
     dto: { feedback: string }

@@ -169,7 +169,7 @@ const OnboardingTooltip: React.FC<OnboardingTooltipProps> = ({
           />
         )}
 
-        <p className="text-sm font-semibold mb-1">{step.title}</p>
+        <p className="text-sm font-bold mb-1">{step.title}</p>
         <p className="text-xs text-gray-300 leading-relaxed">{step.body}</p>
 
         <div className="flex items-center justify-between mt-3">
@@ -181,7 +181,7 @@ const OnboardingTooltip: React.FC<OnboardingTooltipProps> = ({
           </button>
           <button
             onClick={handleNext}
-            className="px-3 py-1.5 text-xs font-semibold text-white bg-[#5E53E0] rounded hover:bg-[#4a42b8] transition-colors"
+            className="px-3 py-1.5 text-xs font-bold text-white bg-[#5E53E0] rounded hover:bg-[#4a42b8] transition-colors"
           >
             {isLast ? t("gotIt") : t("next")}
           </button>

@@ -135,7 +135,7 @@ const OnboardingChecklistCard: React.FC = () => {
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div>
-          <p className="text-sm font-semibold text-[#171717]">{t("title")}</p>
+          <p className="text-sm font-bold text-[#171717]">{t("title")}</p>
           <p className="text-xs text-gray-500 mt-0.5">
             {t("progress", { done: status.completedCount, total: status.totalCount })}
           </p>

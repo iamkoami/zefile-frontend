@@ -227,7 +227,7 @@ const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({
                   <Plus width={24} height={24} color="#171717" strokeWidth={2} />
                 </div>
                 <div className="text-left">
-                  <p className="text-sm font-semibold text-black">
+                  <p className="text-sm font-bold text-black">
                     {t('addMoreFiles')}
                   </p>
                   <p className="text-xs text-gray-500">

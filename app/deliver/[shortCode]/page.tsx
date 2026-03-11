@@ -147,7 +147,7 @@ export default function DeliverPage() {
           <div className="space-y-6">
             {request.status === "revision_requested" && (
               <div className="bg-amber-50 border border-amber-200 rounded p-4">
-                <p className="font-semibold text-amber-800 mb-1">
+                <p className="font-bold text-amber-800 mb-1">
                   {t("revisionRequested")}
                 </p>
                 <p className="text-sm text-amber-700">
@@ -224,7 +224,7 @@ export default function DeliverPage() {
             <button
               onClick={handleDeliver}
               disabled={isSubmitting || selectedFiles.length === 0}
-              className="w-full bg-[#87E64B] text-[#171717] py-3 rounded font-semibold hover:bg-[#78d43f] transition-colors disabled:opacity-50"
+              className="w-full bg-[#87E64B] text-[#171717] py-3 rounded font-bold hover:bg-[#78d43f] transition-colors disabled:opacity-50"
             >
               {isSubmitting ? t("submitting") : t("submitDelivery")}
             </button>

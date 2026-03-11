@@ -83,7 +83,7 @@ const LegalConsentModal: React.FC<LegalConsentModalProps> = ({
         <button
           onClick={handleAccept}
           disabled={!termsAccepted || isSubmitting}
-          className="w-full bg-[#87E64B] text-[#171717] font-semibold py-3 px-6 rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-[#87E64B] text-[#171717] font-bold py-3 px-6 rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isSubmitting ? t("accepting") : t("acceptButton")}
         </button>

@@ -281,7 +281,7 @@ const PayoutMethodsPanel: React.FC = () => {
       <div>
         {/* Header */}
         <div className="mb-6">
-          <h3 className="text-lg font-semibold text-[#171717] mb-1">
+          <h3 className="text-lg font-bold text-[#171717] mb-1">
             {t("title")}
           </h3>
           <p className="text-sm text-gray-500">{t("subtitle")}</p>
@@ -394,7 +394,7 @@ const PayoutMethodsPanel: React.FC = () => {
           ← {t("back")}
         </button>
 
-        <h3 className="text-lg font-semibold text-[#171717] mb-1">
+        <h3 className="text-lg font-bold text-[#171717] mb-1">
           {t("selectCountry")}
         </h3>
         <p className="text-sm text-gray-500 mb-6">{t("selectCountryHint")}</p>
@@ -444,7 +444,7 @@ const PayoutMethodsPanel: React.FC = () => {
           ← {t("back")}
         </button>
 
-        <h3 className="text-lg font-semibold text-[#171717] mb-1">
+        <h3 className="text-lg font-bold text-[#171717] mb-1">
           {t("selectType")}
         </h3>
         <p className="text-sm text-gray-500 mb-6">{t("selectTypeHint")}</p>
@@ -508,7 +508,7 @@ const PayoutMethodsPanel: React.FC = () => {
           ← {t("back")}
         </button>
 
-        <h3 className="text-lg font-semibold text-[#171717] mb-1">
+        <h3 className="text-lg font-bold text-[#171717] mb-1">
           {t("bankDetails")}
         </h3>
         <p className="text-sm text-gray-500 mb-6">{t("bankDetailsHint")}</p>
@@ -680,7 +680,7 @@ const PayoutMethodsPanel: React.FC = () => {
           ← {t("back")}
         </button>
 
-        <h3 className="text-lg font-semibold text-[#171717] mb-1">
+        <h3 className="text-lg font-bold text-[#171717] mb-1">
           {t("mobileDetails")}
         </h3>
         <p className="text-sm text-gray-500 mb-6">{t("mobileDetailsHint")}</p>

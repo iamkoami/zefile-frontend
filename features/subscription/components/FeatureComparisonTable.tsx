@@ -72,7 +72,7 @@ export function FeatureComparisonTable({ currentTier }: FeatureComparisonTablePr
       );
     }
     return (
-      <span className={`text-sm font-semibold ${isPro ? 'text-[#5E53E0]' : 'text-[#171717]'}`}>
+      <span className={`text-sm font-bold ${isPro ? 'text-[#5E53E0]' : 'text-[#171717]'}`}>
         {value}
       </span>
     );
@@ -92,7 +92,7 @@ export function FeatureComparisonTable({ currentTier }: FeatureComparisonTablePr
           return (
             <div
               key={tier}
-              className={`px-6 py-5 text-center text-sm font-semibold border-b ${
+              className={`px-6 py-5 text-center text-sm font-bold border-b ${
                 isPro
                   ? 'bg-[#5E53E0] text-white border-[#5E53E0]'
                   : 'text-[#171717] border-gray-200'

@@ -140,7 +140,7 @@ export function KycVerificationBanner({
           {!isPending && onVerify && (
             <button
               onClick={onVerify}
-              className="rounded bg-white px-3 py-1.5 text-sm font-semibold text-[#171717] hover:bg-gray-100"
+              className="rounded bg-white px-3 py-1.5 text-sm font-bold text-[#171717] hover:bg-gray-100"
             >
               {isRejected ? t('resubmit') : t('verifyNow')}
             </button>

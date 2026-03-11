@@ -1075,7 +1075,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
             {/* Expiry date */}
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <h3 className="text-sm font-semibold text-gray-900">
+                <h3 className="text-sm font-bold text-gray-900">
                   {t("expiryDate")}
                 </h3>
                 <div
@@ -1097,7 +1097,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
             {actionPermissions.canEditPassword && (
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <h3 className="text-sm font-semibold text-gray-900">
+                  <h3 className="text-sm font-bold text-gray-900">
                     {t("password")}
                   </h3>
                   <div
@@ -1155,7 +1155,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
             {/* Recipient management - sender when unpaid, receiver when paid */}
             {actionPermissions.canAddRecipient ? (
               <div>
-                <h3 className="text-sm font-semibold text-gray-900 mb-1">
+                <h3 className="text-sm font-bold text-gray-900 mb-1">
                   {role === "sender" ? t("sentTo", { count: recipients.length }) : t("recipients", { count: recipients.length })}
                 </h3>
                 <div className="space-y-2">
@@ -1294,7 +1294,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
               </div>
             ) : (
               <div>
-                <h3 className="text-sm font-semibold text-gray-900 mb-1">
+                <h3 className="text-sm font-bold text-gray-900 mb-1">
                   {t("receivedFrom")}
                 </h3>
                 <p className="text-sm text-gray-600 flex items-center gap-1">
@@ -1307,7 +1307,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
             {/* Download count (sender only) */}
             {role === "sender" && (
               <div>
-                <h3 className="text-sm font-semibold text-gray-900 mb-1">
+                <h3 className="text-sm font-bold text-gray-900 mb-1">
                   {t("downloadCount")}
                 </h3>
                 <p className="text-sm text-gray-600">
@@ -1341,7 +1341,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
 
           {/* Right column - File list (shows only current version files) */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">
+            <h3 className="text-sm font-bold text-gray-900 mb-3">
               {fileCountText}
             </h3>
             <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">

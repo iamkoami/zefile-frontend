@@ -185,7 +185,7 @@ const CookieConsentBanner: React.FC<CookieConsentBannerProps> = ({
             </button>
             <button
               onClick={handleAcceptAll}
-              className="text-sm font-semibold text-[#171717] bg-[#87E64B] hover:bg-[#78d43f] px-5 py-2 rounded-full transition-colors whitespace-nowrap"
+              className="text-sm font-bold text-[#171717] bg-[#87E64B] hover:bg-[#78d43f] px-5 py-2 rounded-full transition-colors whitespace-nowrap"
             >
               {t("acceptAll")}
             </button>
@@ -200,7 +200,7 @@ const CookieConsentBanner: React.FC<CookieConsentBannerProps> = ({
           <div className="overflow-hidden min-h-0">
             <div className="px-5 md:px-7 pb-5 md:pb-6">
               <div className="border-t border-gray-100 pt-4">
-                <h3 className="text-base font-semibold text-[#171717] mb-4">
+                <h3 className="text-base font-bold text-[#171717] mb-4">
                   {t("preferencesTitle")}
                 </h3>
 
@@ -267,7 +267,7 @@ const CookieConsentBanner: React.FC<CookieConsentBannerProps> = ({
                     </button>
                     <button
                       onClick={handleSavePreferences}
-                      className="text-sm font-semibold text-[#171717] bg-[#87E64B] hover:bg-[#78d43f] px-5 py-2 rounded-full transition-colors"
+                      className="text-sm font-bold text-[#171717] bg-[#87E64B] hover:bg-[#78d43f] px-5 py-2 rounded-full transition-colors"
                     >
                       {t("savePreferences")}
                     </button>

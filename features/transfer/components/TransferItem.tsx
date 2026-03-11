@@ -188,14 +188,23 @@ const TransferItem: React.FC<TransferItemProps> = ({
       )}
 
       <div className="flex-1 min-w-0">
-        {/* Title */}
-        <h4
-          className={`text-base font-semibold truncate transition-colors duration-200 ${
-            isSelected ? 'text-[#171717]' : isActive ? 'text-white' : 'text-gray-900'
-          }`}
-        >
-          {displayTitle}
-        </h4>
+        {/* Title + expired badge */}
+        <div className="flex items-center gap-2">
+          <h4
+            className={`text-base font-bold truncate transition-colors duration-200 ${
+              isSelected ? 'text-[#171717]' : isActive ? 'text-white' : 'text-gray-900'
+            }`}
+          >
+            {displayTitle}
+          </h4>
+          {isExpired && (
+            <span className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 transition-all duration-200 ${
+              isActive ? 'opacity-100 bg-gray-700 text-gray-300' : 'opacity-0'
+            }`}>
+              {t('expired')}
+            </span>
+          )}
+        </div>
 
         {/* Metadata and Actions container with crossfade */}
         <div className="relative h-6 mt-1">

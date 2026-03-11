@@ -31,7 +31,7 @@ export default function GlobalError({
             </p>
             <button
               onClick={() => reset()}
-              className="px-6 py-3 bg-[#87E64B] text-black font-semibold rounded-lg hover:bg-[#75D43A] transition-colors"
+              className="px-6 py-3 bg-[#87E64B] text-black font-bold rounded-lg hover:bg-[#75D43A] transition-colors"
             >
               Reessayer
             </button>

@@ -362,7 +362,7 @@ export function KYCUploadPanel({
     <div className={`space-y-6 ${className}`}>
       {/* Header */}
       <div>
-        <h2 className="text-xl font-semibold text-[#171717]">{t('identityVerification')}</h2>
+        <h2 className="text-xl font-bold text-[#171717]">{t('identityVerification')}</h2>
       </div>
 
       {/* Section: Upload ID */}
@@ -517,7 +517,7 @@ export function KYCUploadPanel({
           type="button"
           onClick={handleSubmit}
           disabled={!isConfirmed || !pendingDocuments?.isComplete || isSubmitting}
-          className="px-8 py-3 bg-[#87E64B] text-[#171717] font-semibold rounded hover:bg-[#78d43f] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="px-8 py-3 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {isSubmitting ? t('submitting') : t('confirm')}
         </button>

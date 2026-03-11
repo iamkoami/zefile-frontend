@@ -241,6 +241,7 @@
     "formCreativeEmailPlaceholder": "Who should receive this request?",
     "formDeadline": "Deadline",
     "sendRequest": "Send request",
+    "securityGuarantee": "Your payment is encrypted and safe.",
     "sending": "Sending...",
     "titleRequired": "Give your request a title",
     "titleTooLong": "Title must be under 255 characters",
@@ -316,7 +317,31 @@
     "continue": "Continue",
     "back": "Back",
     "paymentsUnavailable": "Payments temporarily unavailable",
-    "paymentsUnavailableDesc": "We're doing a bit of maintenance on payments. Your request details are safe — check back shortly."
+    "paymentsUnavailableDesc": "We're doing a bit of maintenance on payments. Your request details are safe — check back shortly.",
+    "review": "Review",
+    "deliver": "Deliver",
+    "budget": "Budget",
+    "description": "Description",
+    "creative": "Creative",
+    "client": "Client",
+    "createdOn": "Created on",
+    "deadline": "Deadline",
+    "revisions": "Revisions",
+    "autoApprove": "Auto-approve",
+    "day": "day",
+    "days": "days",
+    "timeline": "Timeline",
+    "created": "Created",
+    "paid": "Paid",
+    "delivered": "Delivered",
+    "approved": "Approved",
+    "deliveries": "Deliveries",
+    "feedback": "Feedback",
+    "cancelRequest": "Cancel",
+    "cancelRequestTitle": "Cancel this request?",
+    "cancelRequestMessage": "This will cancel the request. You can always create a new one.",
+    "cancelRequestMessageFunded": "This will cancel the request and refund your payment. The refund may take a few days to process.",
+    "cancelRequestConfirm": "Yes, cancel"
   },
   "celebration": {
     "title": "Your first transfer is ready!",
@@ -552,6 +577,7 @@
     "yourName": "Your Name",
     "yourEmail": "Your Email",
     "paymentMethodTitle": "Payment method",
+    "noMethodsAvailable": "No payment methods available for this country.",
     "mobileMoney": "Mobile Money",
     "bankCard": "Bank Card",
     "cardNumber": "Card number",
@@ -651,7 +677,8 @@
     "tabs": {
       "sent": "Sent",
       "received": "Received",
-      "paid": "Paid"
+      "paid": "Paid",
+      "requests": "Requests"
     },
     "filterBy": "Filter by",
     "filterOptions": {
@@ -683,13 +710,42 @@
       "paid": {
         "title": "No paid transfers",
         "subtitle": "Set a price on your next transfer to earn from your work."
+      },
+      "requests": {
+        "title": "No requests yet",
+        "subtitle": "File requests you send or receive will appear here.",
+        "cta": "Create a request"
       }
     },
+    "requestSent": "Sent",
+    "requestReceived": "Received",
+    "noRequests": "No requests yet",
+    "requestStatus": {
+      "pending_payment": "Pending payment",
+      "funded": "Funded",
+      "delivered": "Delivered",
+      "approved": "Approved",
+      "completed": "Completed",
+      "revision_requested": "Revision requested",
+      "expired": "Expired",
+      "refunded": "Refunded",
+      "cancelled": "Cancelled"
+    },
+    "copyLink": "Copy link",
+    "review": "Review",
+    "deliver": "Deliver",
     "linkCopied": "Link copied!",
     "linkCopyFailed": "Couldn't copy the link",
     "noLinkAvailable": "No link available for this transfer",
     "transferDeleted": "Transfer deleted",
-    "deleteError": "We couldn't delete this transfer"
+    "deleteError": "We couldn't delete this transfer",
+    "cancel": "Cancel",
+    "requestCancelled": "Request cancelled",
+    "cancelRequestTitle": "Cancel this request?",
+    "cancelRequestMessage": "This will cancel the request. You can always create a new one.",
+    "cancelRequestMessageFunded": "This will cancel the request and refund your payment. The refund may take a few days to process.",
+    "cancelRequestConfirm": "Yes, cancel",
+    "genericError": "Something went wrong. Try again."
   },
   "contacts": {
     "title": "Contacts",
@@ -1066,7 +1122,19 @@
       "successTitle": "Message sent!",
       "successMessage": "We'll get back to you at the email you provided. Usually within 24 hours.",
       "sendAnother": "Send another message",
-      "errorMessage": "Something went wrong. Try emailing us directly at hello@zefile.io."
+      "errorMessage": "Something went wrong. Try emailing us directly at hello@zefile.io.",
+      "supportIntro": "Whether you're a creator sending files or a recipient downloading them, we're here to help. Our team typically responds within 24 hours on weekdays. For urgent matters, use the chat — it's the fastest way to reach us.",
+      "faqSectionTitle": "Common <highlight>questions</highlight>",
+      "faq1Question": "How do I send large files with ZeFile?",
+      "faq1Answer": "Just drag and drop your files, set a price (or send for free), add your recipient's email, and hit send. They'll get a link to preview and download. No account needed on their end.",
+      "faq2Question": "I haven't received my payment yet. What's going on?",
+      "faq2Answer": "Payments are processed as soon as your recipient completes checkout. If your balance shows the payment but you haven't withdrawn yet, head to your account to request a payout. Payouts typically arrive within 1-3 business days.",
+      "faq3Question": "My download link isn't working. Help?",
+      "faq3Answer": "Links expire after the date set by the sender (1 to 14 days). If yours has expired, ask the sender to create a new transfer. If it's still within the window, check your email for the correct link — sometimes older ones get buried.",
+      "faq4Question": "Can I password-protect my transfers?",
+      "faq4Answer": "Yes. When creating a transfer, toggle on password protection and set your password. Recipients will need to enter it before they can preview or download your files.",
+      "faq5Question": "What file types and sizes does ZeFile support?",
+      "faq5Answer": "Pretty much anything — images, videos, audio, documents, archives. The free plan supports up to 2 GB per transfer, Starter goes up to 10 GB, and Pro up to 50 GB."
     },
     "privacy": {
       "title": "Privacy <highlight>Policy</highlight>",

@@ -87,7 +87,7 @@ export function PaymentStatusCard({
           <button
             onClick={onDownload}
             disabled={isDownloading}
-            className="w-full py-3 px-6 bg-[#87E64B] text-[#171717] font-semibold rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+            className="w-full py-3 px-6 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {t('downloadFiles')}
           </button>
@@ -151,7 +151,7 @@ export function PaymentStatusCard({
         {onRetry && (
           <button
             onClick={onRetry}
-            className="w-full py-3 px-6 bg-[#87E64B] text-[#171717] font-semibold rounded hover:bg-[#78d43f] transition-colors"
+            className="w-full py-3 px-6 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors"
           >
             {t('tryAgain')}
           </button>
@@ -159,7 +159,7 @@ export function PaymentStatusCard({
         {onChangeMethod && (
           <button
             onClick={onChangeMethod}
-            className="w-full py-3 px-6 border-2 border-gray-300 text-[#171717] font-semibold rounded hover:bg-gray-50 transition-colors"
+            className="w-full py-3 px-6 border-2 border-gray-300 text-[#171717] font-bold rounded hover:bg-gray-50 transition-colors"
           >
             {t('useDifferentMethod')}
           </button>

@@ -80,7 +80,7 @@ export default function LegalPageLayout({
                     id={`section-${index}`}
                     className="bg-white rounded-2xl border border-gray-200 p-8 scroll-mt-8"
                   >
-                    <h2 className="text-xl font-semibold text-[#171717] mb-4">
+                    <h2 className="text-xl font-bold text-[#171717] mb-4">
                       {index + 1}. {section.title}
                     </h2>
                     <p className="text-gray-600 leading-relaxed whitespace-pre-line">

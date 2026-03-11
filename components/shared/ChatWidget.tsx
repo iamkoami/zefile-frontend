@@ -169,7 +169,7 @@ function ChatHeader({
           </button>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-[#87E64B]" />
-            <span className="font-semibold text-sm text-[#171717]">ZeFile</span>
+            <span className="font-bold text-sm text-[#171717]">ZeFile</span>
             <span className="text-xs text-gray-500">{t("title")}</span>
           </div>
           <button
@@ -183,7 +183,7 @@ function ChatHeader({
         <>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-[#87E64B]" />
-            <span className="font-semibold text-sm text-[#171717]">Zefi</span>
+            <span className="font-bold text-sm text-[#171717]">Zefi</span>
             <span className="text-xs text-gray-500">{t("title")}</span>
           </div>
           <button

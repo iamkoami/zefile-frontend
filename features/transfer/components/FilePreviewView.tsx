@@ -469,7 +469,7 @@ const FilePreviewView: React.FC<FilePreviewViewProps> = ({
       {/* Left panel - File info */}
       <div className="w-64 flex-shrink-0 border-r border-gray-200 p-6 flex flex-col">
         {/* File name */}
-        <h2 className="text-lg font-semibold text-gray-900 mb-6 break-words">
+        <h2 className="text-lg font-bold text-gray-900 mb-6 break-words">
           {file.name}
         </h2>
 
@@ -501,7 +501,7 @@ const FilePreviewView: React.FC<FilePreviewViewProps> = ({
           <button
             onClick={handleDownload}
             disabled={isDownloading}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#87E64B] text-[#171717] font-semibold rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50"
           >
             <Download className="w-5 h-5" />
             {isDownloading ? t("downloading") : t("download")}

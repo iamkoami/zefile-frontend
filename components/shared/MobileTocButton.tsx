@@ -87,7 +87,7 @@ export default function MobileTocButton({
             className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl max-h-[60vh] overflow-y-auto p-6 animate-[slideUp_0.3s_ease]"
           >
             <div className="flex items-center justify-between mb-4">
-              <p className="text-sm font-semibold text-[#171717]">
+              <p className="text-sm font-bold text-[#171717]">
                 {t("tableOfContents")}
               </p>
               <button
@@ -104,7 +104,7 @@ export default function MobileTocButton({
                     onClick={() => handleSectionClick(section.id)}
                     className={`w-full text-left text-sm py-2 pl-3 pr-2 border-l-2 transition-colors ${
                       activeSection === section.id
-                        ? "border-[#5E53E0] text-[#5E53E0] font-semibold"
+                        ? "border-[#5E53E0] text-[#5E53E0] font-bold"
                         : "border-transparent text-gray-500"
                     }`}
                   >

@@ -240,7 +240,7 @@ export function UpgradePreviewPanel() {
         {/* Proration Breakdown */}
         <div className="border border-gray-200 rounded-lg overflow-hidden mb-6">
           <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
-            <h3 className="font-semibold text-[#171717]">{t("priceSummary")}</h3>
+            <h3 className="font-bold text-[#171717]">{t("priceSummary")}</h3>
           </div>
           <div className="p-4 space-y-3">
             {/* New Plan Price */}
@@ -267,7 +267,7 @@ export function UpgradePreviewPanel() {
             {/* Divider */}
             <div className="border-t border-gray-200 pt-3 mt-3">
               <div className="flex items-center justify-between">
-                <span className="font-semibold text-[#171717]">{t("amountDueToday")}</span>
+                <span className="font-bold text-[#171717]">{t("amountDueToday")}</span>
                 <span className="text-xl font-bold text-[#171717]">
                   {preview.amountDueDisplayAmount}
                 </span>

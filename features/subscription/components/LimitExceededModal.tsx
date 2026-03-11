@@ -91,17 +91,17 @@ export function LimitExceededModal({
         <div className="mb-6 rounded-lg bg-gray-50 p-4">
           <div className="flex items-center justify-between text-sm">
             <span className="text-gray-600">{t('currentUsage')}</span>
-            <span className="font-semibold text-[#171717]">
+            <span className="font-bold text-[#171717]">
               {currentUsageGB.toFixed(2)} GB
             </span>
           </div>
           <div className="mt-2 flex items-center justify-between text-sm">
             <span className="text-gray-600">{t('yourLimit')}</span>
-            <span className="font-semibold text-[#171717]">{limitGB} GB</span>
+            <span className="font-bold text-[#171717]">{limitGB} GB</span>
           </div>
           <div className="mt-2 flex items-center justify-between text-sm">
             <span className="text-gray-600">{t('attemptedUpload')}</span>
-            <span className="font-semibold text-red-600">
+            <span className="font-bold text-red-600">
               +{attemptedUploadGB.toFixed(2)} GB
             </span>
           </div>
@@ -125,14 +125,14 @@ export function LimitExceededModal({
         <div className="flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 rounded border border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-[#171717] hover:bg-gray-50"
+            className="flex-1 rounded border border-gray-300 bg-white px-4 py-3 text-sm font-bold text-[#171717] hover:bg-gray-50"
           >
             {t('cancel')}
           </button>
           {nextTier && (
             <button
               onClick={handleUpgrade}
-              className="flex flex-1 items-center justify-center gap-2 rounded bg-[#87E64B] px-4 py-3 text-sm font-semibold text-[#171717] hover:bg-[#78d43f]"
+              className="flex flex-1 items-center justify-center gap-2 rounded bg-[#87E64B] px-4 py-3 text-sm font-bold text-[#171717] hover:bg-[#78d43f]"
             >
               {t('upgrade')}
               <ArrowUpRight className="h-4 w-4" />

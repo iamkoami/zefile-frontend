@@ -167,7 +167,7 @@ const UploadProgressPanel: React.FC<UploadProgressPanelProps> = ({
       {/* Cancel Button */}
       <button
         onClick={onCancel}
-        className="ze-form-input w-full text-center font-semibold text-[#171717] hover:bg-gray-50 transition-colors"
+        className="ze-form-input w-full text-center font-bold text-[#171717] hover:bg-gray-50 transition-colors"
       >
         {t("cancel")}
       </button>

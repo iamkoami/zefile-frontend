@@ -36,6 +36,7 @@ export default function HomeClient() {
   const tTest = useTranslations("testResult");
   const tUpload = useTranslations("upload");
   const [activeTab, setActiveTab] = useState<"send" | "request">("send");
+  const [requestCheckout, setRequestCheckout] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [maxUploadSize, setMaxUploadSize] = useState<number>(2147483648); // Default 2GB
   const [uploadPanelState, setUploadPanelState] =
@@ -96,6 +97,7 @@ export default function HomeClient() {
 
   const handleTabChange = useCallback((tabId: string) => {
     setActiveTab(tabId as "send" | "request");
+    if (tabId !== "request") setRequestCheckout(false);
     history.replaceState(null, "", `#${tabId}`);
   }, []);
 
@@ -150,6 +152,12 @@ export default function HomeClient() {
       }
       setIsAuthenticated(true);
       try {
+        // Ensure session is valid before fetching config — if the access token
+        // cookie is expired, OptionalJwtAuthGuard silently treats the request as
+        // unauthenticated and returns tier:"free". verifyAuth() triggers the
+        // token refresh flow (401 → refresh → retry) so the subsequent
+        // getUserConfig call sends a valid cookie.
+        await authApi.verifyAuth();
         const response = await platformApi.getUserConfig();
         if (response.data) {
           setMaxUploadSize(response.data.maxUploadSize);
@@ -321,12 +329,13 @@ export default function HomeClient() {
                 {activeTab === "request" ? (
                   <div
                     key="request-panel"
-                    className="ze-upload-panel ze-request-panel ze-tab-animate-in"
+                    className={`ze-upload-panel ze-request-panel ze-tab-animate-in ${requestCheckout ? "ze-request-checkout" : ""}`}
                   >
                     <FileRequestPanel
                       isAuthenticated={isAuthenticated}
                       isAuthChecked={isAuthChecked}
                       userTier={userTier}
+                      onStepChange={(step) => setRequestCheckout(step === "checkout")}
                     />
                   </div>
                 ) : (

@@ -231,7 +231,7 @@ const ReportIssueModal: React.FC<ReportIssueModalProps> = ({
           <div className="flex items-center justify-between p-4 border-b border-gray-200">
             <h2
               id="report-issue-title"
-              className="text-lg font-semibold text-gray-900"
+              className="text-lg font-bold text-gray-900"
             >
               {step === 'form' && t('title')}
               {step === 'success' && t('successTitle')}
@@ -394,7 +394,7 @@ const ReportIssueModal: React.FC<ReportIssueModalProps> = ({
               </p>
               <div className="bg-gray-50 rounded p-3 mb-4">
                 <p className="text-xs text-gray-500">{t('referenceNumber')}</p>
-                <p className="text-lg font-mono font-semibold text-gray-900">
+                <p className="text-lg font-mono font-bold text-gray-900">
                   {reference}
                 </p>
               </div>
@@ -420,7 +420,7 @@ const ReportIssueModal: React.FC<ReportIssueModalProps> = ({
               </h3>
               <div className="bg-gray-50 rounded p-3 mb-4">
                 <p className="text-xs text-gray-500">{t('referenceNumber')}</p>
-                <p className="text-lg font-mono font-semibold text-gray-900">
+                <p className="text-lg font-mono font-bold text-gray-900">
                   {existingDispute.reference}
                 </p>
                 <p className="text-xs text-gray-500 mt-2">{t('status')}</p>

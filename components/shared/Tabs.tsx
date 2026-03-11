@@ -32,7 +32,7 @@ const Tabs: React.FC<TabsProps> = ({
           key={tab.id}
           type="button"
           onClick={() => onTabChange(tab.id)}
-          className={`relative text-base font-semibold transition-colors ${
+          className={`relative text-base font-bold transition-colors ${
             activeTab === tab.id
               ? 'text-gray-900'
               : 'text-gray-400 hover:text-gray-600'

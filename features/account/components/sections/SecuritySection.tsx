@@ -63,7 +63,7 @@ const SecuritySection: React.FC = () => {
 
   return (
     <section className="border-t border-gray-200 pt-6 mt-6">
-      <h3 className="text-lg font-semibold text-[#171717] mb-4">
+      <h3 className="text-lg font-bold text-[#171717] mb-4">
         {t("securitySection")}
       </h3>
 

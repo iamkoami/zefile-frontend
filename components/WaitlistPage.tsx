@@ -188,7 +188,7 @@ export default function WaitlistPage() {
                 <button
                   type="submit"
                   disabled={submitting || !consent || !email.trim()}
-                  className="px-6 py-3 bg-[#87E64B] text-[#171717] font-semibold rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-6 py-3 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {submitting ? t("joining") : t("join")}
                 </button>
@@ -239,7 +239,7 @@ export default function WaitlistPage() {
               {/* Copy invite link */}
               <button
                 onClick={handleCopyLink}
-                className="inline-flex items-center gap-2 px-5 py-2.5 border border-gray-300 rounded text-sm font-semibold text-[#171717] hover:bg-gray-50 transition-colors mb-6"
+                className="inline-flex items-center gap-2 px-5 py-2.5 border border-gray-300 rounded text-sm font-bold text-[#171717] hover:bg-gray-50 transition-colors mb-6"
               >
                 {linkCopied ? (
                   <>
@@ -255,7 +255,7 @@ export default function WaitlistPage() {
               </button>
 
               {count !== null && count > 0 && (
-                <p className="text-sm font-semibold text-gray-400">
+                <p className="text-sm font-bold text-gray-400">
                   {t("counter", { count })}
                 </p>
               )}
@@ -302,7 +302,7 @@ export default function WaitlistPage() {
           <div className="bg-white rounded-xl shadow-lg px-6 py-4 flex items-center gap-3">
             <Image src="/favicon.png" alt="" width={24} height={24} />
             <div>
-              <p className="font-semibold text-[#171717] text-sm">
+              <p className="font-bold text-[#171717] text-sm">
                 {t("cardTitle")}
               </p>
               <p className="text-xs text-gray-400">zefile.io</p>

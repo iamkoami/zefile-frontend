@@ -273,7 +273,7 @@ const PollPanel: React.FC = () => {
       <button
         onClick={handleSubmit}
         disabled={selectedOptions.length === 0 || isSubmitting}
-        className="w-full py-4 px-6 bg-[#87E64B] text-[#171717] font-semibold text-lg rounded-lg hover:bg-[#78d43f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed mb-6"
+        className="w-full py-4 px-6 bg-[#87E64B] text-[#171717] font-bold text-lg rounded-lg hover:bg-[#78d43f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed mb-6"
       >
         {isSubmitting ? t('submitting') : t('submit')}
       </button>

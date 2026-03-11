@@ -25,17 +25,8 @@ const COUNTRY_CALC_DATA: CountryCalcData[] = [
   { countryCode: "NG", flagCode: "NG", currency: "NGN", currencySymbol: "\u20A6", payoutFee: { type: "fixed", value: 50 }, noDecimals: true },
   { countryCode: "GH", flagCode: "GH", currency: "GHS", currencySymbol: "GH\u20B5", payoutFee: { type: "fixed", value: 2 }, noDecimals: false },
   { countryCode: "KE", flagCode: "KE", currency: "KES", currencySymbol: "KSh", payoutFee: { type: "fixed", value: 50 }, noDecimals: true },
-  { countryCode: "SN", flagCode: "SN", currency: "XOF", currencySymbol: "CFA", payoutFee: { type: "percent", value: 2.5 }, noDecimals: true },
   { countryCode: "BJ", flagCode: "BJ", currency: "XOF", currencySymbol: "CFA", payoutFee: { type: "percent", value: 2.5 }, noDecimals: true },
   { countryCode: "TG", flagCode: "TG", currency: "XOF", currencySymbol: "CFA", payoutFee: { type: "percent", value: 2.5 }, noDecimals: true },
-  { countryCode: "BF", flagCode: "BF", currency: "XOF", currencySymbol: "CFA", payoutFee: { type: "percent", value: 2.5 }, noDecimals: true },
-  { countryCode: "ML", flagCode: "ML", currency: "XOF", currencySymbol: "CFA", payoutFee: { type: "percent", value: 2.5 }, noDecimals: true },
-  { countryCode: "GN", flagCode: "GN", currency: "XOF", currencySymbol: "CFA", payoutFee: { type: "percent", value: 2.5 }, noDecimals: true },
-  { countryCode: "CM", flagCode: "CM", currency: "XAF", currencySymbol: "CFA", payoutFee: { type: "percent", value: 2.5 }, noDecimals: true },
-  { countryCode: "ZA", flagCode: "ZA", currency: "ZAR", currencySymbol: "R", payoutFee: { type: "fixed", value: 5 }, noDecimals: false },
-  { countryCode: "TZ", flagCode: "TZ", currency: "TZS", currencySymbol: "TSh", payoutFee: { type: "percent", value: 3 }, noDecimals: true },
-  { countryCode: "UG", flagCode: "UG", currency: "UGX", currencySymbol: "USh", payoutFee: { type: "fixed", value: 1150 }, noDecimals: true },
-  { countryCode: "RW", flagCode: "RW", currency: "RWF", currencySymbol: "RF", payoutFee: { type: "fixed", value: 400 }, noDecimals: true },
 ];
 
 const PLATFORM_FEE_TIERS = [
@@ -47,14 +38,9 @@ const PLATFORM_FEE_TIERS = [
 // Sensible default prices per currency
 const DEFAULT_PRICES: Record<string, number> = {
   XOF: 10000,
-  XAF: 10000,
   NGN: 10000,
   GHS: 100,
   KES: 5000,
-  ZAR: 500,
-  TZS: 50000,
-  UGX: 100000,
-  RWF: 50000,
 };
 
 function formatAmount(amount: number, noDecimals: boolean): string {
@@ -232,7 +218,7 @@ export function TransactionFeesSection({ compact = false }: TransactionFeesSecti
       <h2
         className={
           compact
-            ? "text-xl font-semibold text-[#171717] mb-4 text-center"
+            ? "text-xl font-bold text-[#171717] mb-4 text-center"
             : "text-3xl md:text-5xl font-bold text-[#171717] mb-4 text-center"
         }
       >
@@ -262,7 +248,7 @@ export function TransactionFeesSection({ compact = false }: TransactionFeesSecti
           ref={scrollRef}
           onScroll={updateScrollState}
           onMouseDown={onMouseDown}
-          className="flex flex-nowrap gap-2 overflow-x-auto scroll-smooth p-2 bg-gray-50/80 rounded-xl cursor-grab [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+          className="flex flex-nowrap justify-center gap-2 overflow-x-auto scroll-smooth p-2 bg-gray-50/80 rounded-xl cursor-grab [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
         >
           {COUNTRY_CALC_DATA.map((entry) => {
             const isSelected = selectedCountry === entry.countryCode;
@@ -304,7 +290,7 @@ export function TransactionFeesSection({ compact = false }: TransactionFeesSecti
         <div className="max-w-lg mx-auto rounded-2xl border border-gray-200 bg-white p-6 md:p-8">
           {/* Price input */}
           <div className="mb-5">
-            <label className="text-sm font-semibold text-[#171717] mb-2 block">
+            <label className="text-sm font-bold text-[#171717] mb-2 block">
               {t("calcYourPrice")}
             </label>
             <div className="relative">
@@ -319,7 +305,7 @@ export function TransactionFeesSection({ compact = false }: TransactionFeesSecti
                   const val = e.target.value.replace(/[^0-9.,]/g, "");
                   setPriceInput(val);
                 }}
-                className="w-full pl-14 pr-4 py-3 border border-gray-200 rounded-lg text-lg font-semibold text-[#171717] focus:outline-none focus:border-[#5E53E0] focus:ring-1 focus:ring-[#5E53E0] transition-colors"
+                className="w-full pl-14 pr-4 py-3 border border-gray-200 rounded-lg text-lg font-bold text-[#171717] focus:outline-none focus:border-[#5E53E0] focus:ring-1 focus:ring-[#5E53E0] transition-colors"
                 placeholder="0"
               />
             </div>
@@ -327,7 +313,7 @@ export function TransactionFeesSection({ compact = false }: TransactionFeesSecti
 
           {/* Tier selector */}
           <div className="mb-6">
-            <label className="text-sm font-semibold text-[#171717] mb-2 block">
+            <label className="text-sm font-bold text-[#171717] mb-2 block">
               {t("calcYourPlan")}
             </label>
             <div className="flex gap-2">

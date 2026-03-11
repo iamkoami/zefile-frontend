@@ -978,7 +978,7 @@ export function SubscriptionProcessingPanel() {
       </div>
 
       <div className="mb-6">
-        <h2 className="text-2xl font-semibold text-[#171717] mb-2">
+        <h2 className="text-2xl font-bold text-[#171717] mb-2">
           {t("checkYourPhone")}
         </h2>
         <p className="text-gray-600">{t("confirmPaymentOn")}</p>
@@ -1051,7 +1051,7 @@ export function SubscriptionSuccessPanel() {
       </div>
 
       <div className="mb-6">
-        <h2 className="text-2xl font-semibold text-[#171717] mb-2">
+        <h2 className="text-2xl font-bold text-[#171717] mb-2">
           {tSub("upgradeSuccessTitle")}
         </h2>
         <p className="text-gray-600">
@@ -1114,7 +1114,7 @@ export function SubscriptionFailedPanel() {
       </div>
 
       <div className="mb-6">
-        <h2 className="text-2xl font-semibold text-[#171717] mb-2">
+        <h2 className="text-2xl font-bold text-[#171717] mb-2">
           {t("paymentFailed")}
         </h2>
         <p className="text-gray-600">

@@ -421,7 +421,7 @@ export function BVNVerificationForm({
         <div className="w-16 h-16 mx-auto mb-4 bg-[#87E64B]/20 rounded-full flex items-center justify-center">
           <Check className="w-8 h-8 text-[#87E64B]" />
         </div>
-        <h3 className="text-xl font-semibold text-[#171717] mb-2">
+        <h3 className="text-xl font-bold text-[#171717] mb-2">
           {t("bvnVerified")}
         </h3>
         <p className="text-gray-600 mb-4">{t("bvnVerifiedDescription")}</p>
@@ -442,7 +442,7 @@ export function BVNVerificationForm({
         <div className="w-16 h-16 mx-auto mb-4 bg-yellow-100 rounded-full flex items-center justify-center">
           <ShieldCheck className="w-8 h-8 text-yellow-600" />
         </div>
-        <h3 className="text-xl font-semibold text-[#171717] mb-2">
+        <h3 className="text-xl font-bold text-[#171717] mb-2">
           {t("bvnPendingTitle")}
         </h3>
         <p className="text-gray-600 mb-4">{t("bvnPendingDescription")}</p>
@@ -471,7 +471,7 @@ export function BVNVerificationForm({
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h3 className="text-lg font-semibold text-[#171717]">
+            <h3 className="text-lg font-bold text-[#171717]">
               {t("bvnEnterOtp")}
             </h3>
             <p className="text-sm text-gray-600">
@@ -499,7 +499,7 @@ export function BVNVerificationForm({
               onChange={(e) => handleOtpChange(index, e.target.value)}
               onKeyDown={(e) => handleOtpKeyDown(index, e)}
               onPaste={index === 0 ? handleOtpPaste : undefined}
-              className={`w-12 h-14 text-center text-xl font-semibold border-2 rounded transition-colors outline-none ${
+              className={`w-12 h-14 text-center text-xl font-bold border-2 rounded transition-colors outline-none ${
                 errorMessage
                   ? "border-red-400 focus:border-red-500"
                   : "border-gray-300 focus:border-[#171717]"
@@ -564,7 +564,7 @@ export function BVNVerificationForm({
           type="button"
           onClick={handleVerifyOtp}
           disabled={isLoading || otp.join("").length !== 6 || expiresIn <= 0}
-          className="w-full py-3 bg-[#87E64B] text-[#171717] font-semibold rounded hover:bg-[#78d43f] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="w-full py-3 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {isLoading ? t("bvnVerifying") : t("bvnVerify")}
         </button>
@@ -588,7 +588,7 @@ export function BVNVerificationForm({
     <div className={`space-y-6 ${className}`}>
       {/* Header */}
       <div>
-        <h3 className="text-lg font-semibold text-[#171717]">
+        <h3 className="text-lg font-bold text-[#171717]">
           {t("bvnTitle")}
         </h3>
         <p className="text-sm text-gray-600 mt-1">{t("bvnDescription")}</p>

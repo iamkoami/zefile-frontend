@@ -204,7 +204,7 @@ const FloatingPollWidget: React.FC = () => {
         {/* Header */}
         <div className="flex items-start justify-between p-4 border-b border-gray-100 bg-gray-50">
           <div className="flex-1 pr-2">
-            <h3 className="font-semibold text-[#171717] text-sm leading-tight">
+            <h3 className="font-bold text-[#171717] text-sm leading-tight">
               {currentPoll.question}
             </h3>
             {currentPoll.showAnonymousBadge && (
@@ -308,7 +308,7 @@ const FloatingPollWidget: React.FC = () => {
           <button
             onClick={handleSubmit}
             disabled={selectedOptions.length === 0 || isSubmitting}
-            className="w-full py-2.5 px-4 bg-[#87E64B] text-[#171717] font-semibold text-sm rounded-lg hover:bg-[#78d43f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-2.5 px-4 bg-[#87E64B] text-[#171717] font-bold text-sm rounded-lg hover:bg-[#78d43f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting ? t("submitting") : t("submit")}
           </button>

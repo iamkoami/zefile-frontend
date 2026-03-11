@@ -120,7 +120,7 @@ export default function ContactForm({ strings }: ContactFormProps) {
             setMessage("");
             setCategories([]);
           }}
-          className="mt-8 text-sm font-semibold text-[#171717] underline underline-offset-2 hover:opacity-70 transition-opacity"
+          className="mt-8 text-sm font-bold text-[#171717] underline underline-offset-2 hover:opacity-70 transition-opacity"
         >
           {strings.sendAnother}
         </button>
@@ -142,7 +142,7 @@ export default function ContactForm({ strings }: ContactFormProps) {
         <div>
           <label
             htmlFor="contact-name"
-            className="block text-sm font-semibold text-[#171717] mb-2"
+            className="block text-sm font-bold text-[#171717] mb-2"
           >
             {strings.nameLabel}
           </label>
@@ -160,7 +160,7 @@ export default function ContactForm({ strings }: ContactFormProps) {
         <div>
           <label
             htmlFor="contact-email"
-            className="block text-sm font-semibold text-[#171717] mb-2"
+            className="block text-sm font-bold text-[#171717] mb-2"
           >
             {strings.emailLabel}
           </label>
@@ -178,7 +178,7 @@ export default function ContactForm({ strings }: ContactFormProps) {
         <div>
           <label
             htmlFor="contact-message"
-            className="block text-sm font-semibold text-[#171717] mb-2"
+            className="block text-sm font-bold text-[#171717] mb-2"
           >
             {strings.messageLabel}
           </label>
@@ -194,7 +194,7 @@ export default function ContactForm({ strings }: ContactFormProps) {
 
         {/* Categories */}
         <div>
-          <p className="text-sm font-semibold text-[#171717] mb-3">
+          <p className="text-sm font-bold text-[#171717] mb-3">
             {strings.categoryLabel}
           </p>
           <div className="grid grid-cols-2 gap-3">

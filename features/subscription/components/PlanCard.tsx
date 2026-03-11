@@ -165,7 +165,7 @@ export function PlanCard({
 
       <div className="flex flex-1 flex-col p-6">
         {/* Tier Name & Description */}
-        <h3 className={`text-lg font-semibold ${textColorClass}`}>{tierNames[tier]}</h3>
+        <h3 className={`text-lg font-bold ${textColorClass}`}>{tierNames[tier]}</h3>
         <p className={`mt-1 text-sm ${subtextColorClass}`}>{tierDescriptions[tier]}</p>
 
         {/* Price */}
@@ -189,7 +189,7 @@ export function PlanCard({
         <button
           onClick={onSelect}
           disabled={disabled || isCurrent}
-          className={`mt-6 w-full rounded py-3 text-sm font-semibold transition-colors ${getButtonClasses()} ${
+          className={`mt-6 w-full rounded py-3 text-sm font-bold transition-colors ${getButtonClasses()} ${
             disabled ? 'cursor-not-allowed opacity-50' : ''
           }`}
         >

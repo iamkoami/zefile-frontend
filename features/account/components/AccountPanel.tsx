@@ -169,7 +169,7 @@ const AnalyticsUpgradePrompt: React.FC = () => {
 
   return (
     <div className="mb-10">
-      <h3 className="text-2xl font-semibold text-[#171717] mb-6">
+      <h3 className="text-2xl font-bold text-[#171717] mb-6">
         {t("analytics")}
       </h3>
       <div className="bg-gray-50 rounded-lg p-8 text-center">
@@ -260,7 +260,7 @@ const HelpContent: React.FC = () => {
 
   return (
     <div className="mb-10">
-      <h3 className="text-2xl font-semibold text-[#171717] mb-6">
+      <h3 className="text-2xl font-bold text-[#171717] mb-6">
         {t("title")}
       </h3>
 
@@ -314,7 +314,7 @@ const HelpContent: React.FC = () => {
 
       {/* Contact */}
       <div className="mt-12 pt-8 border-t border-gray-200">
-        <h4 className="text-lg font-semibold text-[#171717] mb-2">
+        <h4 className="text-lg font-bold text-[#171717] mb-2">
           {t("contactTitle")}
         </h4>
         <p className="text-sm text-gray-600">

@@ -77,7 +77,7 @@ const CompactCreatorItem: React.FC<{ creator: FeaturedCreator }> = ({ creator })
             loading="lazy"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-[#5E53E0]/10 text-[#5E53E0] font-semibold text-xs">
+          <div className="w-full h-full flex items-center justify-center bg-[#5E53E0]/10 text-[#5E53E0] font-bold text-xs">
             {initials}
           </div>
         )}
@@ -118,7 +118,7 @@ const CreatorCard: React.FC<{ creator: FeaturedCreator }> = ({ creator }) => {
       </div>
 
       {/* Name */}
-      <p className="text-sm font-semibold text-[#171717] text-center truncate w-full">
+      <p className="text-sm font-bold text-[#171717] text-center truncate w-full">
         {creator.name}
       </p>
 

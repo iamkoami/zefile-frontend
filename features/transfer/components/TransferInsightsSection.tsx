@@ -105,7 +105,7 @@ const TransferInsightsSection: React.FC<TransferInsightsSectionProps> = ({
       <div className="border-t border-gray-200 pt-6 mt-6">
         <div className="flex items-center gap-2 mb-4">
           <StatsReport className="w-5 h-5 text-[#5E53E0]" />
-          <h3 className="text-sm font-semibold text-gray-900">{t('title')}</h3>
+          <h3 className="text-sm font-bold text-gray-900">{t('title')}</h3>
         </div>
         <LoadingPanel className="py-6" />
       </div>
@@ -117,7 +117,7 @@ const TransferInsightsSection: React.FC<TransferInsightsSectionProps> = ({
       <div className="border-t border-gray-200 pt-6 mt-6">
         <div className="flex items-center gap-2 mb-4">
           <StatsReport className="w-5 h-5 text-[#5E53E0]" />
-          <h3 className="text-sm font-semibold text-gray-900">{t('title')}</h3>
+          <h3 className="text-sm font-bold text-gray-900">{t('title')}</h3>
         </div>
         <p className="text-sm text-gray-500">{error}</p>
       </div>
@@ -142,7 +142,7 @@ const TransferInsightsSection: React.FC<TransferInsightsSectionProps> = ({
       >
         <div className="flex items-center gap-2">
           <StatsReport className="w-5 h-5 text-[#5E53E0]" />
-          <h3 className="text-sm font-semibold text-gray-900">{t('title')}</h3>
+          <h3 className="text-sm font-bold text-gray-900">{t('title')}</h3>
         </div>
         <span className="text-sm text-[#5E53E0]">
           {isExpanded ? t('collapse') : t('expand')}

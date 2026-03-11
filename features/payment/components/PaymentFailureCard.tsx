@@ -133,7 +133,7 @@ export function PaymentFailureCard({
         <div className="flex items-center gap-3">
           <WarningCircle className="w-6 h-6 text-green-600 flex-shrink-0" />
           <div>
-            <p className="text-base font-semibold text-green-700">
+            <p className="text-base font-bold text-green-700">
               {t('youWereNotCharged')}
             </p>
             <p className="text-sm text-green-600">
@@ -153,14 +153,14 @@ export function PaymentFailureCard({
       <div className="p-6 space-y-3">
         <button
           onClick={onRetry}
-          className="w-full py-3 px-6 bg-[#87E64B] text-[#171717] font-semibold rounded hover:bg-[#78d43f] transition-colors flex items-center justify-center gap-2"
+          className="w-full py-3 px-6 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors flex items-center justify-center gap-2"
         >
           <Refresh className="w-5 h-5" />
           {t('tryAgain')}
         </button>
         <button
           onClick={onChangeMethod}
-          className="w-full py-3 px-6 border-2 border-gray-300 text-[#171717] font-semibold rounded hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+          className="w-full py-3 px-6 border-2 border-gray-300 text-[#171717] font-bold rounded hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
         >
           <CreditCard className="w-5 h-5" />
           {t('useDifferentMethod')}

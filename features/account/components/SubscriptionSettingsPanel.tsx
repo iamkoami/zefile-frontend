@@ -116,7 +116,7 @@ const SubscriptionSettingsPanel: React.FC = () => {
     <div className="space-y-8">
       {/* Header */}
       <div className="mb-10">
-        <h3 className="text-2xl font-semibold text-[#171717]">{t("title")}</h3>
+        <h3 className="text-2xl font-bold text-[#171717]">{t("title")}</h3>
         <p className="text-gray-500 mt-1">{t("description")}</p>
       </div>
 
@@ -147,7 +147,7 @@ const SubscriptionSettingsPanel: React.FC = () => {
 
       {/* Current Plan Info */}
       <div className="bg-gray-50 rounded-lg p-6 space-y-4">
-        <h4 className="font-semibold text-[#171717]">{t("currentPlan")}</h4>
+        <h4 className="font-bold text-[#171717]">{t("currentPlan")}</h4>
 
         <div className="grid grid-cols-2 gap-6">
           <div>
@@ -198,7 +198,7 @@ const SubscriptionSettingsPanel: React.FC = () => {
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <RefreshDouble className="w-5 h-5 text-[#5E53E0]" />
-              <h4 className="font-semibold text-[#171717]">
+              <h4 className="font-bold text-[#171717]">
                 {t("autoRenewal")}
               </h4>
             </div>
@@ -332,7 +332,7 @@ const RenewalHistorySection: React.FC = () => {
         onClick={handleExpand}
         className="flex items-center justify-between w-full group"
       >
-        <h4 className="font-semibold text-[#171717]">{t("renewalHistory")}</h4>
+        <h4 className="font-bold text-[#171717]">{t("renewalHistory")}</h4>
         <NavArrowDown
           className={`w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-transform ${
             isExpanded ? "rotate-180" : ""

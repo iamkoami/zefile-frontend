@@ -121,7 +121,7 @@ const LinkAnalyticsSection: React.FC<LinkAnalyticsSectionProps> = ({ transferId 
   if (isLoading) {
     return (
       <div className="py-4">
-        <h3 className="text-sm font-semibold text-gray-900 mb-2">{t("title")}</h3>
+        <h3 className="text-sm font-bold text-gray-900 mb-2">{t("title")}</h3>
         <LoadingPanel className="py-4" />
       </div>
     );
@@ -134,7 +134,7 @@ const LinkAnalyticsSection: React.FC<LinkAnalyticsSectionProps> = ({ transferId 
   if (!analytics || analytics.totalAccesses === 0) {
     return (
       <div>
-        <h3 className="text-sm font-semibold text-gray-900 mb-2">{t("title")}</h3>
+        <h3 className="text-sm font-bold text-gray-900 mb-2">{t("title")}</h3>
         <p className="text-sm text-gray-500">{t("noAccesses")}</p>
       </div>
     );
@@ -142,7 +142,7 @@ const LinkAnalyticsSection: React.FC<LinkAnalyticsSectionProps> = ({ transferId 
 
   return (
     <div>
-      <h3 className="text-sm font-semibold text-gray-900 mb-3">{t("title")}</h3>
+      <h3 className="text-sm font-bold text-gray-900 mb-3">{t("title")}</h3>
 
       {/* Total accesses */}
       <div className="mb-4">

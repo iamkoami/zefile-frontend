@@ -51,7 +51,7 @@ export function UsageCard({
   return (
     <div className="rounded border border-gray-200 bg-white p-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-[#171717]">{t('usage')}</h3>
+        <h3 className="text-lg font-bold text-[#171717]">{t('usage')}</h3>
         {resetDate && (
           <span className="text-sm text-gray-500">
             {t('resetsOn', { date: formatDate(resetDate) })}
@@ -110,7 +110,7 @@ export function UsageCard({
           </p>
           <button
             onClick={onUpgrade}
-            className="mt-2 flex items-center gap-1 text-sm font-semibold text-[#171717] underline"
+            className="mt-2 flex items-center gap-1 text-sm font-bold text-[#171717] underline"
           >
             {t('upgradeNow')}
             <ArrowUpRight className="h-4 w-4" />

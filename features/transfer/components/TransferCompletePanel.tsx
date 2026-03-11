@@ -260,7 +260,7 @@ const TransferCompletePanel: React.FC<TransferCompletePanelProps> = ({
         <button
           onClick={handleSendAnother}
           disabled={isTransitioning}
-          className="w-full py-4 px-4 rounded font-semibold text-[#171717] hover:opacity-90 transition-opacity disabled:opacity-50"
+          className="w-full py-4 px-4 rounded font-bold text-[#171717] hover:opacity-90 transition-opacity disabled:opacity-50"
           style={{ backgroundColor: "#87E64B" }}
         >
           {t("sendAnother")}

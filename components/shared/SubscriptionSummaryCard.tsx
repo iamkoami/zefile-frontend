@@ -147,7 +147,7 @@ export function SubscriptionSummaryCard({
       <div
         className={`flex items-center justify-between pt-4 border-t ${borderClass}`}
       >
-        <span className={`font-semibold ${priceTextClass}`}>{t("total")}</span>
+        <span className={`font-bold ${priceTextClass}`}>{t("total")}</span>
         <div className="text-right">
           <span className={`text-xl font-bold ${priceTextClass}`}>
             {formatSubscriptionPrice(amount, pricing.currency)}

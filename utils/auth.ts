@@ -22,3 +22,14 @@ export function getCurrentUserEmail(): string | null {
   const user = authApi.getStoredUser();
   return user?.email || null;
 }
+
+/**
+ * Get the current authenticated user's display name
+ * Returns null if no user is logged in or name is not set
+ */
+export function getCurrentUserName(): string | null {
+  const user = authApi.getStoredUser();
+  if (!user) return null;
+  const name = [user.firstName, user.lastName].filter(Boolean).join(' ');
+  return name || null;
+}

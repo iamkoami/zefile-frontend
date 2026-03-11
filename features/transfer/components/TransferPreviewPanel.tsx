@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useCallback, useState, useMemo, useEffect, useRef } from "react";
+import React, {
+  useCallback,
+  useState,
+  useMemo,
+  useEffect,
+  useRef,
+} from "react";
 import {
   PageEdit,
   MediaImage,
@@ -209,7 +215,6 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
     return true;
   }, [role, requiresPayment, transfer?.isPaid, isPublicTransfer]);
 
-
   // Compute if user can view original files
   // For paid transfers, both sender and receiver see watermarked previews
   // For free transfers, everyone sees originals
@@ -229,7 +234,8 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
     // Check if any previewable file is still missing its thumbnail
     const anyMissingThumbnail = transfer.files.some((f) => {
       const mime = (f.mimeType || f.fileType || "").toLowerCase();
-      const isPreviewable = mime.startsWith("image/") || mime.startsWith("video/");
+      const isPreviewable =
+        mime.startsWith("image/") || mime.startsWith("video/");
       return isPreviewable && !f.thumbnailUrl;
     });
 
@@ -396,7 +402,8 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
     const fetchMissingPreviews = async () => {
       const filesToFetch = processedFiles.filter((file) => {
         // Only fetch for previewable types (images, videos)
-        if (file.fileType !== "image" && file.fileType !== "video") return false;
+        if (file.fileType !== "image" && file.fileType !== "video")
+          return false;
 
         // Skip files already fetched (ref prevents infinite re-trigger)
         if (fetchedFileIdsRef.current.has(file.id)) return false;
@@ -420,7 +427,11 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
             const response = await storageApi.getFilePreviewUrl(
               transfer.shortCode,
               file.id,
-              { sessionToken, requestOriginal: canViewOriginal, email: recipientEmail },
+              {
+                sessionToken,
+                requestOriginal: canViewOriginal,
+                email: recipientEmail,
+              },
             );
             if (response.data?.url) {
               return {
@@ -901,7 +912,9 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
         shortCode={transfer.shortCode}
         transferId={transfer.id}
         role={role === "sender" ? "sender" : "recipient"}
-        userEmail={role === "receiver" ? recipientEmail : senderEmail || undefined}
+        userEmail={
+          role === "receiver" ? recipientEmail : senderEmail || undefined
+        }
         sessionToken={sessionToken}
         allFiles={allFilesForNav}
         currentIndex={selectedFileIndex}
@@ -915,9 +928,9 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
   return (
     <div className="w-full">
       {/* Header */}
-      <div className="flex items-start justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-1">
+      <div className="flex items-start justify-between gap-4 mb-8">
+        <div className="flex-1 min-w-0">
+          <h1 className="text-3xl font-bold text-gray-900 mb-4 line-clamp-2">
             {getDisplayTitle()}
           </h1>
           {senderEmail && (
@@ -930,7 +943,7 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
             {fileCountText} • {formatSize(totalSize)} • {getExpiryText()}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-shrink-0">
           {/* Report Link */}
           <ReportIssueButton
             transferId={transfer.id}
@@ -1093,7 +1106,9 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
                 url={getThumbnailUrl(file)}
                 icon={getFileIcon(file.fileType)}
                 alt={file.fileName}
-                generating={file.fileType === "image" || file.fileType === "video"}
+                generating={
+                  file.fileType === "image" || file.fileType === "video"
+                }
               />
 
               {/* Video play indicator */}

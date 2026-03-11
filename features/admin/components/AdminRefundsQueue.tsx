@@ -528,7 +528,7 @@ const AdminRefundsQueue: React.FC = () => {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-4 border-b">
-              <h3 className="text-lg font-semibold">{t('refundDetails')}</h3>
+              <h3 className="text-lg font-bold">{t('refundDetails')}</h3>
               <button
                 onClick={() => setShowDetailModal(null)}
                 className="p-1 text-gray-400 hover:text-gray-600"
@@ -629,7 +629,7 @@ const AdminRefundsQueue: React.FC = () => {
       {showRejectModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
-            <h3 className="text-lg font-semibold mb-4">{t('rejectTitle')}</h3>
+            <h3 className="text-lg font-bold mb-4">{t('rejectTitle')}</h3>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">

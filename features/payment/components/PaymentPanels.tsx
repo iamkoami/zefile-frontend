@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import Image from "next/image";
 import Flag from "react-flagpack";
 import {
@@ -20,76 +20,30 @@ import LoadingPanel from "@/components/LoadingPanel";
 import { useTranslations } from "next-intl";
 import { useDrawerStore } from "@/stores/drawer-store";
 import { PhoneNumberInput } from "@/features/payment/components/PhoneNumberInput";
-import { paymentApi } from "@/services/payment-api";
+import { paymentApi, type PaymentMethodInfo } from "@/services/payment-api";
 import { toast } from "@/components/shared/Toast";
 import { TransferSummaryCard } from "@/components/shared/TransferSummaryCard";
 import type { MobileMoneyProvider } from "@/features/payment/components/PaymentMethodSelector";
 import type { CountryCode } from "libphonenumber-js";
 import usePaymentStatus from "@/hooks/usePaymentStatus";
 import { useCurrencyStore } from "@/stores/currency-store";
-import { getCurrentUserEmail } from "@/utils/auth";
+import { getCurrentUserEmail, getCurrentUserName } from "@/utils/auth";
 import { safePaymentRedirect } from "@/utils/security";
 import { usePollEligibility } from "@/hooks/usePollEligibility";
 import { trackPaymentMethodSelected, trackPaymentSubmitted } from "@/lib/posthog";
 
-// Country data - Paystack-supported countries + International (card only)
-// Paystack coverage: GH (Ghana), KE (Kenya), CI (Côte d'Ivoire), NG (Nigeria)
-// Nigeria: OPay Wallet (via Pay with Bank), Bank Transfer, USSD, Cards (no Mobile Money)
-// Ghana/Kenya/CI: Mobile Money, Cards
-const PAYSTACK_COUNTRIES = [
-  {
-    code: "GH",
-    name: "Ghana",
-    flagCode: "GH" as string | null,
-    phoneCode: "+233",
-    hasMobileMoney: true,
-    hasBankTransfer: false,
-    hasUSSD: false,
-    hasOPayWallet: false,
-  },
-  {
-    code: "KE",
-    name: "Kenya",
-    flagCode: "KE" as string | null,
-    phoneCode: "+254",
-    hasMobileMoney: true,
-    hasBankTransfer: false,
-    hasUSSD: false,
-    hasOPayWallet: false,
-  },
-  {
-    code: "CI",
-    name: "Côte d'Ivoire",
-    flagCode: "CI" as string | null,
-    phoneCode: "+225",
-    hasMobileMoney: true,
-    hasBankTransfer: false,
-    hasUSSD: false,
-    hasOPayWallet: false,
-  },
-  {
-    code: "NG",
-    name: "Nigeria",
-    flagCode: "NG" as string | null,
-    phoneCode: "+234",
-    hasMobileMoney: false,
-    hasBankTransfer: true,
-    hasUSSD: true,
-    hasOPayWallet: true, // OPay via Paystack "Pay with Bank" channel (launched Nov 2024)
-  },
-  {
-    code: "INTL",
-    name: "International",
-    flagCode: null as string | null,
-    phoneCode: "",
-    hasMobileMoney: false,
-    hasBankTransfer: false,
-    hasUSSD: false,
-    hasOPayWallet: false,
-  },
+// Supported countries for payment — methods are fetched from API per country
+const PAYMENT_COUNTRIES = [
+  { code: "CI", name: "Côte d'Ivoire", flagCode: "CI" as string | null, phoneCode: "CI" as CountryCode | null },
+  { code: "NG", name: "Nigeria", flagCode: "NG" as string | null, phoneCode: "NG" as CountryCode | null },
+  { code: "GH", name: "Ghana", flagCode: "GH" as string | null, phoneCode: "GH" as CountryCode | null },
+  { code: "KE", name: "Kenya", flagCode: "KE" as string | null, phoneCode: "KE" as CountryCode | null },
+  { code: "TG", name: "Togo", flagCode: "TG" as string | null, phoneCode: "TG" as CountryCode | null },
+  { code: "BJ", name: "Benin", flagCode: "BJ" as string | null, phoneCode: "BJ" as CountryCode | null },
+  { code: "INTL", name: "International", flagCode: null, phoneCode: null },
 ];
 
-// Provider icon mapping
+// Provider icon mapping (used by PaymentPhonePanel)
 const getProviderIcon = (provider: string): string => {
   const iconMap: Record<string, string> = {
     mtn_momo: "/icons/payment/mtn.svg",
@@ -127,23 +81,24 @@ export function PaymentMethodPanel() {
   // Get global currency selection to default country
   const { countryCode: globalCountryCode } = useCurrencyStore();
 
+  // Logged-in user detection
+  const isLoggedIn = !!getCurrentUserEmail();
+  const loggedInName = getCurrentUserName();
+
   // Map global currency country to payment country (DEFAULT -> INTL)
   const getDefaultCountry = () => {
     if (globalCountryCode === "DEFAULT") {
       return (
-        PAYSTACK_COUNTRIES.find((c) => c.code === "INTL") ||
-        PAYSTACK_COUNTRIES[4]
+        PAYMENT_COUNTRIES.find((c) => c.code === "INTL") ||
+        PAYMENT_COUNTRIES[PAYMENT_COUNTRIES.length - 1]
       );
     }
     return (
-      PAYSTACK_COUNTRIES.find((c) => c.code === globalCountryCode) ||
-      PAYSTACK_COUNTRIES[0]
+      PAYMENT_COUNTRIES.find((c) => c.code === globalCountryCode) ||
+      PAYMENT_COUNTRIES[0]
     );
   };
 
-  const [selectedMethodType, setSelectedMethodType] = useState<
-    "mobile_money" | "card" | "bank_transfer" | "ussd" | "opay_wallet" | null
-  >(null);
   const [customerName, setCustomerName] = useState("");
   // Priority: logged-in user email > flow data email > empty
   const [customerEmail, setCustomerEmail] = useState(() => {
@@ -153,26 +108,21 @@ export function PaymentMethodPanel() {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState(getDefaultCountry);
   const [isCountryDropdownOpen, setIsCountryDropdownOpen] = useState(false);
-  const [providers, setProviders] = useState<
-    Array<{ provider: MobileMoneyProvider; name: string; icon: string }>
-  >([]);
-  const [selectedProvider, setSelectedProvider] =
-    useState<MobileMoneyProvider | null>(null);
-  const [loadingProviders, setLoadingProviders] = useState(false);
+
+  // API-driven payment methods (replaces hardcoded capability flags)
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethodInfo[]>([]);
+  const [loadingMethods, setLoadingMethods] = useState(false);
+  const [selectedMethod, setSelectedMethod] = useState<PaymentMethodInfo | null>(null);
+  const [failedIcons, setFailedIcons] = useState<Set<string>>(new Set());
+
   const [phoneNumber, setPhoneNumber] = useState("");
   const [isPhoneValid, setIsPhoneValid] = useState(false);
   const [phoneCountryCode, setPhoneCountryCode] = useState<CountryCode>(() => {
     const defaultCountry = getDefaultCountry();
     return (
-      defaultCountry.code !== "INTL" ? defaultCountry.code : "GH"
+      defaultCountry.phoneCode || "GH"
     ) as CountryCode;
   });
-
-  // Card fields
-  const [cardNumber, setCardNumber] = useState("");
-  const [expiryDate, setExpiryDate] = useState("");
-  const [cvv, setCvv] = useState("");
-  const [billingAddress, setBillingAddress] = useState("");
 
   const transfer = selectedTransfer;
 
@@ -213,101 +163,53 @@ export function PaymentMethodPanel() {
     return () => setOnBeforeBack(null);
   }, [setOnBeforeBack, closeDrawer, popView, canGoBack, resetPaymentFlow, payload?.paymentFlowData?.paymentReference]);
 
-  // Fetch mobile money providers when country changes or mobile money is selected
+  // Fetch payment methods from API when country changes
   useEffect(() => {
-    const fetchProviders = async () => {
-      // Skip if not mobile money or country doesn't support it
-      if (
-        selectedMethodType !== "mobile_money" ||
-        !selectedCountry.hasMobileMoney
-      ) {
-        setProviders([]);
-        setSelectedProvider(null);
-        return;
-      }
+    setSelectedMethod(null);
 
-      setLoadingProviders(true);
+    // International: card only, no API call needed
+    if (selectedCountry.code === "INTL") {
+      setPaymentMethods([{ type: "card", name: "Card", provider: "card", icon: "card" }]);
+      setLoadingMethods(false);
+      return;
+    }
+
+    const fetchMethods = async () => {
+      setLoadingMethods(true);
       try {
-        // Always use selected country for fetching providers
-        const url = `${process.env.NEXT_PUBLIC_API_URL}/v2/payments/methods/${selectedCountry.code}`;
-
-        const response = await fetch(url);
-        if (!response.ok) throw new Error("Failed to fetch");
-
-        const data = await response.json();
-        setProviders(data.mobileMoney || []);
-        // Auto-select first provider
-        if (data.mobileMoney?.length > 0) {
-          setSelectedProvider(data.mobileMoney[0].provider);
+        const response = await paymentApi.getPaymentMethods(selectedCountry.code);
+        if (response.data?.methods) {
+          setPaymentMethods(response.data.methods);
+        } else {
+          setPaymentMethods([]);
         }
       } catch {
-        // Fallback providers based on selected country
-        const fallbackByCountry: Record<
-          string,
-          Array<{ provider: MobileMoneyProvider; name: string; icon: string }>
-        > = {
-          GH: [
-            {
-              provider: "mtn_momo" as MobileMoneyProvider,
-              name: "MTN Mobile Money",
-              icon: "mtn",
-            },
-            {
-              provider: "vodafone_cash" as MobileMoneyProvider,
-              name: "Vodafone Cash",
-              icon: "vodafone",
-            },
-            {
-              provider: "airtel_tigo" as MobileMoneyProvider,
-              name: "AirtelTigo Money",
-              icon: "airtel",
-            },
-          ],
-          KE: [
-            {
-              provider: "mpesa" as MobileMoneyProvider,
-              name: "M-Pesa",
-              icon: "mpesa",
-            },
-            {
-              provider: "airtel_money" as MobileMoneyProvider,
-              name: "Airtel Money",
-              icon: "airtel",
-            },
-          ],
-          CI: [
-            {
-              provider: "mtn_momo" as MobileMoneyProvider,
-              name: "MTN Mobile Money",
-              icon: "mtn",
-            },
-            {
-              provider: "orange_money" as MobileMoneyProvider,
-              name: "Orange Money",
-              icon: "orange",
-            },
-            {
-              provider: "wave" as MobileMoneyProvider,
-              name: "Wave",
-              icon: "wave",
-            },
-          ],
-        };
-        const fallback = fallbackByCountry[selectedCountry.code] || [];
-        setProviders(fallback);
-        if (fallback.length > 0) {
-          setSelectedProvider(fallback[0].provider);
-        }
+        setPaymentMethods([]);
       } finally {
-        setLoadingProviders(false);
+        setLoadingMethods(false);
       }
     };
-    fetchProviders();
-  }, [
-    selectedMethodType,
-    selectedCountry.code,
-    selectedCountry.hasMobileMoney,
-  ]);
+    fetchMethods();
+
+    // Update phone country to match selected country
+    if (selectedCountry.phoneCode) {
+      setPhoneCountryCode(selectedCountry.phoneCode);
+    }
+  }, [selectedCountry.code, selectedCountry.phoneCode]);
+
+  // Split methods into mobile money and other types
+  const momoMethods = useMemo(
+    () => paymentMethods.filter((m) => m.type === "mobile_money"),
+    [paymentMethods],
+  );
+  const cardMethod = useMemo(
+    () => paymentMethods.find((m) => m.type === "card"),
+    [paymentMethods],
+  );
+  const otherMethods = useMemo(
+    () => paymentMethods.filter((m) => m.type !== "mobile_money" && m.type !== "card"),
+    [paymentMethods],
+  );
 
   const handlePhoneChange = useCallback(
     (phone: string, isValid: boolean, countryCode: CountryCode) => {
@@ -318,54 +220,12 @@ export function PaymentMethodPanel() {
     [],
   );
 
-  // Format card number with spaces
-  const formatCardNumber = (value: string): string => {
-    const v = value.replace(/\s+/g, "").replace(/[^0-9]/gi, "");
-    const matches = v.match(/\d{4,16}/g);
-    const match = (matches && matches[0]) || "";
-    const parts = [];
-    for (let i = 0, len = match.length; i < len; i += 4) {
-      parts.push(match.substring(i, i + 4));
-    }
-    return parts.length ? parts.join(" ") : v;
+  const getProviderIconPath = (icon: string): string => {
+    return `/icons/payment/${icon}.svg`;
   };
-
-  // Format expiry date as MM/YY
-  const formatExpiryDate = (value: string): string => {
-    const v = value.replace(/\s+/g, "").replace(/[^0-9]/gi, "");
-    if (v.length >= 2) {
-      return v.substring(0, 2) + (v.length > 2 ? "/" + v.substring(2, 4) : "");
-    }
-    return v;
-  };
-
-  const handleCardNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatCardNumber(e.target.value);
-    if (formatted.replace(/\s/g, "").length <= 16) {
-      setCardNumber(formatted);
-    }
-  };
-
-  const handleExpiryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatExpiryDate(e.target.value.replace("/", ""));
-    setExpiryDate(formatted);
-  };
-
-  const handleCvvChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const v = e.target.value.replace(/[^0-9]/gi, "");
-    if (v.length <= 4) {
-      setCvv(v);
-    }
-  };
-
-  // Validate card fields
-  const isCardValid =
-    cardNumber.replace(/\s/g, "").length >= 15 &&
-    expiryDate.length === 5 &&
-    cvv.length >= 3;
 
   const handleContinue = async () => {
-    if (!selectedMethodType || !transfer) return;
+    if (!selectedMethod || !transfer) return;
 
     // Validate email
     if (!customerEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) {
@@ -376,26 +236,25 @@ export function PaymentMethodPanel() {
     // Update flow data with email
     setPaymentFlowData({ senderEmail: customerEmail });
 
-    trackPaymentMethodSelected(selectedMethodType === "mobile_money" ? "mobile_money" : "card");
+    trackPaymentMethodSelected(selectedMethod.type === "mobile_money" ? "mobile_money" : "card");
 
-    if (selectedMethodType === "mobile_money") {
+    if (selectedMethod.type === "mobile_money") {
       // Validate phone number for mobile money
-      if (!isPhoneValid || !selectedProvider) {
+      if (!isPhoneValid) {
         toast.error(t("invalidPhoneNumber"));
         return;
       }
 
       setIsLoading(true);
       try {
-        // Update payment method with selected provider
-        setPaymentMethod({ type: "mobile_money", provider: selectedProvider });
+        setPaymentMethod({ type: "mobile_money", provider: selectedMethod.provider as MobileMoneyProvider });
 
         const response = await paymentApi.initializePaymentV2({
           transferId: transfer.id,
           customerEmail: customerEmail,
           requestedCurrency: transfer.currency,
           paymentMethod: "mobile_money",
-          mobileMoneyProvider: selectedProvider,
+          mobileMoneyProvider: selectedMethod.provider as MobileMoneyProvider,
           phoneNumber: phoneNumber,
         });
 
@@ -407,7 +266,6 @@ export function PaymentMethodPanel() {
 
         if (response.data) {
           trackPaymentSubmitted({ method: "mobile_money", amount: response.data.pricingAmountMinorUnits, currency: transfer.currency });
-          // Store payment data and go to prompt step
           setPaymentFlowData({
             senderEmail: customerEmail,
             phoneNumber,
@@ -423,8 +281,7 @@ export function PaymentMethodPanel() {
       } finally {
         setIsLoading(false);
       }
-    } else if (selectedMethodType === "card") {
-      // Card payments use popup or hosted checkout (Epic 19, Story 19.5)
+    } else if (selectedMethod.type === "card") {
       trackPaymentSubmitted({ method: "card", currency: transfer.currency });
       setPaymentMethod({ type: "card" });
       setPaymentFlowData({
@@ -433,31 +290,23 @@ export function PaymentMethodPanel() {
       });
       pushView("payment-card");
     } else {
-      // For bank_transfer, ussd, and opay_wallet - redirect to payment gateway checkout
+      // For bank_transfer, ussd — redirect to payment gateway checkout
       setIsLoading(true);
       try {
-        // Map method type to Paystack channel preference
-        // OPay uses "bank" channel - user selects "OPay Digital Services Limited (OPay)" from bank list
-        type PaystackChannel =
-          | "card"
-          | "bank_transfer"
-          | "ussd"
-          | "bank"
-          | "qr";
+        type PaystackChannel = "card" | "bank_transfer" | "ussd" | "bank" | "qr";
         const channelMap: Record<string, PaystackChannel> = {
           bank_transfer: "bank_transfer",
           ussd: "ussd",
-          opay_wallet: "bank", // OPay via "Pay with Bank" channel
         };
         const preferredChannel: PaystackChannel =
-          channelMap[selectedMethodType] || "bank_transfer";
+          channelMap[selectedMethod.type] || "bank_transfer";
 
         const response = await paymentApi.initializePaymentV2({
           transferId: transfer.id,
           customerEmail: customerEmail,
           requestedCurrency: transfer.currency,
-          paymentMethod: "card", // Backend treats non-mobile_money as checkout flow
-          preferredChannel, // Pass channel preference for Paystack
+          paymentMethod: "card",
+          preferredChannel,
         });
 
         if (response.error) {
@@ -466,7 +315,7 @@ export function PaymentMethodPanel() {
         }
 
         if (response.data?.authorizationUrl) {
-          trackPaymentSubmitted({ method: selectedMethodType, currency: transfer.currency });
+          trackPaymentSubmitted({ method: selectedMethod.type, currency: transfer.currency });
           try {
             safePaymentRedirect(response.data.authorizationUrl);
           } catch {
@@ -505,18 +354,12 @@ export function PaymentMethodPanel() {
     );
   }
 
-  // Validation rules by payment method:
-  // - Card/Bank Transfer/USSD: only email required (Paystack handles the rest)
-  // - Mobile Money: email + phone + provider required
+  // Validation: method selected + email + phone (for mobile money)
   const isFormValid = (() => {
-    if (!selectedMethodType || !customerEmail) return false;
-
-    // Mobile Money requires phone and provider
-    if (selectedMethodType === "mobile_money") {
-      return isPhoneValid && !!selectedProvider;
+    if (!selectedMethod || !customerEmail) return false;
+    if (selectedMethod.type === "mobile_money") {
+      return isPhoneValid;
     }
-
-    // Card, Bank Transfer, USSD only need email
     return true;
   })();
 
@@ -534,40 +377,44 @@ export function PaymentMethodPanel() {
           </p>
         </div>
 
-        {/* Name Input */}
-        <div className="mb-3">
-          <input
-            type="text"
-            value={customerName}
-            onChange={(e) => setCustomerName(e.target.value)}
-            placeholder={t("yourName")}
-            className="w-full px-4 py-3 border border-gray-200 rounded text-[#171717] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#171717] focus:border-transparent"
-          />
-        </div>
+        {/* Name Input — hidden when logged in and user has a name */}
+        {(!isLoggedIn || !loggedInName) && (
+          <div className="mb-3">
+            <input
+              type="text"
+              value={customerName}
+              onChange={(e) => setCustomerName(e.target.value)}
+              placeholder={t("yourName")}
+              className="w-full px-4 py-3 border border-gray-200 rounded text-[#171717] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#171717] focus:border-transparent"
+            />
+          </div>
+        )}
 
-        {/* Email Input */}
-        <div className="mb-5">
-          <input
-            type="email"
-            value={customerEmail}
-            onChange={(e) => setCustomerEmail(e.target.value)}
-            placeholder={t("yourEmail")}
-            className="w-full px-4 py-3 border border-gray-200 rounded text-[#171717] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#171717] focus:border-transparent"
-          />
-        </div>
+        {/* Email Input — hidden when logged in (auto-filled from stored email) */}
+        {!isLoggedIn && (
+          <div className="mb-5">
+            <input
+              type="email"
+              value={customerEmail}
+              onChange={(e) => setCustomerEmail(e.target.value)}
+              placeholder={t("yourEmail")}
+              className="w-full px-4 py-3 border border-gray-200 rounded text-[#171717] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#171717] focus:border-transparent"
+            />
+          </div>
+        )}
 
         {/* Payment Method Section */}
         <div className="mb-5">
-          <h3 className="text-sm font-semibold text-[#171717] mb-3">
+          <p className="text-sm font-medium text-gray-700 mb-2">
             {t("paymentMethodTitle")}
-          </h3>
+          </p>
 
-          {/* Country Selector - styled like CurrencySwitcher */}
+          {/* Country Selector */}
           <div className="relative mb-3">
             <button
               type="button"
               onClick={() => setIsCountryDropdownOpen(!isCountryDropdownOpen)}
-              className="w-full flex items-center justify-between px-4 py-3 border border-gray-200 rounded-lg text-[#171717] bg-white hover:bg-gray-50 transition-colors"
+              className="w-full flex items-center justify-between px-4 py-3 border border-gray-200 rounded text-[#171717] bg-white hover:bg-gray-50 transition-colors"
             >
               <div className="flex items-center gap-2">
                 {selectedCountry.flagCode ? (
@@ -578,12 +425,6 @@ export function PaymentMethodPanel() {
                 <span className="text-sm font-medium">
                   {selectedCountry.name}
                 </span>
-                {!selectedCountry.hasMobileMoney &&
-                  !selectedCountry.hasBankTransfer && (
-                    <span className="text-xs text-gray-400">
-                      ({t("cardOnly")})
-                    </span>
-                  )}
               </div>
               <NavArrowDown
                 className={`w-4 h-4 text-gray-400 transition-transform ${isCountryDropdownOpen ? "rotate-180" : ""}`}
@@ -591,8 +432,8 @@ export function PaymentMethodPanel() {
             </button>
 
             {isCountryDropdownOpen && (
-              <div className="absolute z-50 w-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg py-1">
-                {PAYSTACK_COUNTRIES.map((country) => {
+              <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded shadow-lg max-h-[220px] overflow-y-auto">
+                {PAYMENT_COUNTRIES.map((country) => {
                   const isSelected = selectedCountry.code === country.code;
                   return (
                     <button
@@ -600,42 +441,13 @@ export function PaymentMethodPanel() {
                       type="button"
                       onClick={() => {
                         setSelectedCountry(country);
-                        // Sync phone country code with selected country (skip for International)
-                        if (country.code !== "INTL") {
-                          setPhoneCountryCode(country.code as CountryCode);
-                        }
                         setIsCountryDropdownOpen(false);
-                        // Reset phone number when country changes
+                        // Reset phone when country changes
                         setPhoneNumber("");
                         setIsPhoneValid(false);
-                        // Reset payment method if new country doesn't support it
-                        if (
-                          !country.hasMobileMoney &&
-                          selectedMethodType === "mobile_money"
-                        ) {
-                          setSelectedMethodType(null);
-                          setSelectedProvider(null);
-                        }
-                        if (
-                          !country.hasBankTransfer &&
-                          selectedMethodType === "bank_transfer"
-                        ) {
-                          setSelectedMethodType(null);
-                        }
-                        if (!country.hasUSSD && selectedMethodType === "ussd") {
-                          setSelectedMethodType(null);
-                        }
-                        if (
-                          !country.hasOPayWallet &&
-                          selectedMethodType === "opay_wallet"
-                        ) {
-                          setSelectedMethodType(null);
-                        }
                       }}
-                      className={`w-full px-4 py-2.5 text-left text-sm hover:bg-gray-50 transition-colors flex items-center gap-2 ${
-                        isSelected
-                          ? "bg-gray-50 font-medium text-[#5E53E0]"
-                          : "text-gray-700"
+                      className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 text-left ${
+                        isSelected ? "bg-gray-50" : ""
                       }`}
                     >
                       {country.flagCode ? (
@@ -643,12 +455,7 @@ export function PaymentMethodPanel() {
                       ) : (
                         <Globe className="w-5 h-5 text-gray-500" />
                       )}
-                      <span className="flex-1">{country.name}</span>
-                      {!country.hasMobileMoney && !country.hasBankTransfer && (
-                        <span className="text-xs text-gray-400">
-                          ({t("cardOnly")})
-                        </span>
-                      )}
+                      <span className="text-sm text-[#171717]">{country.name}</span>
                     </button>
                   );
                 })}
@@ -656,216 +463,117 @@ export function PaymentMethodPanel() {
             )}
           </div>
 
-          {/* Payment Method Buttons */}
-          <div className="flex flex-wrap gap-3 mb-3">
-            {/* Mobile Money Button - Only show if country supports it */}
-            {selectedCountry.hasMobileMoney && (
-              <button
-                onClick={() => setSelectedMethodType("mobile_money")}
-                className={`flex items-center gap-2 px-5 py-3 border rounded transition-all ${
-                  selectedMethodType === "mobile_money"
-                    ? "border-[#87E64B] bg-[#87E64B]/5"
-                    : "border-gray-200 hover:border-gray-300"
-                }`}
-              >
-                <SmartphoneDevice
-                  className={`w-5 h-5 ${selectedMethodType === "mobile_money" ? "text-[#171717]" : "text-gray-400"}`}
-                />
-                <span className="font-medium text-[#171717] text-sm">
-                  {t("mobileMoney")}
-                </span>
-              </button>
-            )}
-
-            {/* Bank Transfer Button - Only show for Nigeria */}
-            {selectedCountry.hasBankTransfer && (
-              <button
-                onClick={() => setSelectedMethodType("bank_transfer")}
-                className={`flex items-center gap-2 px-5 py-3 border rounded transition-all ${
-                  selectedMethodType === "bank_transfer"
-                    ? "border-[#87E64B] bg-[#87E64B]/5"
-                    : "border-gray-200 hover:border-gray-300"
-                }`}
-              >
-                <Bank
-                  className={`w-5 h-5 ${selectedMethodType === "bank_transfer" ? "text-[#171717]" : "text-gray-400"}`}
-                />
-                <span className="font-medium text-[#171717] text-sm">
-                  {t("bankTransfer")}
-                </span>
-              </button>
-            )}
-
-            {/* USSD Button - Only show for Nigeria */}
-            {selectedCountry.hasUSSD && (
-              <button
-                onClick={() => setSelectedMethodType("ussd")}
-                className={`flex items-center gap-2 px-5 py-3 border rounded transition-all ${
-                  selectedMethodType === "ussd"
-                    ? "border-[#87E64B] bg-[#87E64B]/5"
-                    : "border-gray-200 hover:border-gray-300"
-                }`}
-              >
-                <Hashtag
-                  className={`w-5 h-5 ${selectedMethodType === "ussd" ? "text-[#171717]" : "text-gray-400"}`}
-                />
-                <span className="font-medium text-[#171717] text-sm">
-                  {t("ussd")}
-                </span>
-              </button>
-            )}
-
-            {/* OPay Wallet Button - Only show for Nigeria (40M+ users) */}
-            {selectedCountry.hasOPayWallet && (
-              <button
-                onClick={() => setSelectedMethodType("opay_wallet")}
-                className={`flex items-center gap-2 px-5 py-3 border rounded transition-all ${
-                  selectedMethodType === "opay_wallet"
-                    ? "border-[#00B22E] bg-[#00B22E]/5"
-                    : "border-gray-200 hover:border-gray-300"
-                }`}
-              >
-                <Image
-                  src="/icons/payment/opay.svg"
-                  alt="OPay"
-                  width={20}
-                  height={20}
-                  className="flex-shrink-0"
-                  onError={(e) => {
-                    // Fallback to text if icon fails to load
-                    e.currentTarget.style.display = "none";
-                  }}
-                />
-                <span className="font-medium text-[#171717] text-sm">
-                  {t("opayWallet")}
-                </span>
-              </button>
-            )}
-
-            {/* Card Button */}
-            <button
-              onClick={() => setSelectedMethodType("card")}
-              className={`flex items-center gap-2 px-5 py-3 border rounded transition-all ${
-                selectedMethodType === "card"
-                  ? "border-[#87E64B] bg-[#87E64B]/5"
-                  : "border-gray-200 hover:border-gray-300"
-              }`}
-            >
-              <CreditCard
-                className={`w-5 h-5 ${selectedMethodType === "card" ? "text-[#171717]" : "text-gray-400"}`}
-              />
-              <span className="font-medium text-[#171717] text-sm">
-                {t("bankCard")}
-              </span>
-            </button>
-          </div>
-
-          {/* Provider Selection - Show when Mobile Money is selected */}
-          {selectedMethodType === "mobile_money" && (
-            <>
-              {loadingProviders ? (
-                <div className="flex items-center justify-center py-4">
-                  <LoadingPanel />
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-3 mb-3">
-                  {providers.map((provider) => (
-                    <button
-                      key={provider.provider}
-                      onClick={() => setSelectedProvider(provider.provider)}
-                      className={`flex items-center gap-3 px-3 py-2.5 border rounded transition-all ${
-                        selectedProvider === provider.provider
-                          ? "border-[#87E64B] bg-[#87E64B]/5"
-                          : "border-gray-200 hover:border-gray-300"
-                      }`}
-                    >
-                      <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center flex-shrink-0">
+          {/* Payment Methods Grid — API-driven */}
+          {loadingMethods ? (
+            <div className="flex items-center justify-center py-6">
+              <div className="w-5 h-5 border-2 border-gray-300 border-t-[#5E53E0] rounded-full animate-spin" />
+            </div>
+          ) : paymentMethods.length === 0 ? (
+            <p className="text-sm text-gray-500 py-4 text-center">
+              {t("noMethodsAvailable")}
+            </p>
+          ) : (
+            <div className="grid grid-cols-2 gap-2">
+              {/* Mobile Money Providers */}
+              {momoMethods.map((method) => {
+                const isSelected =
+                  selectedMethod?.type === "mobile_money" &&
+                  selectedMethod?.provider === method.provider;
+                return (
+                  <button
+                    key={method.provider}
+                    type="button"
+                    onClick={() => setSelectedMethod(method)}
+                    className={`flex items-center gap-2 p-2.5 rounded border-2 transition-colors ${
+                      isSelected
+                        ? "border-[#5E53E0] bg-[#5E53E0]/5"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    <div className="w-7 h-7 flex-shrink-0 flex items-center justify-center bg-gray-100 rounded">
+                      {failedIcons.has(method.icon) ? (
+                        <SmartphoneDevice className="w-4 h-4 text-gray-500" />
+                      ) : (
                         <Image
-                          src={getProviderIcon(provider.provider)}
-                          alt={provider.name}
-                          width={32}
-                          height={32}
-                          className="object-contain"
+                          src={getProviderIconPath(method.icon)}
+                          alt={method.name}
+                          width={16}
+                          height={16}
+                          onError={() => {
+                            setFailedIcons((prev) => new Set(prev).add(method.icon));
+                          }}
                         />
-                      </div>
-                      <div className="text-left min-w-0">
-                        <span className="block font-medium text-[#171717] text-sm truncate">
-                          {provider.name}
-                        </span>
-                        <span className="block text-xs text-gray-500">
-                          {formatPrice(transfer.price || 0, transfer.currency)}
-                        </span>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
+                      )}
+                    </div>
+                    <span className="text-xs font-medium text-[#171717] truncate">
+                      {method.name}
+                    </span>
+                  </button>
+                );
+              })}
 
-              {/* Phone Input - Country code synced with selected payment country */}
-              <div className="mb-3">
-                <PhoneNumberInput
-                  value={phoneNumber}
-                  onChange={handlePhoneChange}
-                  defaultCountry={phoneCountryCode}
-                  countryCode={selectedCountry.code as CountryCode}
-                  hideCountrySelector={true}
-                />
-              </div>
-            </>
+              {/* Other methods (bank_transfer, ussd, etc.) */}
+              {otherMethods.map((method) => {
+                const isSelected =
+                  selectedMethod?.type === method.type &&
+                  selectedMethod?.provider === method.provider;
+                const MethodIcon = method.type === "bank_transfer" ? Bank
+                  : method.type === "ussd" ? Hashtag
+                  : SmartphoneDevice;
+                return (
+                  <button
+                    key={`${method.type}-${method.provider}`}
+                    type="button"
+                    onClick={() => setSelectedMethod(method)}
+                    className={`flex items-center gap-2 p-2.5 rounded border-2 transition-colors ${
+                      isSelected
+                        ? "border-[#5E53E0] bg-[#5E53E0]/5"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    <div className="w-7 h-7 flex-shrink-0 flex items-center justify-center bg-gray-100 rounded">
+                      <MethodIcon className="w-4 h-4 text-gray-500" />
+                    </div>
+                    <span className="text-xs font-medium text-[#171717] truncate">
+                      {method.name}
+                    </span>
+                  </button>
+                );
+              })}
+
+              {/* Card Option */}
+              {cardMethod && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedMethod(cardMethod)}
+                  className={`flex items-center gap-2 p-2.5 rounded border-2 transition-colors ${
+                    selectedMethod?.type === "card"
+                      ? "border-[#5E53E0] bg-[#5E53E0]/5"
+                      : "border-gray-200 hover:border-gray-300"
+                  }`}
+                >
+                  <div className="w-7 h-7 flex-shrink-0 flex items-center justify-center bg-gray-100 rounded">
+                    <CreditCard className="w-4 h-4 text-gray-500" />
+                  </div>
+                  <span className="text-xs font-medium text-[#171717] truncate">
+                    {cardMethod.name}
+                  </span>
+                </button>
+              )}
+            </div>
           )}
 
-          {/* Card Input Fields - Show when Card is selected */}
-          {selectedMethodType === "card" && (
-            <>
-              {/* Card Number */}
-              <div className="mb-3">
-                <input
-                  type="text"
-                  value={cardNumber}
-                  onChange={handleCardNumberChange}
-                  placeholder={t("cardNumber")}
-                  className="w-full px-4 py-3 border border-gray-200 rounded text-[#171717] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#171717] focus:border-transparent"
-                  inputMode="numeric"
-                  autoComplete="cc-number"
-                />
-              </div>
-
-              {/* Expiry Date and CVV */}
-              <div className="flex gap-3 mb-3">
-                <input
-                  type="text"
-                  value={expiryDate}
-                  onChange={handleExpiryChange}
-                  placeholder={t("expiryDate")}
-                  className="flex-1 px-4 py-3 border border-gray-200 rounded text-[#171717] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#171717] focus:border-transparent"
-                  inputMode="numeric"
-                  maxLength={5}
-                  autoComplete="cc-exp"
-                />
-                <input
-                  type="text"
-                  value={cvv}
-                  onChange={handleCvvChange}
-                  placeholder={t("cvv")}
-                  className="flex-1 px-4 py-3 border border-gray-200 rounded text-[#171717] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#171717] focus:border-transparent"
-                  inputMode="numeric"
-                  maxLength={4}
-                  autoComplete="cc-csc"
-                />
-              </div>
-
-              {/* Billing Address */}
-              <div className="mb-3">
-                <input
-                  type="text"
-                  value={billingAddress}
-                  onChange={(e) => setBillingAddress(e.target.value)}
-                  placeholder={t("billingAddress")}
-                  className="w-full px-4 py-3 border border-gray-200 rounded text-[#171717] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#171717] focus:border-transparent"
-                  autoComplete="street-address"
-                />
-              </div>
-            </>
+          {/* Phone Number — shown when mobile money is selected */}
+          {selectedMethod?.type === "mobile_money" && (
+            <div className="mt-3">
+              <PhoneNumberInput
+                value={phoneNumber}
+                onChange={handlePhoneChange}
+                defaultCountry={selectedCountry.phoneCode || "CI"}
+                countryCode={selectedCountry.phoneCode || "CI"}
+                hideCountrySelector
+              />
+            </div>
           )}
         </div>
 
@@ -1086,7 +794,7 @@ export function PaymentPhonePanel() {
           </div>
         ) : (
           <div className="mb-6">
-            <h3 className="text-sm font-semibold text-[#171717] mb-3">
+            <h3 className="text-sm font-bold text-[#171717] mb-3">
               {t("selectProvider")}
             </h3>
             <div className="flex flex-wrap gap-3">
@@ -1605,7 +1313,7 @@ export function CardPaymentPanel() {
           <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-6">
             <XmarkCircle className="w-10 h-10 text-red-600" />
           </div>
-          <h2 className="text-2xl font-semibold mb-2">{t("paymentFailed")}</h2>
+          <h2 className="text-2xl font-bold mb-2">{t("paymentFailed")}</h2>
           <p className="text-gray-600 text-center mb-6">{initError}</p>
           <div className="flex gap-4">
             <button
@@ -1931,7 +1639,7 @@ export function PaymentProcessingPanel() {
         </div>
 
         {/* Heading */}
-        <h2 className="text-2xl font-semibold mb-2">
+        <h2 className="text-2xl font-bold mb-2">
           {timeoutReached ? t("takingLongerThanUsual") : t("processing")}
         </h2>
 
@@ -2106,7 +1814,7 @@ export function PaymentSuccessPanel() {
         </div>
 
         {/* Heading */}
-        <h2 className="text-2xl font-semibold mb-2">
+        <h2 className="text-2xl font-bold mb-2">
           {t("paymentSuccessful")}
         </h2>
         <p className="text-gray-600 text-center mb-6">
@@ -2258,7 +1966,7 @@ export function PaymentFailedPanel() {
         </div>
 
         {/* Heading */}
-        <h2 className="text-2xl font-semibold mb-2">{t("paymentFailed")}</h2>
+        <h2 className="text-2xl font-bold mb-2">{t("paymentFailed")}</h2>
 
         {/* Error Message */}
         <p className="text-gray-600 text-center mb-2">

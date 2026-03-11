@@ -69,7 +69,7 @@ const DrawerFooter: React.FC = () => {
               <button
                 onClick={() => changeLanguage("en")}
                 className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 transition-colors ${
-                  currentLocale === "en" ? "font-semibold text-gray-900" : "text-gray-600"
+                  currentLocale === "en" ? "font-bold text-gray-900" : "text-gray-600"
                 }`}
               >
                 English
@@ -77,7 +77,7 @@ const DrawerFooter: React.FC = () => {
               <button
                 onClick={() => changeLanguage("fr")}
                 className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 transition-colors ${
-                  currentLocale === "fr" ? "font-semibold text-gray-900" : "text-gray-600"
+                  currentLocale === "fr" ? "font-bold text-gray-900" : "text-gray-600"
                 }`}
               >
                 Français

@@ -1,6 +1,6 @@
 "use client";
 
-import { PageEdit, GitPullRequest } from "iconoir-react";
+import { GitPullRequest } from "iconoir-react";
 import { useTranslations } from "next-intl";
 import { useCurrencyStore } from "@/stores/currency-store";
 import {
@@ -92,9 +92,9 @@ export function TransferSummaryCard({
   };
 
   return (
-    <div className={`bg-[#FDF8F0] rounded-lg p-6 flex flex-col ${className}`}>
+    <div className={`bg-[#FDF8F0] rounded-xl p-8 flex flex-col ${className}`}>
       {/* Header */}
-      <h3 className="text-sm font-medium text-gray-600 mb-3">
+      <h3 className="text-sm font-bold text-gray-600 mb-3">
         {t("transferSummary")}
       </h3>
 
@@ -105,9 +105,9 @@ export function TransferSummaryCard({
 
       {/* Version indicator */}
       {versionCount && versionCount > 1 && (
-        <div className="flex items-center gap-1.5 mb-12">
+        <div className="flex items-center gap-1.5 mb-3">
           <GitPullRequest className="w-4 h-4 text-[#5E53E0]" />
-          <span className="text-sm text-[#5E53E0] font-medium">
+          <span className="text-xs text-[#5E53E0] font-medium">
             {t("latestVersion")} ({versionCount}{" "}
             {versionCount === 1 ? t("version") : t("versions")})
           </span>
@@ -115,7 +115,7 @@ export function TransferSummaryCard({
       )}
 
       {/* File Info */}
-      <p className="text-sm text-gray-500 mb-4 ">
+      <p className="text-xs text-gray-500 mb-4 ">
         {fileCount} {fileCount === 1 ? t("file") : t("files")} -{" "}
         {formatFileSize(totalSize)}
         {createdAt && ` - ${t("sentOn")} ${formatDate(createdAt)}`}
@@ -123,32 +123,28 @@ export function TransferSummaryCard({
 
       {/* Sender info */}
       {senderEmail && (
-        <p className="text-sm text-gray-500 mb-4">
+        <p className="text-xs text-gray-500 mb-4">
           From:{" "}
           <span className="font-medium text-[#171717]">{senderEmail}</span>
         </p>
       )}
-      <span className="flex-1 mt-10" />
       {/* Message/Description */}
       {message && (
-        <p className="text-sm text-gray-600 mb-6 line-clamp-4">{message}</p>
+        <p className="text-xs text-gray-600 mb-6 leading-relaxed">{message}</p>
       )}
 
+      {/* Spacer to push file stats and total to bottom */}
+      <div className="flex-1" />
+
       {/* File Stats Box */}
-      <div className="bg-white rounded-lg p-4 mb-10 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <PageEdit className="w-5 h-5 text-gray-400" />
-          <span className="font-medium text-[#171717]">
-            {fileCount} {fileCount === 1 ? t("file") : t("files")}
-          </span>
-        </div>
-        <span className="font-medium text-gray-600">
+      <div className="bg-white rounded-lg p-4 mb-4 flex items-center justify-between">
+        <span className="font-medium text-[#171717]">
+          {fileCount} {fileCount === 1 ? t("file") : t("files")}
+        </span>
+        <span className="font-bold text-gray-600">
           {formatFileSize(totalSize)}
         </span>
       </div>
-
-      {/* Spacer */}
-      <div className="flex-1" />
 
       {/* Price breakdown with processing fee */}
       {price > 0 && processingFeeMinorUnits && processingFeeMinorUnits > 0 ? (
@@ -162,7 +158,11 @@ export function TransferSummaryCard({
           <div className="flex items-center justify-between">
             <span className="text-sm text-gray-600">
               {processingFeePercent
-                ? t("processingFee", { percent: processingFeePercent.toFixed(processingFeePercent % 1 === 0 ? 0 : 2) })
+                ? t("processingFee", {
+                    percent: processingFeePercent.toFixed(
+                      processingFeePercent % 1 === 0 ? 0 : 2,
+                    ),
+                  })
                 : t("processingFeeGeneric")}
             </span>
             <span className="text-sm font-medium text-[#171717]">
@@ -170,15 +170,20 @@ export function TransferSummaryCard({
             </span>
           </div>
           <div className="flex items-center justify-between pt-2 border-t border-[#E8E0D5]">
-            <span className="font-semibold text-[#171717]">{t("totalCharged")}</span>
+            <span className="font-bold text-[#171717]">
+              {t("totalCharged")}
+            </span>
             <span className="text-xl font-bold text-[#171717]">
-              {formatAmount(totalAmountMinorUnits || (price + processingFeeMinorUnits), currency)}
+              {formatAmount(
+                totalAmountMinorUnits || price + processingFeeMinorUnits,
+                currency,
+              )}
             </span>
           </div>
         </div>
       ) : (
         <div className="flex items-center justify-between pt-4 border-t border-[#E8E0D5]">
-          <span className="font-semibold text-[#171717]">{t("total")}</span>
+          <span className="font-bold text-[#171717]">{t("total")}</span>
           <span className="text-xl font-bold text-[#171717]">
             {price > 0 ? formatAmount(price, currency) : t("freeTransfer")}
           </span>

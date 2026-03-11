@@ -264,7 +264,7 @@ const WithdrawalRequestPanel: React.FC<WithdrawalRequestPanelProps> = ({
         <div className="w-16 h-16 bg-[#87E64B]/20 rounded-full flex items-center justify-center mx-auto mb-4">
           <Check className="w-8 h-8 text-[#87E64B]" />
         </div>
-        <h3 className="text-xl font-semibold text-[#171717] mb-2">
+        <h3 className="text-xl font-bold text-[#171717] mb-2">
           {t("success")}
         </h3>
         <p className="text-gray-500 mb-6">{t("successMessage")}</p>
@@ -290,7 +290,7 @@ const WithdrawalRequestPanel: React.FC<WithdrawalRequestPanelProps> = ({
           ← {t("back")}
         </button>
 
-        <h3 className="text-lg font-semibold text-[#171717] mb-4">
+        <h3 className="text-lg font-bold text-[#171717] mb-4">
           {t("confirmTitle")}
         </h3>
 
@@ -320,7 +320,7 @@ const WithdrawalRequestPanel: React.FC<WithdrawalRequestPanelProps> = ({
           </div>
           <div className="border-t pt-3 flex justify-between">
             <span className="font-medium">{t("youWillReceive")}</span>
-            <span className="font-semibold text-[#171717]">
+            <span className="font-bold text-[#171717]">
               {formatAmount(feeCalculation?.netAmount || 0, balance?.currency)}
             </span>
           </div>
@@ -378,7 +378,7 @@ const WithdrawalRequestPanel: React.FC<WithdrawalRequestPanelProps> = ({
   // Form step
   return (
     <div>
-      <h3 className="text-lg font-semibold text-[#171717] mb-1">
+      <h3 className="text-lg font-bold text-[#171717] mb-1">
         {t("requestTitle")}
       </h3>
       <p className="text-sm text-gray-500 mb-6">{t("requestSubtitle")}</p>

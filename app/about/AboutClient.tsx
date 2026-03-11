@@ -713,7 +713,7 @@ export default function AboutClient() {
                   <div className="mb-5">
                     <AnimatedNumber target={85} suffix="%" />
                   </div>
-                  <p className="text-[#171717] font-semibold text-base leading-snug">
+                  <p className="text-[#171717] font-bold text-base leading-snug">
                     {t("painStat1Label")}
                   </p>
                 </div>
@@ -723,7 +723,7 @@ export default function AboutClient() {
                   <div className="mb-5">
                     <AnimatedNumber target={102} suffix="h" />
                   </div>
-                  <p className="text-[#171717] font-semibold text-base leading-snug">
+                  <p className="text-[#171717] font-bold text-base leading-snug">
                     {t("painStat2Label")}
                   </p>
                 </div>
@@ -733,7 +733,7 @@ export default function AboutClient() {
                   <div className="mb-5">
                     <AnimatedNumber target={71} suffix="%" />
                   </div>
-                  <p className="text-[#171717] font-semibold text-base leading-snug">
+                  <p className="text-[#171717] font-bold text-base leading-snug">
                     {t("painStat3Label")}
                   </p>
                 </div>
@@ -981,7 +981,7 @@ export default function AboutClient() {
                   </Link>
                   <Link
                     href="/how-it-works"
-                    className="text-[#171717] font-semibold underline underline-offset-2 hover:opacity-70 transition-opacity"
+                    className="text-[#171717] font-bold underline underline-offset-2 hover:opacity-70 transition-opacity"
                   >
                     {t("ctaSecondaryLabel")}
                   </Link>

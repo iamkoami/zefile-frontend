@@ -323,7 +323,7 @@ const SubscriptionPanel: React.FC = () => {
             }`}
           >
             {t("annual")}
-            <span className="ml-2 text-xs text-[#5E53E0] font-semibold">
+            <span className="ml-2 text-xs text-[#5E53E0] font-bold">
               {(() => {
                 const currency = getTierCurrency(countryCode);
                 const starterSavings = (getApiTierPrice("starter", countryCode, "monthly") * 12) - getApiTierPrice("starter", countryCode, "annual");
@@ -442,7 +442,7 @@ const SubscriptionPanel: React.FC = () => {
 
               {/* Tier Header */}
               <div className="mb-4">
-                <h3 className={`text-lg font-semibold ${textColorClass}`}>
+                <h3 className={`text-lg font-bold ${textColorClass}`}>
                   {tier.name}
                 </h3>
                 <p className={`text-sm font-medium mt-1 min-h-[3.5rem] ${subtextColorClass}`}>
@@ -488,7 +488,7 @@ const SubscriptionPanel: React.FC = () => {
               <button
                 onClick={() => handleUpgrade(tier.id)}
                 disabled={isAuthenticated && isCurrentPlan}
-                className={`w-full py-3 px-4 rounded font-semibold transition-all mb-6 ${
+                className={`w-full py-3 px-4 rounded font-bold transition-all mb-6 ${
                   isAuthenticated && isCurrentPlan
                     ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                     : isPro
@@ -511,7 +511,7 @@ const SubscriptionPanel: React.FC = () => {
                   <span className={`font-medium ${subtextColorClass}`}>
                     {t("platformFee")}
                   </span>
-                  <span className={`font-semibold ${textColorClass}`}>
+                  <span className={`font-bold ${textColorClass}`}>
                     {tier.platformFee}
                   </span>
                 </div>
@@ -519,7 +519,7 @@ const SubscriptionPanel: React.FC = () => {
                   <span className={`font-medium ${subtextColorClass}`}>
                     {t("storagePerTransfer")}
                   </span>
-                  <span className={`font-semibold ${textColorClass}`}>
+                  <span className={`font-bold ${textColorClass}`}>
                     {tier.storagePerTransfer}
                   </span>
                 </div>
@@ -527,7 +527,7 @@ const SubscriptionPanel: React.FC = () => {
                   <span className={`font-medium ${subtextColorClass}`}>
                     {t("transfersPerMonth")}
                   </span>
-                  <span className={`font-semibold ${textColorClass}`}>
+                  <span className={`font-bold ${textColorClass}`}>
                     {tier.transfersPerMonth}
                   </span>
                 </div>
@@ -535,7 +535,7 @@ const SubscriptionPanel: React.FC = () => {
                   <span className={`font-medium ${subtextColorClass}`}>
                     {t("transferExpiry")}
                   </span>
-                  <span className={`font-semibold ${textColorClass}`}>
+                  <span className={`font-bold ${textColorClass}`}>
                     {tier.expiry}
                   </span>
                 </div>
@@ -581,7 +581,7 @@ const SubscriptionPanel: React.FC = () => {
 
       {/* FAQ Section */}
       <div className="mt-20 mb-16">
-        <h2 className="mb-6 text-xl font-semibold text-[#171717] mb-4 text-center">
+        <h2 className="mb-6 text-xl font-bold text-[#171717] mb-4 text-center">
           {t.rich("faqTitle", {
             highlight: (chunks: ReactNode) => (
               <span className="ze-highlight-green">{chunks}</span>
@@ -600,7 +600,7 @@ const SubscriptionPanel: React.FC = () => {
                   onClick={() => setExpandedFaq(isExpanded ? null : num)}
                   className="w-full flex items-center justify-between px-5 py-4 text-left"
                 >
-                  <span className="text-[15px] font-semibold text-[#171717] pr-4">
+                  <span className="text-[15px] font-bold text-[#171717] pr-4">
                     {t(`faqQ${num}`)}
                   </span>
                   <div

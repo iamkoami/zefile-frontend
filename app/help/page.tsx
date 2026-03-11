@@ -177,7 +177,7 @@ export default async function HelpCenterPage() {
               </Link>
               <Link
                 href="/pricing"
-                className="text-[#171717] font-semibold underline underline-offset-2 hover:opacity-70 transition-opacity"
+                className="text-[#171717] font-bold underline underline-offset-2 hover:opacity-70 transition-opacity"
               >
                 {t("ctaSecondary")}
               </Link>

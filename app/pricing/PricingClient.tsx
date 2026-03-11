@@ -403,7 +403,7 @@ export default function PricingClient() {
               }`}
             >
               {t("annual")}
-              <span className="ml-2 text-xs text-[#5E53E0] font-semibold">
+              <span className="ml-2 text-xs text-[#5E53E0] font-bold">
                 {(() => {
                   const currency = getTierCurrency(countryCode);
                   const starterSavings = (getApiTierPrice("starter", countryCode, "monthly") * 12) - getApiTierPrice("starter", countryCode, "annual");
@@ -529,7 +529,7 @@ export default function PricingClient() {
 
                 {/* Tier Header */}
                 <div className="mb-4">
-                  <h3 className={`text-lg font-semibold ${textColorClass}`}>
+                  <h3 className={`text-lg font-bold ${textColorClass}`}>
                     {tier.name}
                   </h3>
                   <p
@@ -577,7 +577,7 @@ export default function PricingClient() {
                 <button
                   onClick={() => handleSelectTier(tier.id)}
                   disabled={isAuthenticated && isCurrentPlan}
-                  className={`w-full py-3 px-4 rounded font-semibold transition-all mb-6 ${
+                  className={`w-full py-3 px-4 rounded font-bold transition-all mb-6 ${
                     isAuthenticated && isCurrentPlan
                       ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                       : isPro
@@ -602,7 +602,7 @@ export default function PricingClient() {
                     <span className={`font-medium ${subtextColorClass}`}>
                       {t("platformFee")}
                     </span>
-                    <span className={`font-semibold ${textColorClass}`}>
+                    <span className={`font-bold ${textColorClass}`}>
                       {tier.platformFee}
                     </span>
                   </div>
@@ -610,7 +610,7 @@ export default function PricingClient() {
                     <span className={`font-medium ${subtextColorClass}`}>
                       {t("storagePerTransfer")}
                     </span>
-                    <span className={`font-semibold ${textColorClass}`}>
+                    <span className={`font-bold ${textColorClass}`}>
                       {tier.storagePerTransfer}
                     </span>
                   </div>
@@ -618,7 +618,7 @@ export default function PricingClient() {
                     <span className={`font-medium ${subtextColorClass}`}>
                       {t("transfersPerMonth")}
                     </span>
-                    <span className={`font-semibold ${textColorClass}`}>
+                    <span className={`font-bold ${textColorClass}`}>
                       {tier.transfersPerMonth}
                     </span>
                   </div>
@@ -626,7 +626,7 @@ export default function PricingClient() {
                     <span className={`font-medium ${subtextColorClass}`}>
                       {t("transferExpiry")}
                     </span>
-                    <span className={`font-semibold ${textColorClass}`}>
+                    <span className={`font-bold ${textColorClass}`}>
                       {tier.expiry}
                     </span>
                   </div>
@@ -734,7 +734,7 @@ export default function PricingClient() {
                       className="flex items-center justify-between w-full px-6 md:px-8 py-5 md:py-6 text-left"
                       aria-expanded={isExpanded}
                     >
-                      <span className="text-base md:text-lg font-semibold text-[#171717] pr-6">
+                      <span className="text-base md:text-lg font-bold text-[#171717] pr-6">
                         {t(`faqQ${num}`)}
                       </span>
                       <div
@@ -823,7 +823,7 @@ export default function PricingClient() {
               </Link>
               <Link
                 href="/how-it-works"
-                className="text-[#171717] font-semibold underline underline-offset-2 hover:opacity-70 transition-opacity"
+                className="text-[#171717] font-bold underline underline-offset-2 hover:opacity-70 transition-opacity"
               >
                 {t("pricingCtaSecondary")}
               </Link>

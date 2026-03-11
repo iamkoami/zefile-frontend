@@ -380,7 +380,7 @@ export function SubscriptionCheckoutPanel() {
             <div className="flex items-center gap-3 mb-4">
               <div className="p-2 bg-gray-100 rounded-lg">{getTierIcon()}</div>
               <div>
-                <h2 className="text-2xl font-semibold text-[#171717]">
+                <h2 className="text-2xl font-bold text-[#171717]">
                   {tSub("upgradeToTier", { tier: getTierName() })}
                 </h2>
                 <p className="text-sm text-gray-600">
@@ -397,7 +397,7 @@ export function SubscriptionCheckoutPanel() {
             <div className="bg-yellow-50 border border-yellow-200 rounded p-4 mb-4 flex items-start gap-3">
               <InfoCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm font-semibold text-yellow-800">
+                <p className="text-sm font-bold text-yellow-800">
                   {tSub("paymentsUnavailable")}
                 </p>
                 <p className="text-xs text-yellow-700 mt-1">
@@ -531,7 +531,7 @@ export function SubscriptionCheckoutPanel() {
             <div className="flex items-center gap-3 mb-4">
               <div className="p-2 bg-gray-100 rounded-lg">{getTierIcon()}</div>
               <div>
-                <h2 className="text-2xl font-semibold text-[#171717]">
+                <h2 className="text-2xl font-bold text-[#171717]">
                   {tSub("upgradeToTier", { tier: getTierName() })}
                 </h2>
                 <p className="text-sm text-gray-600">
@@ -766,7 +766,7 @@ export function SubscriptionCheckoutPanel() {
         {/* Left: Phone Input Form */}
         <div className="flex-1 min-w-0">
           <div className="mb-8">
-            <h2 className="text-2xl font-semibold text-[#171717]">
+            <h2 className="text-2xl font-bold text-[#171717]">
               {t("enterPhoneNumber")}
             </h2>
             <p className="text-sm text-gray-600 mt-2">
@@ -821,7 +821,7 @@ export function SubscriptionCheckoutPanel() {
         </div>
 
         <div className="mb-6">
-          <h2 className="text-2xl font-semibold text-[#171717] mb-2">
+          <h2 className="text-2xl font-bold text-[#171717] mb-2">
             {t("checkYourPhone")}
           </h2>
           <p className="text-gray-600">{t("confirmPaymentOn")}</p>
@@ -865,7 +865,7 @@ export function SubscriptionCheckoutPanel() {
         </div>
 
         <div className="mb-6">
-          <h2 className="text-2xl font-semibold text-[#171717] mb-2">
+          <h2 className="text-2xl font-bold text-[#171717] mb-2">
             {tSub("upgradeSuccessTitle")}
           </h2>
           <p className="text-gray-600">
@@ -894,7 +894,7 @@ export function SubscriptionCheckoutPanel() {
         </div>
 
         <div className="mb-6">
-          <h2 className="text-2xl font-semibold text-[#171717] mb-2">
+          <h2 className="text-2xl font-bold text-[#171717] mb-2">
             {t("paymentFailed")}
           </h2>
           <p className="text-gray-600">{error || t("youWereNotCharged")}</p>

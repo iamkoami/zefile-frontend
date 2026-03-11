@@ -219,7 +219,7 @@ const AnalyticsPanel: React.FC = () => {
       {/* Trend Chart */}
       {trends && trends.data.length > 0 && (
         <div className="bg-white border border-gray-200 rounded-xl p-6 mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+          <h2 className="text-lg font-bold text-gray-900 mb-4">
             {t("downloadsTrend")}
           </h2>
 
@@ -268,7 +268,7 @@ const AnalyticsPanel: React.FC = () => {
                 period: period === "week" ? t("lastWeek") : t("lastMonth"),
               })}
             </span>
-            <span className="text-lg font-semibold text-gray-900">
+            <span className="text-lg font-bold text-gray-900">
               {formatNumber(trends.totals.downloads)} {t("downloads")}
             </span>
           </div>
@@ -277,7 +277,7 @@ const AnalyticsPanel: React.FC = () => {
 
       {/* Top Transfers */}
       <div className="bg-white border border-gray-200 rounded-xl p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">
+        <h2 className="text-lg font-bold text-gray-900 mb-4">
           {t("topTransfers")}
         </h2>
 

@@ -295,13 +295,13 @@ const TransactionsPanel: React.FC = () => {
     <div>
       {/* Header */}
       <div className="mb-10">
-        <h3 className="text-2xl font-semibold text-[#171717] mb-2">
+        <h3 className="text-2xl font-bold text-[#171717] mb-2">
           {t("title")}
         </h3>
         {/* Balance display */}
         <div className="flex items-center gap-2 text-gray-600">
           <span>{t("availableBalance")}:</span>
-          <span className="font-semibold text-[#171717]">
+          <span className="font-bold text-[#171717]">
             {formatCurrencyAmount(totalBalance, displayCurrency)}
           </span>
         </div>

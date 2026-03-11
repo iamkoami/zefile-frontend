@@ -27,7 +27,7 @@ export default function CrossLinks({ exclude }: CrossLinksProps) {
       aria-label={t("sectionTitle")}
       className="max-w-6xl mx-auto px-6 pb-8"
     >
-      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">
+      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">
         {t("sectionTitle")}
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">

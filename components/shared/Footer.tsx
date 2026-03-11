@@ -143,7 +143,7 @@ const Footer: React.FC = () => {
         {/* Newsletter Section */}
         <Reveal>
           <div className="text-center pb-12">
-            <h2 className="text-2xl md:text-3xl font-semibold tracking-wide mb-3">
+            <h2 className="text-2xl md:text-3xl font-bold tracking-wide mb-3">
               {t("newsletterHeadline")}
             </h2>
             <p className="text-sm font-medium text-gray-400 mb-10 max-w-lg mx-auto">
@@ -181,7 +181,7 @@ const Footer: React.FC = () => {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="text-sm font-semibold text-[#171717] bg-[#87E64B] hover:bg-[#78d43f] px-6 py-2 rounded transition-colors uppercase tracking-wider whitespace-nowrap disabled:opacity-60"
+                  className="text-sm font-bold text-[#171717] bg-[#87E64B] hover:bg-[#78d43f] px-6 py-2 rounded transition-colors uppercase tracking-wider whitespace-nowrap disabled:opacity-60"
                 >
                   {isSubmitting ? "..." : t("newsletterButton")}
                 </button>

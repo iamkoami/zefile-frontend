@@ -338,7 +338,7 @@ const PayoutsPanel: React.FC = () => {
     <div>
       {/* Header */}
       <div className="mb-10">
-        <h3 className="text-2xl font-semibold text-[#171717] mb-2">
+        <h3 className="text-2xl font-bold text-[#171717] mb-2">
           {t("title")}
         </h3>
         <p className="text-gray-500 text-sm">{t("subtitle")}</p>
@@ -433,7 +433,7 @@ const PayoutsPanel: React.FC = () => {
       {activeTab === "history" && (
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h4 className="font-semibold text-[#171717]">
+            <h4 className="font-bold text-[#171717]">
               {t("payoutHistory")}
             </h4>
 
@@ -593,7 +593,7 @@ const PayoutsPanel: React.FC = () => {
 
                       {/* Right Side: Amount + Status */}
                       <div className="text-right ml-4">
-                        <p className="font-semibold text-[#171717] mb-2">
+                        <p className="font-bold text-[#171717] mb-2">
                           {formatAmount(
                             payout.amountMinorUnits,
                             payout.currency,
@@ -673,7 +673,7 @@ const PayoutsPanel: React.FC = () => {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-4 border-b">
-              <h2 className="text-lg font-semibold">
+              <h2 className="text-lg font-bold">
                 {t("requestWithdrawal")}
               </h2>
               <button

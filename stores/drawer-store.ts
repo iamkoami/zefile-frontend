@@ -6,6 +6,7 @@
 
 import { create } from 'zustand';
 import { TransferDto } from '@/services/transfer-api';
+import type { FileRequestDto } from '@/services/file-request-api';
 // Import subscription types from single source of truth
 import type { SubscriptionTier, BillingPeriod } from '@/services/subscription-api';
 
@@ -46,7 +47,9 @@ export type DrawerContentView =
   | 'payment-card'    // Card payment (Epic 19)
   | 'payment-processing' // Payment processing/polling (Epic 19)
   | 'payment-success' // Payment success panel (Epic 19)
-  | 'payment-failed'; // Payment failed panel (Epic 19)
+  | 'payment-failed' // Payment failed panel (Epic 19)
+  | 'request-details' // File request details
+  | 'request-review'; // File request review (approve/revision)
 
 // Role determines which variant of transfer details to show
 export type TransferRole = 'sender' | 'receiver';
@@ -115,6 +118,7 @@ export interface NavigationEntry {
   transfer?: TransferDto;
   role?: TransferRole;
   previousTab?: 'sent' | 'received' | 'paid';
+  fileRequest?: FileRequestDto & { _role?: 'client' | 'creative' };
 }
 
 interface DrawerState {
@@ -127,6 +131,7 @@ interface DrawerState {
   currentContentView: DrawerContentView;
   selectedTransfer: TransferDto | null;
   transferRole: TransferRole | null;
+  selectedFileRequest: (FileRequestDto & { _role?: 'client' | 'creative' }) | null;
 
   // Session token for password-protected transfers (set after password verification on landing page)
   passwordSessionToken: string | null;
@@ -166,6 +171,9 @@ interface DrawerState {
   // Set verified recipient email (for preview analytics attribution)
   setRecipientEmail: (email: string | null) => void;
 
+  // File request actions
+  setSelectedFileRequest: (request: (FileRequestDto & { _role?: 'client' | 'creative' }) | null) => void;
+
   // Payment flow actions
   setPaymentMethod: (method: PaymentMethodInfo | null) => void;
   setPaymentFlowData: (data: Partial<PaymentFlowData>) => void;
@@ -195,6 +203,7 @@ export const useDrawerStore = create<DrawerState>((set, get) => ({
   currentContentView: 'list',
   selectedTransfer: null,
   transferRole: null,
+  selectedFileRequest: null,
   passwordSessionToken: null,
   recipientEmail: null,
   activeAccountMenu: 'settings',
@@ -238,6 +247,7 @@ export const useDrawerStore = create<DrawerState>((set, get) => ({
       transfer: state.selectedTransfer ?? undefined,
       role: state.transferRole ?? undefined,
       previousTab: state.payload?.preSelectedTab,
+      fileRequest: state.selectedFileRequest ?? undefined,
     };
 
     set({
@@ -261,6 +271,7 @@ export const useDrawerStore = create<DrawerState>((set, get) => ({
         currentContentView: previousEntry.contentView,
         selectedTransfer: previousEntry.transfer ?? null,
         transferRole: previousEntry.role ?? null,
+        selectedFileRequest: previousEntry.fileRequest ?? null,
         // Restore top-level view if stored (e.g., going back from payment to transfers)
         ...(previousEntry.view ? { view: previousEntry.view } : {}),
       });
@@ -277,6 +288,7 @@ export const useDrawerStore = create<DrawerState>((set, get) => ({
       currentContentView: 'list',
       selectedTransfer: null,
       transferRole: null,
+      selectedFileRequest: null,
       onBeforeBack: null,
     });
   },
@@ -293,6 +305,8 @@ export const useDrawerStore = create<DrawerState>((set, get) => ({
   setPasswordSessionToken: (token) => set({ passwordSessionToken: token }),
 
   setRecipientEmail: (email) => set({ recipientEmail: email }),
+
+  setSelectedFileRequest: (request) => set({ selectedFileRequest: request }),
 
   // Open drawer directly to a specific content view without navigation stack
   // Used when opening from outside the drawer (e.g., TransferCompletePanel)

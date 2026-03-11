@@ -161,7 +161,7 @@ export function BillingSettingsPanel() {
     <div className="space-y-6">
       {/* Current Plan Section */}
       <div className="rounded-lg border border-gray-200 bg-white p-6">
-        <h3 className="text-lg font-semibold text-[#171717]">{t('currentPlan')}</h3>
+        <h3 className="text-lg font-bold text-[#171717]">{t('currentPlan')}</h3>
 
         <div className="mt-4 flex items-center justify-between">
           <div>
@@ -242,7 +242,7 @@ export function BillingSettingsPanel() {
       {/* Payment Method Section */}
       {!isFreeUser && paymentMethod && (
         <div className="rounded-lg border border-gray-200 bg-white p-6">
-          <h3 className="text-lg font-semibold text-[#171717]">{t('paymentMethod')}</h3>
+          <h3 className="text-lg font-bold text-[#171717]">{t('paymentMethod')}</h3>
 
           <div className="mt-4 flex items-center gap-4">
             {paymentMethod.type === 'card' ? (
@@ -279,7 +279,7 @@ export function BillingSettingsPanel() {
       {/* Billing History Section */}
       {!isFreeUser && (
         <div className="rounded-lg border border-gray-200 bg-white p-6">
-          <h3 className="text-lg font-semibold text-[#171717]">{t('billingHistory')}</h3>
+          <h3 className="text-lg font-bold text-[#171717]">{t('billingHistory')}</h3>
           <p className="mt-2 text-sm text-gray-500">{t('billingHistoryDesc')}</p>
 
           <div className="mt-4 flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 p-4">
@@ -292,7 +292,7 @@ export function BillingSettingsPanel() {
       {/* Cancel Subscription Section */}
       {!isFreeUser && !isCancelled && (
         <div className="rounded-lg border border-gray-200 bg-white p-6">
-          <h3 className="text-lg font-semibold text-[#171717]">{t('cancelSubscription')}</h3>
+          <h3 className="text-lg font-bold text-[#171717]">{t('cancelSubscription')}</h3>
           <p className="mt-2 text-sm text-gray-500">{t('cancelDesc')}</p>
 
           <button
@@ -307,14 +307,14 @@ export function BillingSettingsPanel() {
       {/* Upgrade CTA for Free Users */}
       {isFreeUser && (
         <div className="rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-6 text-center">
-          <h3 className="text-lg font-semibold text-[#171717]">{t('upgradeNow')}</h3>
+          <h3 className="text-lg font-bold text-[#171717]">{t('upgradeNow')}</h3>
           <p className="mt-2 text-sm text-gray-500">{t('upgradeDesc')}</p>
           <button
             onClick={() => {
               // Open subscription drawer
               window.dispatchEvent(new CustomEvent('open-subscriptions-drawer'));
             }}
-            className="mt-4 rounded bg-[#87E64B] px-6 py-2 text-sm font-semibold text-[#171717] hover:bg-[#78d43f]"
+            className="mt-4 rounded bg-[#87E64B] px-6 py-2 text-sm font-bold text-[#171717] hover:bg-[#78d43f]"
           >
             {t('viewPlans')}
           </button>

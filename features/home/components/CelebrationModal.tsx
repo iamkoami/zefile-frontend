@@ -126,7 +126,7 @@ const CelebrationModal: React.FC<CelebrationModalProps> = ({
         <div className="space-y-3">
           <button
             onClick={handleShare}
-            className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-[#87E64B] text-[#171717] font-semibold rounded transition-colors hover:bg-[#78d43f]"
+            className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-[#87E64B] text-[#171717] font-bold rounded transition-colors hover:bg-[#78d43f]"
           >
             <ShareIos className="w-5 h-5" />
             {t('shareNow')}

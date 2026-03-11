@@ -164,7 +164,7 @@ const VersionHistorySection: React.FC<VersionHistorySectionProps> = ({
         className="flex items-center justify-between w-full text-left"
       >
         <div className="flex items-center gap-2">
-          <h3 className="text-sm font-semibold text-gray-900">
+          <h3 className="text-sm font-bold text-gray-900">
             {t("title")}
           </h3>
           <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
@@ -213,7 +213,7 @@ const VersionHistorySection: React.FC<VersionHistorySectionProps> = ({
               >
                 {/* Version badge */}
                 <div
-                  className={`flex-shrink-0 px-2 py-1 rounded text-xs font-semibold ${
+                  className={`flex-shrink-0 px-2 py-1 rounded text-xs font-bold ${
                     version.isDefault
                       ? "bg-[#171717] text-white"
                       : "bg-gray-200 text-gray-700"

@@ -41,6 +41,15 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  --font-weight-thin: 100;
+  --font-weight-extralight: 200;
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+  --font-weight-black: 900;
 }
 
 :root {
@@ -265,7 +274,7 @@
 
   /* Panels Container */
   .ze-panels-container {
-    @apply flex flex-row items-start w-full;
+    @apply flex flex-row items-center w-full;
     margin-left: 12px;
     gap: 0;
     position: relative;
@@ -275,6 +284,7 @@
   .ze-tab-stack {
     position: relative;
     max-width: 320px;
+    margin-top: 20px;
     width: 100%;
     z-index: 2;
     animation: slideUp 0.6s ease-out 0.4s both;
@@ -367,6 +377,14 @@
 
   .ze-upload-panel.ze-test-result {
     max-width: 420px;
+  }
+
+  .ze-upload-panel.ze-request-checkout {
+    min-width: 400px;
+  }
+
+  .ze-tab-stack:has(.ze-request-checkout) {
+    max-width: 400px;
   }
 
   /* Menu Items */

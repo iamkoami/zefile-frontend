@@ -44,7 +44,7 @@ export default function BrandedHeader({ branding }: BrandedHeaderProps) {
           )}
           {branding.logoUrl && (
             <span
-              className="text-sm font-semibold hidden sm:inline"
+              className="text-sm font-bold hidden sm:inline"
               style={{ color: branding.textColor || "#171717" }}
             >
               {branding.companyName}

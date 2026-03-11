@@ -549,7 +549,7 @@ const AdminTransactionsPanel: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-white rounded-lg w-full max-w-lg mx-4 p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-[#171717]">
+              <h2 className="text-lg font-bold text-[#171717]">
                 {t('transactionDetails')}
               </h2>
               <button

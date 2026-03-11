@@ -116,7 +116,7 @@ export function DowngradeWarningModal({
         {/* Feature losses */}
         {featureLosses.length > 0 && (
           <div className="mb-6 rounded-lg bg-red-50 p-4">
-            <p className="mb-2 text-sm font-semibold text-red-800">
+            <p className="mb-2 text-sm font-bold text-red-800">
               {t('youWillLose')}
             </p>
             <ul className="space-y-1">
@@ -140,14 +140,14 @@ export function DowngradeWarningModal({
           <button
             onClick={onClose}
             disabled={isLoading}
-            className="flex-1 rounded border border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-[#171717] hover:bg-gray-50 disabled:opacity-50"
+            className="flex-1 rounded border border-gray-300 bg-white px-4 py-3 text-sm font-bold text-[#171717] hover:bg-gray-50 disabled:opacity-50"
           >
             {t('keepPlan')}
           </button>
           <button
             onClick={handleConfirm}
             disabled={isLoading}
-            className="flex-1 rounded bg-red-600 px-4 py-3 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+            className="flex-1 rounded bg-red-600 px-4 py-3 text-sm font-bold text-white hover:bg-red-700 disabled:opacity-50"
           >
             {isLoading ? t('processing') : t('confirmDowngradeBtn')}
           </button>

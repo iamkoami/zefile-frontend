@@ -72,7 +72,7 @@ export default function PaymentProcessingPage() {
 
       {/* Processing Text */}
       <div className="text-center max-w-md px-4">
-        <h1 className="text-2xl font-semibold text-[#171717] mb-4">
+        <h1 className="text-2xl font-bold text-[#171717] mb-4">
           {t('processing')}
         </h1>
         <p className="text-[#666666] text-base leading-relaxed mb-2">

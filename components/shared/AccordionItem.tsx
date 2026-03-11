@@ -17,7 +17,7 @@ export default function AccordionItem({ question, answer }: AccordionItemProps) 
         className="flex items-center justify-between w-full px-5 py-4 text-left"
         aria-expanded={open}
       >
-        <span className="text-[15px] font-semibold text-[#171717] pr-4">
+        <span className="text-[15px] font-bold text-[#171717] pr-4">
           {question}
         </span>
         <div

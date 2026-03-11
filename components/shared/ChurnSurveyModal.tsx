@@ -229,7 +229,7 @@ const ChurnSurveyModal: React.FC<ChurnSurveyModalProps> = ({
           <button
             onClick={handleSubmit}
             disabled={!selectedReason || isSubmitting}
-            className="w-full py-3 px-4 bg-red-500 text-white font-semibold rounded hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mb-3"
+            className="w-full py-3 px-4 bg-red-500 text-white font-bold rounded hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mb-3"
           >
             {isSubmitting ? t("processing") : t("confirmCancel")}
           </button>

@@ -316,7 +316,7 @@ export function PaymentMethodSelector({
             <div>
               <h2
                 id="payment-modal-title"
-                className="text-lg font-semibold text-[#171717]"
+                className="text-lg font-bold text-[#171717]"
               >
                 {t('payFor')} &quot;{transferTitle}&quot;
               </h2>

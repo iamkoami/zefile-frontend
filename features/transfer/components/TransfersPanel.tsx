@@ -7,7 +7,7 @@ import React, {
   useCallback,
   useRef,
 } from "react";
-import { SortUp, SortDown, SendDiagonal, Download, HandCash } from "iconoir-react";
+import { SortUp, SortDown, SendDiagonal, Download, HandCash, GitFork, NavArrowRight } from "iconoir-react";
 import { useTranslations } from "next-intl";
 import LoadingPanel from "@/components/LoadingPanel";
 import { transferApi, TransferDto } from "@/services/transfer-api";
@@ -24,7 +24,10 @@ import Pagination from "@/components/shared/Pagination";
 import BulkActionBar from "@/components/shared/BulkActionBar";
 import FirstFreeBanner from "@/components/shared/FirstFreeBanner";
 import OnboardingChecklistCard from "./OnboardingChecklistCard";
+import ConfirmationModal from "@/components/shared/ConfirmationModal";
 import { platformApi } from "@/services/platform-api";
+import { fileRequestApi, type FileRequestDto } from "@/services/file-request-api";
+import { formatCurrencyAmount, type CurrencyCode } from "@/lib/currency";
 
 // Filter options enum
 enum FilterBy {
@@ -95,13 +98,172 @@ const deduplicateTransfers = (transfers: TransferDto[]): TransferDto[] => {
   });
 };
 
+// Status color mapping for file requests
+const REQUEST_STATUS_COLORS: Record<string, string> = {
+  pending_payment: "bg-yellow-100 text-yellow-800",
+  funded: "bg-blue-100 text-blue-800",
+  delivered: "bg-purple-100 text-purple-800",
+  approved: "bg-green-100 text-green-800",
+  completed: "bg-green-100 text-green-800",
+  revision_requested: "bg-orange-100 text-orange-800",
+  expired: "bg-gray-100 text-gray-500",
+  refunded: "bg-red-100 text-red-700",
+  cancelled: "bg-gray-100 text-gray-500",
+};
+
+/**
+ * RequestItem - Displays a single file request in the list
+ * Matches TransferItem style with hover actions crossfade
+ */
+const RequestItem: React.FC<{
+  request: FileRequestDto & { _role?: "client" | "creative" };
+  t: ReturnType<typeof useTranslations>;
+  onSelect: (request: FileRequestDto & { _role?: "client" | "creative" }) => void;
+  onCopyLink: (request: FileRequestDto & { _role?: "client" | "creative" }) => void;
+  onCancel: (request: FileRequestDto & { _role?: "client" | "creative" }) => void;
+}> = ({ request, t, onSelect, onCopyLink, onCancel }) => {
+  const [isHovered, setIsHovered] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+  const isActive = isHovered || isFocused;
+
+  const user = authApi.getStoredUser();
+  const isClient = request._role === "client" || request.clientEmail === user?.email;
+  const isTerminal = request.status === "expired" || request.status === "cancelled" || request.status === "refunded" || request.status === "completed";
+  const statusColor = REQUEST_STATUS_COLORS[request.status] || "bg-gray-100 text-gray-600";
+  const budgetMajor = request.budgetMinorUnits / 100;
+  const formattedBudget = formatCurrencyAmount(budgetMajor, request.currency as CurrencyCode);
+  const counterpartyEmail = isClient ? request.creativeEmail : request.clientEmail;
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+  };
+
+  return (
+    <div
+      className={`relative flex items-center justify-between px-6 py-5 cursor-pointer rounded-xl transition-all duration-300 ease-out ${
+        isActive
+          ? "bg-gray-900 scale-[1.01] shadow-lg"
+          : "bg-[#F9F9FA] hover:bg-gray-200 scale-100"
+      }`}
+      onClick={() => onSelect(request)}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onFocus={() => setIsFocused(true)}
+      onBlur={() => setIsFocused(false)}
+      tabIndex={0}
+      role="button"
+      aria-label={`Request: ${request.title}`}
+    >
+      <div className="flex-1 min-w-0">
+        {/* Title + status badge */}
+        <div className="flex items-center gap-2">
+          <h4
+            className={`text-base font-bold truncate transition-colors duration-200 ${
+              isActive ? "text-white" : "text-gray-900"
+            }`}
+          >
+            {request.title}
+          </h4>
+          <span className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 transition-all duration-200 ${
+            isTerminal
+              ? (isActive ? "opacity-100 bg-gray-700 text-gray-300" : "opacity-0")
+              : statusColor
+          }`}>
+            {t(`requestStatus.${request.status}`)}
+          </span>
+        </div>
+
+        {/* Metadata + Actions crossfade */}
+        <div className="relative h-6 mt-1">
+          {/* Metadata - fades out on hover */}
+          <p
+            className={`absolute inset-0 text-sm truncate transition-all duration-200 flex items-center gap-1 text-gray-500 ${
+              isActive ? "opacity-0 translate-y-1" : "opacity-100 translate-y-0"
+            }`}
+          >
+            <span>
+              {isClient ? t("requestSent") : t("requestReceived")} - {counterpartyEmail} - {formattedBudget} - {formatDate(request.createdAt)}
+            </span>
+            {isTerminal && (
+              <>
+                <span>-</span>
+                <span className="text-red-500">{t(`requestStatus.${request.status}`)}</span>
+              </>
+            )}
+          </p>
+
+          {/* Actions - fades in on hover */}
+          <div
+            className={`absolute inset-0 flex items-center gap-1 transition-all duration-200 ${
+              isActive ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-1"
+            }`}
+            aria-hidden={!isActive}
+          >
+            {!isTerminal && (
+              <>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSelect(request);
+                  }}
+                  className="text-sm text-[#87E64B] hover:text-[#9ef55e] underline transition-colors focus:outline-none"
+                  tabIndex={isActive ? 0 : -1}
+                >
+                  {isClient ? t("review") : t("deliver")}
+                </button>
+                <span className="text-gray-500 mx-1">-</span>
+              </>
+            )}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onCopyLink(request);
+              }}
+              className="text-sm text-white hover:text-gray-200 underline transition-colors focus:outline-none"
+              tabIndex={isActive ? 0 : -1}
+            >
+              {t("copyLink")}
+            </button>
+            {isClient && (request.status === "pending_payment" || request.status === "funded") && (
+              <>
+                <span className="text-gray-500 mx-1">-</span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onCancel(request);
+                  }}
+                  className="text-sm text-red-400 hover:text-red-300 underline transition-colors focus:outline-none"
+                  tabIndex={isActive ? 0 : -1}
+                >
+                  {t("cancel")}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Arrow indicator */}
+      <NavArrowRight
+        className={`w-5 h-5 flex-shrink-0 ml-4 transition-all duration-200 ${
+          isActive
+            ? "text-white translate-x-1"
+            : "text-gray-400 translate-x-0"
+        }`}
+        strokeWidth={1.5}
+      />
+    </div>
+  );
+};
+
 /**
  * TransfersPanel - Displays user's transfers with tabs, search, pagination and sort
  */
 const TransfersPanel: React.FC = () => {
   const t = useTranslations("transfers");
   const tBulk = useTranslations("bulkActions");
-  const { isOpen, view, payload, pushView, currentContentView, closeDrawer } = useDrawerStore();
+  const { isOpen, view, payload, pushView, currentContentView, closeDrawer, setSelectedFileRequest } = useDrawerStore();
   const {
     isSelectionMode,
     toggleSelection,
@@ -120,6 +282,7 @@ const TransfersPanel: React.FC = () => {
   const [sentTransfers, setSentTransfers] = useState<TransferDto[]>([]);
   const [receivedTransfers, setReceivedTransfers] = useState<TransferDto[]>([]);
   const [paidTransfers, setPaidTransfers] = useState<TransferDto[]>([]);
+  const [fileRequests, setFileRequests] = useState<FileRequestDto[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [filterBy, setFilterBy] = useState<FilterBy>(FilterBy.DATE);
   const [sortAscending, setSortAscending] = useState(false); // false = descending (default)
@@ -136,6 +299,7 @@ const TransfersPanel: React.FC = () => {
       { id: "sent", label: t("tabs.sent") },
       { id: "received", label: t("tabs.received") },
       { id: "paid", label: t("tabs.paid") },
+      { id: "requests", label: t("tabs.requests") },
     ],
     [t]
   );
@@ -201,8 +365,8 @@ const TransfersPanel: React.FC = () => {
         return;
       }
 
-      // Fetch sent, received transfers, and paid transactions in parallel
-      const [sentResponse, receivedResponse, paidTransactionsResponse] =
+      // Fetch sent, received transfers, paid transactions, and file requests in parallel
+      const [sentResponse, receivedResponse, paidTransactionsResponse, myRequestsResponse, myDeliveriesResponse] =
         await Promise.all([
           transferApi.getTransfersBySender(user.id),
           user.email
@@ -210,6 +374,9 @@ const TransfersPanel: React.FC = () => {
             : Promise.resolve({ data: [] }),
           // Fetch successful transactions (actually paid transfers)
           paymentApi.getTransactionsByUserIdAndStatus(user.id, "SUCCESS"),
+          // Fetch file requests (sent as client + received as creative)
+          fileRequestApi.getMyRequests(1, 100).catch(() => ({ data: { data: [] } })),
+          fileRequestApi.getMyDeliveries(1, 100).catch(() => ({ data: { data: [] } })),
         ]);
 
       // Normalize and deduplicate sent transfers
@@ -246,6 +413,18 @@ const TransfersPanel: React.FC = () => {
 
       const deduplicatedPaid = deduplicateTransfers(paidTransferData);
       setPaidTransfers(deduplicatedPaid);
+
+      // Merge file requests (sent + received), tag with role, deduplicate by id
+      const sentRequests = (myRequestsResponse.data?.data || []).map((r: FileRequestDto) => ({ ...r, _role: "client" as const }));
+      const receivedRequests = (myDeliveriesResponse.data?.data || []).map((r: FileRequestDto) => ({ ...r, _role: "creative" as const }));
+      const allRequests = [...sentRequests, ...receivedRequests];
+      const seenRequestIds = new Set<string>();
+      const dedupedRequests = allRequests.filter((r) => {
+        if (seenRequestIds.has(r.id)) return false;
+        seenRequestIds.add(r.id);
+        return true;
+      });
+      setFileRequests(dedupedRequests);
     } catch (err) {
       console.error("[TransfersPanel] Error fetching transfers:", err);
       setError(t("failedToLoad"));
@@ -378,8 +557,32 @@ const TransfersPanel: React.FC = () => {
     sortAscending,
   ]);
 
+  // Filtered file requests for the requests tab
+  const filteredRequests = useMemo(() => {
+    if (activeTab !== "requests") return [];
+
+    let result = [...fileRequests];
+
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      result = result.filter((req) => {
+        const titleMatch = (req.title || "").toLowerCase().includes(query);
+        const emailMatch = (req.clientEmail || "").toLowerCase().includes(query) ||
+          (req.creativeEmail || "").toLowerCase().includes(query);
+        return titleMatch || emailMatch;
+      });
+    }
+
+    // Sort by date (most recent first)
+    return result.sort((a, b) => {
+      const dateA = new Date(a.createdAt || 0).getTime();
+      const dateB = new Date(b.createdAt || 0).getTime();
+      return sortAscending ? dateA - dateB : dateB - dateA;
+    });
+  }, [activeTab, fileRequests, searchQuery, sortAscending]);
+
   // Calculate pagination
-  const totalItems = filteredTransfers.length;
+  const totalItems = activeTab === "requests" ? filteredRequests.length : filteredTransfers.length;
   const totalPages = Math.ceil(totalItems / pageSize);
 
   // Get paginated transfers for current page
@@ -388,6 +591,13 @@ const TransfersPanel: React.FC = () => {
     const endIndex = startIndex + pageSize;
     return filteredTransfers.slice(startIndex, endIndex);
   }, [filteredTransfers, currentPage, pageSize]);
+
+  // Get paginated requests for current page
+  const paginatedRequests = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    return filteredRequests.slice(startIndex, endIndex);
+  }, [filteredRequests, currentPage, pageSize]);
 
   // Handle page change
   const handlePageChange = useCallback((page: number) => {
@@ -407,6 +617,69 @@ const TransfersPanel: React.FC = () => {
     },
     [pushView, getRoleForTab]
   );
+
+  // Handle clicking on a request item (navigate to request details)
+  const handleRequestClick = useCallback(
+    (request: FileRequestDto & { _role?: "client" | "creative" }) => {
+      setSelectedFileRequest(request);
+      pushView("request-details");
+    },
+    [setSelectedFileRequest, pushView]
+  );
+
+  // Copy request review/deliver link
+  const handleRequestCopyLink = useCallback(
+    async (request: FileRequestDto & { _role?: "client" | "creative" }) => {
+      if (!request.shortCode) {
+        toast.error(t("noLinkAvailable"));
+        return;
+      }
+      const user = authApi.getStoredUser();
+      const isClient = request._role === "client" || request.clientEmail === user?.email;
+      const path = isClient ? `/review/${request.shortCode}` : `/deliver/${request.shortCode}`;
+      const url = `${window.location.origin}${path}`;
+      await copyToClipboard(url, {
+        successMessage: t("linkCopied"),
+        errorMessage: t("linkCopyFailed"),
+      });
+    },
+    [t]
+  );
+
+  // Cancel request state
+  const [cancellingRequest, setCancellingRequest] = useState<(FileRequestDto & { _role?: "client" | "creative" }) | null>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
+
+  const handleRequestCancel = useCallback(
+    (request: FileRequestDto & { _role?: "client" | "creative" }) => {
+      setCancellingRequest(request);
+    },
+    []
+  );
+
+  const confirmCancelRequest = useCallback(async () => {
+    if (!cancellingRequest) return;
+    setIsCancelling(true);
+    try {
+      const response = await fileRequestApi.cancel(cancellingRequest.id);
+      if (response.error) {
+        const errorMsg =
+          typeof response.error.message === "string"
+            ? response.error.message
+            : t("genericError");
+        toast.error(errorMsg);
+        return;
+      }
+      toast.success(t("requestCancelled"));
+      setCancellingRequest(null);
+      // Refresh the list
+      fetchTransfers();
+    } catch {
+      toast.error(t("genericError"));
+    } finally {
+      setIsCancelling(false);
+    }
+  }, [cancellingRequest, t, fetchTransfers]);
 
   // Action handlers
   const handlePreview = useCallback(
@@ -534,6 +807,8 @@ const TransfersPanel: React.FC = () => {
         return t("noReceivedTransfers");
       case "paid":
         return t("noPaidTransfers");
+      case "requests":
+        return t("noRequests");
       default:
         return t("noSentTransfers");
     }
@@ -591,7 +866,7 @@ const TransfersPanel: React.FC = () => {
                 className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
               >
                 <span>{t("filterBy")} :</span>
-                <span className="font-semibold text-gray-900">
+                <span className="font-bold text-gray-900">
                   {currentFilterLabel}
                 </span>
               </button>
@@ -608,7 +883,7 @@ const TransfersPanel: React.FC = () => {
                       }}
                       className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 transition-colors ${
                         filterBy === option.id
-                          ? "font-semibold text-gray-900"
+                          ? "font-bold text-gray-900"
                           : "text-gray-600"
                       }`}
                     >
@@ -645,7 +920,7 @@ const TransfersPanel: React.FC = () => {
                 className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
               >
                 <span>{t("itemsPerPage")} :</span>
-                <span className="font-semibold text-gray-900">{pageSize}</span>
+                <span className="font-bold text-gray-900">{pageSize}</span>
               </button>
 
               {showPageSizeDropdown && (
@@ -660,7 +935,7 @@ const TransfersPanel: React.FC = () => {
                       }}
                       className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 transition-colors ${
                         pageSize === size
-                          ? "font-semibold text-gray-900"
+                          ? "font-bold text-gray-900"
                           : "text-gray-600"
                       }`}
                     >
@@ -686,58 +961,86 @@ const TransfersPanel: React.FC = () => {
         />
       </div>
 
-      {/* Transfers List */}
-      {paginatedTransfers.length > 0 ? (
-        <div className="flex flex-col gap-3">
-          {paginatedTransfers.map((transfer) => (
-            <TransferItem
-              key={transfer.id}
-              transfer={transfer}
-              onClick={handleTransferClick}
-              onPreview={handlePreview}
-              onCopyLink={handleCopyLink}
-              onDelete={handleDelete}
-              // Selection mode props - only enable for sent tab
-              selectionMode={activeTab === "sent" && isSelectionMode}
-              isSelected={isSelected(transfer.id)}
-              onSelectionChange={activeTab === "sent" ? toggleSelection : undefined}
-            />
-          ))}
-        </div>
-      ) : searchQuery ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <p className="text-gray-500">{t("noResults")}</p>
-        </div>
+      {/* Content List */}
+      {activeTab === "requests" ? (
+        // Requests tab content
+        paginatedRequests.length > 0 ? (
+          <div className="flex flex-col gap-3">
+            {paginatedRequests.map((request) => (
+              <RequestItem key={request.id} request={request} t={t} onSelect={handleRequestClick} onCopyLink={handleRequestCopyLink} onCancel={handleRequestCancel} />
+            ))}
+          </div>
+        ) : searchQuery ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <p className="text-gray-500">{t("noResults")}</p>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-16 text-center px-4">
+            <GitFork className="w-12 h-12 text-gray-200 mb-4" strokeWidth={1.5} />
+            <p className="text-base font-bold text-[#171717] mb-1">{t("emptyState.requests.title")}</p>
+            <p className="text-sm text-gray-500 mb-6">{t("emptyState.requests.subtitle")}</p>
+            <button
+              onClick={closeDrawer}
+              className="px-6 py-2.5 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors text-sm"
+            >
+              {t("emptyState.requests.cta")}
+            </button>
+          </div>
+        )
       ) : (
-        <div className="flex flex-col items-center justify-center py-16 text-center px-4">
-          {activeTab === "sent" && (
-            <>
-              <SendDiagonal className="w-12 h-12 text-gray-200 mb-4" strokeWidth={1.5} />
-              <p className="text-base font-semibold text-[#171717] mb-1">{t("emptyState.sent.title")}</p>
-              <p className="text-sm text-gray-500 mb-6">{t("emptyState.sent.subtitle")}</p>
-              <button
-                onClick={closeDrawer}
-                className="px-6 py-2.5 bg-[#87E64B] text-[#171717] font-semibold rounded hover:bg-[#78d43f] transition-colors text-sm"
-              >
-                {t("emptyState.sent.cta")}
-              </button>
-            </>
-          )}
-          {activeTab === "received" && (
-            <>
-              <Download className="w-12 h-12 text-gray-200 mb-4" strokeWidth={1.5} />
-              <p className="text-base font-semibold text-[#171717] mb-1">{t("emptyState.received.title")}</p>
-              <p className="text-sm text-gray-500">{t("emptyState.received.subtitle")}</p>
-            </>
-          )}
-          {activeTab === "paid" && (
-            <>
-              <HandCash className="w-12 h-12 text-gray-200 mb-4" strokeWidth={1.5} />
-              <p className="text-base font-semibold text-[#171717] mb-1">{t("emptyState.paid.title")}</p>
-              <p className="text-sm text-gray-500">{t("emptyState.paid.subtitle")}</p>
-            </>
-          )}
-        </div>
+        // Transfers tab content (sent, received, paid)
+        paginatedTransfers.length > 0 ? (
+          <div className="flex flex-col gap-3">
+            {paginatedTransfers.map((transfer) => (
+              <TransferItem
+                key={transfer.id}
+                transfer={transfer}
+                onClick={handleTransferClick}
+                onPreview={handlePreview}
+                onCopyLink={handleCopyLink}
+                onDelete={handleDelete}
+                // Selection mode props - only enable for sent tab
+                selectionMode={activeTab === "sent" && isSelectionMode}
+                isSelected={isSelected(transfer.id)}
+                onSelectionChange={activeTab === "sent" ? toggleSelection : undefined}
+              />
+            ))}
+          </div>
+        ) : searchQuery ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <p className="text-gray-500">{t("noResults")}</p>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-16 text-center px-4">
+            {activeTab === "sent" && (
+              <>
+                <SendDiagonal className="w-12 h-12 text-gray-200 mb-4" strokeWidth={1.5} />
+                <p className="text-base font-bold text-[#171717] mb-1">{t("emptyState.sent.title")}</p>
+                <p className="text-sm text-gray-500 mb-6">{t("emptyState.sent.subtitle")}</p>
+                <button
+                  onClick={closeDrawer}
+                  className="px-6 py-2.5 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors text-sm"
+                >
+                  {t("emptyState.sent.cta")}
+                </button>
+              </>
+            )}
+            {activeTab === "received" && (
+              <>
+                <Download className="w-12 h-12 text-gray-200 mb-4" strokeWidth={1.5} />
+                <p className="text-base font-bold text-[#171717] mb-1">{t("emptyState.received.title")}</p>
+                <p className="text-sm text-gray-500">{t("emptyState.received.subtitle")}</p>
+              </>
+            )}
+            {activeTab === "paid" && (
+              <>
+                <HandCash className="w-12 h-12 text-gray-200 mb-4" strokeWidth={1.5} />
+                <p className="text-base font-bold text-[#171717] mb-1">{t("emptyState.paid.title")}</p>
+                <p className="text-sm text-gray-500">{t("emptyState.paid.subtitle")}</p>
+              </>
+            )}
+          </div>
+        )
       )}
 
       {/* Pagination */}
@@ -761,6 +1064,22 @@ const TransfersPanel: React.FC = () => {
           onDeselectAll={handleDeselectAll}
         />
       )}
+
+      {/* Cancel request confirmation modal */}
+      <ConfirmationModal
+        isOpen={!!cancellingRequest}
+        type="warning"
+        title={t("cancelRequestTitle")}
+        message={
+          cancellingRequest?.status === "funded"
+            ? t("cancelRequestMessageFunded")
+            : t("cancelRequestMessage")
+        }
+        confirmLabel={t("cancelRequestConfirm")}
+        isLoading={isCancelling}
+        onConfirm={confirmCancelRequest}
+        onCancel={() => setCancellingRequest(null)}
+      />
     </div>
   );
 };

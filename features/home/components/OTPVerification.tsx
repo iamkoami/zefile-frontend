@@ -105,7 +105,7 @@ const OTPVerification: React.FC<OTPVerificationProps> = ({
       <p className="text-sm text-gray-600 text-center mb-1">
         {t("description")}
       </p>
-      <p className="text-sm font-semibold text-black text-center mb-1">
+      <p className="text-sm font-bold text-black text-center mb-1">
         {email}
       </p>
       <p className="text-sm text-gray-600 text-center mb-1">

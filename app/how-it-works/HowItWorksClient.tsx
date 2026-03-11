@@ -389,7 +389,7 @@ function StackedCard({
               {String(i + 1).padStart(2, "0")}
             </span>
             <div className="min-w-0 pt-1">
-              <h4 className="font-semibold text-white text-base leading-snug">
+              <h4 className="font-bold text-white text-base leading-snug">
                 {step.title}
               </h4>
               <p className="text-gray-400 text-base font-medium leading-relaxed mt-1">
@@ -440,7 +440,7 @@ function SplitPerspective({
             <div className="inline-flex bg-[#171717] rounded-md p-1 gap-1">
               <button
                 onClick={() => setActive("sender")}
-                className={`px-5 py-2.5 text-sm font-semibold rounded-md transition-all duration-300 ${
+                className={`px-5 py-2.5 text-sm font-bold rounded-md transition-all duration-300 ${
                   active === "sender"
                     ? "bg-[#87E64B] text-[#171717]"
                     : "text-gray-400 hover:text-white"
@@ -450,7 +450,7 @@ function SplitPerspective({
               </button>
               <button
                 onClick={() => setActive("receiver")}
-                className={`px-5 py-2.5 text-sm font-semibold rounded-md transition-all duration-300 ${
+                className={`px-5 py-2.5 text-sm font-bold rounded-md transition-all duration-300 ${
                   active === "receiver"
                     ? "bg-[#5E53E0] text-white"
                     : "text-gray-400 hover:text-white"
@@ -500,7 +500,7 @@ function SplitPerspective({
                     {String(i + 1).padStart(2, "0")}
                   </span>
                   <div>
-                    <h4 className="font-semibold text-white text-base">
+                    <h4 className="font-bold text-white text-base">
                       {step.title}
                     </h4>
                     <p className="text-gray-400 font-medium text-base mt-0.5">
@@ -525,7 +525,7 @@ function SplitPerspective({
                     {String(i + 1).padStart(2, "0")}
                   </span>
                   <div>
-                    <h4 className="font-semibold text-white text-sm">
+                    <h4 className="font-bold text-white text-sm">
                       {step.title}
                     </h4>
                     <p className="text-gray-400 font-medium text-base mt-0.5">
@@ -1024,7 +1024,7 @@ function StatsBar({
                   )}
                 </div>
                 {/* Description */}
-                <p className="text-[#171717] font-semibold text-base leading-snug">
+                <p className="text-[#171717] font-bold text-base leading-snug">
                   {stat.label}
                 </p>
                 <p className="text-[#171717]/70 text-base font-medium mt-1">
@@ -1058,7 +1058,7 @@ function FAQAccordionItem({
         className="flex items-center justify-between w-full px-6 md:px-8 py-5 md:py-6 text-left group"
         aria-expanded={open}
       >
-        <span className="text-base md:text-lg font-semibold text-[#171717] pr-6">
+        <span className="text-base md:text-lg font-bold text-[#171717] pr-6">
           {question}
         </span>
         <div
@@ -1513,7 +1513,7 @@ export default function HowItWorksClient() {
                     </Link>
                     <Link
                       href="/pricing"
-                      className="text-[#171717] font-semibold underline underline-offset-2 hover:opacity-70 transition-opacity"
+                      className="text-[#171717] font-bold underline underline-offset-2 hover:opacity-70 transition-opacity"
                     >
                       {t("ctaSecondaryLabel")}
                     </Link>

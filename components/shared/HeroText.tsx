@@ -114,7 +114,7 @@ const HeroText: React.FC<HeroTextProps> = ({
           </p>
           <button
             onClick={onUpgradeClick}
-            className="pointer-events-auto bg-[#87E64B] text-[#171717] rounded px-6 py-2.5 font-semibold text-sm hover:bg-[#78d43f] transition-colors"
+            className="pointer-events-auto bg-[#87E64B] text-[#171717] rounded px-6 py-2.5 font-bold text-sm hover:bg-[#78d43f] transition-colors"
           >
             {t("ctaButton")}
           </button>

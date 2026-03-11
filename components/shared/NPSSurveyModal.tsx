@@ -147,7 +147,7 @@ const NPSSurveyModal: React.FC<NPSSurveyModalProps> = ({
                 <button
                   key={score}
                   onClick={() => setSelectedScore(score)}
-                  className={`w-7 h-10 sm:w-9 sm:h-12 rounded font-semibold text-sm sm:text-base transition-all ${
+                  className={`w-7 h-10 sm:w-9 sm:h-12 rounded font-bold text-sm sm:text-base transition-all ${
                     selectedScore === score
                       ? getSelectedScoreColor(score)
                       : selectedScore === null
@@ -179,7 +179,7 @@ const NPSSurveyModal: React.FC<NPSSurveyModalProps> = ({
           <button
             onClick={handleSubmit}
             disabled={selectedScore === null || isSubmitting}
-            className="w-full py-3 px-4 bg-[#87E64B] text-[#171717] font-semibold rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed mb-4"
+            className="w-full py-3 px-4 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed mb-4"
           >
             {isSubmitting ? t("submitting") : t("submit")}
           </button>

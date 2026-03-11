@@ -90,7 +90,7 @@ const BrandingPanel: React.FC = () => {
   if (userTier === "free") {
     return (
       <div className="mb-10">
-        <h3 className="text-2xl font-semibold text-[#171717] mb-6">
+        <h3 className="text-2xl font-bold text-[#171717] mb-6">
           {t("title")}
         </h3>
         <div className="bg-gray-50 rounded-lg p-8 text-center">
@@ -234,7 +234,7 @@ const BrandingPanel: React.FC = () => {
 
   return (
     <div className="mb-10">
-      <h3 className="text-2xl font-semibold text-[#171717] mb-6">
+      <h3 className="text-2xl font-bold text-[#171717] mb-6">
         {t("title")}
       </h3>
       <p className="text-sm text-gray-500 mb-8">{t("description")}</p>
@@ -406,7 +406,7 @@ const BrandingPanel: React.FC = () => {
               />
             ) : null}
             <span
-              className="font-semibold text-sm"
+              className="font-bold text-sm"
               style={{ color: textColor || "#171717" }}
             >
               {companyName || t("yourCompany")}

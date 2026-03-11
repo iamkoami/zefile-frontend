@@ -19,6 +19,7 @@ import {
 } from "iconoir-react";
 import ChatButton from "./ChatButton";
 import ContactForm from "./ContactForm";
+import ContactFAQ from "./ContactFAQ";
 
 export default async function ContactPage() {
   const t = await getTranslations("pages.contact");
@@ -56,9 +57,17 @@ export default async function ContactPage() {
       <Header />
 
       <main className="flex-1">
-        <PageHero title={t.rich("title", { highlight })} subtitle={t("subtitle")} />
+        <PageHero
+          title={t.rich("title", { highlight })}
+          subtitle={t("subtitle")}
+        />
 
         <div className="max-w-7xl mx-auto px-6 py-12 lg:py-20">
+          {/* Support intro text */}
+          <p className="text-center font-medium text-gray-600 max-w-2xl mx-auto mb-12 text-base leading-relaxed">
+            {t("supportIntro")}
+          </p>
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 bg-white rounded-2xl overflow-hidden">
             {/* Left Column -- Contact Info */}
             <div className="p-8 lg:p-12 flex flex-col justify-between">
@@ -70,9 +79,9 @@ export default async function ContactPage() {
                       <ChatBubble width={24} height={24} strokeWidth={1.5} />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-[#171717] mb-0.5">
+                      <h2 className="text-base font-bold text-[#171717] mb-0.5">
                         {t("chatTitle")}
-                      </h3>
+                      </h2>
                       <p className="text-sm font-medium text-gray-500 mb-1">
                         {t("chatDesc")}
                       </p>
@@ -86,9 +95,9 @@ export default async function ContactPage() {
                       <Mail width={24} height={24} strokeWidth={1.5} />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-[#171717] mb-0.5">
+                      <h2 className="text-base font-bold text-[#171717] mb-0.5">
                         {t("emailTitle")}
-                      </h3>
+                      </h2>
                       <p className="text-sm font-medium text-gray-500 mb-1">
                         {t("emailDesc")}
                       </p>
@@ -107,9 +116,9 @@ export default async function ContactPage() {
                       <Globe width={24} height={24} strokeWidth={1.5} />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-[#171717] mb-0.5">
+                      <h2 className="text-base font-bold text-[#171717] mb-0.5">
                         {t("socialTitle")}
-                      </h3>
+                      </h2>
                       <p className="text-sm font-medium text-gray-500 mb-1">
                         {t("socialDesc")}
                       </p>
@@ -193,6 +202,22 @@ export default async function ContactPage() {
             <div className="bg-[#87E64B] p-8 lg:p-12">
               <ContactForm strings={formStrings} />
             </div>
+          </div>
+
+          {/* FAQ Section */}
+          <div className="mt-16 lg:mt-24 max-w-3xl mx-auto">
+            <h2 className="text-3xl lg:text-4xl font-bold text-[#171717] text-center mb-10">
+              {t.rich("faqSectionTitle", { highlight })}
+            </h2>
+            <ContactFAQ
+              faqs={[
+                { question: t("faq1Question"), answer: t("faq1Answer") },
+                { question: t("faq2Question"), answer: t("faq2Answer") },
+                { question: t("faq3Question"), answer: t("faq3Answer") },
+                { question: t("faq4Question"), answer: t("faq4Answer") },
+                { question: t("faq5Question"), answer: t("faq5Answer") },
+              ]}
+            />
           </div>
         </div>
       </main>

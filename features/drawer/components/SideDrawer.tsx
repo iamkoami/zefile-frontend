@@ -30,6 +30,8 @@ import {
 } from '@/features/payment/components/PaymentPanels';
 import AccountPanel from '@/features/account/components/AccountPanel';
 import PollPanel from '@/features/poll/components/PollPanel';
+import RequestDetailsPanel from '@/features/file-request/components/RequestDetailsPanel';
+import RequestReviewPanel from '@/features/file-request/components/RequestReviewPanel';
 import DrawerFooter from './DrawerFooter';
 
 /**
@@ -102,6 +104,7 @@ const SideDrawer: React.FC = () => {
     transferRole,
     passwordSessionToken,
     recipientEmail,
+    selectedFileRequest,
     popView,
     canGoBack,
     onBeforeBack,
@@ -130,6 +133,8 @@ const SideDrawer: React.FC = () => {
         'subscription-processing': 4,
         'subscription-success': 5,
         'subscription-failed': 5,
+        'request-details': 1,
+        'request-review': 2,
         'payment-method': 0,
         'payment-phone': 1,
         'payment-prompt': 2,
@@ -435,6 +440,26 @@ const SideDrawer: React.FC = () => {
             >
               {selectedTransfer && (
                 <TransferPreviewPanel transfer={selectedTransfer} role={transferRole || undefined} sessionToken={passwordSessionToken || undefined} recipientEmail={recipientEmail || undefined} />
+              )}
+            </AnimatedView>
+
+            {/* File request details view */}
+            <AnimatedView
+              isActive={currentContentView === 'request-details' && !!selectedFileRequest}
+              direction={animationDirection}
+            >
+              {selectedFileRequest && (
+                <RequestDetailsPanel request={selectedFileRequest} />
+              )}
+            </AnimatedView>
+
+            {/* File request review view (approve/revision) */}
+            <AnimatedView
+              isActive={currentContentView === 'request-review' && !!selectedFileRequest}
+              direction={animationDirection}
+            >
+              {selectedFileRequest && (
+                <RequestReviewPanel request={selectedFileRequest} />
               )}
             </AnimatedView>
 

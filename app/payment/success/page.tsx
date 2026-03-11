@@ -180,7 +180,7 @@ export default function PaymentSuccessPage() {
 
               {/* Amount Paid */}
               <div className="flex items-center justify-between pt-4 border-t border-[#E8E0D5]">
-                <span className="font-semibold text-[#171717]">{t('amountPaid')}</span>
+                <span className="font-bold text-[#171717]">{t('amountPaid')}</span>
                 <span className="text-xl font-bold text-[#171717]">
                   {formatAmount(
                     paymentInfo?.pricingAmountMinorUnits || transfer?.price || 0,
@@ -218,7 +218,7 @@ export default function PaymentSuccessPage() {
               <button
                 onClick={handleDownload}
                 disabled={isDownloading || !transfer?.shortCode}
-                className="w-full max-w-xs px-8 py-4 bg-[#87E64B] text-[#171717] font-semibold rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full max-w-xs px-8 py-4 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {isDownloading ? (
                   <div className="w-5 h-5 border-2 border-[#171717] border-t-transparent rounded-full animate-spin" />

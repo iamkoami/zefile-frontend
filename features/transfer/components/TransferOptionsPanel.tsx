@@ -286,7 +286,7 @@ const TransferOptionsPanel: React.FC<TransferOptionsPanelProps> = ({
             <label className="text-xs font-medium text-gray-500 mb-2 block">
               {t('wallpaperLabel')}
               {isWallpaperDisabled && (
-                <span className="ml-1 text-[#5E53E0] text-[10px] font-semibold uppercase">
+                <span className="ml-1 text-[#5E53E0] text-[10px] font-bold uppercase">
                   ({t('starterTier')})
                 </span>
               )}

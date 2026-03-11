@@ -73,7 +73,7 @@ const AccountSettingsContent: React.FC = () => {
     <div className="space-y-6">
       {/* Page Header */}
       <div className="mb-10">
-        <h3 className="text-2xl font-semibold text-[#171717]">
+        <h3 className="text-2xl font-bold text-[#171717]">
           {t("settingsTitle")}
         </h3>
         <p className="text-gray-500 mt-1">{t("settingsDescription")}</p>

@@ -317,7 +317,7 @@ const AdminPayoutSettingsPanel: React.FC = () => {
       {activeTab === 'payouts' && (
         <div className="space-y-6">
           <div className="bg-white p-6 rounded-lg border border-gray-200">
-            <h2 className="text-lg font-semibold mb-6">{t('payoutSettings')}</h2>
+            <h2 className="text-lg font-bold mb-6">{t('payoutSettings')}</h2>
 
             {/* Withdrawal Limits */}
             <div className="space-y-4 mb-8">
@@ -513,7 +513,7 @@ const AdminPayoutSettingsPanel: React.FC = () => {
       {activeTab === 'refunds' && (
         <div className="space-y-6">
           <div className="bg-white p-6 rounded-lg border border-gray-200">
-            <h2 className="text-lg font-semibold mb-6">{t('refundSettings')}</h2>
+            <h2 className="text-lg font-bold mb-6">{t('refundSettings')}</h2>
 
             {/* Refund Window */}
             <div className="space-y-4 mb-8">
@@ -629,7 +629,7 @@ const AdminPayoutSettingsPanel: React.FC = () => {
       {showResetConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-white rounded-lg w-full max-w-md mx-4 p-6">
-            <h2 className="text-lg font-semibold text-[#171717] mb-4">
+            <h2 className="text-lg font-bold text-[#171717] mb-4">
               {t('confirmReset')}
             </h2>
             <p className="text-gray-600 mb-6">

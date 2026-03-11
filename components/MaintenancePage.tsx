@@ -148,14 +148,14 @@ export default function MaintenancePage({
             <p className="text-sm font-medium text-gray-500">
               {t("estimatedReturn")}
             </p>
-            <p className="font-semibold text-[#171717] mt-1">{estimate}</p>
+            <p className="font-bold text-[#171717] mt-1">{estimate}</p>
           </div>
         )}
 
         {/* Refresh button */}
         <button
           onClick={() => window.location.reload()}
-          className="inline-flex items-center gap-2 px-6 py-3 border border-gray-300 rounded font-semibold transition-colors hover:bg-white/50"
+          className="inline-flex items-center gap-2 px-6 py-3 border border-gray-300 rounded font-bold transition-colors hover:bg-white/50"
           style={{
             color: textColor,
             animation: "fadeIn 0.5s ease-out 1.0s both",

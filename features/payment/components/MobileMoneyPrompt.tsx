@@ -245,7 +245,7 @@ export function MobileMoneyPrompt({
             <div className="flex items-center justify-center mb-4">
               <CheckCircle className="w-16 h-16 text-[#87E64B]" />
             </div>
-            <p className="text-xl font-semibold text-gray-900 text-center mb-2">
+            <p className="text-xl font-bold text-gray-900 text-center mb-2">
               {t('paymentSuccessful')}
             </p>
             <p className="text-lg text-gray-700 text-center mb-4">
@@ -263,7 +263,7 @@ export function MobileMoneyPrompt({
             <div className="flex items-center justify-center mb-4">
               <XmarkCircle className="w-16 h-16 text-red-500" />
             </div>
-            <p className="text-xl font-semibold text-gray-900 text-center mb-2">
+            <p className="text-xl font-bold text-gray-900 text-center mb-2">
               {t('paymentFailed')}
             </p>
             {errorMessage && (
@@ -295,7 +295,7 @@ export function MobileMoneyPrompt({
             <div className="flex items-center justify-center mb-4">
               <WarningCircle className="w-16 h-16 text-yellow-500" />
             </div>
-            <p className="text-xl font-semibold text-gray-900 text-center mb-2">
+            <p className="text-xl font-bold text-gray-900 text-center mb-2">
               {t('takingLongerThanUsual')}
             </p>
             <p className="text-sm text-gray-600 text-center mb-6">

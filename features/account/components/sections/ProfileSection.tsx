@@ -319,7 +319,7 @@ const AvatarSection: React.FC<{
                 height={96}
               />
             ) : (
-              <span className="text-2xl font-semibold text-gray-400">
+              <span className="text-2xl font-bold text-gray-400">
                 {getInitials()}
               </span>
             )}
@@ -546,7 +546,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, onUpdate }) => {
 
   return (
     <section>
-      <h3 className="text-lg font-semibold text-[#171717] mb-4">
+      <h3 className="text-lg font-bold text-[#171717] mb-4">
         {t("profileSection")}
       </h3>
 

@@ -135,7 +135,7 @@ const PhoneAuthForm: React.FC<PhoneAuthFormProps> = ({ onSuccess, termsAccepted 
   if (step === 'phone') {
     return (
       <div className="ze-phone-form w-full">
-        <h2 className="ze-form-title text-lg font-semibold text-gray-900 mb-6">
+        <h2 className="ze-form-title text-lg font-bold text-gray-900 mb-6">
           {t('enterPhoneTitle')}
         </h2>
 

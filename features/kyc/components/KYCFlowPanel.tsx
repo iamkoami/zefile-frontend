@@ -228,7 +228,7 @@ export function KYCFlowPanel({
         <div className="w-16 h-16 mx-auto mb-4 bg-[#87E64B]/20 rounded-full flex items-center justify-center">
           <Check className="w-8 h-8 text-[#87E64B]" />
         </div>
-        <h3 className="text-xl font-semibold text-[#171717] mb-2">
+        <h3 className="text-xl font-bold text-[#171717] mb-2">
           {t("verificationComplete")}
         </h3>
         <p className="text-gray-600">{t("verificationCompleteDescription")}</p>
@@ -252,7 +252,7 @@ export function KYCFlowPanel({
         <div className="w-16 h-16 mx-auto mb-4 bg-yellow-100 rounded-full flex items-center justify-center">
           <ShieldCheck className="w-8 h-8 text-yellow-600" />
         </div>
-        <h3 className="text-xl font-semibold text-[#171717] mb-2">
+        <h3 className="text-xl font-bold text-[#171717] mb-2">
           {t("verificationPendingTitle")}
         </h3>
         <p className="text-gray-600 mb-4">
@@ -269,7 +269,7 @@ export function KYCFlowPanel({
       <div className={`space-y-6 ${className} `}>
         {/* Header */}
         <div className="mb-10">
-          <h2 className="text-2xl font-semibold text-[#171717]">
+          <h2 className="text-2xl font-bold text-[#171717]">
             {t("identityVerification")}
           </h2>
           <p className="text-sm text-gray-600 mt-1">
@@ -355,7 +355,7 @@ export function KYCFlowPanel({
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h2 className="text-xl font-semibold text-[#171717]">
+            <h2 className="text-xl font-bold text-[#171717]">
               {t("chooseVerificationMethod")}
             </h2>
             <p className="text-sm text-gray-600 mt-1">
@@ -377,7 +377,7 @@ export function KYCFlowPanel({
                 <ShieldCheck className="w-6 h-6 text-[#171717]" />
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-[#171717] mb-1">
+                <h3 className="text-lg font-bold text-[#171717] mb-1">
                   {t("bvnMethodTitle")}
                 </h3>
                 <p className="text-sm text-gray-600 mb-2">
@@ -406,7 +406,7 @@ export function KYCFlowPanel({
                 <Page className="w-6 h-6 text-gray-500" />
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-[#171717] mb-1">
+                <h3 className="text-lg font-bold text-[#171717] mb-1">
                   {t("documentMethodTitle")}
                 </h3>
                 <p className="text-sm text-gray-600 mb-2">

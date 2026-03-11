@@ -24,7 +24,7 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({
             {/* Step circle + label */}
             <div className="flex flex-col items-center">
               <div
-                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-colors duration-200 ${
+                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-colors duration-200 ${
                   isCompleted
                     ? "bg-[#87E64B] text-white"
                     : isActive

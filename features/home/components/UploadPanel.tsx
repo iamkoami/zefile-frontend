@@ -1369,7 +1369,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
 
                   {/* Text */}
                   <div id="ze-upload-text" className="ze-upload-text text-left">
-                    <p className="text-sm font-semibold text-[#171717]">
+                    <p className="text-sm font-bold text-[#171717]">
                       {t("addFiles")}
                     </p>
                     <p className="text-xs text-gray-500">
@@ -1478,7 +1478,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
 
                 {/* Text */}
                 <div id="ze-upload-text" className="ze-upload-text text-left">
-                  <p className="text-sm font-semibold text-black">
+                  <p className="text-sm font-bold text-black">
                     {t("addFiles")}
                   </p>
                   <p className="text-xs text-gray-500">
@@ -1678,7 +1678,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                         ),
                         percentage: serviceChargePercentage,
                         b: (chunks) => (
-                          <span className="font-semibold">{chunks}</span>
+                          <span className="font-bold">{chunks}</span>
                         ),
                       })}
                     </p>
@@ -1949,7 +1949,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                   <label className="text-xs font-medium text-gray-500 mb-2 block">
                     {tOptions("wallpaperLabel")}
                     {isWallpaperDisabled && (
-                      <span className="ml-1 text-[#5E53E0] text-[10px] font-semibold uppercase">
+                      <span className="ml-1 text-[#5E53E0] text-[10px] font-bold uppercase">
                         ({tOptions("starterTier")})
                       </span>
                     )}

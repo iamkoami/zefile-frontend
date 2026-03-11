@@ -148,7 +148,7 @@ const ContactModal: React.FC<ContactModalProps> = ({
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
             <h2
               id="contact-modal-title"
-              className="text-xl font-semibold text-gray-900"
+              className="text-xl font-bold text-gray-900"
             >
               {isEditMode ? t('editContactTitle') : t('addContactTitle')}
             </h2>
