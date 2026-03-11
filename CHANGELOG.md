@@ -5,6 +5,29 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.37.0] - 2026-03-11
+
+### Added
+
+- File request delivery and review pages with dedicated panels
+- Contact page FAQ component and OpenGraph image
+
+### Changed
+
+- Reworked payment panels for gateway-agnostic checkout flow
+- Updated download page with improved payment and file request flows
+- Updated transfers panel with file requests tab
+
+### Fixed
+
+- Restored missing French accents across legal, contact, how-it-works, branding, waitlist, and crossLinks sections
+- Replaced double dashes with em dashes in EN and FR copy
+- Fixed typo in French FAQ (n'aceedons -> n'accédons)
+
+### Removed
+
+- Unused short-link-redirect.html
+
 ## [1.36.0] - 2026-03-09
 
 ### Added
