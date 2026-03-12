@@ -158,9 +158,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
   // Minimum price converted to selected currency
   const minimumPriceInCurrency = useMemo(() => {
     if (currency === "NGN") return minimumTransferPriceNGN;
-    return Math.ceil(
-      convertCurrency(minimumTransferPriceNGN, "NGN", currency),
-    );
+    return Math.ceil(convertCurrency(minimumTransferPriceNGN, "NGN", currency));
   }, [minimumTransferPriceNGN, currency]);
 
   // Upload progress state
@@ -449,7 +447,10 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
     const handleAddRecipient = (event: CustomEvent<{ email: string }>) => {
       const { email: recipientEmail } = event.detail;
       // Validate email format before accepting
-      if (!recipientEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipientEmail)) {
+      if (
+        !recipientEmail ||
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipientEmail)
+      ) {
         return;
       }
       if (!recipientEmails.includes(recipientEmail)) {
@@ -1197,7 +1198,12 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
       );
 
       if (result.error || !result.data) {
-        setFileError(result.error?.message || tTest("uploadFailed"));
+        const isRateLimited = result.status === 429;
+        setFileError(
+          isRateLimited
+            ? tTest("rateLimited")
+            : result.error?.message || tTest("uploadFailed"),
+        );
         setPanelState("form");
         return;
       }
@@ -1342,7 +1348,6 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
           const isTestMode = transferMode === "test";
           return (
             <>
-            
               {/* Upload Area */}
               <div
                 id="ze-upload-area"
@@ -1444,7 +1449,6 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                   {t("transfer")}
                 </button>
               </div>
-
             </>
           );
         }
@@ -1544,7 +1548,6 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                 {t("transfer")}
               </button>
             </div>
-
           </>
         );
 
@@ -1609,9 +1612,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                   >
                     <span
                       className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        isFreeTransfer
-                          ? "translate-x-6"
-                          : "translate-x-1"
+                        isFreeTransfer ? "translate-x-6" : "translate-x-1"
                       }`}
                     />
                   </button>
@@ -1746,6 +1747,13 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
             {formErrors.password && (
               <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
                 <p className="text-sm text-red-600">{formErrors.password}</p>
+              </div>
+            )}
+
+            {/* Error Message (e.g. rate limit on test upload) */}
+            {fileError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-xs text-red-600">{fileError}</p>
               </div>
             )}
 
@@ -1931,15 +1939,17 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                       );
                     })}
                   </select>
-                  {isUserAuthenticated && userTier === "free" && !tierLimitsData?.isLoading && (
-                    <button
-                      type="button"
-                      onClick={() => openDrawer("subscriptions")}
-                      className="text-xs text-[#5E53E0] mt-1 underline hover:no-underline"
-                    >
-                      {tOptions("sizeLimitUpsell")}
-                    </button>
-                  )}
+                  {isUserAuthenticated &&
+                    userTier === "free" &&
+                    !tierLimitsData?.isLoading && (
+                      <button
+                        type="button"
+                        onClick={() => openDrawer("subscriptions")}
+                        className="text-xs text-[#5E53E0] mt-1 underline hover:no-underline"
+                      >
+                        {tOptions("sizeLimitUpsell")}
+                      </button>
+                    )}
                 </div>
               )}
 

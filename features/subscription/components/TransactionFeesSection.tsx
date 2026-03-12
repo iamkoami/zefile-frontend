@@ -21,12 +21,54 @@ interface CountryCalcData {
 }
 
 const COUNTRY_CALC_DATA: CountryCalcData[] = [
-  { countryCode: "CI", flagCode: "CI", currency: "XOF", currencySymbol: "CFA", payoutFee: { type: "percent", value: 2.5 }, noDecimals: true },
-  { countryCode: "NG", flagCode: "NG", currency: "NGN", currencySymbol: "\u20A6", payoutFee: { type: "fixed", value: 50 }, noDecimals: true },
-  { countryCode: "GH", flagCode: "GH", currency: "GHS", currencySymbol: "GH\u20B5", payoutFee: { type: "fixed", value: 2 }, noDecimals: false },
-  { countryCode: "KE", flagCode: "KE", currency: "KES", currencySymbol: "KSh", payoutFee: { type: "fixed", value: 50 }, noDecimals: true },
-  { countryCode: "BJ", flagCode: "BJ", currency: "XOF", currencySymbol: "CFA", payoutFee: { type: "percent", value: 2.5 }, noDecimals: true },
-  { countryCode: "TG", flagCode: "TG", currency: "XOF", currencySymbol: "CFA", payoutFee: { type: "percent", value: 2.5 }, noDecimals: true },
+  {
+    countryCode: "CI",
+    flagCode: "CI",
+    currency: "XOF",
+    currencySymbol: "CFA",
+    payoutFee: { type: "percent", value: 2.5 },
+    noDecimals: true,
+  },
+  {
+    countryCode: "NG",
+    flagCode: "NG",
+    currency: "NGN",
+    currencySymbol: "\u20A6",
+    payoutFee: { type: "fixed", value: 50 },
+    noDecimals: true,
+  },
+  {
+    countryCode: "GH",
+    flagCode: "GH",
+    currency: "GHS",
+    currencySymbol: "GH\u20B5",
+    payoutFee: { type: "fixed", value: 2 },
+    noDecimals: false,
+  },
+  {
+    countryCode: "KE",
+    flagCode: "KE",
+    currency: "KES",
+    currencySymbol: "KSh",
+    payoutFee: { type: "fixed", value: 50 },
+    noDecimals: true,
+  },
+  {
+    countryCode: "BJ",
+    flagCode: "BJ",
+    currency: "XOF",
+    currencySymbol: "CFA",
+    payoutFee: { type: "percent", value: 2.5 },
+    noDecimals: true,
+  },
+  {
+    countryCode: "TG",
+    flagCode: "TG",
+    currency: "XOF",
+    currencySymbol: "CFA",
+    payoutFee: { type: "percent", value: 2.5 },
+    noDecimals: true,
+  },
 ];
 
 const PLATFORM_FEE_TIERS = [
@@ -57,10 +99,14 @@ interface TransactionFeesSectionProps {
   compact?: boolean;
 }
 
-export function TransactionFeesSection({ compact = false }: TransactionFeesSectionProps) {
+export function TransactionFeesSection({
+  compact = false,
+}: TransactionFeesSectionProps) {
   const t = useTranslations("subscriptions");
   const [selectedCountry, setSelectedCountry] = useState("NG");
-  const [selectedTier, setSelectedTier] = useState<"free" | "starter" | "pro">("free");
+  const [selectedTier, setSelectedTier] = useState<"free" | "starter" | "pro">(
+    "free",
+  );
   const [priceInput, setPriceInput] = useState(
     String(DEFAULT_PRICES["NGN"] || 10000),
   );
@@ -210,9 +256,7 @@ export function TransactionFeesSection({ compact = false }: TransactionFeesSecti
   return (
     <div
       className={
-        compact
-          ? "mt-20 relative"
-          : "mt-32 max-w-[55rem] mx-auto relative"
+        compact ? "mt-20 relative" : "mt-32 max-w-[55rem] mx-auto relative"
       }
     >
       <h2
@@ -285,6 +329,11 @@ export function TransactionFeesSection({ compact = false }: TransactionFeesSecti
         />
       </div>
 
+      {/* Available countries note */}
+      <p className="text-xs text-gray-400 font-medium text-left max-w-lg mx-auto mb-6">
+        {t("availableCountriesNote")}
+      </p>
+
       {/* Calculator card */}
       {selectedData && (
         <div className="max-w-lg mx-auto rounded-2xl border border-gray-200 bg-white p-6 md:p-8">
@@ -339,9 +388,7 @@ export function TransactionFeesSection({ compact = false }: TransactionFeesSecti
             <div className="border-t border-gray-100 pt-5 space-y-3">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-500">{t("calcYourPrice")}</span>
-                <span className="font-medium text-[#171717]">
-                  {fmt(price)}
-                </span>
+                <span className="font-medium text-[#171717]">{fmt(price)}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-500">

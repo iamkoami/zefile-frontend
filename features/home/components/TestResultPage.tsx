@@ -50,6 +50,11 @@ const TestResultPage: React.FC<TestResultPageProps> = ({
         <p className="text-xs text-gray-500 mt-1">{t("subtitle")}</p>
       </div>
 
+      {/* No-email notice */}
+      <div className="bg-[#F3F2FD] rounded px-4 py-3 mb-4">
+        <p className="text-sm text-[#171717]">{t("noEmailNotice")}</p>
+      </div>
+
       {/* Desktop: Sender view only (client view is in side panel) */}
       <div className="hidden lg:block">
         <TestSenderView simulationData={simulationData} />

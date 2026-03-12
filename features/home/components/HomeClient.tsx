@@ -388,7 +388,7 @@ export default function HomeClient() {
                     {/* Test Result Side Panel - simulated download page */}
                     {uploadPanelState === "test-result" &&
                       testSimulationData && (
-                        <div className="ze-file-preview-panel ze-test-result-side visible">
+                        <div className="ze-file-preview-panel ze-test-result-side visible hidden lg:block">
                           <div className="ze-file-preview-content">
                             <TestDownloadSimulation
                               simulationData={testSimulationData}

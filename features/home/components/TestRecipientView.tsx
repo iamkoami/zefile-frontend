@@ -26,7 +26,7 @@ const TestRecipientView: React.FC<TestRecipientViewProps> = ({
   return (
     <div className="space-y-6">
       {/* Explainer */}
-      <p className="text-sm text-gray-500">{t("recipientExplainer")}</p>
+      <p className="text-xs text-gray-500">{t("recipientExplainer")}</p>
 
       {/* Section A: Compact email notification card */}
       <div className="border border-gray-200 rounded bg-white p-5">
@@ -34,17 +34,15 @@ const TestRecipientView: React.FC<TestRecipientViewProps> = ({
           {t("recipientEmailTitle")}
         </p>
         <h3 className="text-base font-bold leading-snug mb-1">
-          <span className="text-[#5E53E0]">
-            {simulationData.senderEmail}
-          </span>{" "}
+          <span className="text-[#5E53E0]">{simulationData.senderEmail}</span>{" "}
           {t("sentYou")}{" "}
           <span className="text-[#171717]">
             {simulationData.title || simulationData.filename}
           </span>
         </h3>
         <p className="text-sm text-gray-500">
-          1 {t("filesCountLabel")},{" "}
-          {formatFileSize(simulationData.fileSize)} {t("totalLabel")}
+          1 {t("filesCountLabel")}, {formatFileSize(simulationData.fileSize)}{" "}
+          {t("totalLabel")}
         </p>
       </div>
 
@@ -107,7 +105,7 @@ const TestRecipientView: React.FC<TestRecipientViewProps> = ({
         <div className="space-y-3">
           <button
             disabled
-            className="w-full px-6 py-3.5 bg-[#87E64B] text-[#171717] font-bold rounded opacity-50 cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full px-4 py-3 bg-[#87E64B] text-[#171717] font-bold text-sm rounded opacity-50 cursor-not-allowed flex items-center justify-center gap-2 whitespace-nowrap"
           >
             {isPaid ? (
               <>
@@ -123,7 +121,7 @@ const TestRecipientView: React.FC<TestRecipientViewProps> = ({
           </button>
           <button
             disabled
-            className="w-full px-6 py-3.5 border-2 border-gray-300 bg-white text-[#171717] font-medium rounded opacity-50 cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full px-4 py-3 border-2 border-gray-300 bg-white text-[#171717] font-medium text-sm rounded opacity-50 cursor-not-allowed flex items-center justify-center gap-2 whitespace-nowrap"
           >
             <Eye className="w-5 h-5" />
             {t("previewLabel")}
@@ -134,7 +132,7 @@ const TestRecipientView: React.FC<TestRecipientViewProps> = ({
       {/* Recipient email note */}
       <div className="bg-gray-50 rounded px-4 py-3">
         <p className="text-xs text-gray-500">
-          {t("recipientEmailNote", {
+          {t("recipientEmailNoteReal", {
             email: simulationData.recipientEmails[0] || "",
           })}
         </p>

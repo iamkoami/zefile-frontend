@@ -376,7 +376,12 @@
   }
 
   .ze-upload-panel.ze-test-result {
-    max-width: 420px;
+    min-width: 430px;
+    max-width: 430px;
+  }
+
+  .ze-tab-stack:has(.ze-test-result) {
+    max-width: 430px;
   }
 
   .ze-upload-panel.ze-request-checkout {
@@ -385,6 +390,18 @@
 
   .ze-tab-stack:has(.ze-request-checkout) {
     max-width: 400px;
+  }
+
+  /* Responsive: test result panel adapts on smaller screens */
+  @media (max-width: 1023px) {
+    .ze-upload-panel.ze-test-result {
+      min-width: unset;
+      max-width: 100%;
+    }
+
+    .ze-tab-stack:has(.ze-test-result) {
+      max-width: 100%;
+    }
   }
 
   /* Menu Items */
@@ -599,7 +616,7 @@
   }
 
   .ze-file-preview-panel.ze-test-result-side.visible {
-    left: 444px;
+    left: 455px;
     opacity: 1;
   }
 

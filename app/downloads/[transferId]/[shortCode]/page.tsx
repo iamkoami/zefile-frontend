@@ -67,6 +67,7 @@ import { useDrawerStore } from "@/stores/drawer-store";
 import FloatingPollWidget from "@/components/shared/FloatingPollWidget";
 import { usePollEligibility } from "@/hooks/usePollEligibility";
 import { useChatStore } from "@/stores/chat-store";
+import { useCaptcha, CAPTCHA_ACTIONS } from "@/hooks/useCaptcha";
 import {
   trackPaymentPageViewed,
   trackPaymentPageAbandoned,
@@ -178,6 +179,7 @@ export default function TransferLandingPage() {
   );
 
   const { openDrawer, openDrawerToView, setRecipientEmail } = useDrawerStore();
+  const { executeAsync: executeCaptcha, isEnabled: captchaEnabled } = useCaptcha();
 
   // Store original page title on mount
   const originalTitleRef = useRef<string>(
@@ -763,8 +765,13 @@ export default function TransferLandingPage() {
         return;
       }
 
+      // Get CAPTCHA token if enabled (invisible to user)
+      const captchaToken = captchaEnabled
+        ? await executeCaptcha(CAPTCHA_ACTIONS.REQUEST_OTP)
+        : null;
+
       // Request OTP using standard flow
-      const response = await authApi.requestOTP({ email: customerEmail });
+      const response = await authApi.requestOTP({ email: customerEmail, captchaToken });
 
       if (response.error) {
         toast.error(response.error.message || t("error"));
@@ -861,8 +868,13 @@ export default function TransferLandingPage() {
     setIsLoading(true);
 
     try {
+      // Get CAPTCHA token if enabled (invisible to user)
+      const captchaToken = captchaEnabled
+        ? await executeCaptcha(CAPTCHA_ACTIONS.REQUEST_OTP)
+        : null;
+
       // Resend OTP using standard flow
-      const response = await authApi.requestOTP({ email: customerEmail });
+      const response = await authApi.requestOTP({ email: customerEmail, captchaToken });
 
       if (response.error) {
         toast.error(response.error.message || t("error"));
