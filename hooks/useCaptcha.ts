@@ -11,9 +11,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
  * @see Story 5-2: Invisible CAPTCHA Integration
  */
 
-// Environment variables
+// Environment variables — CAPTCHA is enabled automatically when site key is set
 const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || '';
-const CAPTCHA_ENABLED = process.env.NEXT_PUBLIC_CAPTCHA_ENABLED === 'true';
 
 // Extend window type for reCAPTCHA
 declare global {
@@ -66,7 +65,7 @@ export function useCaptcha(): UseCaptchaReturn {
   const scriptLoadedRef = useRef(false);
 
   // Check if CAPTCHA is enabled
-  const isEnabled = CAPTCHA_ENABLED && !!RECAPTCHA_SITE_KEY;
+  const isEnabled = !!RECAPTCHA_SITE_KEY;
 
   // Load reCAPTCHA script
   useEffect(() => {
