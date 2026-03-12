@@ -112,19 +112,35 @@ export function useCaptcha(): UseCaptchaReturn {
   }, [isEnabled]);
 
   /**
-   * Execute CAPTCHA for the given action
+   * Execute CAPTCHA for the given action.
+   * Waits up to 5s for the script to be ready before giving up.
    */
   const executeAsync = useCallback(
     async (action: string): Promise<string | null> => {
-      // Return null if not enabled - backend will handle gracefully
       if (!isEnabled) {
         return null;
       }
 
-      // Wait for ready state
+      // Poll until ready (handles slow script loads on first render)
       if (!isReady || !window.grecaptcha) {
-        console.warn('reCAPTCHA not ready yet');
-        return null;
+        await new Promise<void>((resolve, reject) => {
+          const deadline = Date.now() + 5000;
+          const check = () => {
+            if (window.grecaptcha) {
+              resolve();
+            } else if (Date.now() > deadline) {
+              reject(new Error('reCAPTCHA not ready'));
+            } else {
+              setTimeout(check, 100);
+            }
+          };
+          check();
+        }).catch(() => null);
+
+        if (!window.grecaptcha) {
+          console.warn('reCAPTCHA not ready after timeout');
+          return null;
+        }
       }
 
       try {
