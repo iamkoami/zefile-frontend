@@ -5,6 +5,14 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.37.1] - 2026-03-14
+
+### Fixed
+
+- Added missing CAPTCHA token to upload OTP flow (caused 400 errors for non-logged-in users)
+- Added null-token guards to all OTP call sites (EmailAuthForm, download page, UploadPanel)
+- Added `captchaNotReady` translation keys (EN/FR) for graceful error messaging
+
 ## [1.37.0] - 2026-03-11
 
 ### Added
