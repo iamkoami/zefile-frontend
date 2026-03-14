@@ -61,6 +61,12 @@ const EmailAuthForm: React.FC<EmailAuthFormProps> = ({ onSuccess, termsAccepted 
         ? await executeCaptcha(CAPTCHA_ACTIONS.REQUEST_OTP)
         : null;
 
+      if (captchaEnabled && !captchaToken) {
+        setError(t('captchaNotReady'));
+        setLoading(false);
+        return;
+      }
+
       const response = await authApi.requestOTP({ email, captchaToken });
 
       if (response.error) {
@@ -169,6 +175,12 @@ const EmailAuthForm: React.FC<EmailAuthFormProps> = ({ onSuccess, termsAccepted 
       const captchaToken = captchaEnabled
         ? await executeCaptcha(CAPTCHA_ACTIONS.REQUEST_OTP)
         : null;
+
+      if (captchaEnabled && !captchaToken) {
+        setError(t('captchaNotReady'));
+        setLoading(false);
+        return;
+      }
 
       const response = await authApi.requestOTP({ email, captchaToken });
 

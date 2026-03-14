@@ -770,6 +770,12 @@ export default function TransferLandingPage() {
         ? await executeCaptcha(CAPTCHA_ACTIONS.REQUEST_OTP)
         : null;
 
+      if (captchaEnabled && !captchaToken) {
+        toast.error(t("captchaNotReady"));
+        setIsLoading(false);
+        return;
+      }
+
       // Request OTP using standard flow
       const response = await authApi.requestOTP({ email: customerEmail, captchaToken });
 
@@ -872,6 +878,12 @@ export default function TransferLandingPage() {
       const captchaToken = captchaEnabled
         ? await executeCaptcha(CAPTCHA_ACTIONS.REQUEST_OTP)
         : null;
+
+      if (captchaEnabled && !captchaToken) {
+        toast.error(t("captchaNotReady"));
+        setIsLoading(false);
+        return;
+      }
 
       // Resend OTP using standard flow
       const response = await authApi.requestOTP({ email: customerEmail, captchaToken });

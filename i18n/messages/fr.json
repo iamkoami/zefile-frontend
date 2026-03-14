@@ -104,6 +104,7 @@
     "verifyOtpError": "La vérification a échoué. Vérifiez le code.",
     "phoneAuthNotImplemented": "La connexion par téléphone n'est pas encore disponible. Utilisez l'e-mail.",
     "captchaFailed": "La vérification de sécurité a échoué. Réessayez.",
+    "captchaNotReady": "La vérification de sécurité n'a pas pu charger. Désactivez votre bloqueur de publicités et rafraîchissez la page.",
     "checkSpamFolder": "Vous ne l'avez pas reçu ? Vérifiez votre dossier spam.",
     "termsAgreement": "J'accepte les",
     "termsNotice": "En utilisant nos services, vous acceptez les",
@@ -222,7 +223,8 @@
     "trustExpiry": "Expiration automatique",
     "trustPaywall": "Vos fichiers restent verrouillés jusqu'au paiement",
     "sendFilesTab": "Envoyer des fichiers",
-    "requestFilesTab": "Demander des fichiers"
+    "requestFilesTab": "Demander des fichiers",
+    "captchaNotReady": "La vérification de sécurité n'a pas pu charger. Désactivez votre bloqueur de publicités et rafraîchissez la page."
   },
   "fileRequests": {
     "comingSoon": "Les demandes de fichiers arrivent bient\u00f4t",

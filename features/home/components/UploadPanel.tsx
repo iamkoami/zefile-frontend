@@ -37,6 +37,7 @@ import { storageApi } from "@/services/storage-api";
 import { getTierTranslationKey } from "@/hooks/useTierLimits";
 import TestResultPage, { TestSimulationData } from "./TestResultPage";
 import { usePollEligibility } from "@/hooks/usePollEligibility";
+import { useCaptcha, CAPTCHA_ACTIONS } from "@/hooks/useCaptcha";
 import { toast } from "@/components/shared/Toast";
 import Image from "next/image";
 import FirstFreeBanner from "@/components/shared/FirstFreeBanner";
@@ -128,6 +129,9 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
 
   // Poll eligibility - fire after_transfer trigger on completion
   const { checkForPoll } = usePollEligibility();
+
+  // CAPTCHA for bot protection on OTP requests
+  const { executeAsync: executeCaptcha, isEnabled: captchaEnabled } = useCaptcha();
 
   const [isDragging, setIsDragging] = useState(false);
   const [recipientEmails, setRecipientEmails] = useState<string[]>([]); // Changed from sendTo
@@ -792,7 +796,16 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
       }
 
       // User not logged in, request OTP to authenticate
-      const response = await authApi.requestOTP({ email });
+      const captchaToken = captchaEnabled
+        ? await executeCaptcha(CAPTCHA_ACTIONS.REQUEST_OTP)
+        : null;
+
+      if (captchaEnabled && !captchaToken) {
+        setFormErrors({ email: t('captchaNotReady') });
+        return;
+      }
+
+      const response = await authApi.requestOTP({ email, captchaToken });
 
       if (response.error) {
         setFormErrors({ email: response.error.message });

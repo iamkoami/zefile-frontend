@@ -104,6 +104,7 @@
     "verifyOtpError": "Verification failed. Check the code and try again.",
     "phoneAuthNotImplemented": "Phone login isn't available yet. Use email for now.",
     "captchaFailed": "Security check failed. Let's try again.",
+    "captchaNotReady": "Security check couldn't load. Disable any ad blocker and refresh the page.",
     "checkSpamFolder": "Didn't receive it? Check your spam folder.",
     "termsAgreement": "I agree to the",
     "termsNotice": "By using our services, you agree to the",
@@ -221,7 +222,8 @@
     "trustExpiry": "Files expire automatically",
     "trustPaywall": "Files stay locked until you're paid",
     "sendFilesTab": "Send files",
-    "requestFilesTab": "Request files"
+    "requestFilesTab": "Request files",
+    "captchaNotReady": "Security check couldn't load. Disable any ad blocker and refresh the page."
   },
   "fileRequests": {
     "comingSoon": "File requests are coming soon",
@@ -508,6 +510,7 @@
     "enterOtp": "Enter 6-digit code",
     "verifyAndContinue": "Verify and continue",
     "resendOtp": "Resend code",
+    "captchaNotReady": "Security check couldn't load. Disable any ad blocker and refresh the page.",
     "resendOtpIn": "You can resend in 30 seconds",
     "otpResent": "Verification code resent",
     "invalidOtp": "That code didn't work. Try again.",
