@@ -28,6 +28,7 @@ import LinkAnalyticsSection from "./LinkAnalyticsSection";
 import ShareButtons from "./ShareButtons";
 import { getCurrentUserId, getCurrentUserEmail } from "@/utils/auth";
 import { storageApi } from "@/services/storage-api";
+import { platformApi } from "@/services/platform-api";
 import LoadingPanel from "@/components/LoadingPanel";
 import VerifiedBadge from "@/components/shared/VerifiedBadge";
 
@@ -96,6 +97,139 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
 
   // Version upload modal state
   const [showVersionUploadModal, setShowVersionUploadModal] = useState(false);
+
+  // Appearance state (cover + wallpaper)
+  const [userTier, setUserTier] = useState<"free" | "starter" | "pro">("free");
+  const [coverUrl, setCoverUrl] = useState(transfer?.coverUrl);
+  const [wallpaperUrl, setWallpaperUrl] = useState(transfer?.wallpaperUrl);
+  const [isCoverUploading, setIsCoverUploading] = useState(false);
+  const [isWallpaperUploading, setIsWallpaperUploading] = useState(false);
+  const [isCoverRemoving, setIsCoverRemoving] = useState(false);
+  const [isWallpaperRemoving, setIsWallpaperRemoving] = useState(false);
+  const coverInputRef = React.useRef<HTMLInputElement>(null);
+  const wallpaperInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Fetch user tier on mount (defaults to "free" = locked if fetch fails)
+  useEffect(() => {
+    platformApi.getUserConfig().then((res) => {
+      if (res.data?.tier)
+        setUserTier(res.data.tier.toLowerCase() as "free" | "starter" | "pro");
+    }).catch(() => {});
+  }, []);
+
+  const isAppearanceLocked = userTier === "free";
+
+  const handleCoverUpload = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+      if (!allowedTypes.includes(file.type)) {
+        toast.error(t("invalidFileType"));
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(t("fileTooLarge"));
+        return;
+      }
+      setIsCoverUploading(true);
+      try {
+        const uploadRes = await storageApi.uploadCover(file);
+        if (uploadRes.error) {
+          toast.error(uploadRes.error.message);
+          return;
+        }
+        const patchRes = await transferApi.updateTransfer(currentTransfer.id, {
+          coverKey: uploadRes.data!.coverKey,
+        });
+        if (patchRes.error) {
+          toast.error(patchRes.error.message);
+          return;
+        }
+        setCoverUrl(patchRes.data?.coverUrl);
+        toast.success(t("coverUpdated"));
+      } catch {
+        toast.error(t("coverUploadFailed"));
+      } finally {
+        setIsCoverUploading(false);
+        if (coverInputRef.current) coverInputRef.current.value = "";
+      }
+    },
+    [currentTransfer.id, t],
+  );
+
+  const handleWallpaperUpload = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+      if (!allowedTypes.includes(file.type)) {
+        toast.error(t("invalidFileType"));
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(t("fileTooLarge"));
+        return;
+      }
+      setIsWallpaperUploading(true);
+      try {
+        const uploadRes = await storageApi.uploadWallpaper(file);
+        if (uploadRes.error) {
+          toast.error(uploadRes.error.message);
+          return;
+        }
+        const patchRes = await transferApi.updateTransfer(currentTransfer.id, {
+          wallpaperKey: uploadRes.data!.wallpaperKey,
+        });
+        if (patchRes.error) {
+          toast.error(patchRes.error.message);
+          return;
+        }
+        setWallpaperUrl(patchRes.data?.wallpaperUrl);
+        toast.success(t("wallpaperUpdated"));
+      } catch {
+        toast.error(t("wallpaperUploadFailed"));
+      } finally {
+        setIsWallpaperUploading(false);
+        if (wallpaperInputRef.current) wallpaperInputRef.current.value = "";
+      }
+    },
+    [currentTransfer.id, t],
+  );
+
+  const handleRemoveCover = useCallback(async () => {
+    setIsCoverRemoving(true);
+    try {
+      const res = await transferApi.removeCover(currentTransfer.id);
+      if (res.error) {
+        toast.error(res.error.message);
+        return;
+      }
+      setCoverUrl(undefined);
+      toast.success(t("coverRemoved"));
+    } catch {
+      toast.error(t("coverRemoveFailed"));
+    } finally {
+      setIsCoverRemoving(false);
+    }
+  }, [currentTransfer.id, t]);
+
+  const handleRemoveWallpaper = useCallback(async () => {
+    setIsWallpaperRemoving(true);
+    try {
+      const res = await transferApi.removeWallpaper(currentTransfer.id);
+      if (res.error) {
+        toast.error(res.error.message);
+        return;
+      }
+      setWallpaperUrl(undefined);
+      toast.success(t("wallpaperRemoved"));
+    } catch {
+      toast.error(t("wallpaperRemoveFailed"));
+    } finally {
+      setIsWallpaperRemoving(false);
+    }
+  }, [currentTransfer.id, t]);
 
   // Check if transfer requires payment
   // Use backend's paymentRequired field if available, otherwise fall back to price > 0
@@ -1313,6 +1447,119 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
                 <p className="text-sm text-gray-600">
                   {currentTransfer.downloadCount || 0}
                 </p>
+              </div>
+            )}
+
+            {/* Appearance section - sender only */}
+            {role === "sender" && (
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="text-sm font-bold text-gray-900">
+                    {t("appearance")}
+                  </h3>
+                  {isAppearanceLocked && (
+                    <span className="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
+                      {t("appearanceLockedLabel")}
+                    </span>
+                  )}
+                </div>
+                <div className="space-y-3">
+                  {/* Cover */}
+                  <div className={isAppearanceLocked || expiryStatus.isExpired ? "opacity-50 pointer-events-none" : ""}>
+                    <p className="text-sm text-gray-700">{t("cover")}</p>
+                    <p className="text-xs text-gray-400 mb-1">
+                      {t("coverDescription")}
+                    </p>
+                    {coverUrl ? (
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded overflow-hidden">
+                          <img
+                            src={coverUrl}
+                            alt=""
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <button
+                          onClick={handleRemoveCover}
+                          disabled={isCoverRemoving || isAppearanceLocked || expiryStatus.isExpired}
+                          className="text-xs text-red-500 hover:text-red-600 disabled:opacity-50"
+                        >
+                          {isCoverRemoving
+                            ? t("removing")
+                            : t("removeCover")}
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => coverInputRef.current?.click()}
+                          disabled={isCoverUploading || isAppearanceLocked || expiryStatus.isExpired}
+                          className="text-xs text-[#5E53E0] hover:underline disabled:opacity-50"
+                        >
+                          {isCoverUploading
+                            ? t("uploading")
+                            : t("uploadCover")}
+                        </button>
+                        <input
+                          ref={coverInputRef}
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          className="hidden"
+                          onChange={handleCoverUpload}
+                        />
+                      </>
+                    )}
+                  </div>
+
+                  {/* Wallpaper */}
+                  <div className={isAppearanceLocked || expiryStatus.isExpired ? "opacity-50 pointer-events-none" : ""}>
+                    <p className="text-sm text-gray-700">{t("wallpaper")}</p>
+                    <p className="text-xs text-gray-400 mb-1">
+                      {t("wallpaperDescription")}
+                    </p>
+                    {wallpaperUrl ? (
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded overflow-hidden">
+                          <img
+                            src={wallpaperUrl}
+                            alt=""
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <button
+                          onClick={handleRemoveWallpaper}
+                          disabled={isWallpaperRemoving || isAppearanceLocked || expiryStatus.isExpired}
+                          className="text-xs text-red-500 hover:text-red-600 disabled:opacity-50"
+                        >
+                          {isWallpaperRemoving
+                            ? t("removing")
+                            : t("removeWallpaper")}
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() =>
+                            wallpaperInputRef.current?.click()
+                          }
+                          disabled={isWallpaperUploading || isAppearanceLocked || expiryStatus.isExpired}
+                          className="text-xs text-[#5E53E0] hover:underline disabled:opacity-50"
+                        >
+                          {isWallpaperUploading
+                            ? t("uploading")
+                            : t("uploadWallpaper")}
+                        </button>
+                        <input
+                          ref={wallpaperInputRef}
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          className="hidden"
+                          onChange={handleWallpaperUpload}
+                        />
+                      </>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
 

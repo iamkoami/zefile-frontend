@@ -2149,16 +2149,30 @@ export default function TransferLandingPage() {
                       <input
                         ref={otpInputRef}
                         type="text"
-                        value={otpValue}
-                        onChange={(e) =>
-                          setOtpValue(
-                            e.target.value.replace(/\D/g, "").slice(0, 6),
-                          )
-                        }
-                        placeholder={t("enterOtp")}
-                        className="w-full px-4 py-3 border border-gray-200 rounded text-[#171717] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#171717] focus:border-transparent text-center tracking-widest font-mono text-lg"
-                        maxLength={6}
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        value={otpValue.length <= 3 ? otpValue : `${otpValue.slice(0, 3)} ${otpValue.slice(3)}`}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/\D/g, "").replace(/\s/g, "");
+                          if (value.length <= 6) setOtpValue(value);
+                        }}
+                        placeholder="000 000"
+                        className="w-full text-center font-bold bg-transparent outline-none"
+                        style={{
+                          fontSize: "32px",
+                          letterSpacing: "0.3em",
+                          color: otpValue ? "#171717" : "#D1D5DB",
+                          border: "none",
+                          padding: "16px 0",
+                        }}
+                        maxLength={7}
                         required
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && otpValue.length === 6 && !isLoading) {
+                            e.preventDefault();
+                            handleOtpVerify(e as unknown as React.FormEvent);
+                          }
+                        }}
                       />
                       {emailSubmitted && error && (
                         <p className="text-sm text-red-500 mt-2 text-center">
@@ -2409,12 +2423,22 @@ export default function TransferLandingPage() {
                   </div>
                 )}
 
-                {/* Download Arrow Icon */}
+                {/* Download Arrow Icon or Cover Image */}
                 <div className="flex flex-col items-center mb-6">
-                  <Download
-                    className="w-30 h-30 text-gray-300"
-                    strokeWidth={1.5}
-                  />
+                  {transfer?.coverUrl ? (
+                    <div className="w-[200px] h-[200px] overflow-hidden rounded">
+                      <img
+                        src={transfer.coverUrl}
+                        alt={transfer.title || ""}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <Download
+                      className="w-30 h-30 text-gray-300"
+                      strokeWidth={1.5}
+                    />
+                  )}
                 </div>
 
                 {/* Title */}
@@ -2440,7 +2464,7 @@ export default function TransferLandingPage() {
                 </h2>
 
                 {/* Preview Before You Pay subtitle (paid transfers only) */}
-                {transfer.price && transfer.price > 0 && !transfer.isPaid && (
+                {transfer.price > 0 && !transfer.isPaid && (
                   <p className="text-sm font-medium text-[#5E53E0] mb-4">
                     {t("previewBeforeYouPay")}
                   </p>

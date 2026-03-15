@@ -14,6 +14,7 @@ import {
   Send,
   CreditCard,
   Xmark,
+  Download,
 } from "iconoir-react";
 import {
   payoutsApi,
@@ -21,6 +22,7 @@ import {
   PayoutMethod,
   SenderPayoutsResponse,
 } from "@/services/payouts-api";
+import { invoicesApi, InvoiceType } from "@/services/invoices-api";
 import { withdrawalsApi, BalanceResponse } from "@/services/withdrawals-api";
 import { payoutMethodsApi } from "@/services/payout-methods-api";
 import LoadingPanel from "@/components/LoadingPanel";
@@ -66,6 +68,10 @@ const PayoutsPanel: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isRetrying, setIsRetrying] = useState<string | null>(null);
+
+  // Download state
+  const [downloadingPayoutId, setDownloadingPayoutId] = useState<string | null>(null);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
   // Filter
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>("all");
@@ -132,6 +138,47 @@ const PayoutsPanel: React.FC = () => {
     const balanceRes = await withdrawalsApi.getBalance();
     if (balanceRes.data) {
       setBalance(balanceRes.data);
+    }
+  };
+
+  // Handle receipt download for a completed payout
+  const handleDownloadReceipt = async (payoutId: string) => {
+    if (downloadingPayoutId) return;
+    setDownloadingPayoutId(payoutId);
+    setDownloadError(null);
+
+    try {
+      // Step 1: Find invoice for this withdrawal
+      const listResponse = await invoicesApi.listInvoices({
+        withdrawalId: payoutId,
+        type: InvoiceType.PAYOUT_RECEIPT,
+        limit: 1,
+      });
+
+      if (listResponse.error || !listResponse.data?.data?.length) {
+        setDownloadError(t("receiptGenerating"));
+        setTimeout(() => setDownloadError(null), 3000);
+        return;
+      }
+
+      const invoiceId = listResponse.data.data[0].id;
+
+      // Step 2: Get presigned download URL
+      const downloadResponse = await invoicesApi.downloadInvoice(invoiceId);
+
+      if (downloadResponse.error || !downloadResponse.data?.downloadUrl) {
+        setDownloadError(t("downloadError"));
+        setTimeout(() => setDownloadError(null), 3000);
+        return;
+      }
+
+      // Step 3: Redirect to download
+      window.location.href = downloadResponse.data.downloadUrl;
+    } catch {
+      setDownloadError(t("downloadError"));
+      setTimeout(() => setDownloadError(null), 3000);
+    } finally {
+      setDownloadingPayoutId(null);
     }
   };
 
@@ -518,6 +565,13 @@ const PayoutsPanel: React.FC = () => {
             </div>
           </div>
 
+          {/* Download error banner */}
+          {downloadError && (
+            <div className="mb-4 px-4 py-3 bg-red-50 text-red-700 text-sm rounded">
+              {downloadError}
+            </div>
+          )}
+
           {/* Payouts List */}
           {filteredPayouts.length === 0 ? (
             <div className="text-center py-12 bg-gray-50 rounded-lg">
@@ -607,6 +661,20 @@ const PayoutsPanel: React.FC = () => {
                           {statusBadge.icon}
                           {statusBadge.label}
                         </span>
+
+                        {/* Download Receipt Button */}
+                        {payout.status === PayoutStatus.COMPLETED && (
+                          <button
+                            onClick={() => handleDownloadReceipt(payout.id)}
+                            disabled={downloadingPayoutId === payout.id}
+                            title={t("downloadReceipt")}
+                            className="mt-2 p-1.5 rounded hover:bg-gray-100 transition-colors text-gray-500 hover:text-[#171717] disabled:opacity-50 disabled:cursor-wait"
+                          >
+                            <Download
+                              className={`w-4 h-4 ${downloadingPayoutId === payout.id ? "animate-pulse" : ""}`}
+                            />
+                          </button>
+                        )}
 
                         {/* Retry Button */}
                         {canRetry && (

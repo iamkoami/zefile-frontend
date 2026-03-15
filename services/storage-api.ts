@@ -148,6 +148,12 @@ export class StorageApi {
     return apiClient.upload<{ wallpaperKey: string }>('/storage/wallpaper/upload', formData);
   }
 
+  async uploadCover(file: File): Promise<ApiResponse<{ coverKey: string }>> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return apiClient.upload<{ coverKey: string }>('/storage/cover/upload', formData);
+  }
+
   /**
    * Generate presigned download URL(s)
    */

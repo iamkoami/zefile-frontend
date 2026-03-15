@@ -35,3 +35,13 @@ export {
   type TransferDto,
   type UpdateTransferDto,
 } from './transfer-api';
+
+// Invoices
+export {
+  invoicesApi,
+  InvoiceType,
+  type InvoiceDto,
+  type ListInvoicesParams,
+  type PaginatedInvoicesResponse,
+  type DownloadInvoiceResponse,
+} from './invoices-api';

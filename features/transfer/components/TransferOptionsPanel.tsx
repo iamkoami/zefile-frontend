@@ -24,6 +24,10 @@ export interface TransferOptions {
   wallpaperFile?: File;
   /** Local blob URL for wallpaper preview */
   wallpaperPreview?: string;
+  /** Custom cover image file selected for upload (undefined = no cover) */
+  coverFile?: File;
+  /** Local blob URL for cover preview */
+  coverPreview?: string;
 }
 
 interface TransferOptionsPanelProps {

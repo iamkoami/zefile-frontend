@@ -2,13 +2,14 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { useTranslations, useLocale } from "next-intl";
-import { Calendar, Filter, User, Search, NavArrowDown } from "iconoir-react";
+import { Calendar, Filter, User, Search, NavArrowDown, Download } from "iconoir-react";
 import {
   transactionsApi,
   TransactionDto,
   TransactionStatus,
   PaymentMethod,
 } from "@/services/transactions-api";
+import { invoicesApi } from "@/services/invoices-api";
 import { getCurrentUserId } from "@/utils/auth";
 import LoadingPanel from "@/components/LoadingPanel";
 import Pagination from "@/components/shared/Pagination";
@@ -43,6 +44,10 @@ const TransactionsPanel: React.FC = () => {
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
   const [contactFilter, setContactFilter] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Download state - tracks which transaction is currently downloading
+  const [downloadingTxId, setDownloadingTxId] = useState<string | null>(null);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
   // Dropdown open states
   const [isPeriodOpen, setIsPeriodOpen] = useState(false);
@@ -279,6 +284,46 @@ const TransactionsPanel: React.FC = () => {
     { value: "refund", label: t("categoryRefund") },
   ];
 
+  // Handle invoice download for a transaction
+  const handleDownloadReceipt = async (transactionId: string) => {
+    if (downloadingTxId) return;
+    setDownloadingTxId(transactionId);
+    setDownloadError(null);
+
+    try {
+      // Step 1: Find invoice for this transaction
+      const listResponse = await invoicesApi.listInvoices({
+        transactionId,
+        limit: 1,
+      });
+
+      if (listResponse.error || !listResponse.data?.data?.length) {
+        setDownloadError(t("noReceiptAvailable"));
+        setTimeout(() => setDownloadError(null), 3000);
+        return;
+      }
+
+      const invoiceId = listResponse.data.data[0].id;
+
+      // Step 2: Get presigned download URL
+      const downloadResponse = await invoicesApi.downloadInvoice(invoiceId);
+
+      if (downloadResponse.error || !downloadResponse.data?.downloadUrl) {
+        setDownloadError(t("downloadError"));
+        setTimeout(() => setDownloadError(null), 3000);
+        return;
+      }
+
+      // Step 3: Redirect to download
+      window.location.href = downloadResponse.data.downloadUrl;
+    } catch {
+      setDownloadError(t("downloadError"));
+      setTimeout(() => setDownloadError(null), 3000);
+    } finally {
+      setDownloadingTxId(null);
+    }
+  };
+
   if (isLoading) {
     return <LoadingPanel className="py-12" />;
   }
@@ -457,6 +502,13 @@ const TransactionsPanel: React.FC = () => {
         </div>
       </div>
 
+      {/* Download error banner (inline, doesn't replace table) */}
+      {downloadError && (
+        <div className="mb-4 px-4 py-3 bg-red-50 text-red-700 text-sm rounded">
+          {downloadError}
+        </div>
+      )}
+
       {/* Transactions Table */}
       {filteredTransactions.length === 0 ? (
         <div className="text-center py-12 text-gray-500">
@@ -490,6 +542,7 @@ const TransactionsPanel: React.FC = () => {
                 <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">
                   {t("colRefId")}
                 </th>
+                <th className="w-12 py-3 px-4"></th>
               </tr>
             </thead>
             <tbody>
@@ -528,6 +581,29 @@ const TransactionsPanel: React.FC = () => {
                     </td>
                     <td className="py-4 px-4 text-sm text-gray-500 font-mono">
                       {tx.paymentReference?.slice(0, 12) || "-"}
+                    </td>
+                    <td className="py-4 px-4">
+                      {tx.transactionStatus === TransactionStatus.SUCCESS ||
+                      tx.transactionStatus === TransactionStatus.REFUNDED ? (
+                        <button
+                          onClick={() => handleDownloadReceipt(tx.id)}
+                          disabled={downloadingTxId === tx.id}
+                          title={t("downloadReceipt")}
+                          className="p-1.5 rounded hover:bg-gray-100 transition-colors text-gray-500 hover:text-[#171717] disabled:opacity-50 disabled:cursor-wait"
+                        >
+                          <Download
+                            className={`w-4 h-4 ${downloadingTxId === tx.id ? "animate-pulse" : ""}`}
+                          />
+                        </button>
+                      ) : tx.transactionStatus ===
+                        TransactionStatus.PENDING ? (
+                        <span
+                          title={t("receiptGenerating")}
+                          className="p-1.5 inline-block text-gray-300 cursor-not-allowed"
+                        >
+                          <Download className="w-4 h-4" />
+                        </span>
+                      ) : null}
                     </td>
                   </tr>
                 );

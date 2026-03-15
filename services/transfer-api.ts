@@ -20,6 +20,7 @@ export interface CreateTransferDto {
   expiryDate?: string; // Legacy field
   maxDownloads?: number;
   wallpaperKey?: string;
+  coverKey?: string;
   paymentRequired?: boolean;
 }
 
@@ -91,6 +92,7 @@ export interface TransferDto {
   // Payment requirement - true if payment is required for this transfer
   paymentRequired?: boolean;
   wallpaperUrl?: string;
+  coverUrl?: string;
   // Custom domain URL when sender has an active custom domain
   customDomainUrl?: string;
   // Sender branding from BrandingProfile (STARTER+ only, story 57.3)
@@ -101,6 +103,8 @@ export interface UpdateTransferDto {
   status?: 'pending' | 'active' | 'completed' | 'expired' | 'cancelled';
   currency?: string;
   message?: string;
+  coverKey?: string;
+  wallpaperKey?: string;
 }
 
 export interface UpdateTitleDto {
@@ -460,7 +464,7 @@ export class TransferApi {
    * Update transfer
    */
   async updateTransfer(id: string, data: UpdateTransferDto): Promise<ApiResponse<TransferDto>> {
-    return apiClient.patch<TransferDto>(`/transfers/${id}`, data);
+    return apiClient.patch<TransferDto>(`/transfers/${id}?id=${id}`, { ...data, id });
   }
 
   /**
@@ -734,6 +738,22 @@ export class TransferApi {
   ): Promise<ApiResponse<TransferAnalyticsDto>> {
     return apiClient.get<TransferAnalyticsDto>(
       `/transfers/${transferId}/analytics?senderId=${senderId}`
+    );
+  }
+
+  async removeCover(
+    transferId: string
+  ): Promise<ApiResponse<{ success: boolean }>> {
+    return apiClient.delete<{ success: boolean }>(
+      `/transfers/${transferId}/cover`
+    );
+  }
+
+  async removeWallpaper(
+    transferId: string
+  ): Promise<ApiResponse<{ success: boolean }>> {
+    return apiClient.delete<{ success: boolean }>(
+      `/transfers/${transferId}/wallpaper`
     );
   }
 }

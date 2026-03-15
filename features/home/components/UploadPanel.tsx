@@ -187,6 +187,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const wallpaperInputRef = useRef<HTMLInputElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
 
   // Test transfer state
   const [transferMode, setTransferMode] = useState<"test" | "real" | null>(
@@ -248,6 +249,41 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
       ...transferOptions!,
       wallpaperFile: undefined,
       wallpaperPreview: undefined,
+    });
+  };
+
+  // Cover handlers
+  const handleCoverSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+    if (!ALLOWED_WALLPAPER_TYPES.includes(file.type)) {
+      toast.error(tOptions("invalidFileType"));
+      return;
+    }
+    if (file.size > MAX_WALLPAPER_SIZE) {
+      toast.error(tOptions("fileTooLarge"));
+      return;
+    }
+    if (transferOptions?.coverPreview) {
+      URL.revokeObjectURL(transferOptions.coverPreview);
+    }
+    const previewUrl = URL.createObjectURL(file);
+    onTransferOptionsChange?.({
+      ...transferOptions!,
+      coverFile: file,
+      coverPreview: previewUrl,
+    });
+  };
+
+  const handleRemoveCover = () => {
+    if (transferOptions?.coverPreview) {
+      URL.revokeObjectURL(transferOptions.coverPreview);
+    }
+    onTransferOptionsChange?.({
+      ...transferOptions!,
+      coverFile: undefined,
+      coverPreview: undefined,
     });
   };
 
@@ -877,7 +913,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
       title.trim() || selectedFiles[0]?.name || "Untitled Transfer";
 
     try {
-      // Step 0: Upload wallpaper if selected (non-blocking — failure = no wallpaper)
+      // Step 0: Upload wallpaper and cover if selected (non-blocking — failure = skip)
       let wallpaperKey: string | undefined;
       if (transferOptions?.wallpaperFile) {
         try {
@@ -891,6 +927,23 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
           console.warn(
             "Wallpaper upload failed, continuing without wallpaper:",
             wpError,
+          );
+        }
+      }
+
+      let coverKey: string | undefined;
+      if (transferOptions?.coverFile) {
+        try {
+          const cvResponse = await storageApi.uploadCover(
+            transferOptions.coverFile,
+          );
+          if (cvResponse.data?.coverKey) {
+            coverKey = cvResponse.data.coverKey;
+          }
+        } catch (cvError) {
+          console.warn(
+            "Cover upload failed, continuing without cover:",
+            cvError,
           );
         }
       }
@@ -914,6 +967,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
           ? calculateExpiryDate(transferOptions.validityDuration)
           : undefined,
         wallpaperKey,
+        coverKey,
       });
 
       if (transferResponse.error) {
@@ -2037,6 +2091,82 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                       className="text-xs text-[#5E53E0] mt-1 underline hover:no-underline"
                     >
                       {tOptions("wallpaperUpsell")}
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Cover Upload */}
+              {transferOptions && (
+                <div>
+                  <label className="text-xs font-medium text-gray-500 mb-2 block">
+                    {tOptions("coverLabel")}
+                    {isWallpaperDisabled && (
+                      <span className="ml-1 text-[#5E53E0] text-[10px] font-bold uppercase">
+                        ({tOptions("starterTier")})
+                      </span>
+                    )}
+                  </label>
+
+                  <input
+                    ref={coverInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={handleCoverSelect}
+                    className="hidden"
+                    disabled={isWallpaperDisabled}
+                  />
+
+                  {transferOptions.coverPreview ? (
+                    <div className="relative inline-block">
+                      <div className="w-[80px] h-[80px] rounded border-2 border-[#87E64B] overflow-hidden">
+                        <Image
+                          src={transferOptions.coverPreview}
+                          alt={tOptions("coverPreview")}
+                          width={80}
+                          height={80}
+                          className="object-cover w-full h-full"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleRemoveCover}
+                        className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
+                        aria-label={tOptions("removeCover")}
+                      >
+                        <Xmark className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        !isWallpaperDisabled &&
+                        coverInputRef.current?.click()
+                      }
+                      className={`w-full h-[60px] rounded border-2 border-dashed flex items-center justify-center gap-2 transition-colors ${
+                        isWallpaperDisabled
+                          ? "opacity-50 cursor-not-allowed border-gray-200 bg-gray-50"
+                          : "cursor-pointer border-gray-300 bg-gray-50 hover:border-[#5E53E0] hover:bg-gray-100"
+                      }`}
+                      disabled={isWallpaperDisabled}
+                    >
+                      <MediaImagePlus className="w-5 h-5 text-gray-400" />
+                      <span className="text-xs text-gray-400">
+                        {tOptions("uploadCover")}
+                      </span>
+                    </button>
+                  )}
+                  <p className="text-[10px] text-gray-400 mt-1">
+                    {tOptions("coverHint")}
+                  </p>
+                  {isUserAuthenticated && isWallpaperDisabled && (
+                    <button
+                      type="button"
+                      onClick={() => openDrawer("subscriptions")}
+                      className="text-xs text-[#5E53E0] mt-1 underline hover:no-underline"
+                    >
+                      {tOptions("coverUpsell")}
                     </button>
                   )}
                 </div>

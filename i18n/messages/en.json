@@ -447,6 +447,12 @@
     "invalidFileType": "Invalid file type. Only JPEG, PNG, and WebP are allowed.",
     "fileTooLarge": "File too large. Maximum 5MB.",
     "wallpaperUpsell": "Unlock custom wallpapers with Starter",
+    "coverLabel": "Transfer cover",
+    "uploadCover": "Upload image (JPEG, PNG, max 5MB)",
+    "coverHint": "Square image shown instead of the download icon",
+    "coverPreview": "Cover preview",
+    "removeCover": "Remove cover",
+    "coverUpsell": "Unlock custom covers with Starter",
     "sizeLimitUpsell": "Need more space? Upgrade your plan"
   },
   "fileTypes": {
@@ -1290,7 +1296,29 @@
     "removeRecipientTitle": "Remove recipient?",
     "removeRecipientMessage": "Remove {email} from this transfer? They will no longer have access.",
     "removeRecipientConfirm": "Remove",
-    "alsoAvailableAt": "Also available at {url}"
+    "alsoAvailableAt": "Also available at {url}",
+    "appearance": "Appearance",
+    "cover": "Transfer cover",
+    "coverDescription": "Square image shown instead of the download icon",
+    "uploadCover": "Upload cover",
+    "removeCover": "Remove cover",
+    "coverUpdated": "Cover updated",
+    "coverRemoved": "Cover removed",
+    "coverUploadFailed": "Couldn't upload the cover",
+    "coverRemoveFailed": "Couldn't remove the cover",
+    "wallpaper": "Download page wallpaper",
+    "wallpaperDescription": "Background image on the download page",
+    "uploadWallpaper": "Upload wallpaper",
+    "removeWallpaper": "Remove wallpaper",
+    "wallpaperUpdated": "Wallpaper updated",
+    "wallpaperRemoved": "Wallpaper removed",
+    "wallpaperUploadFailed": "Couldn't upload the wallpaper",
+    "wallpaperRemoveFailed": "Couldn't remove the wallpaper",
+    "appearanceLockedLabel": "Available on Starter and Pro",
+    "uploading": "Uploading...",
+    "removing": "Removing...",
+    "invalidFileType": "Only JPEG, PNG, and WebP images are accepted",
+    "fileTooLarge": "File is too large. Maximum 5MB."
   },
   "linkAnalytics": {
     "title": "Link Analytics",
@@ -1954,7 +1982,11 @@
     "noTransactions": "No transactions yet",
     "noResultsFiltered": "No transactions match your filters",
     "loadError": "Couldn't load your transactions",
-    "authRequired": "You'll need to sign in first"
+    "authRequired": "You'll need to sign in first",
+    "downloadReceipt": "Download receipt",
+    "receiptGenerating": "Receipt is being generated",
+    "downloadError": "Couldn't download the receipt",
+    "noReceiptAvailable": "No receipt available yet"
   },
   "payouts": {
     "title": "Payouts",
@@ -1992,7 +2024,11 @@
     "retryError": "Failed to retry payout",
     "untitledTransfer": "Untitled transfer",
     "previous": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "downloadReceipt": "Download receipt",
+    "receiptGenerating": "Receipt is being generated",
+    "downloadError": "Couldn't download the receipt",
+    "noReceiptAvailable": "No receipt available yet"
   },
   "kyc": {
     "verificationRequired": "Identity verification needed",

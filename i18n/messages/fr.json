@@ -448,6 +448,12 @@
     "invalidFileType": "Type de fichier invalide. Seuls JPEG, PNG et WebP sont autorisés.",
     "fileTooLarge": "Fichier trop volumineux. Maximum 5 Mo.",
     "wallpaperUpsell": "Débloquez les fonds personnalisés avec Starter",
+    "coverLabel": "Couverture du transfert",
+    "uploadCover": "Ajouter une image (JPEG, PNG, max 5 Mo)",
+    "coverHint": "Image carree affichee a la place de l'icone de telechargement",
+    "coverPreview": "Apercu de la couverture",
+    "removeCover": "Retirer la couverture",
+    "coverUpsell": "Debloquez les couvertures avec Starter",
     "sizeLimitUpsell": "Besoin de plus d'espace ? Passez à un plan supérieur"
   },
   "fileTypes": {
@@ -1290,7 +1296,29 @@
     "removeRecipientTitle": "Supprimer le destinataire ?",
     "removeRecipientMessage": "Supprimer {email} de ce transfert ? Cette personne n'aura plus accès.",
     "removeRecipientConfirm": "Supprimer",
-    "alsoAvailableAt": "Aussi disponible sur {url}"
+    "alsoAvailableAt": "Aussi disponible sur {url}",
+    "appearance": "Apparence",
+    "cover": "Couverture du transfert",
+    "coverDescription": "Image carree affichee a la place de l'icone de telechargement",
+    "uploadCover": "Ajouter une couverture",
+    "removeCover": "Retirer la couverture",
+    "coverUpdated": "Couverture mise a jour",
+    "coverRemoved": "Couverture retiree",
+    "coverUploadFailed": "Impossible d'ajouter la couverture",
+    "coverRemoveFailed": "Impossible de retirer la couverture",
+    "wallpaper": "Fond de la page de telechargement",
+    "wallpaperDescription": "Image de fond sur la page de telechargement",
+    "uploadWallpaper": "Ajouter un fond",
+    "removeWallpaper": "Retirer le fond",
+    "wallpaperUpdated": "Fond mis a jour",
+    "wallpaperRemoved": "Fond retire",
+    "wallpaperUploadFailed": "Impossible d'ajouter le fond",
+    "wallpaperRemoveFailed": "Impossible de retirer le fond",
+    "appearanceLockedLabel": "Disponible sur Starter et Pro",
+    "uploading": "Envoi en cours...",
+    "removing": "Suppression...",
+    "invalidFileType": "Seuls les formats JPEG, PNG et WebP sont acceptes",
+    "fileTooLarge": "Fichier trop volumineux. 5 Mo maximum."
   },
   "linkAnalytics": {
     "title": "Analytiques du lien",
@@ -1954,7 +1982,11 @@
     "noTransactions": "Aucune transaction pour le moment",
     "noResultsFiltered": "Aucune transaction ne correspond à vos filtres",
     "loadError": "On n'a pas pu charger vos transactions",
-    "authRequired": "Connectez-vous pour voir les transactions"
+    "authRequired": "Connectez-vous pour voir les transactions",
+    "downloadReceipt": "Télécharger le reçu",
+    "receiptGenerating": "Le reçu est en cours de création",
+    "downloadError": "Le téléchargement du reçu a échoué",
+    "noReceiptAvailable": "Le reçu n'est pas encore disponible"
   },
   "payouts": {
     "title": "Retraits",
@@ -1992,7 +2024,11 @@
     "retryError": "Échec de la nouvelle tentative",
     "untitledTransfer": "Transfert sans titre",
     "previous": "Précédent",
-    "next": "Suivant"
+    "next": "Suivant",
+    "downloadReceipt": "Télécharger le reçu",
+    "receiptGenerating": "Le reçu est en cours de création",
+    "downloadError": "Le téléchargement du reçu a échoué",
+    "noReceiptAvailable": "Le reçu n'est pas encore disponible"
   },
   "kyc": {
     "verificationRequired": "Vérification d'identité nécessaire",
