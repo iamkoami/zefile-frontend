@@ -2464,7 +2464,7 @@ export default function TransferLandingPage() {
                 </h2>
 
                 {/* Preview Before You Pay subtitle (paid transfers only) */}
-                {transfer.price > 0 && !transfer.isPaid && (
+                {(transfer.price ?? 0) > 0 && !transfer.isPaid && (
                   <p className="text-sm font-medium text-[#5E53E0] mb-4">
                     {t("previewBeforeYouPay")}
                   </p>
