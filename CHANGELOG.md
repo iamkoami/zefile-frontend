@@ -5,6 +5,16 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.38.0] - 2026-03-15
+
+### Added
+
+- Invoice download buttons in TransactionsPanel and PayoutsPanel (Epic 72)
+- Transfer cover image and details media support in TransferDetailsPanel and UploadPanel
+- invoices-api service for invoice list and download endpoints
+- Download page improvements for transfer cover display
+- Updated translations (EN/FR) for invoice and cover media features
+
 ## [1.37.1] - 2026-03-14
 
 ### Fixed
