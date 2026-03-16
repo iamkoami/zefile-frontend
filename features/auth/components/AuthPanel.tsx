@@ -99,6 +99,7 @@ const AuthPanel: React.FC<AuthPanelProps> = ({
             <EmailAuthForm
               onSuccess={onClose}
               termsAccepted={mode === "signup" ? termsAccepted : undefined}
+              consentRequired={mode === "signup"}
             />
 
             {/* Terms & Privacy Checkbox (signup) / Passive notice (login) */}

@@ -12,9 +12,10 @@ import LoadingFullscreen from '@/components/LoadingFullscreen';
 interface EmailAuthFormProps {
   onSuccess: () => void;
   termsAccepted?: boolean;
+  consentRequired?: boolean;
 }
 
-const EmailAuthForm: React.FC<EmailAuthFormProps> = ({ onSuccess, termsAccepted }) => {
+const EmailAuthForm: React.FC<EmailAuthFormProps> = ({ onSuccess, termsAccepted, consentRequired }) => {
   const router = useRouter();
   const t = useTranslations('auth');
   const tErrors = useTranslations('errors');
@@ -245,7 +246,7 @@ const EmailAuthForm: React.FC<EmailAuthFormProps> = ({ onSuccess, termsAccepted 
 
           <button
             type="submit"
-            disabled={loading || !isValidEmail}
+            disabled={loading || !isValidEmail || (consentRequired && !termsAccepted)}
             className="ze-submit-button bg-black text-white font-medium py-4 px-16 rounded hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ borderRadius: '4px' }}
           >
