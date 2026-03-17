@@ -5,6 +5,22 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.40.0] - 2026-03-17
+
+### Added
+
+- Referral landing page at /r/[code] with code validation and intent capture
+- ReferralsPanel in account settings with stats, history, and share functionality
+- Post-OTP referral application (silent code capture)
+- Referral API client (services/referrals-api.ts)
+- Growth prompts for referral nudges
+- EN/FR translations for referral system
+
+### Changed
+
+- Updated favicon and logo assets
+- Updated WaitlistPage, AccountPanel, PayoutsPanel, auth forms for referral integration
+
 ## [1.39.0] - 2026-03-16
 
 ### Changed
