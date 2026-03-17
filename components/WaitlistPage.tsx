@@ -125,7 +125,7 @@ export default function WaitlistPage() {
                   {t("headline2")}
                 </h1>
                 <h1
-                  className="text-4xl md:text-4xl font-black text-[#87E64B] leading-tight"
+                  className="text-4xl md:text-4xl font-black text-[#5E53E0] leading-tight"
                   style={{ animation: "slideInLeft 0.6s ease-out 0.7s both" }}
                 >
                   {t("headline3")}
@@ -208,7 +208,11 @@ export default function WaitlistPage() {
             </>
           ) : (
             /* Success / Already on list state */
-            <div style={{ animation: "slideUp 0.6s ease-out both" }}>
+            <div
+              style={{
+                animation: "slideUp 0.6s ease-out both",
+              }}
+            >
               {/* Confetti (plays once) */}
               {state === "success" && confettiAnimation && (
                 <div className="w-48 h-48 mx-auto mb-4">

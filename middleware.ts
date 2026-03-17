@@ -155,5 +155,5 @@ export function middleware(request: NextRequest) {
  * patterns like /:path* are safe.
  */
 export const config = {
-  matcher: ['/:path*'],
+  matcher: ['/:path*', '/r/:path*'],
 };

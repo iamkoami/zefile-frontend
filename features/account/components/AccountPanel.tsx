@@ -12,6 +12,7 @@ import {
   Globe,
   GraphUp,
   Palette,
+  Gift,
 } from "iconoir-react";
 import AccordionItem from "@/components/shared/AccordionItem";
 import { useDrawerStore, AccountMenuItem } from "@/stores/drawer-store";
@@ -24,6 +25,7 @@ import CustomDomainPanel from "./CustomDomainPanel";
 import BrandingPanel from "./BrandingPanel";
 import AnalyticsPanel from "@/features/analytics/components/AnalyticsPanel";
 import LoadingPanel from "@/components/LoadingPanel";
+import ReferralsPanel from "./ReferralsPanel";
 import { subscriptionApi } from "@/services/subscription-api";
 
 interface MenuItem {
@@ -40,6 +42,7 @@ const MENU_ITEMS: MenuItem[] = [
   { id: "payouts", icon: <Wallet className="w-5 h-5" />, labelKey: "payouts" },
   { id: "branding", icon: <Palette className="w-5 h-5" />, labelKey: "branding" },
   { id: "analytics", icon: <GraphUp className="w-5 h-5" />, labelKey: "analytics" },
+  { id: "referrals", icon: <Gift className="w-5 h-5" />, labelKey: "referrals" },
   { id: "verification", icon: <ShieldCheck className="w-5 h-5" />, labelKey: "verification" },
   { id: "custom-domain", icon: <Globe className="w-5 h-5" />, labelKey: "customDomain" },
   { id: "help", icon: <InfoCircle className="w-5 h-5" />, labelKey: "help" },
@@ -99,6 +102,8 @@ const AccountPanel: React.FC = () => {
           return <AnalyticsUpgradePrompt />;
         }
         return <AnalyticsPanel />;
+      case "referrals":
+        return <ReferralsPanel />;
       case "verification":
         return <VerificationContent />;
       case "custom-domain":

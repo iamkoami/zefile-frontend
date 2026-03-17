@@ -25,9 +25,12 @@ import {
 import { invoicesApi, InvoiceType } from "@/services/invoices-api";
 import { withdrawalsApi, BalanceResponse } from "@/services/withdrawals-api";
 import { payoutMethodsApi } from "@/services/payout-methods-api";
+import { referralsApi, ReferralMyCode } from "@/services/referrals-api";
 import LoadingPanel from "@/components/LoadingPanel";
 import { useCurrentCurrency } from "@/stores/currency-store";
+import { useDrawerStore } from "@/stores/drawer-store";
 import { convertCurrency, formatCurrencyAmount } from "@/lib/currency";
+import { copyToClipboard } from "@/utils/clipboard";
 import PayoutMethodsPanel from "./PayoutMethodsPanel";
 import WithdrawalRequestPanel from "./WithdrawalRequestPanel";
 
@@ -45,8 +48,10 @@ type PayoutsTab = "history" | "methods";
 const PayoutsPanel: React.FC = () => {
   const t = useTranslations("payouts");
   const tMethods = useTranslations("payoutMethods");
+  const tReferrals = useTranslations("referrals");
   const locale = useLocale();
   const { currency: displayCurrency } = useCurrentCurrency();
+  const { openAccountView } = useDrawerStore();
 
   // Tab state
   const [activeTab, setActiveTab] = useState<PayoutsTab>("history");
@@ -72,6 +77,9 @@ const PayoutsPanel: React.FC = () => {
   // Download state
   const [downloadingPayoutId, setDownloadingPayoutId] = useState<string | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
+
+  // Referral prompt state
+  const [myCode, setMyCode] = useState<ReferralMyCode | null>(null);
 
   // Filter
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>("all");
@@ -123,6 +131,18 @@ const PayoutsPanel: React.FC = () => {
 
     fetchData();
   }, [t, statusFilter, currentPage]);
+
+  // Non-blocking fetch of referral code for earn prompt (AC: 3, Story 89.5)
+  useEffect(() => {
+    let cancelled = false;
+    referralsApi
+      .getMyCode()
+      .then((res) => {
+        if (!cancelled && res.data) setMyCode(res.data);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
 
   // Auto-switch to "methods" tab when no payout methods exist (only on initial load)
   useEffect(() => {
@@ -438,6 +458,36 @@ const PayoutsPanel: React.FC = () => {
           </p>
         </div>
       </div>
+
+      {/* Referral Earn Prompt — subtle nudge below earnings (AC: 3, Story 89.5) */}
+      {myCode && (
+        <div className="flex items-center justify-between bg-[#FDFAF4] border border-gray-100 rounded px-4 py-3 mb-6">
+          <div className="flex-1">
+            <p className="text-sm text-gray-600">
+              {tReferrals("earnPrompt", { percentage: "10" })}
+            </p>
+          </div>
+          <div className="flex items-center gap-3 ml-4 flex-shrink-0">
+            <button
+              onClick={() =>
+                copyToClipboard(myCode.shareUrl, {
+                  successMessage: tReferrals("linkCopied"),
+                  errorMessage: tReferrals("copyError"),
+                })
+              }
+              className="text-xs font-medium text-[#5E53E0] hover:underline"
+            >
+              {tReferrals("copyLink")}
+            </button>
+            <button
+              onClick={() => openAccountView("referrals")}
+              className="text-xs font-medium text-[#5E53E0] hover:underline"
+            >
+              {tReferrals("menuLabel")}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Request Withdrawal Button */}
       <button

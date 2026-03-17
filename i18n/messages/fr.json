@@ -1910,6 +1910,7 @@
     "cancelDeletionError": "Échec de l'annulation de la suppression du compte",
     "analytics": "Statistiques",
     "branding": "Image de marque",
+    "referrals": "Parrainage",
     "analyticsUpgradeTitle": "Suivez la performance de vos transferts",
     "analyticsUpgradeDescription": "Tendances de téléchargement, revenus et performance de vos transferts, le tout au même endroit. Disponible sur les plans Starter et Pro.",
     "analyticsUpgradeCta": "Voir les plans"
@@ -2937,5 +2938,40 @@
       "label": "Blog",
       "description": "Conseils, guides et actualités pour les créatifs."
     }
+  },
+  "referrals": {
+    "validTitle": "{name} vous a invité(e) sur ZeFile",
+    "validSubtitle": "Votre parrainage a été enregistré. Redirection vers l'accueil...",
+    "invalidLink": "Ce lien de parrainage n'est pas valide.",
+    "invalidSubtitle": "Il a peut-être été mal saisi ou n'est plus actif.",
+    "alreadyHaveAccount": "Vous avez déjà un compte.",
+    "alreadyHaveAccountSubtitle": "Les codes de parrainage sont réservés aux nouveaux utilisateurs.",
+    "goHome": "Aller sur ZeFile",
+    "menuLabel": "Parrainage",
+    "title": "Votre programme de parrainage",
+    "yourLink": "Votre lien de parrainage",
+    "sharePrompt": "Partagez votre lien avec vos proches",
+    "copyLink": "Copier le lien",
+    "linkCopied": "Lien copié !",
+    "shareVia": "Partager via",
+    "statsInvited": "Invités",
+    "statsActive": "Actifs",
+    "statsEarned": "Gagnés",
+    "recentReferrals": "Parrainages récents",
+    "transfers": "{count} transfert(s)",
+    "pending": "En attente",
+    "emptyTitle": "Aucun parrainage pour le moment",
+    "emptyDescription": "Partagez votre lien pour commencer à gagner des bonus",
+    "earnPrompt": "Gagnez {percentage} % quand vos proches utilisent ZeFile",
+    "referredBy": "Vous avez été parrainé(e) par {name}",
+    "bonusEarned": "Bonus reçu !",
+    "disabled": "Le programme de parrainage arrive bientôt",
+    "welcomeReferred": "Bienvenue ! Vous avez été parrainé(e) par {name}",
+    "copyError": "Impossible de copier le lien",
+    "emailColumn": "E-mail",
+    "transfersColumn": "Transferts",
+    "email": "E-mail",
+    "shareMessage": "Découvrez ZeFile !",
+    "tellAFriend": "Parlez de ZeFile à vos proches"
   }
 }

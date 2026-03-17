@@ -24,6 +24,7 @@ export type AccountMenuItem =
   | 'payouts'        // Payout status (Story 1-8)
   | 'branding'       // Branding profile (Epic 57, STARTER+ only)
   | 'analytics'      // Analytics dashboard (Epic 62, STARTER+ only)
+  | 'referrals'      // Referral program dashboard (Epic 89)
   | 'verification'   // Identity verification
   | 'custom-domain'  // Custom domain management (Epic 42)
   | 'help';          // Help center

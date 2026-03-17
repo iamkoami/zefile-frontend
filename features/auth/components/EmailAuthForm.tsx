@@ -4,9 +4,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { authApi } from '@/services/auth-api';
+import { referralsApi } from '@/services/referrals-api';
 import { useCaptcha, CAPTCHA_ACTIONS } from '@/hooks/useCaptcha';
 import { usersApi } from '@/services/users-api';
 import { getAnalyticsConsent } from '@/components/shared/CookieConsentBanner';
+import { toast } from '@/components/shared/Toast';
 import LoadingFullscreen from '@/components/LoadingFullscreen';
 
 interface EmailAuthFormProps {
@@ -19,6 +21,7 @@ const EmailAuthForm: React.FC<EmailAuthFormProps> = ({ onSuccess, termsAccepted,
   const router = useRouter();
   const t = useTranslations('auth');
   const tErrors = useTranslations('errors');
+  const tReferrals = useTranslations('referrals');
   const { executeAsync: executeCaptcha, isEnabled: captchaEnabled } = useCaptcha();
   const [step, setStep] = useState<'email' | 'otp'>('email');
   const [email, setEmail] = useState('');
@@ -148,6 +151,23 @@ const EmailAuthForm: React.FC<EmailAuthFormProps> = ({ onSuccess, termsAccepted,
             privacyAccepted: true,
             cookieConsentAnalytics: getAnalyticsConsent(),
           }).catch(() => {});
+        }
+
+        // Apply referral code if present (fire-and-forget)
+        const referralCode = localStorage.getItem('referral_code');
+        if (referralCode) {
+          const referrerName = localStorage.getItem('referral_referrer_name');
+          localStorage.removeItem('referral_code');
+          localStorage.removeItem('referral_referrer_name');
+          referralsApi.applyCode(referralCode)
+            .then((applyResponse) => {
+              if (!applyResponse.error && referrerName) {
+                toast.success(tReferrals('welcomeReferred', { name: referrerName }));
+              }
+            })
+            .catch(() => {
+              // Silently ignore — don't disrupt onboarding
+            });
         }
 
         // Soft navigation - no page reload needed

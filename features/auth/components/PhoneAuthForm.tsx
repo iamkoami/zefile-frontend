@@ -100,6 +100,7 @@ const PhoneAuthForm: React.FC<PhoneAuthFormProps> = ({ onSuccess, termsAccepted 
 
     try {
       // TODO: Implement phone OTP verification when backend is ready
+      // TODO: Add referral code application after OTP success (see EmailAuthForm.tsx Story 89-4 pattern)
       await new Promise(resolve => setTimeout(resolve, 1000));
 
       setError(t('phoneAuthNotImplemented'));

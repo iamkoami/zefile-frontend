@@ -1910,6 +1910,7 @@
     "cancelDeletionError": "Failed to cancel account deletion",
     "analytics": "Analytics",
     "branding": "Branding",
+    "referrals": "Referrals",
     "analyticsUpgradeTitle": "See how your transfers perform",
     "analyticsUpgradeDescription": "Download trends, revenue insights, and transfer performance — all in one place. Available on Starter and Pro plans.",
     "analyticsUpgradeCta": "View plans"
@@ -2967,5 +2968,40 @@
       "label": "Blog",
       "description": "Tips, guides, and updates for creatives."
     }
+  },
+  "referrals": {
+    "validTitle": "{name} invited you to ZeFile",
+    "validSubtitle": "Your referral has been saved. Taking you to the homepage...",
+    "invalidLink": "This referral link isn't valid.",
+    "invalidSubtitle": "It may have been mistyped or is no longer active.",
+    "alreadyHaveAccount": "You already have an account.",
+    "alreadyHaveAccountSubtitle": "Referral codes are for new users only, but thanks for checking.",
+    "goHome": "Go to ZeFile",
+    "menuLabel": "Referrals",
+    "title": "Your referral program",
+    "yourLink": "Your referral link",
+    "sharePrompt": "Share your link with friends",
+    "copyLink": "Copy link",
+    "linkCopied": "Link copied!",
+    "shareVia": "Share via",
+    "statsInvited": "Invited",
+    "statsActive": "Active",
+    "statsEarned": "Earned",
+    "recentReferrals": "Recent referrals",
+    "transfers": "{count} transfer(s)",
+    "pending": "Pending",
+    "emptyTitle": "No referrals yet",
+    "emptyDescription": "Share your link to start earning bonuses",
+    "earnPrompt": "Earn {percentage}% when friends use ZeFile",
+    "referredBy": "You were referred by {name}",
+    "bonusEarned": "Bonus earned!",
+    "disabled": "Referral program coming soon",
+    "welcomeReferred": "Welcome! You were referred by {name}",
+    "copyError": "Failed to copy link",
+    "emailColumn": "Email",
+    "transfersColumn": "Transfers",
+    "email": "Email",
+    "shareMessage": "Check out ZeFile!",
+    "tellAFriend": "Tell a friend about ZeFile"
   }
 }

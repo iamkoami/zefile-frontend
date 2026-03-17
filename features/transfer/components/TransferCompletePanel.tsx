@@ -6,6 +6,8 @@ import { Link as LinkIcon } from "iconoir-react";
 import Lottie, { LottieRefCurrentProps } from "lottie-react";
 import { TransferDto } from "@/services/transfer-api";
 import { useDrawerStore } from "@/stores/drawer-store";
+import { referralsApi, ReferralMyCode } from "@/services/referrals-api";
+import { copyToClipboard } from "@/utils/clipboard";
 import CelebrationModal from "@/features/home/components/CelebrationModal";
 import QuickShareButtons from "./QuickShareButtons";
 import OnboardingTooltip, {
@@ -32,9 +34,11 @@ const TransferCompletePanel: React.FC<TransferCompletePanelProps> = ({
   const t = useTranslations("upload");
   const tOnboarding = useTranslations("onboarding");
   const tFirstFree = useTranslations("firstFree");
+  const tReferrals = useTranslations("referrals");
   const { openDrawerToView } = useDrawerStore();
   const [showSuccess, setShowSuccess] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [myCode, setMyCode] = useState<ReferralMyCode | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [showCelebration, setShowCelebration] = useState(isFirstTransfer);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -63,13 +67,24 @@ const TransferCompletePanel: React.FC<TransferCompletePanelProps> = ({
       .catch(() => {});
   }, []);
 
+  // Non-blocking fetch of referral code — only for paid transfers (AC: 1, 2)
+  useEffect(() => {
+    if (!transfer.price || transfer.price <= 0) return;
+    let cancelled = false;
+    referralsApi
+      .getMyCode()
+      .then((res) => {
+        if (!cancelled && res.data) setMyCode(res.data);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [transfer.price]);
+
   const handleCopyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(shortLink);
+    const success = await copyToClipboard(shortLink, { showToast: false });
+    if (success) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error("Failed to copy link:", err);
     }
   };
 
@@ -288,6 +303,31 @@ const TransferCompletePanel: React.FC<TransferCompletePanelProps> = ({
         >
           {t("sendSameFiles")}
         </button>
+
+        {/* Referral prompt — non-intrusive, below primary actions (AC: 1, 2) */}
+        {myCode && (
+          <div className="w-full mt-6 pt-4 border-t border-gray-100">
+            <p className="text-xs text-gray-500 mb-2">
+              {tReferrals("tellAFriend")}
+            </p>
+            <div className="flex items-center gap-2">
+              <span className="flex-1 text-xs font-mono text-gray-600 truncate">
+                {myCode.shareUrl}
+              </span>
+              <button
+                onClick={() =>
+                  copyToClipboard(myCode.shareUrl, {
+                    successMessage: tReferrals("linkCopied"),
+                    errorMessage: tReferrals("copyError"),
+                  })
+                }
+                className="text-xs font-medium text-[#5E53E0] hover:underline flex-shrink-0"
+              >
+                {tReferrals("copyLink")}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
