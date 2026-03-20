@@ -8,7 +8,6 @@ import PageHero from "@/components/shared/PageHero";
 import Image from "next/image";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import LoadingFullscreen from "@/components/LoadingFullscreen";
 import {
   useCallback,
   useEffect,
@@ -1144,15 +1143,6 @@ const HIW_SECTIONS = [
 /* ------------------------------------------------------------------ */
 export default function HowItWorksClient() {
   const t = useTranslations("pages.howItWorks");
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    setIsLoading(false);
-  }, []);
-
-  if (isLoading) {
-    return <LoadingFullscreen />;
-  }
 
   const highlight = (chunks: ReactNode) => (
     <span className="ze-highlight-green">{chunks}</span>

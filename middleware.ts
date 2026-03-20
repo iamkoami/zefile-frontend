@@ -83,6 +83,44 @@ function parseAcceptLanguage(header: string | null): 'en' | 'fr' {
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Handle /fr prefix — French locale URLs for SEO indexability.
+  // Rewrites /fr/* to /* but injects NEXT_LOCALE=fr into the request
+  // so getLocale() returns 'fr' and the page renders in French.
+  if (pathname === '/fr' || pathname.startsWith('/fr/')) {
+    const nonce = generateNonce();
+    const csp = buildCsp(nonce);
+    const canonicalPath = pathname === '/fr' ? '/' : pathname.slice(3);
+
+    const url = request.nextUrl.clone();
+    url.pathname = canonicalPath;
+
+    const requestHeaders = new Headers(request.headers);
+    // Override cookie so getLocale() returns 'fr'
+    const existingCookies = requestHeaders.get('cookie') || '';
+    const newCookies = existingCookies.includes('NEXT_LOCALE=')
+      ? existingCookies.replace(/NEXT_LOCALE=[^;]*(;|$)/, `NEXT_LOCALE=fr$1`)
+      : existingCookies ? `${existingCookies}; NEXT_LOCALE=fr` : 'NEXT_LOCALE=fr';
+    requestHeaders.set('cookie', newCookies);
+    requestHeaders.set('x-nonce', nonce);
+    requestHeaders.set('x-locale', 'fr');
+    requestHeaders.set('x-canonical-path', canonicalPath);
+
+    const response = NextResponse.rewrite(url, { request: { headers: requestHeaders } });
+
+    response.cookies.set('NEXT_LOCALE', 'fr', { path: '/', maxAge: 365 * 24 * 60 * 60, sameSite: 'lax' });
+    response.headers.set('Content-Security-Policy', csp);
+    response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+    response.headers.set('X-Content-Type-Options', 'nosniff');
+    response.headers.set('X-Frame-Options', 'DENY');
+    response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+    response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+    response.headers.set('Vary', 'Accept-Language, Cookie');
+    response.headers.set('Content-Language', 'fr');
+    response.headers.set('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
+    response.headers.delete('X-Powered-By');
+    return response;
+  }
+
   // Handle /z-{shortCode} pattern — redirect to downloads page
   const shortLinkMatch = pathname.match(/^\/(z-[a-zA-Z0-9]+)$/);
 
@@ -112,6 +150,9 @@ export function middleware(request: NextRequest) {
   // applies it as a nonce attribute on framework <script> tags.
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-nonce', nonce);
+  // Pass canonical path so layout.tsx can build correct hreflang URLs
+  requestHeaders.set('x-canonical-path', pathname);
+  requestHeaders.set('x-locale', 'en');
 
   const response = NextResponse.next({
     request: { headers: requestHeaders },

@@ -95,6 +95,13 @@ export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
   const content = seoContent[locale as keyof typeof seoContent] || seoContent.en;
 
+  // Read canonical path injected by middleware — strips /fr prefix for rewrites
+  const headersList = await headers();
+  const canonicalPath = headersList.get('x-canonical-path') || '/';
+  const pagePath = canonicalPath === '/' ? '' : canonicalPath;
+  const canonicalUrl = `${SITE_URL}${pagePath}`;
+  const frUrl = `${SITE_URL}/fr${pagePath}`;
+
   return {
     metadataBase: new URL(SITE_URL),
     title: {
@@ -118,7 +125,7 @@ export async function generateMetadata(): Promise<Metadata> {
     openGraph: {
       type: 'website',
       locale: locale === 'fr' ? 'fr_FR' : 'en_US',
-      url: SITE_URL,
+      url: canonicalUrl,
       siteName: 'ZeFile',
       title: content.title,
       description: content.description,
@@ -140,11 +147,11 @@ export async function generateMetadata(): Promise<Metadata> {
       site: '@zefile',
     },
     alternates: {
-      canonical: SITE_URL,
+      canonical: canonicalUrl,
       languages: {
-        'en': SITE_URL,
-        'fr': SITE_URL,
-        'x-default': SITE_URL,
+        'en': canonicalUrl,
+        'fr': frUrl,
+        'x-default': canonicalUrl,
       },
     },
     icons: {
