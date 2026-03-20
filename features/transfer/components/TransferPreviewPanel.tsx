@@ -541,14 +541,15 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
 
       // Otherwise, use watermarked thumbnail via backend proxy
       if (file.thumbnailUrl) {
-        return `${API_URL}/storage/thumbnail/${file.id}?type=thumbnail`;
+        const sc = transfer.shortCode ? `&shortCode=${encodeURIComponent(transfer.shortCode)}` : '';
+        return `${API_URL}/storage/thumbnail/${file.id}?type=thumbnail${sc}`;
       }
 
       // Fallback to fetched preview only if watermarked
       if (fetched?.isWatermarked) return fetched.url;
       return null;
     },
-    [fetchedPreviews, canViewOriginal],
+    [fetchedPreviews, canViewOriginal, transfer.shortCode],
   );
 
   // Helper to get preview URL for lightbox
@@ -563,6 +564,8 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
         return fetched.url;
       }
 
+      const sc = transfer.shortCode ? `&shortCode=${encodeURIComponent(transfer.shortCode)}` : '';
+
       // Otherwise, fall back to watermarked previews
       if (file.fileType === "video") {
         // For videos, prefer previewClipUrl (20-sec watermarked clip) via proxy
@@ -571,19 +574,19 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
           | null
           | undefined;
         if (previewClip)
-          return `${API_URL}/storage/thumbnail/${file.id}?type=preview`;
+          return `${API_URL}/storage/thumbnail/${file.id}?type=preview${sc}`;
         // Fall back to fetched URL only if watermarked
         if (fetched?.isWatermarked) return fetched.url;
         return null; // Don't show original file in lightbox
       }
       // For images, check pre-generated thumbnail (always watermarked) via proxy
       if (file.thumbnailUrl)
-        return `${API_URL}/storage/thumbnail/${file.id}?type=thumbnail`;
+        return `${API_URL}/storage/thumbnail/${file.id}?type=thumbnail${sc}`;
       // Check fetched preview only if watermarked
       if (fetched?.isWatermarked) return fetched.url;
       return null; // Don't show original file in lightbox
     },
-    [fetchedPreviews, canViewOriginal],
+    [fetchedPreviews, canViewOriginal, transfer.shortCode],
   );
 
   // Sort files based on current sort field and direction

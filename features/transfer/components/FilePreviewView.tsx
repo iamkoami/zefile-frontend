@@ -246,14 +246,15 @@ const FilePreviewView: React.FC<FilePreviewViewProps> = ({
 
     // All pre-generated previews now go through the backend proxy endpoint
     // which converts S3 keys to presigned URLs
+    const sc = shortCode ? `&shortCode=${encodeURIComponent(shortCode)}` : '';
     if (fileType === "video" && file.previewClipUrl) {
-      return `${API_URL}/storage/thumbnail/${file.id}?type=preview`;
+      return `${API_URL}/storage/thumbnail/${file.id}?type=preview${sc}`;
     }
     if (fileType === "audio" && file.previewClipUrl) {
-      return `${API_URL}/storage/thumbnail/${file.id}?type=preview`;
+      return `${API_URL}/storage/thumbnail/${file.id}?type=preview${sc}`;
     }
     if (fileType === "image" && file.thumbnailUrl) {
-      return `${API_URL}/storage/thumbnail/${file.id}?type=thumbnail`;
+      return `${API_URL}/storage/thumbnail/${file.id}?type=thumbnail${sc}`;
     }
     // PDFs: Don't return thumbnail - we want to fetch the actual PDF for viewing
     // The thumbnail is only used for grid display, not for preview view
@@ -422,7 +423,7 @@ const FilePreviewView: React.FC<FilePreviewViewProps> = ({
           <div className="flex flex-col items-center justify-center h-full">
             {file.waveformUrl ? (
               <img
-                src={`${API_URL}/storage/thumbnail/${file.id}?type=waveform`}
+                src={`${API_URL}/storage/thumbnail/${file.id}?type=waveform${shortCode ? `&shortCode=${encodeURIComponent(shortCode)}` : ''}`}
                 alt="Audio waveform"
                 className="w-full max-w-md mb-8 rounded-lg"
               />

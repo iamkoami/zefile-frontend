@@ -21,13 +21,15 @@ interface TransferPreviewModalProps {
   isOpen: boolean;
   onClose: () => void;
   isPaid: boolean; // Show watermarked or unwatermarked
+  shortCode?: string;
 }
 
 const TransferPreviewModal: React.FC<TransferPreviewModalProps> = ({
   files,
   isOpen,
   onClose,
-  isPaid
+  isPaid,
+  shortCode,
 }) => {
   const t = useTranslations('transferLanding');
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -38,7 +40,8 @@ const TransferPreviewModal: React.FC<TransferPreviewModalProps> = ({
   // Use proxy endpoint for thumbnails (thumbnailUrl is now an S3 key, not a direct URL)
   const getThumbnailProxyUrl = (file: FilePreview) => {
     if (file.thumbnailUrl) {
-      return `${API_URL}/storage/thumbnail/${file.id}?type=thumbnail`;
+      const sc = shortCode ? `&shortCode=${encodeURIComponent(shortCode)}` : '';
+      return `${API_URL}/storage/thumbnail/${file.id}?type=thumbnail${sc}`;
     }
     return null;
   };

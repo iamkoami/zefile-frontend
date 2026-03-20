@@ -2431,6 +2431,7 @@ export default function TransferLandingPage() {
           isOpen={showPreviewModal}
           onClose={() => setShowPreviewModal(false)}
           isPaid={false}
+          shortCode={transfer.shortCode}
         />
 
         <main style={{ minHeight: "calc(100vh - 64px)", position: "relative" }}>
@@ -2572,7 +2573,7 @@ export default function TransferLandingPage() {
                 pointerEvents: "none",
               }}
             >
-              <div className="ze-upload-panel">
+              <div className="ze-upload-panel ze-request-checkout">
                 {/* Cover Image or Download Icon */}
                 <div className="flex flex-col items-center mb-6">
                   {transfer?.coverUrl ? (
