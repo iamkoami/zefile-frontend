@@ -137,6 +137,7 @@ export interface PlatformStatus {
   maintenanceEstimate?: string;
   maintenanceAllowDownloads?: boolean;
   waitlist: boolean;
+  darkModeEnabled: boolean;
 }
 
 /**

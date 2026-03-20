@@ -58,6 +58,7 @@ const PaperPlaneAnimation: React.FC<PaperPlaneAnimationProps> = ({
         animationData={logoAnimation}
         loop={true}
         autoplay={true}
+        className="ze-lottie-container"
         style={{
           width: "1400px",
           height: "auto",

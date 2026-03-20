@@ -118,7 +118,7 @@ function apiToBrandingConfig(
     backgroundColor: sanitizeColor(sender.backgroundColor, "#FFFFFF"),
     textColor: sanitizeColor(sender.textColor, "#171717"),
     buttonTextColor: sanitizeColor(sender.buttonTextColor, "#171717"),
-    showPoweredByZefile: sender.showPoweredByZefile,
+    showPoweredByZefile: sender.showPoweredByZefile !== false,
     logoUrl: sanitizeUrl(sender.logoUrl),
     faviconUrl: sanitizeUrl(sender.faviconUrl),
     domain: "",

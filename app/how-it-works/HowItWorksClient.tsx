@@ -123,7 +123,7 @@ function ImageZone({
       className={`relative overflow-hidden rounded-2xl ${aspect} ${className} ${
         dark
           ? "bg-gradient-to-br from-[#2a2a2a] via-[#333] to-[#2a2a2a]"
-          : "bg-gradient-to-br from-[#F3F0FF] via-[#FDFAF4] to-[#F0FFF4]"
+          : "bg-gradient-to-br from-[#F3F0FF] via-[#FDFAF4] to-[#F0FFF4] dark:from-[#1a1530] dark:via-[#141218] dark:to-[#0f1a14]"
       }`}
     >
       <div className="absolute inset-0 flex items-center justify-center">
@@ -272,7 +272,7 @@ function StepCards({
   return (
     <section className="max-w-5xl mx-auto px-6 pt-28 md:pt-36 pb-32 md:pb-28">
       <Reveal>
-        <h2 className="text-3xl md:text-5xl font-bold text-[#171717] pb-8 mb-28 md:mb-24 text-center">
+        <h2 className="text-3xl md:text-5xl font-bold text-[#171717] dark:text-white pb-8 mb-28 md:mb-24 text-center">
           {title}
         </h2>
       </Reveal>
@@ -425,10 +425,10 @@ function SplitPerspective({
       <div className="max-w-5xl mx-auto px-6">
         <Reveal>
           <div className="text-center mb-10">
-            <h2 className="text-3xl md:text-5xl font-bold text-[#171717] mb-3">
+            <h2 className="text-3xl md:text-5xl font-bold text-[#171717] dark:text-white mb-3">
               {title}
             </h2>
-            <p className="text-gray-500 text-base max-w-xl mx-auto leading-relaxed">
+            <p className="text-gray-500 dark:text-gray-400 text-base max-w-xl mx-auto leading-relaxed">
               {subtitle}
             </p>
           </div>
@@ -626,7 +626,7 @@ function FeatureCarousel({
   }, [features.length]);
 
   return (
-    <section className="bg-gradient-to-b from-white via-[#FDFAF4] to-white relative overflow-x-clip">
+    <section className="bg-gradient-to-b from-white via-[#FDFAF4] to-white dark:from-background dark:via-[#1a1520] dark:to-background relative overflow-x-clip">
       <BrandCross
         size={200}
         color="#5E53E0"
@@ -652,10 +652,10 @@ function FeatureCarousel({
       <div className="max-w-6xl mx-auto px-6 py-32 md:py-40 relative z-10">
         <Reveal>
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-5xl font-bold text-[#171717] mb-3">
+            <h2 className="text-3xl md:text-5xl font-bold text-[#171717] dark:text-white mb-3">
               {title}
             </h2>
-            <p className="text-[#171717]/70 font-medium text-base max-w-xl mx-auto leading-relaxed">
+            <p className="text-[#171717]/70 dark:text-white/70 font-medium text-base max-w-xl mx-auto leading-relaxed">
               {subtitle}
             </p>
           </div>
@@ -681,18 +681,18 @@ function FeatureCarousel({
             {features.map((feature, i) => (
               <div
                 key={i}
-                className={`bg-white rounded-2xl p-6 shrink-0 flex flex-col transition-opacity duration-300 border border-gray-100 ${
+                className={`bg-white dark:bg-card rounded-2xl p-6 shrink-0 flex flex-col transition-opacity duration-300 border border-gray-100 dark:border-border ${
                   i === active ? "opacity-100" : "opacity-70"
                 }`}
                 style={{ width: FEATURE_CARD_WIDTH }}
               >
-                <h3 className="text-[#171717] font-bold text-base mb-2">
+                <h3 className="text-[#171717] dark:text-white font-bold text-base mb-2">
                   {feature.title}
                 </h3>
-                <p className="text-[#171717] font-medium text-base leading-relaxed mb-4">
+                <p className="text-[#171717] dark:text-white font-medium text-base leading-relaxed mb-4">
                   {feature.description}
                 </p>
-                <div className="mt-auto rounded-xl bg-[#F3F0FF] aspect-[16/10] flex items-center justify-center">
+                <div className="mt-auto rounded-xl bg-[#F3F0FF] dark:bg-[#1a1530] aspect-[16/10] flex items-center justify-center">
                   <div className="w-10 h-10 rounded-full bg-[#5E53E0]/10 flex items-center justify-center">
                     <div className="w-5 h-5 rounded-full bg-[#5E53E0]/20" />
                   </div>
@@ -772,15 +772,15 @@ function MosaicTile({
         </div>
 
         {/* Name */}
-        <h3 className="text-lg font-bold text-[#171717] mb-1">{name}</h3>
+        <h3 className="text-lg font-bold text-[#171717] dark:text-white mb-1">{name}</h3>
 
         {/* Formats — always visible */}
-        <p className="text-sm font-medium text-gray-500 leading-relaxed mb-3 flex-1">
+        <p className="text-sm font-medium text-gray-500 dark:text-gray-400 leading-relaxed mb-3 flex-1">
           {formats}
         </p>
 
         {/* Spec badge */}
-        <span className="inline-block self-start bg-[#87E64B]/10 text-[#171717] text-xs font-medium px-3 py-1 rounded-full">
+        <span className="inline-block self-start bg-[#87E64B]/10 text-[#171717] dark:text-white text-xs font-medium px-3 py-1 rounded-full">
           {spec}
         </span>
       </div>
@@ -796,7 +796,7 @@ function FileTypeStrip({
   types: { icon: ReactNode; name: string; formats: string; spec: string }[];
 }) {
   return (
-    <section className="bg-gradient-to-b from-white via-[#FDFAF4] to-[#F5F0E8] relative overflow-x-clip py-20 md:py-28">
+    <section className="bg-gradient-to-b from-white via-[#FDFAF4] to-[#F5F0E8] dark:from-background dark:via-[#1a1520] dark:to-[#141210] relative overflow-x-clip py-20 md:py-28">
       <BrandCross
         size={140}
         color="#87E64B"
@@ -821,7 +821,7 @@ function FileTypeStrip({
 
       <div className="max-w-5xl mx-auto px-6 relative z-10">
         <Reveal>
-          <h2 className="text-3xl md:text-5xl font-bold text-[#171717] mb-14 text-center">
+          <h2 className="text-3xl md:text-5xl font-bold text-[#171717] dark:text-white mb-14 text-center">
             {title}
           </h2>
         </Reveal>
@@ -948,7 +948,7 @@ function AnimatedNumber({
 
   return (
     <div ref={ref}>
-      <span className="text-6xl md:text-8xl font-bold text-[#2d6b0e]/[0.12]">
+      <span className="text-6xl md:text-8xl font-bold text-[#2d6b0e]/[0.12] dark:text-[#87E64B]/20">
         {count}
         <span className="text-4xl md:text-5xl">{suffix}</span>
       </span>
@@ -972,7 +972,7 @@ function StatsBar({
   }[];
 }) {
   return (
-    <section className="relative overflow-x-clip bg-gradient-to-b from-[#F5F0E8] via-[#EAF9DE] to-white">
+    <section className="relative overflow-x-clip bg-gradient-to-b from-[#F5F0E8] via-[#EAF9DE] to-white dark:from-[#141210] dark:via-[#0f1a14] dark:to-background">
       <BrandCross
         size={160}
         color="#5E53E0"
@@ -999,10 +999,10 @@ function StatsBar({
         {/* Two-line title */}
         <Reveal>
           <div className="mb-20 md:mb-28">
-            <p className="text-2xl md:text-4xl text-[#171717]/50 font-light leading-snug">
+            <p className="text-2xl md:text-4xl text-[#171717]/50 dark:text-white/50 font-light leading-snug">
               {titleLine1}
             </p>
-            <h2 className="text-3xl md:text-5xl font-bold text-[#171717] leading-snug mt-1">
+            <h2 className="text-3xl md:text-5xl font-bold text-[#171717] dark:text-white leading-snug mt-1">
               {titleLine2}
             </h2>
           </div>
@@ -1018,16 +1018,16 @@ function StatsBar({
                   {stat.value !== null ? (
                     <AnimatedNumber target={stat.value} suffix={stat.suffix} />
                   ) : (
-                    <span className="text-6xl md:text-8xl font-bold text-[#2d6b0e]/[0.12]">
+                    <span className="text-6xl md:text-8xl font-bold text-[#2d6b0e]/[0.12] dark:text-[#87E64B]/20">
                       {stat.textValue}
                     </span>
                   )}
                 </div>
                 {/* Description */}
-                <p className="text-[#171717] font-bold text-base leading-snug">
+                <p className="text-[#171717] dark:text-white font-bold text-base leading-snug">
                   {stat.label}
                 </p>
-                <p className="text-[#171717]/70 text-base font-medium mt-1">
+                <p className="text-[#171717]/70 dark:text-white/70 text-base font-medium mt-1">
                   {stat.sublabel}
                 </p>
               </div>
@@ -1052,13 +1052,13 @@ function FAQAccordionItem({
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="rounded-2xl bg-[#F5F5F4] transition-colors duration-300">
+    <div className="rounded-2xl bg-[#F5F5F4] dark:bg-card transition-colors duration-300">
       <button
         onClick={() => setOpen(!open)}
         className="flex items-center justify-between w-full px-6 md:px-8 py-5 md:py-6 text-left group"
         aria-expanded={open}
       >
-        <span className="text-base md:text-lg font-bold text-[#171717] pr-6">
+        <span className="text-base md:text-lg font-bold text-[#171717] dark:text-white pr-6">
           {question}
         </span>
         <div
@@ -1067,7 +1067,7 @@ function FAQAccordionItem({
           }`}
         >
           <svg
-            className="w-3.5 h-3.5 text-gray-400"
+            className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500"
             fill="none"
             stroke="currentColor"
             strokeWidth={1.5}
@@ -1087,8 +1087,8 @@ function FAQAccordionItem({
       >
         <div className="overflow-hidden">
           <div className="px-6 md:px-8 pb-6">
-            <div className="border-t border-black/[0.06] pt-4">
-              <p className="text-sm font-medium md:text-[15px] text-gray-500 leading-relaxed">
+            <div className="border-t border-black/[0.06] dark:border-white/[0.06] pt-4">
+              <p className="text-sm font-medium md:text-[15px] text-gray-500 dark:text-gray-400 leading-relaxed">
                 {answer}
               </p>
             </div>
@@ -1109,7 +1109,7 @@ function FAQSection({
   return (
     <section className="max-w-[55rem] mx-auto px-6 py-20 md:py-28">
       <Reveal>
-        <h2 className="text-3xl md:text-5xl font-bold text-[#171717] mb-12 text-center">
+        <h2 className="text-3xl md:text-5xl font-bold text-[#171717] dark:text-white mb-12 text-center">
           {title}
         </h2>
       </Reveal>
@@ -1347,7 +1347,7 @@ export default function HowItWorksClient() {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-white dark:bg-background">
       <Header />
 
       <SectionIndicator sections={HIW_SECTIONS} />

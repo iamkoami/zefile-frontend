@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 import { Xmark, NavArrowRight } from "iconoir-react";
 import LanguageSwitcher from "./LanguageSwitcher";
 import CurrencySwitcher from "./CurrencySwitcher";
+import ThemeToggle from "./ThemeToggle";
 import { SubscriptionTier } from "@/services/subscription-api";
 
 interface MenuItem {
@@ -146,18 +147,26 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
       role="dialog"
       aria-modal="true"
       aria-label={t("openMenu")}
-      className={`fixed inset-0 bg-white z-[10000] flex flex-col transition-opacity duration-300 ease-in-out ${
+      className={`fixed inset-0 bg-white dark:bg-background z-[10000] flex flex-col transition-opacity duration-300 ease-in-out ${
         isAnimating ? "opacity-100" : "opacity-0"
       }`}
     >
       {/* Header: Logo left, Close button right */}
-      <div className="flex items-center justify-between px-6 h-16 border-b border-gray-200 flex-shrink-0">
+      <div className="flex items-center justify-between px-6 h-16 border-b border-gray-200 dark:border-border flex-shrink-0">
         <Link href="/" onClick={onClose} className="flex items-center">
           <Image
             src="/zefile-logo.svg"
             alt={tCommon("logoAlt")}
             width={120}
             height={33}
+            className="dark:hidden"
+          />
+          <Image
+            src="/zefile-logo-white.svg"
+            alt={tCommon("logoAlt")}
+            width={120}
+            height={33}
+            className="hidden dark:block"
           />
         </Link>
         <button
@@ -166,7 +175,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
           className="w-10 h-10 flex items-center justify-center"
           aria-label={t("closeMenu")}
         >
-          <Xmark className="w-6 h-6 text-[#171717]" />
+          <Xmark className="w-6 h-6 text-[#171717] dark:text-gray-100" />
         </button>
       </div>
 
@@ -195,8 +204,8 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                 )}
               </div>
               <div>
-                <p className="text-sm font-bold text-[#171717]">{user.email}</p>
-                <p className="text-xs text-gray-500">{tierLabel}</p>
+                <p className="text-sm font-bold text-[#171717] dark:text-gray-100">{user.email}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{tierLabel}</p>
               </div>
             </div>
           </div>
@@ -211,7 +220,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                 <button
                   key={item.label}
                   onClick={() => handleItemClick(item)}
-                  className="w-full px-6 py-4 text-left text-base font-medium text-[#171717] hover:bg-gray-50 transition-colors"
+                  className="w-full px-6 py-4 text-left text-base font-medium text-[#171717] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
                 >
                   {item.label}
                 </button>
@@ -221,23 +230,23 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
               <div>
                 <button
                   onClick={() => setShowResources(!showResources)}
-                  className="w-full px-6 py-4 text-left text-base font-medium text-[#171717] hover:bg-gray-50 transition-colors flex items-center gap-2"
+                  className="w-full px-6 py-4 text-left text-base font-medium text-[#171717] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors flex items-center gap-2"
                 >
                   {t("resources")}
                   <NavArrowRight
-                    className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${
+                    className={`w-5 h-5 text-gray-400 dark:text-gray-500 transition-transform duration-200 ${
                       showResources ? "rotate-90" : ""
                     }`}
                   />
                 </button>
                 {showResources && (
-                  <div className="bg-gray-50">
+                  <div className="bg-gray-50 dark:bg-accent">
                     {resourcesMenuItems.map((item) => (
                       <Link
                         key={item.label}
                         href={item.href!}
                         onClick={onClose}
-                        className="block px-10 py-3 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                        className="block px-10 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-secondary transition-colors"
                       >
                         {item.label}
                       </Link>
@@ -247,7 +256,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
               </div>
 
               {/* Separator */}
-              <div className="mx-6 my-2 border-t border-gray-200" />
+              <div className="mx-6 my-2 border-t border-gray-200 dark:border-border" />
 
               {/* Account Settings */}
               <button
@@ -255,7 +264,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                   onClose();
                   setTimeout(() => onOpenAccountSettings(), 100);
                 }}
-                className="w-full px-6 py-4 text-left text-base font-medium text-[#171717] hover:bg-gray-50 transition-colors"
+                className="w-full px-6 py-4 text-left text-base font-medium text-[#171717] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
               >
                 {t("accountSettings")}
               </button>
@@ -266,7 +275,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                   onClose();
                   setTimeout(() => onLogout(), 100);
                 }}
-                className="w-full px-6 py-4 text-left text-base font-medium text-red-500 hover:bg-red-50 transition-colors"
+                className="w-full px-6 py-4 text-left text-base font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
               >
                 {t("logout")}
               </button>
@@ -279,7 +288,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                   <button
                     key={item.label}
                     onClick={() => handleItemClick(item)}
-                    className="w-full px-6 py-4 text-left text-base font-medium text-[#171717] hover:bg-gray-50 transition-colors"
+                    className="w-full px-6 py-4 text-left text-base font-medium text-[#171717] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
                   >
                     {item.label}
                   </button>
@@ -288,7 +297,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                     key={item.label}
                     href={item.href!}
                     onClick={onClose}
-                    className="block px-6 py-4 text-base font-medium text-[#171717] hover:bg-gray-50 transition-colors"
+                    className="block px-6 py-4 text-base font-medium text-[#171717] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
                   >
                     {item.label}
                   </Link>
@@ -300,11 +309,12 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
       </div>
 
       {/* Footer: Language/Currency + Copyright */}
-      <div className="flex-shrink-0 px-6 py-4 border-t border-gray-200">
+      <div className="flex-shrink-0 px-6 py-4 border-t border-gray-200 dark:border-border">
         <div className="flex items-center gap-1 mb-3">
           <LanguageSwitcher />
-          <span className="text-gray-300">|</span>
+          <span className="text-gray-300 dark:text-gray-600">|</span>
           <CurrencySwitcher dropDirection="up" dropAlign="left" />
+          <ThemeToggle />
         </div>
         <p className="text-xs text-gray-400">
           {t("copyright", { year: new Date().getFullYear() })}

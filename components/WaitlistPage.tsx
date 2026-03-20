@@ -86,9 +86,9 @@ export default function WaitlistPage() {
   ] as const;
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row">
-      {/* Left panel (white) */}
-      <div className="flex-1 flex flex-col justify-between bg-white px-6 md:px-12 lg:px-16 py-8 relative z-10 order-2 lg:order-1">
+    <div className="min-h-screen flex flex-col lg:flex-row dark:bg-[oklch(0.19_0_0)]">
+      {/* Left panel (white / dark) */}
+      <div className="flex-1 flex flex-col justify-between bg-white dark:bg-[oklch(0.19_0_0)] px-6 md:px-12 lg:px-16 py-8 relative z-10 order-2 lg:order-1">
         {/* Logo + language */}
         <div
           className="flex items-center justify-between mb-8 lg:mb-0"
@@ -97,7 +97,14 @@ export default function WaitlistPage() {
           <div className="flex items-center gap-2">
             <Image
               src="/zefile-logo.svg"
-              className="pt-1"
+              className="pt-1 dark:hidden"
+              alt="ZeFile"
+              width={125}
+              height={24}
+            />
+            <Image
+              src="/zefile-logo-white.svg"
+              className="pt-1 hidden dark:block"
               alt="ZeFile"
               width={125}
               height={24}
@@ -113,13 +120,13 @@ export default function WaitlistPage() {
               {/* Staggered headline */}
               <div className="mb-6">
                 <h1
-                  className="text-4xl md:text-4xl font-black text-[#171717] leading-tight"
+                  className="text-4xl md:text-4xl font-black text-[#171717] dark:text-[oklch(0.91_0_0)] leading-tight"
                   style={{ animation: "slideInLeft 0.6s ease-out 0.3s both" }}
                 >
                   {t("headline1")}
                 </h1>
                 <h1
-                  className="text-4xl md:text-4xl font-black text-[#171717] leading-tight"
+                  className="text-4xl md:text-4xl font-black text-[#171717] dark:text-[oklch(0.91_0_0)] leading-tight"
                   style={{ animation: "slideInLeft 0.6s ease-out 0.5s both" }}
                 >
                   {t("headline2")}
@@ -134,7 +141,7 @@ export default function WaitlistPage() {
 
               {/* Subtitle */}
               <p
-                className="text-gray-500 font-bold mb-8 leading-relaxed"
+                className="text-gray-500 dark:text-[oklch(0.65_0_0)] font-bold mb-8 leading-relaxed"
                 style={{ animation: "fadeIn 0.8s ease-out 1.0s both" }}
               >
                 {t("subtitle")}
@@ -153,7 +160,7 @@ export default function WaitlistPage() {
                   className={`mt-0.5 w-5 h-5 shrink-0 rounded border-2 flex items-center justify-center transition-colors ${
                     consent
                       ? "bg-[#87E64B] border-[#87E64B]"
-                      : "border-gray-300 bg-white hover:border-[#171717]"
+                      : "border-gray-300 dark:border-[oklch(0.40_0_0)] bg-white dark:bg-[oklch(0.22_0_0)] hover:border-[#171717] dark:hover:border-[oklch(0.60_0_0)]"
                   }`}
                 >
                   {consent && (
@@ -168,7 +175,7 @@ export default function WaitlistPage() {
                     </svg>
                   )}
                 </button>
-                <span className="text-sm text-gray-600">{t("consent")}</span>
+                <span className="text-sm text-gray-600 dark:text-[oklch(0.65_0_0)]">{t("consent")}</span>
               </label>
 
               {/* Email form */}
@@ -182,7 +189,7 @@ export default function WaitlistPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder={t("emailPlaceholder")}
-                  className="flex-1 px-4 py-3 border border-gray-200 border-2 font-medium rounded text-[#171717] placeholder:text-gray-400 focus:outline-none hover:border-2 hover:border-[#87E64B] focus:border-2 focus:border-[#87E64B] transition-colors"
+                  className="flex-1 px-4 py-3 border-2 border-gray-200 dark:border-[oklch(0.30_0_0)] font-medium rounded text-[#171717] dark:text-[oklch(0.91_0_0)] bg-white dark:bg-[oklch(0.22_0_0)] placeholder:text-gray-400 dark:placeholder:text-[oklch(0.45_0_0)] focus:outline-none hover:border-[#87E64B] focus:border-[#87E64B] transition-colors"
                   required
                 />
                 <button
@@ -194,12 +201,12 @@ export default function WaitlistPage() {
                 </button>
               </form>
 
-              {error && <p className="text-sm text-red-500 mb-4">{error}</p>}
+              {error && <p className="text-sm text-red-500 dark:text-red-400 mb-4">{error}</p>}
 
               {/* Live counter */}
-              {count !== null && count > 0 && (
+              {count !== null && count >= 20 && (
                 <p
-                  className="text-sm font-medium text-gray-400"
+                  className="text-sm font-medium text-gray-400 dark:text-[oklch(0.50_0_0)]"
                   style={{ animation: "fadeIn 0.5s ease-out 1.8s both" }}
                 >
                   {t("counter", { count })}
@@ -220,6 +227,7 @@ export default function WaitlistPage() {
                     animationData={confettiAnimation}
                     loop={false}
                     autoplay={true}
+                    className="ze-lottie-container"
                     style={{ width: "100%", height: "100%" }}
                   />
                 </div>
@@ -231,10 +239,10 @@ export default function WaitlistPage() {
                 </div>
               )}
 
-              <h2 className="text-2xl font-bold text-[#171717] mb-3">
+              <h2 className="text-2xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-3">
                 {state === "success" ? t("successTitle") : t("alreadyTitle")}
               </h2>
-              <p className="text-gray-500 font-medium mb-6 leading-relaxed">
+              <p className="text-gray-500 dark:text-[oklch(0.65_0_0)] font-medium mb-6 leading-relaxed">
                 {state === "success"
                   ? t("successSubtitle")
                   : t("alreadySubtitle")}
@@ -243,7 +251,7 @@ export default function WaitlistPage() {
               {/* Copy invite link */}
               <button
                 onClick={handleCopyLink}
-                className="inline-flex items-center gap-2 px-5 py-2.5 border border-gray-300 rounded text-sm font-bold text-[#171717] hover:bg-gray-50 transition-colors mb-6"
+                className="inline-flex items-center gap-2 px-5 py-2.5 border border-gray-300 dark:border-[oklch(0.30_0_0)] rounded text-sm font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] hover:bg-gray-50 dark:hover:bg-[oklch(0.24_0_0)] transition-colors mb-6"
               >
                 {linkCopied ? (
                   <>
@@ -258,8 +266,8 @@ export default function WaitlistPage() {
                 )}
               </button>
 
-              {count !== null && count > 0 && (
-                <p className="text-sm font-bold text-gray-400">
+              {count !== null && count >= 20 && (
+                <p className="text-sm font-bold text-gray-400 dark:text-[oklch(0.50_0_0)]">
                   {t("counter", { count })}
                 </p>
               )}
@@ -287,7 +295,7 @@ export default function WaitlistPage() {
               loop={true}
               autoplay={true}
               style={{ width: 400, height: 400 }}
-              className="lg:w-[400px] lg:h-[400px]"
+              className="ze-lottie-container lg:w-[400px] lg:h-[400px]"
             />
           )}
         </div>

@@ -92,14 +92,14 @@ export function TransferSummaryCard({
   };
 
   return (
-    <div className={`bg-[#FDF8F0] rounded-xl p-8 flex flex-col ${className}`}>
+    <div className={`bg-[#FDF8F0] dark:bg-[oklch(0.24_0_0)] rounded-xl p-8 flex flex-col ${className}`}>
       {/* Header */}
-      <h3 className="text-sm font-bold text-gray-600 mb-3">
+      <h3 className="text-sm font-bold text-gray-600 dark:text-[oklch(0.65_0_0)] mb-3">
         {t("transferSummary")}
       </h3>
 
       {/* Transfer Title */}
-      <h4 className="text-xl font-bold text-[#171717] mb-2">
+      <h4 className="text-xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-2">
         {title || "Untitled Transfer"}
       </h4>
 
@@ -115,7 +115,7 @@ export function TransferSummaryCard({
       )}
 
       {/* File Info */}
-      <p className="text-xs text-gray-500 mb-4 ">
+      <p className="text-xs text-gray-500 dark:text-[oklch(0.60_0_0)] mb-4 ">
         {fileCount} {fileCount === 1 ? t("file") : t("files")} -{" "}
         {formatFileSize(totalSize)}
         {createdAt && ` - ${t("sentOn")} ${formatDate(createdAt)}`}
@@ -123,40 +123,40 @@ export function TransferSummaryCard({
 
       {/* Sender info */}
       {senderEmail && (
-        <p className="text-xs text-gray-500 mb-4">
+        <p className="text-xs text-gray-500 dark:text-[oklch(0.60_0_0)] mb-4">
           From:{" "}
-          <span className="font-medium text-[#171717]">{senderEmail}</span>
+          <span className="font-medium text-[#171717] dark:text-[oklch(0.91_0_0)]">{senderEmail}</span>
         </p>
       )}
       {/* Message/Description */}
       {message && (
-        <p className="text-xs text-gray-600 mb-6 leading-relaxed">{message}</p>
+        <p className="text-xs text-gray-600 dark:text-[oklch(0.65_0_0)] mb-6 leading-relaxed">{message}</p>
       )}
 
       {/* Spacer to push file stats and total to bottom */}
       <div className="flex-1" />
 
       {/* File Stats Box */}
-      <div className="bg-white rounded-lg p-4 mb-4 flex items-center justify-between">
-        <span className="font-medium text-[#171717]">
+      <div className="bg-white dark:bg-[oklch(0.22_0_0)] rounded-lg p-4 mb-4 flex items-center justify-between">
+        <span className="font-medium text-[#171717] dark:text-[oklch(0.91_0_0)]">
           {fileCount} {fileCount === 1 ? t("file") : t("files")}
         </span>
-        <span className="font-bold text-gray-600">
+        <span className="font-bold text-gray-600 dark:text-[oklch(0.65_0_0)]">
           {formatFileSize(totalSize)}
         </span>
       </div>
 
       {/* Price breakdown with processing fee */}
       {price > 0 && processingFeeMinorUnits && processingFeeMinorUnits > 0 ? (
-        <div className="pt-4 border-t border-[#E8E0D5] space-y-2">
+        <div className="pt-4 border-t border-[#E8E0D5] dark:border-[oklch(0.30_0_0)] space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-600">{t("filePrice")}</span>
-            <span className="text-sm font-medium text-[#171717]">
+            <span className="text-sm text-gray-600 dark:text-[oklch(0.65_0_0)]">{t("filePrice")}</span>
+            <span className="text-sm font-medium text-[#171717] dark:text-[oklch(0.91_0_0)]">
               {formatAmount(price, currency)}
             </span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-600">
+            <span className="text-sm text-gray-600 dark:text-[oklch(0.65_0_0)]">
               {processingFeePercent
                 ? t("processingFee", {
                     percent: processingFeePercent.toFixed(
@@ -165,15 +165,15 @@ export function TransferSummaryCard({
                   })
                 : t("processingFeeGeneric")}
             </span>
-            <span className="text-sm font-medium text-[#171717]">
+            <span className="text-sm font-medium text-[#171717] dark:text-[oklch(0.91_0_0)]">
               {formatAmount(processingFeeMinorUnits, currency)}
             </span>
           </div>
-          <div className="flex items-center justify-between pt-2 border-t border-[#E8E0D5]">
-            <span className="font-bold text-[#171717]">
+          <div className="flex items-center justify-between pt-2 border-t border-[#E8E0D5] dark:border-[oklch(0.30_0_0)]">
+            <span className="font-bold text-[#171717] dark:text-[oklch(0.91_0_0)]">
               {t("totalCharged")}
             </span>
-            <span className="text-xl font-bold text-[#171717]">
+            <span className="text-xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)]">
               {formatAmount(
                 totalAmountMinorUnits || price + processingFeeMinorUnits,
                 currency,
@@ -182,9 +182,9 @@ export function TransferSummaryCard({
           </div>
         </div>
       ) : (
-        <div className="flex items-center justify-between pt-4 border-t border-[#E8E0D5]">
-          <span className="font-bold text-[#171717]">{t("total")}</span>
-          <span className="text-xl font-bold text-[#171717]">
+        <div className="flex items-center justify-between pt-4 border-t border-[#E8E0D5] dark:border-[oklch(0.30_0_0)]">
+          <span className="font-bold text-[#171717] dark:text-[oklch(0.91_0_0)]">{t("total")}</span>
+          <span className="text-xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)]">
             {price > 0 ? formatAmount(price, currency) : t("freeTransfer")}
           </span>
         </div>

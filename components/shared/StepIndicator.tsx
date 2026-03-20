@@ -29,7 +29,7 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({
                     ? "bg-[#87E64B] text-white"
                     : isActive
                       ? "bg-[#5E53E0] text-white"
-                      : "border border-gray-300 text-gray-400"
+                      : "border border-gray-300 dark:border-[oklch(0.40_0_0)] text-gray-400 dark:text-[oklch(0.50_0_0)]"
                 }`}
               >
                 {isCompleted ? (
@@ -55,7 +55,7 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({
                     ? "text-[#87E64B] font-medium"
                     : isActive
                       ? "text-[#5E53E0] font-medium"
-                      : "text-gray-400"
+                      : "text-gray-400 dark:text-[oklch(0.50_0_0)]"
                 }`}
               >
                 {label}
@@ -66,7 +66,7 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({
             {index < steps.length - 1 && (
               <div
                 className={`flex-1 h-px min-w-3 mb-4 transition-colors duration-200 ${
-                  index < currentStep ? "bg-[#87E64B]" : "bg-gray-200"
+                  index < currentStep ? "bg-[#87E64B]" : "bg-gray-200 dark:bg-[oklch(0.30_0_0)]"
                 }`}
               />
             )}

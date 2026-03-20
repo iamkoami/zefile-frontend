@@ -25,7 +25,7 @@ import {
 import { invoicesApi, InvoiceType } from "@/services/invoices-api";
 import { withdrawalsApi, BalanceResponse } from "@/services/withdrawals-api";
 import { payoutMethodsApi } from "@/services/payout-methods-api";
-import { referralsApi, ReferralMyCode } from "@/services/referrals-api";
+import { referralsApi, ReferralMyCode, RewardInfo } from "@/services/referrals-api";
 import LoadingPanel from "@/components/LoadingPanel";
 import { useCurrentCurrency } from "@/stores/currency-store";
 import { useDrawerStore } from "@/stores/drawer-store";
@@ -80,6 +80,7 @@ const PayoutsPanel: React.FC = () => {
 
   // Referral prompt state
   const [myCode, setMyCode] = useState<ReferralMyCode | null>(null);
+  const [rewardInfo, setRewardInfo] = useState<RewardInfo | null>(null);
 
   // Filter
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>("all");
@@ -132,13 +133,19 @@ const PayoutsPanel: React.FC = () => {
     fetchData();
   }, [t, statusFilter, currentPage]);
 
-  // Non-blocking fetch of referral code for earn prompt (AC: 3, Story 89.5)
+  // Non-blocking fetch of referral code + reward info for earn prompt (AC: 3, Story 89.5)
   useEffect(() => {
     let cancelled = false;
     referralsApi
       .getMyCode()
       .then((res) => {
         if (!cancelled && res.data) setMyCode(res.data);
+      })
+      .catch(() => {});
+    referralsApi
+      .getRewardInfo()
+      .then((res) => {
+        if (!cancelled && res.data) setRewardInfo(res.data);
       })
       .catch(() => {});
     return () => { cancelled = true; };
@@ -315,43 +322,43 @@ const PayoutsPanel: React.FC = () => {
       case PayoutStatus.COMPLETED:
         return {
           label: t("statusCompleted"),
-          className: "bg-green-100 text-green-700",
+          className: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
           icon: <Check className="w-3 h-3" />,
         };
       case PayoutStatus.PENDING:
         return {
           label: t("statusPending"),
-          className: "bg-yellow-100 text-yellow-700",
+          className: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
           icon: <Clock className="w-3 h-3" />,
         };
       case PayoutStatus.APPROVED:
         return {
           label: t("statusApproved"),
-          className: "bg-purple-100 text-purple-700",
+          className: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
           icon: <Check className="w-3 h-3" />,
         };
       case PayoutStatus.PROCESSING:
         return {
           label: t("statusProcessing"),
-          className: "bg-blue-100 text-blue-700",
+          className: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
           icon: <Clock className="w-3 h-3 animate-pulse" />,
         };
       case PayoutStatus.FAILED:
         return {
           label: t("statusFailed"),
-          className: "bg-red-100 text-red-700",
+          className: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
           icon: <WarningCircle className="w-3 h-3" />,
         };
       case PayoutStatus.REJECTED:
         return {
           label: t("statusRejected"),
-          className: "bg-red-100 text-red-700",
+          className: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
           icon: <WarningCircle className="w-3 h-3" />,
         };
       default:
         return {
           label: String(status),
-          className: "bg-gray-100 text-gray-700",
+          className: "bg-gray-100 text-gray-700 dark:bg-[oklch(0.28_0_0)] dark:text-[oklch(0.75_0_0)]",
           icon: null,
         };
     }
@@ -405,23 +412,23 @@ const PayoutsPanel: React.FC = () => {
     <div>
       {/* Header */}
       <div className="mb-10">
-        <h3 className="text-2xl font-bold text-[#171717] mb-2">
+        <h3 className="text-2xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-2">
           {t("title")}
         </h3>
-        <p className="text-gray-500 text-sm">{t("subtitle")}</p>
+        <p className="text-gray-500 dark:text-[oklch(0.75_0_0)] text-sm">{t("subtitle")}</p>
       </div>
 
       {/* Balance Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         {/* Available Balance */}
-        <div className="bg-gradient-to-br from-[#87E64B]/10 to-[#87E64B]/5 border border-[#87E64B]/30 rounded-lg p-6">
+        <div className="bg-gradient-to-br from-[#87E64B]/10 to-[#87E64B]/5 dark:from-[#87E64B]/15 dark:to-[#87E64B]/5 border border-[#87E64B]/30 rounded-lg p-6">
           <div className="flex items-center gap-2 mb-2">
             <Wallet className="w-5 h-5 text-[#87E64B]" />
-            <span className="text-sm text-gray-600">
+            <span className="text-sm text-gray-600 dark:text-[oklch(0.75_0_0)]">
               {t("availableBalance")}
             </span>
           </div>
-          <p className="text-2xl font-bold text-[#171717]">
+          <p className="text-2xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)]">
             {formatAmount(
               balance?.availableMinorUnits || 0,
               balance?.currency || "XOF",
@@ -430,12 +437,12 @@ const PayoutsPanel: React.FC = () => {
         </div>
 
         {/* Pending Payouts */}
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+        <div className="bg-gray-50 dark:bg-[oklch(0.22_0_0)] border border-gray-200 dark:border-[oklch(0.30_0_0)] rounded-lg p-6">
           <div className="flex items-center gap-2 mb-2">
-            <Clock className="w-5 h-5 text-gray-400" />
-            <span className="text-sm text-gray-600">{t("pendingPayouts")}</span>
+            <Clock className="w-5 h-5 text-gray-400 dark:text-[oklch(0.60_0_0)]" />
+            <span className="text-sm text-gray-600 dark:text-[oklch(0.75_0_0)]">{t("pendingPayouts")}</span>
           </div>
-          <p className="text-2xl font-bold text-[#171717]">
+          <p className="text-2xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)]">
             {formatAmount(
               balance?.pendingMinorUnits || 0,
               balance?.currency || "XOF",
@@ -444,12 +451,12 @@ const PayoutsPanel: React.FC = () => {
         </div>
 
         {/* Total Earned */}
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+        <div className="bg-gray-50 dark:bg-[oklch(0.22_0_0)] border border-gray-200 dark:border-[oklch(0.30_0_0)] rounded-lg p-6">
           <div className="flex items-center gap-2 mb-2">
-            <Wallet className="w-5 h-5 text-gray-400" />
-            <span className="text-sm text-gray-600">{t("totalEarned")}</span>
+            <Wallet className="w-5 h-5 text-gray-400 dark:text-[oklch(0.60_0_0)]" />
+            <span className="text-sm text-gray-600 dark:text-[oklch(0.75_0_0)]">{t("totalEarned")}</span>
           </div>
-          <p className="text-2xl font-bold text-[#171717]">
+          <p className="text-2xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)]">
             {formatAmount(
               (balance?.availableMinorUnits || 0) +
                 (balance?.pendingMinorUnits || 0),
@@ -461,10 +468,10 @@ const PayoutsPanel: React.FC = () => {
 
       {/* Referral Earn Prompt — subtle nudge below earnings (AC: 3, Story 89.5) */}
       {myCode && (
-        <div className="flex items-center justify-between bg-[#FDFAF4] border border-gray-100 rounded px-4 py-3 mb-6">
+        <div className="flex items-center justify-between bg-[#FDFAF4] dark:bg-[oklch(0.22_0_0)] border border-gray-100 dark:border-[oklch(0.30_0_0)] rounded px-4 py-3 mb-6">
           <div className="flex-1">
-            <p className="text-sm text-gray-600">
-              {tReferrals("earnPrompt", { percentage: "10" })}
+            <p className="text-sm text-gray-600 dark:text-[oklch(0.75_0_0)]">
+              {tReferrals("earnPrompt", { percent: String(rewardInfo?.bonusPercent || 10) })}
             </p>
           </div>
           <div className="flex items-center gap-3 ml-4 flex-shrink-0">
@@ -499,13 +506,13 @@ const PayoutsPanel: React.FC = () => {
       </button>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-gray-200 mb-6 mt-10">
+      <div className="flex gap-1 border-b border-gray-200 dark:border-[oklch(0.30_0_0)] mb-6 mt-10">
         <button
           onClick={() => setActiveTab("history")}
           className={`px-4 py-2 text-md font-medium border-b-2 transition-colors ${
             activeTab === "history"
-              ? "border-[#87E64B] text-[#171717]"
-              : "border-transparent text-gray-500 hover:text-[#171717]"
+              ? "border-[#87E64B] text-[#171717] dark:text-[oklch(0.91_0_0)]"
+              : "border-transparent text-gray-500 dark:text-[oklch(0.75_0_0)] hover:text-[#171717] dark:hover:text-[oklch(0.91_0_0)]"
           }`}
         >
           {t("payoutHistory")}
@@ -514,8 +521,8 @@ const PayoutsPanel: React.FC = () => {
           onClick={() => setActiveTab("methods")}
           className={`px-4 py-2 text-md font-medium border-b-2 transition-colors flex items-center gap-2 ${
             activeTab === "methods"
-              ? "border-[#87E64B] text-[#171717]"
-              : "border-transparent text-gray-500 hover:text-[#171717]"
+              ? "border-[#87E64B] text-[#171717] dark:text-[oklch(0.91_0_0)]"
+              : "border-transparent text-gray-500 dark:text-[oklch(0.75_0_0)] hover:text-[#171717] dark:hover:text-[oklch(0.91_0_0)]"
           }`}
         >
           <CreditCard className="w-4 h-4" />
@@ -530,7 +537,7 @@ const PayoutsPanel: React.FC = () => {
       {activeTab === "history" && (
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h4 className="font-bold text-[#171717]">
+            <h4 className="font-bold text-[#171717] dark:text-[oklch(0.91_0_0)]">
               {t("payoutHistory")}
             </h4>
 
@@ -542,7 +549,7 @@ const PayoutsPanel: React.FC = () => {
                     setIsStatusOpen(!isStatusOpen);
                     setIsPeriodOpen(false);
                   }}
-                  className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded bg-white hover:border-gray-400 transition-colors min-w-[140px]"
+                  className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-[oklch(0.30_0_0)] rounded bg-white dark:bg-[oklch(0.22_0_0)] hover:border-gray-400 dark:hover:border-[oklch(0.40_0_0)] transition-colors min-w-[140px]"
                 >
                   <span className="flex-1 text-left text-sm">
                     {statusOptions.find((o) => o.value === statusFilter)?.label}
@@ -552,7 +559,7 @@ const PayoutsPanel: React.FC = () => {
                   />
                 </button>
                 {isStatusOpen && (
-                  <div className="absolute top-full right-0 mt-1 w-full bg-white border border-gray-200 rounded shadow-lg z-10">
+                  <div className="absolute top-full right-0 mt-1 w-full bg-white dark:bg-[oklch(0.22_0_0)] border border-gray-200 dark:border-[oklch(0.30_0_0)] rounded shadow-lg dark:shadow-black/30 z-10">
                     {statusOptions.map((option) => (
                       <button
                         key={option.value}
@@ -561,10 +568,10 @@ const PayoutsPanel: React.FC = () => {
                           setIsStatusOpen(false);
                           setCurrentPage(1);
                         }}
-                        className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 ${
+                        className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-[oklch(0.28_0_0)] ${
                           statusFilter === option.value
-                            ? "bg-[#87E64B]/10 text-[#171717] font-medium"
-                            : "text-gray-700"
+                            ? "bg-[#87E64B]/10 text-[#171717] dark:text-[oklch(0.91_0_0)] font-medium"
+                            : "text-gray-700 dark:text-[oklch(0.75_0_0)]"
                         }`}
                       >
                         {option.label}
@@ -581,7 +588,7 @@ const PayoutsPanel: React.FC = () => {
                     setIsPeriodOpen(!isPeriodOpen);
                     setIsStatusOpen(false);
                   }}
-                  className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded bg-white hover:border-gray-400 transition-colors min-w-[140px]"
+                  className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-[oklch(0.30_0_0)] rounded bg-white dark:bg-[oklch(0.22_0_0)] hover:border-gray-400 dark:hover:border-[oklch(0.40_0_0)] transition-colors min-w-[140px]"
                 >
                   <Calendar className="w-4 h-4 text-gray-500" />
                   <span className="flex-1 text-left text-sm">
@@ -592,7 +599,7 @@ const PayoutsPanel: React.FC = () => {
                   />
                 </button>
                 {isPeriodOpen && (
-                  <div className="absolute top-full right-0 mt-1 w-full bg-white border border-gray-200 rounded shadow-lg z-10">
+                  <div className="absolute top-full right-0 mt-1 w-full bg-white dark:bg-[oklch(0.22_0_0)] border border-gray-200 dark:border-[oklch(0.30_0_0)] rounded shadow-lg dark:shadow-black/30 z-10">
                     {periodOptions.map((option) => (
                       <button
                         key={option.value}
@@ -600,10 +607,10 @@ const PayoutsPanel: React.FC = () => {
                           setPeriodFilter(option.value);
                           setIsPeriodOpen(false);
                         }}
-                        className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 ${
+                        className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-[oklch(0.28_0_0)] ${
                           periodFilter === option.value
-                            ? "bg-[#87E64B]/10 text-[#171717] font-medium"
-                            : "text-gray-700"
+                            ? "bg-[#87E64B]/10 text-[#171717] dark:text-[oklch(0.91_0_0)] font-medium"
+                            : "text-gray-700 dark:text-[oklch(0.75_0_0)]"
                         }`}
                       >
                         {option.label}
@@ -617,17 +624,17 @@ const PayoutsPanel: React.FC = () => {
 
           {/* Download error banner */}
           {downloadError && (
-            <div className="mb-4 px-4 py-3 bg-red-50 text-red-700 text-sm rounded">
+            <div className="mb-4 px-4 py-3 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 text-sm rounded">
               {downloadError}
             </div>
           )}
 
           {/* Payouts List */}
           {filteredPayouts.length === 0 ? (
-            <div className="text-center py-12 bg-gray-50 rounded-lg">
-              <Wallet className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500">{t("noPayouts")}</p>
-              <p className="text-sm text-gray-400 mt-1">{t("noPayoutsHint")}</p>
+            <div className="text-center py-12 bg-gray-50 dark:bg-[oklch(0.22_0_0)] rounded-lg">
+              <Wallet className="w-12 h-12 text-gray-300 dark:text-[oklch(0.60_0_0)] mx-auto mb-4" />
+              <p className="text-gray-500 dark:text-[oklch(0.75_0_0)]">{t("noPayouts")}</p>
+              <p className="text-sm text-gray-400 dark:text-[oklch(0.60_0_0)] mt-1">{t("noPayoutsHint")}</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -640,18 +647,18 @@ const PayoutsPanel: React.FC = () => {
                 return (
                   <div
                     key={payout.id}
-                    className="bg-white border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors"
+                    className="bg-white dark:bg-[oklch(0.24_0_0)] border border-gray-200 dark:border-[oklch(0.30_0_0)] rounded-lg p-4 hover:border-gray-300 dark:hover:border-[oklch(0.40_0_0)] transition-colors"
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         {/* Transfer Title */}
-                        <p className="font-medium text-[#171717] mb-1">
+                        <p className="font-medium text-[#171717] dark:text-[oklch(0.91_0_0)] mb-1">
                           {payout.paymentId?.transferId?.title ||
                             t("untitledTransfer")}
                         </p>
 
                         {/* Details Row */}
-                        <div className="flex items-center gap-4 text-sm text-gray-500">
+                        <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-[oklch(0.60_0_0)]">
                           <span>{formatDate(payout.createdAt)}</span>
                           {payout.payoutMethod?.type && (
                             <>
@@ -697,7 +704,7 @@ const PayoutsPanel: React.FC = () => {
 
                       {/* Right Side: Amount + Status */}
                       <div className="text-right ml-4">
-                        <p className="font-bold text-[#171717] mb-2">
+                        <p className="font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-2">
                           {formatAmount(
                             payout.amountMinorUnits,
                             payout.currency,
@@ -718,7 +725,7 @@ const PayoutsPanel: React.FC = () => {
                             onClick={() => handleDownloadReceipt(payout.id)}
                             disabled={downloadingPayoutId === payout.id}
                             title={t("downloadReceipt")}
-                            className="mt-2 p-1.5 rounded hover:bg-gray-100 transition-colors text-gray-500 hover:text-[#171717] disabled:opacity-50 disabled:cursor-wait"
+                            className="mt-2 p-1.5 rounded hover:bg-gray-100 dark:hover:bg-[oklch(0.28_0_0)] transition-colors text-gray-500 dark:text-[oklch(0.60_0_0)] hover:text-[#171717] dark:hover:text-[oklch(0.91_0_0)] disabled:opacity-50 disabled:cursor-wait"
                           >
                             <Download
                               className={`w-4 h-4 ${downloadingPayoutId === payout.id ? "animate-pulse" : ""}`}
@@ -743,7 +750,7 @@ const PayoutsPanel: React.FC = () => {
                     </div>
 
                     {/* Reference */}
-                    <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-400">
+                    <div className="mt-3 pt-3 border-t border-gray-100 dark:border-[oklch(0.30_0_0)] flex items-center justify-between text-xs text-gray-400 dark:text-[oklch(0.60_0_0)]">
                       <span>
                         {t("reference")}: {payout.reference}
                       </span>
@@ -765,11 +772,11 @@ const PayoutsPanel: React.FC = () => {
               <button
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="px-3 py-1 border border-gray-300 rounded text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-1 border border-gray-300 dark:border-[oklch(0.30_0_0)] rounded text-sm dark:text-[oklch(0.91_0_0)] hover:bg-gray-50 dark:hover:bg-[oklch(0.28_0_0)] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {t("previous")}
               </button>
-              <span className="text-sm text-gray-600">
+              <span className="text-sm text-gray-600 dark:text-[oklch(0.75_0_0)]">
                 {currentPage} / {payoutsData.totalPages}
               </span>
               <button
@@ -777,7 +784,7 @@ const PayoutsPanel: React.FC = () => {
                   setCurrentPage((p) => Math.min(payoutsData.totalPages, p + 1))
                 }
                 disabled={currentPage === payoutsData.totalPages}
-                className="px-3 py-1 border border-gray-300 rounded text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-1 border border-gray-300 dark:border-[oklch(0.30_0_0)] rounded text-sm dark:text-[oklch(0.91_0_0)] hover:bg-gray-50 dark:hover:bg-[oklch(0.28_0_0)] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {t("next")}
               </button>
@@ -788,10 +795,10 @@ const PayoutsPanel: React.FC = () => {
 
       {/* Withdrawal Modal */}
       {showWithdrawModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-4 border-b">
-              <h2 className="text-lg font-bold">
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-[oklch(0.24_0_0)] rounded-lg shadow-xl dark:shadow-black/40 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-4 border-b dark:border-[oklch(0.30_0_0)]">
+              <h2 className="text-lg font-bold dark:text-[oklch(0.91_0_0)]">
                 {t("requestWithdrawal")}
               </h2>
               <button

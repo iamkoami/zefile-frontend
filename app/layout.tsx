@@ -2,6 +2,7 @@
 import "@/lib/localStorage-polyfill";
 
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { Suspense } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import localFont from "next/font/local";
@@ -174,10 +175,21 @@ export default async function RootLayout({
 }>) {
   const locale = await getLocale();
   const messages = await getMessages();
+  const nonce = (await headers()).get('x-nonce') || '';
 
   return (
-    <html lang={locale}>
+    <html lang={locale} suppressHydrationWarning>
       <head>
+        {/* FOWT prevention — logic must match resolveTheme() in stores/theme-store.ts
+             Cookie ze-dm=0 means admin disabled dark mode → force light.
+             No cookie (first visit) → default to light (option B). */}
+        <script
+          suppressHydrationWarning
+          nonce={nonce}
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var c=document.cookie.match(/ze-dm=(\\d)/);if(c&&c[1]==='0')return;if(!c)return;var t=localStorage.getItem('ze-theme');var d=t==='dark'||(t!=='light'&&window.matchMedia('(prefers-color-scheme:dark)').matches);document.documentElement.classList.toggle('dark',d);if(d){document.documentElement.style.colorScheme='dark';var s=document.createElement('style');s.textContent='html.dark,html.dark body{background-color:oklch(0.19 0 0)!important;color:oklch(0.91 0 0)!important}';document.head.appendChild(s)}}catch(e){}})()`,
+          }}
+        />
         <link rel="preconnect" href={process.env.NEXT_PUBLIC_API_URL || ''} />
         <link rel="preconnect" href="https://eu.i.posthog.com" />
         <OrganizationJsonLd />

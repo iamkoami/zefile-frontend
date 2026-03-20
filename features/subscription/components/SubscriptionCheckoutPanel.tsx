@@ -378,12 +378,12 @@ export function SubscriptionCheckoutPanel() {
           {/* Header */}
           <div className="mb-8">
             <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-gray-100 rounded-lg">{getTierIcon()}</div>
+              <div className="p-2 bg-gray-100 dark:bg-[oklch(0.28_0_0)] rounded-lg">{getTierIcon()}</div>
               <div>
-                <h2 className="text-2xl font-bold text-[#171717]">
+                <h2 className="text-2xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)]">
                   {tSub("upgradeToTier", { tier: getTierName() })}
                 </h2>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-600 dark:text-[oklch(0.75_0_0)]">
                   {checkoutData.billingPeriod === "annual"
                     ? tSub("billedAnnually")
                     : tSub("billedMonthly")}
@@ -394,13 +394,13 @@ export function SubscriptionCheckoutPanel() {
 
           {/* Payment block notice */}
           {paymentsDisabled && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded p-4 mb-4 flex items-start gap-3">
+            <div className="bg-yellow-50 dark:bg-amber-900/20 border border-yellow-200 dark:border-amber-800/30 rounded p-4 mb-4 flex items-start gap-3">
               <InfoCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm font-bold text-yellow-800">
+                <p className="text-sm font-bold text-yellow-800 dark:text-amber-300">
                   {tSub("paymentsUnavailable")}
                 </p>
-                <p className="text-xs text-yellow-700 mt-1">
+                <p className="text-xs text-yellow-700 dark:text-amber-400 mt-1">
                   {tSub("paymentsUnavailableDesc")}
                 </p>
               </div>
@@ -409,13 +409,13 @@ export function SubscriptionCheckoutPanel() {
 
           {/* Country Selection */}
           <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-[oklch(0.75_0_0)] mb-2">
               {t("selectCountry")}
             </label>
             <div className="relative">
               <button
                 onClick={() => setIsCountryDropdownOpen(!isCountryDropdownOpen)}
-                className="w-full flex items-center justify-between gap-2 px-4 py-3 bg-white border border-gray-200 rounded-lg text-sm font-medium text-[#171717] hover:border-gray-300 transition-colors"
+                className="w-full flex items-center justify-between gap-2 px-4 py-3 bg-white dark:bg-[oklch(0.22_0_0)] border border-gray-200 dark:border-[oklch(0.30_0_0)] rounded-lg text-sm font-medium text-[#171717] dark:text-[oklch(0.91_0_0)] hover:border-gray-300 dark:hover:border-[oklch(0.40_0_0)] transition-colors"
                 aria-expanded={isCountryDropdownOpen}
                 aria-haspopup="listbox"
               >
@@ -423,13 +423,13 @@ export function SubscriptionCheckoutPanel() {
                   {(COUNTRY_CONFIG[selectedCountry]?.flagCode || COUNTRY_CONFIG.DEFAULT.flagCode) ? (
                     <Flag code={(COUNTRY_CONFIG[selectedCountry]?.flagCode || COUNTRY_CONFIG.DEFAULT.flagCode)!} size="s" hasBorder={false} />
                   ) : (
-                    <Globe className="w-5 h-5 text-gray-500" />
+                    <Globe className="w-5 h-5 text-gray-500 dark:text-[oklch(0.60_0_0)]" />
                   )}
                   {COUNTRY_CONFIG[selectedCountry]?.name ||
                     COUNTRY_CONFIG.DEFAULT.name}
                 </span>
                 <NavArrowDown
-                  className={`w-5 h-5 text-gray-500 transition-transform ${isCountryDropdownOpen ? "rotate-180" : ""}`}
+                  className={`w-5 h-5 text-gray-500 dark:text-[oklch(0.60_0_0)] transition-transform ${isCountryDropdownOpen ? "rotate-180" : ""}`}
                 />
               </button>
 
@@ -441,7 +441,7 @@ export function SubscriptionCheckoutPanel() {
                     aria-hidden="true"
                   />
                   <div
-                    className="absolute top-full mt-1 left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg z-20"
+                    className="absolute top-full mt-1 left-0 right-0 bg-white dark:bg-[oklch(0.24_0_0)] border border-gray-200 dark:border-[oklch(0.30_0_0)] rounded-lg shadow-lg dark:shadow-black/30 z-20"
                     role="listbox"
                   >
                     {ALL_COUNTRY_CODES.map(
@@ -449,10 +449,10 @@ export function SubscriptionCheckoutPanel() {
                         <button
                           key={code}
                           onClick={() => handleCountrySelect(code)}
-                          className={`w-full px-4 py-3 text-left text-sm hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg flex items-center gap-2 ${
+                          className={`w-full px-4 py-3 text-left text-sm hover:bg-gray-50 dark:hover:bg-[oklch(0.28_0_0)] first:rounded-t-lg last:rounded-b-lg flex items-center gap-2 ${
                             selectedCountry === code
                               ? "bg-[#5E53E0]/5 text-[#5E53E0] font-medium"
-                              : "text-gray-700"
+                              : "text-gray-700 dark:text-[oklch(0.75_0_0)]"
                           }`}
                           role="option"
                           aria-selected={selectedCountry === code}
@@ -460,7 +460,7 @@ export function SubscriptionCheckoutPanel() {
                           {COUNTRY_CONFIG[code]?.flagCode ? (
                             <Flag code={COUNTRY_CONFIG[code].flagCode!} size="s" hasBorder={false} />
                           ) : (
-                            <Globe className="w-5 h-5 text-gray-500" />
+                            <Globe className="w-5 h-5 text-gray-500 dark:text-[oklch(0.60_0_0)]" />
                           )}
                           {COUNTRY_CONFIG[code]?.name}
                         </button>
@@ -473,12 +473,12 @@ export function SubscriptionCheckoutPanel() {
           </div>
 
           {/* Price Display - Only show on mobile, hidden on lg where summary is visible */}
-          <div className="mb-8 p-4 bg-gray-50 rounded-lg lg:hidden">
+          <div className="mb-8 p-4 bg-gray-50 dark:bg-[oklch(0.22_0_0)] rounded-lg lg:hidden">
             <div className="flex justify-between items-center">
-              <span className="text-gray-600">{t("amount")}</span>
-              <span className="text-2xl font-bold text-[#171717]">
+              <span className="text-gray-600 dark:text-[oklch(0.75_0_0)]">{t("amount")}</span>
+              <span className="text-2xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)]">
                 {formatSubscriptionPrice(currentAmount, pricing.currency)}
-                <span className="text-sm font-normal text-gray-500 ml-1">
+                <span className="text-sm font-normal text-gray-500 dark:text-[oklch(0.60_0_0)] ml-1">
                   {getBillingText()}
                 </span>
               </span>
@@ -497,7 +497,7 @@ export function SubscriptionCheckoutPanel() {
 
             <button
               onClick={handleBackToPlans}
-              className="w-full px-5 py-2 text-sm font-medium text-gray-600 hover:text-gray-800"
+              className="w-full px-5 py-2 text-sm font-medium text-gray-600 dark:text-[oklch(0.75_0_0)] hover:text-gray-800 dark:hover:text-[oklch(0.91_0_0)]"
             >
               {tSub("backToPlans")}
             </button>
@@ -529,12 +529,12 @@ export function SubscriptionCheckoutPanel() {
           {/* Header */}
           <div className="mb-8">
             <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-gray-100 rounded-lg">{getTierIcon()}</div>
+              <div className="p-2 bg-gray-100 dark:bg-[oklch(0.28_0_0)] rounded-lg">{getTierIcon()}</div>
               <div>
-                <h2 className="text-2xl font-bold text-[#171717]">
+                <h2 className="text-2xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)]">
                   {tSub("upgradeToTier", { tier: getTierName() })}
                 </h2>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-600 dark:text-[oklch(0.75_0_0)]">
                   {checkoutData.billingPeriod === "annual"
                     ? tSub("billedAnnually")
                     : tSub("billedMonthly")}
@@ -542,24 +542,24 @@ export function SubscriptionCheckoutPanel() {
               </div>
             </div>
             {/* Price - Only show on mobile */}
-            <p className="text-3xl font-bold text-[#171717] lg:hidden">
+            <p className="text-3xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] lg:hidden">
               {formatSubscriptionPrice(currentAmount, pricing.currency)}
-              <span className="text-lg font-normal text-gray-500 ml-1">
+              <span className="text-lg font-normal text-gray-500 dark:text-[oklch(0.60_0_0)] ml-1">
                 {getBillingText()}
               </span>
             </p>
 
             {/* Billing Summary (AC2 compliance - first charge date) */}
-            <div className="mt-4 p-4 bg-gray-50 rounded-lg space-y-2">
+            <div className="mt-4 p-4 bg-gray-50 dark:bg-[oklch(0.22_0_0)] rounded-lg space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">{tSub("firstChargeDate")}</span>
-                <span className="font-medium text-[#171717]">
+                <span className="text-gray-600 dark:text-[oklch(0.75_0_0)]">{tSub("firstChargeDate")}</span>
+                <span className="font-medium text-[#171717] dark:text-[oklch(0.91_0_0)]">
                   {tSub("today")}
                 </span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">{tSub("nextBillingDate")}</span>
-                <span className="font-medium text-[#171717]">
+                <span className="text-gray-600 dark:text-[oklch(0.75_0_0)]">{tSub("nextBillingDate")}</span>
+                <span className="font-medium text-[#171717] dark:text-[oklch(0.91_0_0)]">
                   {nextBillingDate.toLocaleDateString(undefined, {
                     year: "numeric",
                     month: "short",
@@ -572,7 +572,7 @@ export function SubscriptionCheckoutPanel() {
 
           {/* Payment Methods */}
           <div className="mb-8">
-            <p className="text-sm font-medium text-gray-700 mb-4">
+            <p className="text-sm font-medium text-gray-700 dark:text-[oklch(0.75_0_0)] mb-4">
               {t("choosePaymentMethod")}
             </p>
 
@@ -599,15 +599,15 @@ export function SubscriptionCheckoutPanel() {
                       className={`w-full flex items-center gap-4 p-4 rounded border-2 transition-colors focus:outline-none focus:ring-2 focus:ring-[#171717] focus:ring-offset-2 ${
                         isSelected
                           ? "border-[#5E53E0] bg-[#5E53E0]/5"
-                          : "border-gray-200 hover:border-gray-300"
+                          : "border-gray-200 dark:border-[oklch(0.30_0_0)] hover:border-gray-300 dark:hover:border-[oklch(0.40_0_0)]"
                       }`}
                       role="radio"
                       aria-checked={isSelected}
                       aria-label={provider.name}
                     >
-                      <div className="w-10 h-10 flex items-center justify-center bg-gray-100 rounded">
+                      <div className="w-10 h-10 flex items-center justify-center bg-gray-100 dark:bg-[oklch(0.28_0_0)] rounded">
                         {failedIcons.has(provider.icon) ? (
-                          <SmartphoneDevice className="w-6 h-6 text-gray-500" />
+                          <SmartphoneDevice className="w-6 h-6 text-gray-500 dark:text-[oklch(0.60_0_0)]" />
                         ) : (
                           <Image
                             src={getProviderIconPath(provider.icon)}
@@ -624,17 +624,17 @@ export function SubscriptionCheckoutPanel() {
                       </div>
                       <div className="flex-1 text-left">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium text-[#171717]">
+                          <span className="font-medium text-[#171717] dark:text-[oklch(0.91_0_0)]">
                             {provider.name}
                           </span>
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 rounded">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-gray-100 dark:bg-[oklch(0.28_0_0)] text-gray-600 dark:text-[oklch(0.75_0_0)] rounded">
                             {tSub("manualRenewal")}
                           </span>
                         </div>
                       </div>
                       <div
                         className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                          isSelected ? "border-[#5E53E0]" : "border-gray-300"
+                          isSelected ? "border-[#5E53E0]" : "border-gray-300 dark:border-[oklch(0.60_0_0)]"
                         }`}
                       >
                         {isSelected && (
@@ -651,21 +651,21 @@ export function SubscriptionCheckoutPanel() {
                   className={`w-full flex items-center gap-4 p-4 rounded border-2 transition-colors focus:outline-none focus:ring-2 focus:ring-[#171717] focus:ring-offset-2 ${
                     selectedMethod?.type === "card"
                       ? "border-[#5E53E0] bg-[#5E53E0]/5"
-                      : "border-gray-200 hover:border-gray-300"
+                      : "border-gray-200 dark:border-[oklch(0.30_0_0)] hover:border-gray-300 dark:hover:border-[oklch(0.40_0_0)]"
                   }`}
                   role="radio"
                   aria-checked={selectedMethod?.type === "card"}
                   aria-label={t("payWithCard")}
                 >
-                  <div className="w-10 h-10 flex items-center justify-center bg-gray-100 rounded">
-                    <CreditCard className="w-6 h-6 text-gray-500" />
+                  <div className="w-10 h-10 flex items-center justify-center bg-gray-100 dark:bg-[oklch(0.28_0_0)] rounded">
+                    <CreditCard className="w-6 h-6 text-gray-500 dark:text-[oklch(0.60_0_0)]" />
                   </div>
                   <div className="flex-1 text-left">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-[#171717]">
+                      <span className="font-medium text-[#171717] dark:text-[oklch(0.91_0_0)]">
                         {t("payWithCard")}
                       </span>
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded">
                         <RefreshDouble className="w-3 h-3" />
                         {tSub("autoRenews")}
                       </span>
@@ -675,7 +675,7 @@ export function SubscriptionCheckoutPanel() {
                     className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
                       selectedMethod?.type === "card"
                         ? "border-[#5E53E0]"
-                        : "border-gray-300"
+                        : "border-gray-300 dark:border-[oklch(0.60_0_0)]"
                     }`}
                   >
                     {selectedMethod?.type === "card" && (
@@ -691,8 +691,8 @@ export function SubscriptionCheckoutPanel() {
               <div
                 className={`mt-4 p-4 rounded-lg flex items-start gap-3 ${
                   selectedMethod.type === "card"
-                    ? "bg-green-50 border border-green-200"
-                    : "bg-amber-50 border border-amber-200"
+                    ? "bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/30"
+                    : "bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/30"
                 }`}
               >
                 <InfoCircle
@@ -705,19 +705,19 @@ export function SubscriptionCheckoutPanel() {
                 <div className="text-sm">
                   {selectedMethod.type === "card" ? (
                     <>
-                      <p className="font-medium text-green-800 mb-1">
+                      <p className="font-medium text-green-800 dark:text-green-300 mb-1">
                         {tSub("autoRenewalEnabled")}
                       </p>
-                      <p className="text-green-700">
+                      <p className="text-green-700 dark:text-green-400">
                         {tSub("cardAutoRenewalDescription")}
                       </p>
                     </>
                   ) : (
                     <>
-                      <p className="font-medium text-amber-800 mb-1">
+                      <p className="font-medium text-amber-800 dark:text-amber-300 mb-1">
                         {tSub("manualRenewalRequired")}
                       </p>
-                      <p className="text-amber-700">
+                      <p className="text-amber-700 dark:text-amber-400">
                         {tSub("mobileMoneyRenewalDescription")}
                       </p>
                     </>
@@ -740,7 +740,7 @@ export function SubscriptionCheckoutPanel() {
             <button
               onClick={() => setStep("country")}
               disabled={isLoading}
-              className="w-full px-5 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 disabled:opacity-50"
+              className="w-full px-5 py-2 text-sm font-medium text-gray-600 dark:text-[oklch(0.75_0_0)] hover:text-gray-800 dark:hover:text-[oklch(0.91_0_0)] disabled:opacity-50"
             >
               {tSub("previous")}
             </button>
@@ -766,10 +766,10 @@ export function SubscriptionCheckoutPanel() {
         {/* Left: Phone Input Form */}
         <div className="flex-1 min-w-0">
           <div className="mb-8">
-            <h2 className="text-2xl font-bold text-[#171717]">
+            <h2 className="text-2xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)]">
               {t("enterPhoneNumber")}
             </h2>
-            <p className="text-sm text-gray-600 mt-2">
+            <p className="text-sm text-gray-600 dark:text-[oklch(0.75_0_0)] mt-2">
               {t("enterPhoneForMobileMoney")}
             </p>
           </div>
@@ -786,7 +786,7 @@ export function SubscriptionCheckoutPanel() {
             <button
               onClick={() => setStep("method")}
               disabled={isLoading}
-              className="flex-1 px-5 py-3 border border-gray-300 text-gray-700 font-medium rounded hover:bg-gray-50 transition-colors disabled:opacity-50"
+              className="flex-1 px-5 py-3 border border-gray-300 dark:border-[oklch(0.30_0_0)] text-gray-700 dark:text-[oklch(0.75_0_0)] font-medium rounded hover:bg-gray-50 dark:hover:bg-[oklch(0.28_0_0)] transition-colors disabled:opacity-50"
             >
               {tSub("previous")}
             </button>
@@ -821,32 +821,32 @@ export function SubscriptionCheckoutPanel() {
         </div>
 
         <div className="mb-6">
-          <h2 className="text-2xl font-bold text-[#171717] mb-2">
+          <h2 className="text-2xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-2">
             {t("checkYourPhone")}
           </h2>
-          <p className="text-gray-600">{t("confirmPaymentOn")}</p>
+          <p className="text-gray-600 dark:text-[oklch(0.75_0_0)]">{t("confirmPaymentOn")}</p>
         </div>
 
-        <div className="bg-gray-50 rounded-lg p-4 mb-6">
+        <div className="bg-gray-50 dark:bg-[oklch(0.22_0_0)] rounded-lg p-4 mb-6">
           <div className="flex justify-between items-center mb-2">
-            <span className="text-gray-600">{tSub("plan")}</span>
-            <span className="font-medium">{getTierName()}</span>
+            <span className="text-gray-600 dark:text-[oklch(0.75_0_0)]">{tSub("plan")}</span>
+            <span className="font-medium dark:text-[oklch(0.91_0_0)]">{getTierName()}</span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-gray-600">{t("amount")}</span>
-            <span className="font-bold text-lg">
+            <span className="text-gray-600 dark:text-[oklch(0.75_0_0)]">{t("amount")}</span>
+            <span className="font-bold text-lg dark:text-[oklch(0.91_0_0)]">
               {formatSubscriptionPrice(currentAmount, pricing.currency)}
             </span>
           </div>
         </div>
 
-        <p className="text-sm text-gray-500 mb-6">
+        <p className="text-sm text-gray-500 dark:text-[oklch(0.60_0_0)] mb-6">
           {t("waitingForConfirmation")}
         </p>
 
         <button
           onClick={handleClose}
-          className="w-full px-5 py-2 text-sm font-medium text-gray-600 hover:text-gray-800"
+          className="w-full px-5 py-2 text-sm font-medium text-gray-600 dark:text-[oklch(0.75_0_0)] hover:text-gray-800 dark:hover:text-[oklch(0.91_0_0)]"
         >
           {t("cancel")}
         </button>
@@ -859,16 +859,16 @@ export function SubscriptionCheckoutPanel() {
     return (
       <div className="max-w-lg mx-auto text-center">
         <div className="mb-6">
-          <div className="w-20 h-20 mx-auto bg-green-100 rounded-full flex items-center justify-center">
+          <div className="w-20 h-20 mx-auto bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
             <CheckCircle className="w-10 h-10 text-green-600" />
           </div>
         </div>
 
         <div className="mb-6">
-          <h2 className="text-2xl font-bold text-[#171717] mb-2">
+          <h2 className="text-2xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-2">
             {tSub("upgradeSuccessTitle")}
           </h2>
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-[oklch(0.75_0_0)]">
             {tSub("upgradeSuccessMessage", { tier: getTierName() })}
           </p>
         </div>
@@ -888,16 +888,16 @@ export function SubscriptionCheckoutPanel() {
     return (
       <div className="max-w-lg mx-auto text-center">
         <div className="mb-6">
-          <div className="w-20 h-20 mx-auto bg-red-100 rounded-full flex items-center justify-center">
+          <div className="w-20 h-20 mx-auto bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
             <XmarkCircle className="w-10 h-10 text-red-600" />
           </div>
         </div>
 
         <div className="mb-6">
-          <h2 className="text-2xl font-bold text-[#171717] mb-2">
+          <h2 className="text-2xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-2">
             {t("paymentFailed")}
           </h2>
-          <p className="text-gray-600">{error || t("youWereNotCharged")}</p>
+          <p className="text-gray-600 dark:text-[oklch(0.75_0_0)]">{error || t("youWereNotCharged")}</p>
         </div>
 
         <div className="space-y-3">
@@ -910,14 +910,14 @@ export function SubscriptionCheckoutPanel() {
 
           <button
             onClick={handleChangeMethod}
-            className="w-full px-5 py-3 border border-gray-300 text-gray-700 font-medium rounded hover:bg-gray-50 transition-colors"
+            className="w-full px-5 py-3 border border-gray-300 dark:border-[oklch(0.30_0_0)] text-gray-700 dark:text-[oklch(0.75_0_0)] font-medium rounded hover:bg-gray-50 dark:hover:bg-[oklch(0.28_0_0)] transition-colors"
           >
             {t("useDifferentMethod")}
           </button>
 
           <button
             onClick={handleClose}
-            className="w-full px-5 py-2 text-sm font-medium text-gray-600 hover:text-gray-800"
+            className="w-full px-5 py-2 text-sm font-medium text-gray-600 dark:text-[oklch(0.75_0_0)] hover:text-gray-800 dark:hover:text-[oklch(0.91_0_0)]"
           >
             {t("cancel")}
           </button>

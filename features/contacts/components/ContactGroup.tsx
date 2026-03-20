@@ -33,9 +33,9 @@ const ContactGroup: React.FC<ContactGroupProps> = ({
     <div className="mb-4">
       {/* Letter header */}
       <div className="relative mb-2">
-        <span className="text-lg font-medium text-gray-400">{letter}</span>
+        <span className="text-lg font-medium text-gray-400 dark:text-[oklch(0.60_0_0)]">{letter}</span>
         {/* Divider line */}
-        <div className="absolute bottom-0 left-0 w-full h-px bg-gray-100 mt-2" />
+        <div className="absolute bottom-0 left-0 w-full h-px bg-gray-100 dark:bg-[oklch(0.30_0_0)] mt-2" />
       </div>
 
       {/* Contact rows */}

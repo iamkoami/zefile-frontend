@@ -150,8 +150,8 @@ const TransferItem: React.FC<TransferItemProps> = ({
         isSelected
           ? 'bg-[#87E64B]/10 ring-2 ring-[#87E64B] scale-[1.01]'
           : isActive
-            ? 'bg-gray-900 scale-[1.01] shadow-lg'
-            : 'bg-[#F9F9FA] hover:bg-gray-200 scale-100'
+            ? 'bg-gray-900 scale-[1.01] shadow-lg dark:shadow-black/30'
+            : 'bg-[#F9F9FA] dark:bg-[oklch(0.22_0_0)] hover:bg-gray-200 dark:hover:bg-[oklch(0.28_0_0)] scale-100'
       }`}
       onClick={selectionMode ? handleCheckboxClick : handleItemClick}
       onKeyDown={handleKeyDown}
@@ -177,7 +177,7 @@ const TransferItem: React.FC<TransferItemProps> = ({
             className={`w-6 h-6 rounded-full border-2 flex items-center justify-center cursor-pointer transition-all ${
               isSelected
                 ? 'bg-[#87E64B] border-[#87E64B]'
-                : 'border-gray-300 hover:border-gray-400'
+                : 'border-gray-300 dark:border-[oklch(0.40_0_0)] hover:border-gray-400 dark:hover:border-[oklch(0.50_0_0)]'
             }`}
           >
             {isSelected && (
@@ -192,7 +192,7 @@ const TransferItem: React.FC<TransferItemProps> = ({
         <div className="flex items-center gap-2">
           <h4
             className={`text-base font-bold truncate transition-colors duration-200 ${
-              isSelected ? 'text-[#171717]' : isActive ? 'text-white' : 'text-gray-900'
+              isSelected ? 'text-[#171717] dark:text-[oklch(0.91_0_0)]' : isActive ? 'text-white' : 'text-gray-900 dark:text-[oklch(0.91_0_0)]'
             }`}
           >
             {displayTitle}
@@ -211,7 +211,7 @@ const TransferItem: React.FC<TransferItemProps> = ({
           {/* Metadata - fades out on hover (unless in selection mode) */}
           <p
             className={`absolute inset-0 text-sm truncate transition-all duration-200 flex items-center gap-1 ${
-              isSelected ? 'text-gray-700' : 'text-gray-500'
+              isSelected ? 'text-gray-700 dark:text-[oklch(0.75_0_0)]' : 'text-gray-500 dark:text-[oklch(0.65_0_0)]'
             } ${
               isActive && !selectionMode ? 'opacity-0 translate-y-1' : 'opacity-100 translate-y-0'
             }`}
@@ -286,7 +286,7 @@ const TransferItem: React.FC<TransferItemProps> = ({
             ? 'opacity-0'
             : isActive
               ? 'text-white translate-x-1'
-              : 'text-gray-400 translate-x-0'
+              : 'text-gray-400 dark:text-[oklch(0.50_0_0)] translate-x-0'
         }`}
         strokeWidth={1.5}
       />

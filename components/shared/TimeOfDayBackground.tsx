@@ -64,6 +64,7 @@ const TimeOfDayBackground: React.FC<TimeOfDayBackgroundProps> = ({
             animationData={birdsAnimation}
             loop={true}
             autoplay={true}
+            className="ze-lottie-container"
             style={{
               width: "100%",
               height: "100%",
@@ -87,6 +88,7 @@ const TimeOfDayBackground: React.FC<TimeOfDayBackgroundProps> = ({
             animationData={starsAnimation}
             loop={true}
             autoplay={true}
+            className="ze-lottie-container"
             style={{
               width: "100%",
               height: "100%",

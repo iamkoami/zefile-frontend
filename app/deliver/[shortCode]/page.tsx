@@ -114,7 +114,7 @@ export default function DeliverPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-[oklch(0.19_0_0)]">
         <LoadingPanel />
       </div>
     );
@@ -122,9 +122,9 @@ export default function DeliverPage() {
 
   if (error || !request) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-[oklch(0.19_0_0)]">
         <ToastContainer />
-        <p className="text-gray-500">{error || t("requestNotFound")}</p>
+        <p className="text-gray-500 dark:text-[oklch(0.65_0_0)]">{error || t("requestNotFound")}</p>
       </div>
     );
   }
@@ -138,7 +138,7 @@ export default function DeliverPage() {
       case "pending_payment":
         return (
           <div className="text-center py-8">
-            <p className="text-gray-500">{t("requestPendingPayment")}</p>
+            <p className="text-gray-500 dark:text-[oklch(0.65_0_0)]">{t("requestPendingPayment")}</p>
           </div>
         );
       case "funded":
@@ -146,11 +146,11 @@ export default function DeliverPage() {
         return (
           <div className="space-y-6">
             {request.status === "revision_requested" && (
-              <div className="bg-amber-50 border border-amber-200 rounded p-4">
-                <p className="font-bold text-amber-800 mb-1">
+              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 rounded p-4">
+                <p className="font-bold text-amber-800 dark:text-amber-200 mb-1">
                   {t("revisionRequested")}
                 </p>
-                <p className="text-sm text-amber-700">
+                <p className="text-sm text-amber-700 dark:text-amber-300">
                   {t("revisionFeedbackHint")}
                 </p>
               </div>
@@ -158,7 +158,7 @@ export default function DeliverPage() {
 
             {/* File upload area */}
             <div
-              className="border-2 border-dashed border-gray-300 rounded p-8 text-center cursor-pointer hover:border-[#5E53E0] transition-colors"
+              className="border-2 border-dashed border-gray-300 dark:border-[oklch(0.30_0_0)] rounded p-8 text-center cursor-pointer hover:border-[#5E53E0] transition-colors"
               onClick={() => fileInputRef.current?.click()}
               onDrop={handleDrop}
               onDragOver={(e) => e.preventDefault()}
@@ -170,8 +170,8 @@ export default function DeliverPage() {
                 className="hidden"
                 onChange={handleFileSelect}
               />
-              <p className="text-gray-500 mb-2">{t("dropFilesHere")}</p>
-              <p className="text-sm text-gray-400">{t("orClickToSelect")}</p>
+              <p className="text-gray-500 dark:text-[oklch(0.65_0_0)] mb-2">{t("dropFilesHere")}</p>
+              <p className="text-sm text-gray-400 dark:text-[oklch(0.50_0_0)]">{t("orClickToSelect")}</p>
             </div>
 
             {/* Selected files list */}
@@ -180,14 +180,14 @@ export default function DeliverPage() {
                 {selectedFiles.map((file, index) => (
                   <div
                     key={`${file.name}-${index}`}
-                    className="flex items-center justify-between bg-gray-50 rounded px-3 py-2"
+                    className="flex items-center justify-between bg-gray-50 dark:bg-[oklch(0.24_0_0)] rounded px-3 py-2"
                   >
-                    <span className="text-sm text-[#171717] truncate">
+                    <span className="text-sm text-[#171717] dark:text-[oklch(0.91_0_0)] truncate">
                       {file.name}
                     </span>
                     <button
                       onClick={() => handleRemoveFile(index)}
-                      className="text-gray-400 hover:text-red-500 ml-2 text-sm"
+                      className="text-gray-400 dark:text-[oklch(0.50_0_0)] hover:text-red-500 dark:hover:text-red-400 ml-2 text-sm"
                     >
                       x
                     </button>
@@ -200,7 +200,7 @@ export default function DeliverPage() {
             <div>
               <label
                 htmlFor="deliver-message"
-                className="block text-sm font-medium text-[#171717] mb-1"
+                className="block text-sm font-medium text-[#171717] dark:text-[oklch(0.91_0_0)] mb-1"
               >
                 {t("deliverMessage")}
               </label>
@@ -211,12 +211,12 @@ export default function DeliverPage() {
                 placeholder={t("deliverMessagePlaceholder")}
                 maxLength={2000}
                 rows={3}
-                className="w-full border border-gray-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#5E53E0]/30 resize-y"
+                className="w-full border border-gray-200 dark:border-[oklch(0.30_0_0)] rounded px-3 py-2 text-sm text-[#171717] dark:text-[oklch(0.91_0_0)] bg-white dark:bg-[oklch(0.22_0_0)] placeholder:text-gray-400 dark:placeholder:text-[oklch(0.45_0_0)] focus:outline-none focus:ring-2 focus:ring-[#5E53E0]/30 resize-y"
               />
             </div>
 
             {!isAuthenticated && (
-              <p className="text-sm text-amber-600 text-center">
+              <p className="text-sm text-amber-600 dark:text-amber-400 text-center">
                 {t("loginToDeliver")}
               </p>
             )}
@@ -233,38 +233,38 @@ export default function DeliverPage() {
       case "delivered":
         return (
           <div className="text-center py-8">
-            <p className="text-gray-500">{t("alreadyDelivered")}</p>
+            <p className="text-gray-500 dark:text-[oklch(0.65_0_0)]">{t("alreadyDelivered")}</p>
           </div>
         );
       case "approved":
       case "completed":
         return (
           <div className="text-center py-8">
-            <p className="text-gray-500">{t("requestCompleted")}</p>
+            <p className="text-gray-500 dark:text-[oklch(0.65_0_0)]">{t("requestCompleted")}</p>
           </div>
         );
       case "expired":
         return (
           <div className="text-center py-8">
-            <p className="text-gray-500">{t("requestExpired")}</p>
+            <p className="text-gray-500 dark:text-[oklch(0.65_0_0)]">{t("requestExpired")}</p>
           </div>
         );
       case "refunded":
         return (
           <div className="text-center py-8">
-            <p className="text-gray-500">{t("requestRefunded")}</p>
+            <p className="text-gray-500 dark:text-[oklch(0.65_0_0)]">{t("requestRefunded")}</p>
           </div>
         );
       case "cancelled":
         return (
           <div className="text-center py-8">
-            <p className="text-gray-500">{t("requestCancelled")}</p>
+            <p className="text-gray-500 dark:text-[oklch(0.65_0_0)]">{t("requestCancelled")}</p>
           </div>
         );
       default:
         return (
           <div className="text-center py-8">
-            <p className="text-gray-500">{t("requestInactive")}</p>
+            <p className="text-gray-500 dark:text-[oklch(0.65_0_0)]">{t("requestInactive")}</p>
           </div>
         );
     }
@@ -272,50 +272,50 @@ export default function DeliverPage() {
 
   if (delivered) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-white dark:bg-[oklch(0.19_0_0)] flex items-center justify-center">
         <ToastContainer />
         <div className="max-w-lg mx-auto px-6 text-center">
-          <h1 className="text-2xl font-bold text-[#171717] mb-3">
+          <h1 className="text-2xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-3">
             {t("deliverySubmitted")}
           </h1>
-          <p className="text-gray-500">{t("deliverySubmittedDesc")}</p>
+          <p className="text-gray-500 dark:text-[oklch(0.65_0_0)]">{t("deliverySubmittedDesc")}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white dark:bg-[oklch(0.19_0_0)]">
       <ToastContainer />
       <div className="max-w-lg mx-auto px-6 py-12">
-        <h1 className="text-2xl font-bold text-[#171717] mb-2">
+        <h1 className="text-2xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-2">
           {t("deliverTitle")}
         </h1>
-        <p className="text-gray-500 mb-8">{t("deliverDesc")}</p>
+        <p className="text-gray-500 dark:text-[oklch(0.65_0_0)] mb-8">{t("deliverDesc")}</p>
 
         {/* Request details */}
-        <div className="bg-gray-50 rounded p-4 mb-8 space-y-2">
+        <div className="bg-gray-50 dark:bg-[oklch(0.24_0_0)] rounded p-4 mb-8 space-y-2">
           <div className="flex justify-between">
-            <span className="text-sm text-gray-500">{t("formTitle")}</span>
-            <span className="text-sm font-medium text-[#171717]">
+            <span className="text-sm text-gray-500 dark:text-[oklch(0.65_0_0)]">{t("formTitle")}</span>
+            <span className="text-sm font-medium text-[#171717] dark:text-[oklch(0.91_0_0)]">
               {request.title}
             </span>
           </div>
           {request.description && (
-            <p className="text-sm text-gray-600">{request.description}</p>
+            <p className="text-sm text-gray-600 dark:text-[oklch(0.65_0_0)]">{request.description}</p>
           )}
           <div className="flex justify-between">
-            <span className="text-sm text-gray-500">{t("formBudget")}</span>
-            <span className="text-sm font-medium text-[#171717]">
+            <span className="text-sm text-gray-500 dark:text-[oklch(0.65_0_0)]">{t("formBudget")}</span>
+            <span className="text-sm font-medium text-[#171717] dark:text-[oklch(0.91_0_0)]">
               {formatBudget(request.budgetMinorUnits, request.currency)}
             </span>
           </div>
           {request.deadline && (
             <div className="flex justify-between">
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-gray-500 dark:text-[oklch(0.65_0_0)]">
                 {t("formDeadline")}
               </span>
-              <span className="text-sm font-medium text-[#171717]">
+              <span className="text-sm font-medium text-[#171717] dark:text-[oklch(0.91_0_0)]">
                 {new Date(request.deadline).toLocaleDateString(undefined, {
                   year: "numeric",
                   month: "long",

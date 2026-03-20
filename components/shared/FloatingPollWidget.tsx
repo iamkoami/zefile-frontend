@@ -170,14 +170,14 @@ const FloatingPollWidget: React.FC = () => {
   if (showThankYou) {
     return (
       <div className="fixed bottom-6 right-[92px] z-[9100] animate-in slide-in-from-bottom-4 duration-300">
-        <div className="bg-white rounded-xl shadow-2xl border border-gray-200 p-6 w-80 text-center">
+        <div className="bg-white dark:bg-[oklch(0.24_0_0)] rounded-xl shadow-2xl dark:shadow-black/40 border border-gray-200 dark:border-[oklch(0.30_0_0)] p-6 w-80 text-center">
           <div className="w-12 h-12 bg-[#87E64B] rounded-full flex items-center justify-center mx-auto mb-3">
             <Check className="w-6 h-6 text-white" strokeWidth={3} />
           </div>
-          <h3 className="text-lg font-bold text-[#171717] mb-1">
+          <h3 className="text-lg font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-1">
             {t("thankYou")}
           </h3>
-          <p className="text-sm text-gray-600">{t("feedbackReceived")}</p>
+          <p className="text-sm text-gray-600 dark:text-[oklch(0.65_0_0)]">{t("feedbackReceived")}</p>
         </div>
       </div>
     );
@@ -200,15 +200,15 @@ const FloatingPollWidget: React.FC = () => {
 
   return (
     <div className="fixed bottom-6 right-[92px] z-[9100] animate-in slide-in-from-bottom-4 duration-300">
-      <div className="bg-white rounded-xl shadow-2xl border border-gray-200 w-96 max-h-[80vh] overflow-hidden flex flex-col">
+      <div className="bg-white dark:bg-[oklch(0.24_0_0)] rounded-xl shadow-2xl dark:shadow-black/40 border border-gray-200 dark:border-[oklch(0.30_0_0)] w-96 max-h-[80vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-start justify-between p-4 border-b border-gray-100 bg-gray-50">
+        <div className="flex items-start justify-between p-4 border-b border-gray-100 dark:border-[oklch(0.28_0_0)] bg-gray-50 dark:bg-[oklch(0.22_0_0)]">
           <div className="flex-1 pr-2">
-            <h3 className="font-bold text-[#171717] text-sm leading-tight">
+            <h3 className="font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] text-sm leading-tight">
               {currentPoll.question}
             </h3>
             {currentPoll.showAnonymousBadge && (
-              <div className="flex items-center gap-1 mt-1 text-xs text-gray-500">
+              <div className="flex items-center gap-1 mt-1 text-xs text-gray-500 dark:text-[oklch(0.65_0_0)]">
                 <Check className="w-3 h-3" />
                 <span>{t("anonymousBadge")}</span>
               </div>
@@ -217,14 +217,14 @@ const FloatingPollWidget: React.FC = () => {
           <div className="flex items-center gap-1">
             <button
               onClick={() => setIsExpanded(false)}
-              className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+              className="p-1.5 text-gray-400 dark:text-[oklch(0.50_0_0)] hover:text-gray-600 dark:hover:text-[oklch(0.75_0_0)] hover:bg-gray-100 dark:hover:bg-[oklch(0.28_0_0)] rounded transition-colors"
               title="Minimize"
             >
               <NavArrowDown className="w-4 h-4" />
             </button>
             <button
               onClick={handleClose}
-              className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+              className="p-1.5 text-gray-400 dark:text-[oklch(0.50_0_0)] hover:text-gray-600 dark:hover:text-[oklch(0.75_0_0)] hover:bg-gray-100 dark:hover:bg-[oklch(0.28_0_0)] rounded transition-colors"
               title={t("dismiss")}
             >
               <Xmark className="w-4 h-4" />
@@ -234,7 +234,7 @@ const FloatingPollWidget: React.FC = () => {
 
         {/* Description if any */}
         {currentPoll.description && (
-          <p className="text-sm text-gray-600 px-4 py-2 bg-gray-50 border-b border-gray-100">
+          <p className="text-sm text-gray-600 dark:text-[oklch(0.65_0_0)] px-4 py-2 bg-gray-50 dark:bg-[oklch(0.22_0_0)] border-b border-gray-100 dark:border-[oklch(0.28_0_0)]">
             {currentPoll.description}
           </p>
         )}
@@ -250,7 +250,7 @@ const FloatingPollWidget: React.FC = () => {
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg border transition-all text-left text-sm ${
                   isSelected
                     ? "border-[#5E53E0] bg-[#5E53E0]/5"
-                    : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                    : "border-gray-200 dark:border-[oklch(0.30_0_0)] hover:border-gray-300 dark:hover:border-[oklch(0.40_0_0)] hover:bg-gray-50 dark:hover:bg-[oklch(0.28_0_0)]"
                 }`}
               >
                 {/* Checkbox/Radio */}
@@ -262,7 +262,7 @@ const FloatingPollWidget: React.FC = () => {
                   } ${
                     isSelected
                       ? "border-[#5E53E0] bg-[#5E53E0]"
-                      : "border-gray-300"
+                      : "border-gray-300 dark:border-[oklch(0.30_0_0)]"
                   }`}
                 >
                   {isSelected && (
@@ -275,12 +275,12 @@ const FloatingPollWidget: React.FC = () => {
                   {option.emoji && (
                     <span className="text-base">{option.emoji}</span>
                   )}
-                  <span className="text-[#171717] truncate">{option.text}</span>
+                  <span className="text-[#171717] dark:text-[oklch(0.91_0_0)] truncate">{option.text}</span>
                 </div>
 
                 {/* Vote count if shown */}
                 {currentPoll.showVoteCounts && option.voteCount !== undefined && (
-                  <span className="text-xs text-gray-400 flex-shrink-0">
+                  <span className="text-xs text-gray-400 dark:text-[oklch(0.50_0_0)] flex-shrink-0">
                     {option.voteCount}
                   </span>
                 )}
@@ -296,14 +296,14 @@ const FloatingPollWidget: React.FC = () => {
                 onChange={(e) => setOtherText(e.target.value)}
                 placeholder={t("otherPlaceholder")}
                 rows={2}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#171717] focus:border-transparent resize-none text-sm"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-[oklch(0.30_0_0)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#171717] dark:focus:ring-[#5E53E0] focus:border-transparent resize-none text-sm bg-white dark:bg-[oklch(0.24_0_0)] text-[#171717] dark:text-[oklch(0.91_0_0)]"
               />
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-gray-100 bg-gray-50">
+        <div className="p-4 border-t border-gray-100 dark:border-[oklch(0.28_0_0)] bg-gray-50 dark:bg-[oklch(0.22_0_0)]">
           {/* Submit button */}
           <button
             onClick={handleSubmit}
@@ -317,7 +317,7 @@ const FloatingPollWidget: React.FC = () => {
           <div className="flex items-center justify-between mt-3">
             <button
               onClick={handleDismiss}
-              className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+              className="text-xs text-gray-400 dark:text-[oklch(0.50_0_0)] hover:text-gray-600 dark:hover:text-[oklch(0.75_0_0)] transition-colors"
             >
               {t("dontAskAgain")}
             </button>
@@ -325,7 +325,7 @@ const FloatingPollWidget: React.FC = () => {
             <div className="relative">
               <button
                 onClick={() => setShowSnoozeMenu(!showSnoozeMenu)}
-                className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-[oklch(0.65_0_0)] hover:text-gray-700 dark:hover:text-[oklch(0.91_0_0)] transition-colors"
               >
                 <Clock className="w-3.5 h-3.5" />
                 <span>{t("remindLater")}</span>
@@ -334,12 +334,12 @@ const FloatingPollWidget: React.FC = () => {
 
               {/* Snooze dropdown */}
               {showSnoozeMenu && (
-                <div className="absolute bottom-full right-0 mb-2 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[120px] z-10">
+                <div className="absolute bottom-full right-0 mb-2 bg-white dark:bg-[oklch(0.24_0_0)] border border-gray-200 dark:border-[oklch(0.30_0_0)] rounded-lg shadow-lg dark:shadow-black/30 py-1 min-w-[120px] z-10">
                   {(["8h", "1d", "1w"] as SnoozeDuration[]).map((duration) => (
                     <button
                       key={duration}
                       onClick={() => handleSnooze(duration)}
-                      className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                      className="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-[oklch(0.75_0_0)] hover:bg-gray-50 dark:hover:bg-[oklch(0.28_0_0)] transition-colors"
                     >
                       {getSnoozeLabel(duration)}
                     </button>

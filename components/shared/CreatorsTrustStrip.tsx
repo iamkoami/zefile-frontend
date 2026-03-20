@@ -91,7 +91,7 @@ const CreatorsTrustStrip: React.FC<CreatorsTrustStripProps> = ({
       {/* Text below */}
       <p
         className={`text-sm font-medium ${
-          isNight ? "text-gray-300" : "text-[#4B5563]"
+          isNight ? "text-gray-300" : "text-[#4B5563] dark:text-gray-300"
         }`}
         style={{
           animation: "fadeIn 0.6s ease-out 1.0s both",

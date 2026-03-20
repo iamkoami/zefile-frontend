@@ -41,6 +41,7 @@ import { useCaptcha, CAPTCHA_ACTIONS } from "@/hooks/useCaptcha";
 import { toast } from "@/components/shared/Toast";
 import Image from "next/image";
 import FirstFreeBanner from "@/components/shared/FirstFreeBanner";
+import Toggle from "@/components/shared/Toggle";
 import { trackFilesSelected, trackTransferStarted } from "@/lib/posthog";
 
 // Interface for files from an existing transfer (reuse flow)
@@ -151,6 +152,10 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
   const [receivedAmount, setReceivedAmount] = useState<number>(0);
   const [serviceChargePercentage, setServiceChargePercentage] =
     useState<number>(7);
+
+  // Public sales mode (Starter/Pro only)
+  const [isPublicSales, setIsPublicSales] = useState(false);
+  const canUsePublicSales = userTier === "starter" || userTier === "pro";
 
   // Free transfer & minimum price state
   const [isFreeTransfer, setIsFreeTransfer] = useState(false);
@@ -462,9 +467,10 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
       selectedFiles.length === 0 &&
       panelState === "form" &&
       recipientEmails.length === 0 &&
-      !reuseTransferData
+      !reuseTransferData &&
+      !isPublicSales
     ) {
-      // Only revert to initial if no pre-filled recipients and no reuse files
+      // Only revert to initial if no pre-filled recipients, no reuse files, and not in public sales mode
       setPanelState("initial");
     }
   }, [
@@ -472,6 +478,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
     panelState,
     recipientEmails.length,
     reuseTransferData,
+    isPublicSales,
   ]);
 
   // Reset formView to main when leaving form state
@@ -706,7 +713,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
   const validateForm = (): boolean => {
     const errors: { [key: string]: string } = {};
 
-    if (recipientEmails.length === 0) {
+    if (!isPublicSales && recipientEmails.length === 0) {
       errors.recipientEmails = t("sendToRequired");
     }
 
@@ -749,9 +756,10 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
         reuseTransferData.transferId,
         {
           senderId: userId,
-          recipientEmails: recipientEmails,
+          recipientEmails: isPublicSales ? [] : recipientEmails,
           title: transferTitle,
           message: message || undefined,
+          isPublicSales: isPublicSales ? true : undefined,
         },
       );
 
@@ -951,7 +959,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
       // Step 1: Create transfer metadata (without files)
       const transferResponse = await transferApi.createTransfer({
         senderId: userId,
-        recipientEmails: recipientEmails,
+        recipientEmails: isPublicSales ? [] : recipientEmails,
         title: transferTitle,
         price: isFreeTransfer ? 0 : parsePriceToNumber(price),
         currency: currency,
@@ -968,6 +976,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
           : undefined,
         wallpaperKey,
         coverKey,
+        isPublicSales: isPublicSales ? true : undefined,
       });
 
       if (transferResponse.error) {
@@ -1279,7 +1288,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
       const sessionResult = await transferApi.createTestSession({
         sessionId: result.data.sessionId,
         senderEmail: email,
-        recipientEmails,
+        recipientEmails: isPublicSales ? [] : recipientEmails,
         title: title || file.name,
         price: parsePriceToNumber(price),
         currency,
@@ -1330,6 +1339,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
     setTitle("");
     setPrice("");
     setIsFreeTransfer(false);
+    setIsPublicSales(false);
     setCurrency(globalCurrency || "XOF"); // Reset to global currency
     setMessage("");
     setFormErrors({});
@@ -1347,6 +1357,24 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
     setTestSimulationData(null);
     onTestSimulationDataChange?.(null);
     setFileError("");
+    // Reset wallpaper and cover previews
+    if (transferOptions && onTransferOptionsChange) {
+      if (transferOptions.wallpaperPreview) {
+        URL.revokeObjectURL(transferOptions.wallpaperPreview);
+      }
+      if (transferOptions.coverPreview) {
+        URL.revokeObjectURL(transferOptions.coverPreview);
+      }
+      onTransferOptionsChange({
+        ...transferOptions,
+        wallpaperFile: undefined,
+        wallpaperPreview: undefined,
+        coverFile: undefined,
+        coverPreview: undefined,
+        accessControl: "private",
+        password: "",
+      });
+    }
   };
 
   // Render appropriate panel based on state
@@ -1429,19 +1457,19 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                   {/* Plus Icon */}
                   <div
                     id="ze-upload-icon"
-                    className="ze-upload-icon w-12 h-12 flex items-center justify-center border-2 border-[#171717] rounded flex-shrink-0"
+                    className="ze-upload-icon w-12 h-12 flex items-center justify-center border-2 border-[#171717] dark:border-[oklch(0.50_0_0)] rounded flex-shrink-0 text-[#171717] dark:text-[oklch(0.91_0_0)]"
                   >
                     <Plus
                       width={24}
                       height={24}
-                      color="#171717"
+                      color="currentColor"
                       strokeWidth={2}
                     />
                   </div>
 
                   {/* Text */}
                   <div id="ze-upload-text" className="ze-upload-text text-left">
-                    <p className="text-sm font-bold text-[#171717]">
+                    <p className="text-sm font-bold text-[#171717] dark:text-[oklch(0.91_0_0)]">
                       {t("addFiles")}
                     </p>
                     <p className="text-xs text-gray-500">
@@ -1466,15 +1494,15 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
 
               {/* Error Message */}
               {fileError && (
-                <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-sm text-red-600">{fileError}</p>
+                <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30 rounded-lg">
+                  <p className="text-sm text-red-600 dark:text-red-400">{fileError}</p>
                 </div>
               )}
 
               {/* Description Text */}
               <p
                 id="ze-upload-description"
-                className="ze-upload-description text-sm font-medium mt-5 mb-6 text-center text-[#171717]"
+                className="ze-upload-description text-sm font-medium mt-5 mb-6 text-center text-[#171717] dark:text-[oklch(0.91_0_0)]"
               >
                 {t("dropFilesHere")}
               </p>
@@ -1485,7 +1513,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                   <button
                     type="button"
                     onClick={handleRealBlockClick}
-                    className="underline text-[#171717] hover:text-[#444444] transition-colors"
+                    className="underline text-[#171717] dark:text-[oklch(0.91_0_0)] hover:text-[#444444] dark:hover:text-[oklch(0.75_0_0)] transition-colors"
                   >
                     {t("switchToReal")}
                   </button>
@@ -1495,7 +1523,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                     <button
                       type="button"
                       onClick={handleTestBlockClick}
-                      className="underline text-[#171717] hover:text-[#444444] transition-colors"
+                      className="underline text-[#171717] dark:text-[oklch(0.91_0_0)] hover:text-[#444444] dark:hover:text-[oklch(0.75_0_0)] transition-colors"
                     >
                       {t("sendTestLink")}
                     </button>
@@ -1537,19 +1565,19 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                 {/* Plus Icon */}
                 <div
                   id="ze-upload-icon"
-                  className="ze-upload-icon w-12 h-12 flex items-center justify-center border-2 border-[#171717] rounded flex-shrink-0"
+                  className="ze-upload-icon w-12 h-12 flex items-center justify-center border-2 border-[#171717] dark:border-[oklch(0.50_0_0)] rounded flex-shrink-0 text-[#171717] dark:text-[oklch(0.91_0_0)]"
                 >
                   <Plus
                     width={24}
                     height={24}
-                    color="#171717"
+                    color="currentColor"
                     strokeWidth={2}
                   />
                 </div>
 
                 {/* Text */}
                 <div id="ze-upload-text" className="ze-upload-text text-left">
-                  <p className="text-sm font-bold text-black">
+                  <p className="text-sm font-bold text-black dark:text-[oklch(0.91_0_0)]">
                     {t("addFiles")}
                   </p>
                   <p className="text-xs text-gray-500">
@@ -1577,15 +1605,15 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
 
             {/* Error Message */}
             {fileError && (
-              <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-sm text-red-600">{fileError}</p>
+              <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30 rounded-lg">
+                <p className="text-sm text-red-600 dark:text-red-400">{fileError}</p>
               </div>
             )}
 
             {/* Size limit warning when files exceed limit */}
             {selectedFilesSize > maxUploadSize && (
-              <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <p className="text-sm text-yellow-700 font-medium">
+              <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/30 rounded-lg">
+                <p className="text-sm text-yellow-700 dark:text-yellow-400 font-medium">
                   {t("filesExceedLimit", {
                     limit: formatBytes(maxUploadSize),
                     current: formatBytes(selectedFilesSize),
@@ -1597,7 +1625,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
             {/* Description Text */}
             <p
               id="ze-upload-description"
-              className="ze-upload-description text-sm font-medium mt-5 mb-12 text-center text-gray-500"
+              className="ze-upload-description text-sm font-medium mt-5 mb-12 text-center text-gray-500 dark:text-[oklch(0.65_0_0)]"
             >
               {t("dropFilesHere")}
             </p>
@@ -1623,16 +1651,18 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
           <div key="form-main" className="animate-slideInLeft">
             {/* Core Form Fields */}
             <div className="space-y-4 mb-6">
-              {/* Recipient Emails */}
-              <div>
-                <MultiEmailInput
-                  emails={recipientEmails}
-                  onEmailsChange={setRecipientEmails}
-                  placeholder={t("sendTo")}
-                  maxEmails={10}
-                  error={formErrors.recipientEmails}
-                />
-              </div>
+              {/* Recipient Emails — hidden when public sales is on */}
+              {!isPublicSales && (
+                <div>
+                  <MultiEmailInput
+                    emails={recipientEmails}
+                    onEmailsChange={setRecipientEmails}
+                    placeholder={t("sendTo")}
+                    maxEmails={10}
+                    error={formErrors.recipientEmails}
+                  />
+                </div>
+              )}
 
               {/* Email — hidden when authenticated (auto-filled) */}
               {!isUserAuthenticated && (
@@ -1643,7 +1673,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder={t("yourEmail")}
                     className={`ze-form-input ${
-                      formErrors.email ? "border-red-500" : ""
+                      formErrors.email ? "border-red-500 dark:border-red-400" : ""
                     }`}
                   />
                   {formErrors.email && (
@@ -1654,35 +1684,25 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                 </div>
               )}
 
-              {/* Free Transfer Toggle — STARTER and PRO only */}
-              {canCreateFreeTransfers && (
-                <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium text-[#171717]">
+              {/* Free Transfer Toggle — STARTER and PRO only, hidden during public sales */}
+              {canCreateFreeTransfers && !isPublicSales && (
+                <div className="flex items-center justify-between gap-3">
+                  <label className="text-sm font-medium text-[#171717] dark:text-[oklch(0.91_0_0)]">
                     {t("freeTransfer")}
                   </label>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!isFreeTransfer) {
-                        // Toggling ON: save current price, then clear
+                  <Toggle
+                    checked={isFreeTransfer}
+                    onChange={(checked) => {
+                      if (checked) {
                         savedPriceRef.current = price;
                         setPrice("");
                       } else {
-                        // Toggling OFF: restore saved price
                         setPrice(savedPriceRef.current);
                       }
-                      setIsFreeTransfer(!isFreeTransfer);
+                      setIsFreeTransfer(checked);
                     }}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      isFreeTransfer ? "bg-[#87E64B]" : "bg-gray-300"
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        isFreeTransfer ? "translate-x-6" : "translate-x-1"
-                      }`}
-                    />
-                  </button>
+                    label={t("freeTransfer")}
+                  />
                 </div>
               )}
 
@@ -1696,7 +1716,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                         value={currency}
                         onChange={(e) => setCurrency(e.target.value)}
                         className={`ze-form-select h-full ${
-                          formErrors.price ? "border-red-500" : ""
+                          formErrors.price ? "border-red-500 dark:border-red-400" : ""
                         }`}
                       >
                         <option value="XOF">XOF</option>
@@ -1721,7 +1741,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                           ),
                         })}
                         className={`ze-form-input ${
-                          formErrors.price ? "border-red-500" : ""
+                          formErrors.price ? "border-red-500 dark:border-red-400" : ""
                         }`}
                         inputMode="numeric"
                       />
@@ -1735,7 +1755,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                   )}
                   {/* Service Charge — single-line inline */}
                   {price && parsePriceToNumber(price) > 0 && (
-                    <p className="text-xs  text-[#171717] mt-3">
+                    <p className="text-xs text-[#171717] dark:text-[oklch(0.91_0_0)] mt-3">
                       {t.rich("earningsInline", {
                         formattedAmount: formatCurrencyAmount(
                           receivedAmount > 0
@@ -1759,7 +1779,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowDetails(true)}
-                  className="text-sm text-[#171717] underline font-medium"
+                  className="text-sm text-[#171717] dark:text-[oklch(0.91_0_0)] underline font-medium"
                 >
                   {t("addDetails")}
                 </button>
@@ -1779,6 +1799,16 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                     />
                   </div>
 
+                  {/* Message (optional) */}
+                  <textarea
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    placeholder={t("message")}
+                    className="ze-form-input resize-none pt-4"
+                    rows={2}
+                    style={{ height: "60px" }}
+                  />
+
                   {/* First-Free Banner - shown when user hasn't used their first free transfer */}
                   {!isFirstPaidTransferUsed &&
                     price &&
@@ -1789,7 +1819,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                     <button
                       type="button"
                       onClick={() => setFormView("options")}
-                      className="text-sm text-[#171717] underline font-medium"
+                      className="text-sm text-[#171717] dark:text-[oklch(0.91_0_0)] underline font-medium"
                     >
                       {t("moreOptions")}
                     </button>
@@ -1800,8 +1830,8 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
 
             {/* Size limit warning when files exceed limit */}
             {selectedFilesSize > maxUploadSize && (
-              <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <p className="text-sm text-yellow-700 font-medium">
+              <div className="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/30 rounded-lg">
+                <p className="text-sm text-yellow-700 dark:text-yellow-400 font-medium">
                   {t("filesExceedLimit", {
                     limit: formatBytes(maxUploadSize),
                     current: formatBytes(selectedFilesSize),
@@ -1812,15 +1842,15 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
 
             {/* Password validation error */}
             {formErrors.password && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-sm text-red-600">{formErrors.password}</p>
+              <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30 rounded-lg">
+                <p className="text-sm text-red-600 dark:text-red-400">{formErrors.password}</p>
               </div>
             )}
 
             {/* Error Message (e.g. rate limit on test upload) */}
             {fileError && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-xs text-red-600">{fileError}</p>
+              <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30 rounded-lg">
+                <p className="text-xs text-red-600 dark:text-red-400">{fileError}</p>
               </div>
             )}
 
@@ -1862,6 +1892,40 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
 
             {/* Option Fields */}
             <div className="space-y-4">
+              {/* Public Sales Toggle — Starter/Pro only */}
+              {canUsePublicSales && (
+                <div className="rounded border border-neutral-200 dark:border-border p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm text-[#171717] dark:text-[oklch(0.91_0_0)]">
+                        {t("publicSalesToggle")}
+                      </p>
+                      <p className="text-xs text-neutral-500 dark:text-[oklch(0.65_0_0)] mt-0.5">
+                        {t("publicSalesDescription")}
+                      </p>
+                    </div>
+                    <Toggle
+                      checked={isPublicSales}
+                      onChange={(checked) => {
+                        setIsPublicSales(checked);
+                        if (checked && isFreeTransfer) {
+                          setIsFreeTransfer(false);
+                          setPrice(savedPriceRef.current);
+                        }
+                        if (checked && transferOptions && onTransferOptionsChange) {
+                          onTransferOptionsChange({
+                            ...transferOptions,
+                            accessControl: "public",
+                            password: "",
+                          });
+                        }
+                      }}
+                      label={t("publicSalesToggle")}
+                    />
+                  </div>
+                </div>
+              )}
+
               {/* Expiry Duration Selector */}
               {tierLimitsData && onTransferOptionsChange && transferOptions && (
                 <div>
@@ -1913,25 +1977,15 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
 
                   {/* 1-day expiry warning */}
                   {transferOptions.validityDuration === "1" && (
-                    <p className="text-xs text-yellow-600 mt-1.5 bg-yellow-50 border border-yellow-200 rounded px-3 py-2">
+                    <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1.5 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/30 rounded px-3 py-2">
                       {t("shortExpiryWarning")}
                     </p>
                   )}
                 </div>
               )}
 
-              {/* Message */}
-              <textarea
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder={t("message")}
-                className="ze-form-input resize-none pt-4"
-                rows={2}
-                style={{ height: "60px" }}
-              />
-
-              {/* Access Control */}
-              {transferOptions && (
+              {/* Access Control -- hidden when public sales is active */}
+              {transferOptions && !isPublicSales && (
                 <select
                   value={transferOptions.accessControl}
                   onChange={(e) => handleAccessControlChange(e.target.value)}
@@ -1954,11 +2008,11 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                     value={transferOptions.password}
                     onChange={(e) => handlePasswordChange(e.target.value)}
                     placeholder={tOptions("setPassword")}
-                    className={`ze-form-input ${isPasswordTooShort ? "border-red-500" : ""}`}
+                    className={`ze-form-input ${isPasswordTooShort ? "border-red-500 dark:border-red-400" : ""}`}
                     minLength={MIN_PASSWORD_LENGTH}
                   />
                   {isPasswordTooShort && (
-                    <p className="text-red-500 text-xs mt-1">
+                    <p className="text-red-500 dark:text-red-400 text-xs mt-1">
                       {tOptions("passwordMinLength", {
                         min: MIN_PASSWORD_LENGTH,
                       })}
@@ -2023,7 +2077,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
               {/* Wallpaper Upload */}
               {transferOptions && (
                 <div>
-                  <label className="text-xs font-medium text-gray-500 mb-2 block">
+                  <label className="text-xs font-medium text-gray-500 dark:text-[oklch(0.65_0_0)] mb-2 block">
                     {tOptions("wallpaperLabel")}
                     {isWallpaperDisabled && (
                       <span className="ml-1 text-[#5E53E0] text-[10px] font-bold uppercase">
@@ -2070,8 +2124,8 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                       }
                       className={`w-full h-[60px] rounded border-2 border-dashed flex items-center justify-center gap-2 transition-colors ${
                         isWallpaperDisabled
-                          ? "opacity-50 cursor-not-allowed border-gray-200 bg-gray-50"
-                          : "cursor-pointer border-gray-300 bg-gray-50 hover:border-[#5E53E0] hover:bg-gray-100"
+                          ? "opacity-50 cursor-not-allowed border-gray-200 dark:border-border bg-gray-50 dark:bg-[oklch(0.22_0_0)]"
+                          : "cursor-pointer border-gray-300 dark:border-border bg-gray-50 dark:bg-[oklch(0.22_0_0)] hover:border-[#5E53E0] hover:bg-gray-100 dark:hover:bg-[oklch(0.28_0_0)]"
                       }`}
                       disabled={isWallpaperDisabled}
                     >
@@ -2099,7 +2153,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
               {/* Cover Upload */}
               {transferOptions && (
                 <div>
-                  <label className="text-xs font-medium text-gray-500 mb-2 block">
+                  <label className="text-xs font-medium text-gray-500 dark:text-[oklch(0.65_0_0)] mb-2 block">
                     {tOptions("coverLabel")}
                     {isWallpaperDisabled && (
                       <span className="ml-1 text-[#5E53E0] text-[10px] font-bold uppercase">
@@ -2146,8 +2200,8 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                       }
                       className={`w-full h-[60px] rounded border-2 border-dashed flex items-center justify-center gap-2 transition-colors ${
                         isWallpaperDisabled
-                          ? "opacity-50 cursor-not-allowed border-gray-200 bg-gray-50"
-                          : "cursor-pointer border-gray-300 bg-gray-50 hover:border-[#5E53E0] hover:bg-gray-100"
+                          ? "opacity-50 cursor-not-allowed border-gray-200 dark:border-border bg-gray-50 dark:bg-[oklch(0.22_0_0)]"
+                          : "cursor-pointer border-gray-300 dark:border-border bg-gray-50 dark:bg-[oklch(0.22_0_0)] hover:border-[#5E53E0] hover:bg-gray-100 dark:hover:bg-[oklch(0.28_0_0)]"
                       }`}
                       disabled={isWallpaperDisabled}
                     >
@@ -2187,7 +2241,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
     >
       {renderPanel()}
       {panelState === "initial" && (
-        <div className="flex items-center justify-center gap-3 text-[10px] text-gray-400 mt-4 flex-wrap">
+        <div className="flex items-center justify-center gap-3 text-[10px] text-gray-400 dark:text-[oklch(0.60_0_0)] mt-4 flex-wrap">
           <span className="flex items-center gap-1">
             <Lock className="w-3 h-3" />
             {t("trustSecure")}

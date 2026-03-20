@@ -77,10 +77,10 @@ function NotLoggedInState({ t }: { t: ReturnType<typeof useTranslations> }) {
 
   return (
     <div className="flex flex-col items-center justify-center py-10 px-6 text-center">
-      <h2 className="text-xl font-bold text-[#171717] mb-2">
+      <h2 className="text-xl font-bold text-[#171717] dark:text-white mb-2">
         {t("notLoggedInTitle")}
       </h2>
-      <p className="text-sm font-medium text-gray-500 mb-8">
+      <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-8">
         {t("notLoggedInDesc")}
       </p>
       <button
@@ -104,10 +104,10 @@ function FreeTierState({ t }: { t: ReturnType<typeof useTranslations> }) {
 
   return (
     <div className="flex flex-col items-center justify-center py-10 px-6 text-center">
-      <h2 className="text-xl font-bold text-[#171717] mb-2">
+      <h2 className="text-xl font-bold text-[#171717] dark:text-white mb-2">
         {t("freeTierTitle")}
       </h2>
-      <p className="text-sm font-medium text-gray-500 mb-8">
+      <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-8">
         {t("freeTierDesc")}
       </p>
       <button
@@ -451,13 +451,13 @@ function RequestForm({ t, onStepChange }: { t: ReturnType<typeof useTranslations
         {pollingStatus === "polling" && (
           <>
             <Clock className="w-10 h-10 text-[#5E53E0] animate-pulse mb-4" />
-            <h2 className="text-lg font-bold text-[#171717] mb-2">
+            <h2 className="text-lg font-bold text-[#171717] dark:text-white mb-2">
               {t("checkYourPhone")}
             </h2>
-            <p className="text-sm text-gray-500 mb-2">
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
               {t("waitingForPayment")}
             </p>
-            <p className="text-sm font-mono text-gray-700">
+            <p className="text-sm font-mono text-gray-700 dark:text-gray-300">
               {phoneNumber.replace(/\d(?=\d{4})/g, "*")}
             </p>
           </>
@@ -465,7 +465,7 @@ function RequestForm({ t, onStepChange }: { t: ReturnType<typeof useTranslations
         {pollingStatus === "success" && (
           <>
             <CheckCircle className="w-12 h-12 text-[#87E64B] mb-4" />
-            <h2 className="text-lg font-bold text-[#171717] mb-2">
+            <h2 className="text-lg font-bold text-[#171717] dark:text-white mb-2">
               {t("paymentConfirmed")}
             </h2>
           </>
@@ -473,7 +473,7 @@ function RequestForm({ t, onStepChange }: { t: ReturnType<typeof useTranslations
         {pollingStatus === "failed" && (
           <>
             <XmarkCircle className="w-12 h-12 text-red-500 mb-4" />
-            <h2 className="text-lg font-bold text-[#171717] mb-2">
+            <h2 className="text-lg font-bold text-[#171717] dark:text-white mb-2">
               {t("paymentFailedRetry")}
             </h2>
             <button
@@ -487,7 +487,7 @@ function RequestForm({ t, onStepChange }: { t: ReturnType<typeof useTranslations
         {pollingStatus === "timeout" && (
           <>
             <WarningCircle className="w-12 h-12 text-yellow-500 mb-4" />
-            <h2 className="text-lg font-bold text-[#171717] mb-2">
+            <h2 className="text-lg font-bold text-[#171717] dark:text-white mb-2">
               {t("paymentTimeout")}
             </h2>
           </>
@@ -499,10 +499,10 @@ function RequestForm({ t, onStepChange }: { t: ReturnType<typeof useTranslations
   if (success) {
     return (
       <div className="flex flex-col items-center justify-center py-10 px-6 text-center">
-        <h2 className="text-xl font-bold text-[#171717] mb-2">
+        <h2 className="text-xl font-bold text-[#171717] dark:text-white mb-2">
           {t("successTitle")}
         </h2>
-        <p className="text-sm font-medium text-gray-500 mb-6">
+        <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-6">
           {t("successDesc", { email: success.email })}
         </p>
         <button
@@ -631,7 +631,7 @@ function RequestForm({ t, onStepChange }: { t: ReturnType<typeof useTranslations
       <div className="space-y-4 mb-6">
         {/* Country Selector */}
         <div>
-          <p className="text-sm font-medium text-gray-700 mb-2">
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             {t("paymentCountry")}
           </p>
           <div className="relative" ref={countryDropdownRef}>
@@ -649,14 +649,14 @@ function RequestForm({ t, onStepChange }: { t: ReturnType<typeof useTranslations
               ) : (
                 <Globe className="w-5 h-5 text-gray-500" />
               )}
-              <span className="text-sm text-[#171717]">
+              <span className="text-sm text-[#171717] dark:text-gray-200">
                 {selectedCountryInfo?.name}
               </span>
               <NavArrowDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             </button>
 
             {countryDropdownOpen && (
-              <div className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-200 rounded shadow-lg z-50 max-h-[180px] overflow-y-auto">
+              <div className="absolute top-full left-0 mt-1 w-full bg-white dark:bg-[var(--card)] border border-gray-200 dark:border-[var(--border)] rounded shadow-lg z-50 max-h-[180px] overflow-y-auto">
                 {SUPPORTED_COUNTRIES.map((c) => (
                   <button
                     key={c.code}
@@ -666,7 +666,7 @@ function RequestForm({ t, onStepChange }: { t: ReturnType<typeof useTranslations
                       localStorage.setItem("zefile_detected_country", c.code);
                       setCountryDropdownOpen(false);
                     }}
-                    className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 text-left ${
+                    className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 dark:hover:bg-[oklch(0.28_0_0)] text-left ${
                       c.code === selectedCountry ? "bg-gray-50" : ""
                     }`}
                   >
@@ -675,7 +675,7 @@ function RequestForm({ t, onStepChange }: { t: ReturnType<typeof useTranslations
                     ) : (
                       <Globe className="w-5 h-5 text-gray-500" />
                     )}
-                    <span className="text-sm text-[#171717]">{c.name}</span>
+                    <span className="text-sm text-[#171717] dark:text-gray-200">{c.name}</span>
                   </button>
                 ))}
               </div>
@@ -685,7 +685,7 @@ function RequestForm({ t, onStepChange }: { t: ReturnType<typeof useTranslations
 
         {/* Payment Methods */}
         <div>
-          <p className="text-sm font-medium text-gray-700 mb-2">
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             {t("paymentMethod")}
           </p>
 
@@ -694,7 +694,7 @@ function RequestForm({ t, onStepChange }: { t: ReturnType<typeof useTranslations
               <div className="w-5 h-5 border-2 border-gray-300 border-t-[#5E53E0] rounded-full animate-spin" />
             </div>
           ) : paymentMethods.length === 0 ? (
-            <p className="text-sm text-gray-500 py-4 text-center">
+            <p className="text-sm text-gray-500 dark:text-gray-400 py-4 text-center">
               {t("noPaymentMethods")}
             </p>
           ) : (
@@ -718,7 +718,7 @@ function RequestForm({ t, onStepChange }: { t: ReturnType<typeof useTranslations
                         : "border-gray-200 hover:border-gray-300"
                     }`}
                   >
-                    <div className="w-7 h-7 flex-shrink-0 flex items-center justify-center bg-gray-100 rounded">
+                    <div className="w-7 h-7 flex-shrink-0 flex items-center justify-center bg-gray-100 dark:bg-[oklch(0.28_0_0)] rounded">
                       {failedIcons.has(method.icon) ? (
                         <SmartphoneDevice className="w-4 h-4 text-gray-500" />
                       ) : (
@@ -735,7 +735,7 @@ function RequestForm({ t, onStepChange }: { t: ReturnType<typeof useTranslations
                         />
                       )}
                     </div>
-                    <span className="text-xs font-medium text-[#171717] truncate">
+                    <span className="text-xs font-medium text-[#171717] dark:text-gray-200 truncate">
                       {method.name}
                     </span>
                   </button>
@@ -756,10 +756,10 @@ function RequestForm({ t, onStepChange }: { t: ReturnType<typeof useTranslations
                       : "border-gray-200 hover:border-gray-300"
                   }`}
                 >
-                  <div className="w-7 h-7 flex-shrink-0 flex items-center justify-center bg-gray-100 rounded">
+                  <div className="w-7 h-7 flex-shrink-0 flex items-center justify-center bg-gray-100 dark:bg-[oklch(0.28_0_0)] rounded">
                     <CreditCard className="w-4 h-4 text-gray-500" />
                   </div>
-                  <span className="text-xs font-medium text-[#171717] truncate">
+                  <span className="text-xs font-medium text-[#171717] dark:text-gray-200 truncate">
                     {cardMethod.name}
                   </span>
                 </button>
@@ -793,13 +793,13 @@ function RequestForm({ t, onStepChange }: { t: ReturnType<typeof useTranslations
 
       {/* Payment disabled notice */}
       {paymentsDisabled && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded p-4 mb-4 flex items-start gap-3">
+        <div className="bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded p-4 mb-4 flex items-start gap-3">
           <WarningCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-bold text-yellow-800">
+            <p className="text-sm font-bold text-yellow-800 dark:text-yellow-300">
               {t("paymentsUnavailable")}
             </p>
-            <p className="text-xs text-yellow-700 mt-1">
+            <p className="text-xs text-yellow-700 dark:text-yellow-400 mt-1">
               {t("paymentsUnavailableDesc")}
             </p>
           </div>

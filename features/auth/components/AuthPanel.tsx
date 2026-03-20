@@ -64,7 +64,7 @@ const AuthPanel: React.FC<AuthPanelProps> = ({
       {/* Panel */}
       <div
         id="ze-auth-panel"
-        className={`ze-auth-panel fixed top-0 right-0 h-full bg-white z-[9999] shadow-2xl transition-transform duration-500 ease-in-out ${
+        className={`ze-auth-panel fixed top-0 right-0 h-full bg-white dark:bg-background z-[9999] shadow-2xl transition-transform duration-500 ease-in-out ${
           isAnimating ? "translate-x-0" : "translate-x-full"
         }`}
         style={{ width: "calc(100% - 60px)" }}
@@ -76,20 +76,20 @@ const AuthPanel: React.FC<AuthPanelProps> = ({
             e.stopPropagation();
             onClose();
           }}
-          className="ze-auth-close absolute top-6 left-8 w-12 h-12 rounded-lg border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors z-10"
+          className="ze-auth-close absolute top-6 left-8 w-12 h-12 rounded-lg border border-gray-300 dark:border-border flex items-center justify-center hover:bg-gray-50 dark:hover:bg-white/5 transition-colors z-10"
           aria-label="Close"
         >
-          <Xmark className="w-6 h-6 text-gray-600" />
+          <Xmark className="w-6 h-6 text-gray-600 dark:text-gray-400" />
         </button>
 
         {/* Content */}
         <div className="ze-auth-panel-content h-full flex flex-col pt-24 pb-12">
           {/* Title and Subtitle - centered */}
           <div className="text-center mb-6">
-            <h1 className="text-3xl font-bold text-gray-900 mb-1">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
               {mode === "signup" ? t("joinTitle") : t("welcomeBackTitle")}
             </h1>
-            <p className="text-base text-gray-500">
+            <p className="text-base text-gray-500 dark:text-gray-400">
               {mode === "signup" ? t("joinSubtitle") : t("welcomeBackSubtitle")}
             </p>
           </div>
@@ -109,15 +109,15 @@ const AuthPanel: React.FC<AuthPanelProps> = ({
                   type="checkbox"
                   checked={termsAccepted}
                   onChange={(e) => setTermsAccepted(e.target.checked)}
-                  className="mt-0.5 w-4 h-4 rounded border-gray-300 text-[#87E64B] focus:ring-[#87E64B] accent-[#87E64B] flex-shrink-0"
+                  className="mt-0.5 w-4 h-4 rounded border-gray-300 dark:border-border text-[#87E64B] focus:ring-[#87E64B] accent-[#87E64B] flex-shrink-0"
                 />
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-gray-500 dark:text-gray-400">
                   {t("termsAgreement")}{" "}
                   <Link
                     href="/terms"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-[#171717] font-medium underline hover:opacity-80 transition-opacity"
+                    className="text-[#171717] dark:text-white font-medium underline hover:opacity-80 transition-opacity"
                   >
                     {t("termsOfService")}
                   </Link>{" "}
@@ -126,20 +126,20 @@ const AuthPanel: React.FC<AuthPanelProps> = ({
                     href="/privacy"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-[#171717] font-medium underline hover:opacity-80 transition-opacity"
+                    className="text-[#171717] dark:text-white font-medium underline hover:opacity-80 transition-opacity"
                   >
                     {t("privacyPolicy")}
                   </Link>
                 </span>
               </label>
             ) : (
-              <p className="text-sm text-gray-500 mt-10 max-w-xl">
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-10 max-w-xl">
                 {t("termsNotice")}{" "}
                 <Link
                   href="/terms"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[#171717] font-medium underline hover:opacity-80 transition-opacity"
+                  className="text-[#171717] dark:text-white font-medium underline hover:opacity-80 transition-opacity"
                 >
                   {t("termsOfService")}
                 </Link>{" "}
@@ -148,7 +148,7 @@ const AuthPanel: React.FC<AuthPanelProps> = ({
                   href="/privacy"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[#171717] font-medium underline hover:opacity-80 transition-opacity"
+                  className="text-[#171717] dark:text-white font-medium underline hover:opacity-80 transition-opacity"
                 >
                   {t("privacyPolicy")}
                 </Link>

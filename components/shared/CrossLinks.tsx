@@ -27,7 +27,7 @@ export default function CrossLinks({ exclude }: CrossLinksProps) {
       aria-label={t("sectionTitle")}
       className="max-w-6xl mx-auto px-6 pb-8"
     >
-      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">
+      <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-4">
         {t("sectionTitle")}
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -35,15 +35,15 @@ export default function CrossLinks({ exclude }: CrossLinksProps) {
           <Link
             key={link.href}
             href={link.href}
-            className="group flex flex-col gap-1.5 p-5 rounded-xl hover:bg-gray-50 transition-all duration-200"
+            className="group flex flex-col gap-1.5 p-5 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 transition-all duration-200"
           >
             <span className="flex items-center justify-between">
-              <span className="text-base font-bold text-[#171717] group-hover:text-[#5E53E0] transition-colors">
+              <span className="text-base font-bold text-[#171717] dark:text-white group-hover:text-[#5E53E0] transition-colors">
                 {t(`${link.key}.label`)}
               </span>
               <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-[#5E53E0] group-hover:translate-x-1 transition-all duration-200" />
             </span>
-            <span className="text-xs text-gray-500 leading-relaxed">
+            <span className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
               {t(`${link.key}.description`)}
             </span>
           </Link>

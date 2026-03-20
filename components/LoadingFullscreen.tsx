@@ -35,6 +35,7 @@ const LoadingFullscreen: React.FC<LoadingFullscreenProps> = ({ message }) => {
           animationData={animationData}
           loop={true}
           autoplay={true}
+          className="ze-lottie-container"
           style={{ width: 160, height: 160 }}
         />
       ) : (
@@ -43,7 +44,7 @@ const LoadingFullscreen: React.FC<LoadingFullscreenProps> = ({ message }) => {
         </div>
       )}
       {message && (
-        <p className="mt-4 px-4 text-sm text-center text-gray-600 max-w-md">
+        <p className="mt-4 px-4 text-sm text-center max-w-md text-gray-600">
           {message}
         </p>
       )}

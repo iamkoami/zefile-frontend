@@ -44,18 +44,18 @@ const Toggle: React.FC<ToggleProps> = ({
       onClick={() => !disabled && onChange(!checked)}
       onKeyDown={handleKeyDown}
       className={`
-        relative inline-flex h-6 w-11 items-center rounded-full
+        relative inline-flex h-7 w-12 items-center rounded-full shrink-0
         transition-colors duration-200 ease-in-out
         focus:outline-none focus:ring-2 focus:ring-[#87E64B] focus:ring-offset-2
         ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-        ${checked ? 'bg-[#87E64B]' : 'bg-gray-200'}
+        ${checked ? 'bg-[#87E64B]' : 'bg-gray-200 dark:bg-[oklch(0.35_0_0)]'}
       `}
     >
       <span
         className={`
-          inline-block h-4 w-4 transform rounded-full bg-white shadow-sm
-          transition-transform duration-200 ease-in-out
-          ${checked ? 'translate-x-6' : 'translate-x-1'}
+          inline-block h-5 w-5 transform rounded-full shadow-sm
+          transition-all duration-200 ease-in-out
+          ${checked ? 'translate-x-6 bg-[#171717]' : 'translate-x-1 bg-white'}
         `}
       />
     </button>

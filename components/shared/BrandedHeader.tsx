@@ -2,8 +2,8 @@
 
 import React from "react";
 import Image from "next/image";
-import Link from "next/link";
 import type { BrandingConfig } from "@/hooks/useCustomBranding";
+import LanguageSwitcher from "./LanguageSwitcher";
 
 interface BrandedHeaderProps {
   branding: BrandingConfig;
@@ -12,7 +12,8 @@ interface BrandedHeaderProps {
 /**
  * Simplified branded header for custom domain download pages.
  * Replaces the standard Header when a custom domain is active.
- * Shows company logo + name, no navigation or auth controls.
+ * Shows company logo + name + language switcher, no navigation or auth controls.
+ * "Powered by ZeFile" is in the footer, not here.
  */
 export default function BrandedHeader({ branding }: BrandedHeaderProps) {
   return (
@@ -52,24 +53,8 @@ export default function BrandedHeader({ branding }: BrandedHeaderProps) {
           )}
         </div>
 
-        {/* Right: Powered by ZeFile (if enabled) */}
-        {branding.showPoweredByZefile && (
-          <Link
-            href="https://zefile.io"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-500 transition-colors"
-          >
-            <span>Powered by</span>
-            <Image
-              src="/zefile-logo.svg"
-              alt="ZeFile"
-              width={50}
-              height={14}
-              className="opacity-60"
-            />
-          </Link>
-        )}
+        {/* Right: Language switcher */}
+        <LanguageSwitcher />
       </div>
     </header>
   );

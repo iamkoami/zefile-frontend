@@ -17,7 +17,10 @@ export default function PlatformStatusGate({ children }: { children: React.React
   const pathname = usePathname();
   const { status, loading } = usePlatformStatus();
 
-  // Don't block until we know the status
+  // While fetching status, render children so normal mode has zero delay.
+  // The lazy initializer in usePlatformStatus reads sessionStorage synchronously,
+  // so if maintenance/waitlist was cached, `status` is already set on first frame
+  // and we skip straight to the maintenance/waitlist page below — no flash.
   if (loading || !status) return <>{children}</>;
 
   const isDownloadPage = pathname?.startsWith("/downloads");

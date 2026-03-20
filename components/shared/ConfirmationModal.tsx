@@ -15,6 +15,7 @@ interface ConfirmationModalProps {
   confirmLabel?: string;
   cancelLabel?: string;
   isLoading?: boolean;
+  className?: string;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -32,6 +33,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   confirmLabel,
   cancelLabel,
   isLoading = false,
+  className,
   onConfirm,
   onCancel,
 }) => {
@@ -100,7 +102,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/30 z-[10000] transition-opacity duration-200"
+        className="fixed inset-0 bg-black/30 dark:bg-black/60 z-[10000] transition-opacity duration-200"
         onClick={handleBackdropClick}
         aria-hidden="true"
       />
@@ -116,18 +118,18 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
         onClick={handleBackdropClick}
       >
         <div
-          className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 animate-in fade-in zoom-in-95 duration-200"
+          className={`bg-white dark:bg-[oklch(0.24_0_0)] rounded-2xl shadow-2xl dark:shadow-black/40 w-full max-w-md p-8 animate-in fade-in zoom-in-95 duration-200${className ? ` ${className}` : ''}`}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Icon */}
           <div className="flex justify-center mb-6">
             {type === 'warning' ? (
               <div className="w-20 h-20 flex items-center justify-center">
-                <WarningTriangle className="w-16 h-16 text-red-500" strokeWidth={1.5} />
+                <WarningTriangle className="w-16 h-16 text-red-500 dark:text-red-400" strokeWidth={1.5} />
               </div>
             ) : (
               <div className="w-20 h-20 flex items-center justify-center">
-                <Trash className="w-16 h-16 text-red-500" strokeWidth={1.5} />
+                <Trash className="w-16 h-16 text-red-500 dark:text-red-400" strokeWidth={1.5} />
               </div>
             )}
           </div>
@@ -135,7 +137,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
           {/* Title */}
           <h2
             id="confirmation-title"
-            className="text-xl font-bold text-gray-900 text-center mb-2"
+            className="text-xl font-bold text-gray-900 dark:text-[oklch(0.91_0_0)] text-center mb-2"
           >
             {title}
           </h2>
@@ -143,7 +145,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
           {/* Message */}
           <p
             id="confirmation-message"
-            className="text-sm text-gray-500 text-center mb-8"
+            className="text-sm text-gray-500 dark:text-[oklch(0.68_0_0)] text-center mb-8"
           >
             {message}
           </p>
@@ -154,7 +156,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
               type="button"
               onClick={onCancel}
               disabled={isLoading}
-              className="flex-1 max-w-[140px] px-6 py-3 text-base font-medium text-gray-900 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 max-w-[140px] px-6 py-3 text-base font-medium text-gray-900 dark:text-[oklch(0.91_0_0)] bg-white dark:bg-[oklch(0.28_0_0)] border border-gray-300 dark:border-[oklch(0.30_0_0)] rounded-lg hover:bg-gray-50 dark:hover:bg-[oklch(0.32_0_0)] transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300 dark:focus:ring-[oklch(0.40_0_0)] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {cancel}
             </button>

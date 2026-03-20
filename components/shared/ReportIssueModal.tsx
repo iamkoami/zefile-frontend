@@ -224,14 +224,14 @@ const ReportIssueModal: React.FC<ReportIssueModalProps> = ({
         onClick={handleBackdropClick}
       >
         <div
-          className="bg-white rounded-lg shadow-xl w-full max-w-md animate-in fade-in zoom-in-95 duration-200"
+          className="bg-white dark:bg-[oklch(0.24_0_0)] rounded-lg shadow-xl dark:shadow-black/40 w-full max-w-md animate-in fade-in zoom-in-95 duration-200"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-200">
+          <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-[oklch(0.30_0_0)]">
             <h2
               id="report-issue-title"
-              className="text-lg font-bold text-gray-900"
+              className="text-lg font-bold text-gray-900 dark:text-[oklch(0.91_0_0)]"
             >
               {step === 'form' && t('title')}
               {step === 'success' && t('successTitle')}
@@ -239,7 +239,7 @@ const ReportIssueModal: React.FC<ReportIssueModalProps> = ({
             </h2>
             <button
               onClick={onClose}
-              className="p-1 text-gray-400 hover:text-gray-600 rounded transition-colors"
+              className="p-1 text-gray-400 dark:text-[oklch(0.50_0_0)] hover:text-gray-600 dark:hover:text-[oklch(0.75_0_0)] rounded transition-colors"
             >
               <Xmark className="w-5 h-5" />
             </button>
@@ -249,21 +249,21 @@ const ReportIssueModal: React.FC<ReportIssueModalProps> = ({
             <form onSubmit={handleSubmit} className="p-4 space-y-4">
               {/* Transfer Reference */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-[oklch(0.75_0_0)] mb-1">
                   {t('transferReference')}
                 </label>
                 <input
                   type="text"
                   value={shortCode}
                   disabled
-                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded text-gray-500 text-sm"
+                  className="w-full px-3 py-2 bg-gray-50 dark:bg-[oklch(0.22_0_0)] border border-gray-200 dark:border-[oklch(0.30_0_0)] rounded text-gray-500 dark:text-[oklch(0.65_0_0)] text-sm"
                 />
               </div>
 
               {/* Email (if not authenticated) */}
               {!userEmail && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-[oklch(0.75_0_0)] mb-1">
                     {t('yourEmail')} *
                   </label>
                   <input
@@ -273,7 +273,7 @@ const ReportIssueModal: React.FC<ReportIssueModalProps> = ({
                       setFormData((f) => ({ ...f, email: e.target.value }))
                     }
                     placeholder="your@email.com"
-                    className="w-full px-3 py-2 border border-gray-200 rounded focus:border-[#171717] focus:ring-1 focus:ring-[#171717] outline-none text-sm"
+                    className="w-full px-3 py-2 border border-gray-200 dark:border-[oklch(0.30_0_0)] rounded focus:border-[#171717] dark:focus:border-[#5E53E0] focus:ring-1 focus:ring-[#171717] dark:focus:ring-[#5E53E0] outline-none text-sm dark:bg-[oklch(0.22_0_0)] dark:text-[oklch(0.91_0_0)]"
                     required
                   />
                 </div>
@@ -281,7 +281,7 @@ const ReportIssueModal: React.FC<ReportIssueModalProps> = ({
 
               {/* Issue Type */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-[oklch(0.75_0_0)] mb-1">
                   {t('issueType')} *
                 </label>
                 <select
@@ -292,7 +292,7 @@ const ReportIssueModal: React.FC<ReportIssueModalProps> = ({
                       type: e.target.value as DisputeType,
                     }))
                   }
-                  className="w-full px-3 py-2 border border-gray-200 rounded focus:border-[#171717] focus:ring-1 focus:ring-[#171717] outline-none text-sm"
+                  className="w-full px-3 py-2 border border-gray-200 dark:border-[oklch(0.30_0_0)] rounded focus:border-[#171717] dark:focus:border-[#5E53E0] focus:ring-1 focus:ring-[#171717] dark:focus:ring-[#5E53E0] outline-none text-sm dark:bg-[oklch(0.22_0_0)] dark:text-[oklch(0.91_0_0)]"
                   required
                 >
                   <option value="">{t('selectIssue')}</option>
@@ -306,7 +306,7 @@ const ReportIssueModal: React.FC<ReportIssueModalProps> = ({
 
               {/* Description */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-[oklch(0.75_0_0)] mb-1">
                   {t('description')} *
                 </label>
                 <textarea
@@ -317,41 +317,41 @@ const ReportIssueModal: React.FC<ReportIssueModalProps> = ({
                   placeholder={t('descriptionPlaceholder')}
                   rows={4}
                   maxLength={1000}
-                  className="w-full px-3 py-2 border border-gray-200 rounded focus:border-[#171717] focus:ring-1 focus:ring-[#171717] outline-none text-sm resize-none"
+                  className="w-full px-3 py-2 border border-gray-200 dark:border-[oklch(0.30_0_0)] rounded focus:border-[#171717] dark:focus:border-[#5E53E0] focus:ring-1 focus:ring-[#171717] dark:focus:ring-[#5E53E0] outline-none text-sm resize-none dark:bg-[oklch(0.22_0_0)] dark:text-[oklch(0.91_0_0)]"
                   required
                 />
-                <p className="text-xs text-gray-400 mt-1">
+                <p className="text-xs text-gray-400 dark:text-[oklch(0.50_0_0)] mt-1">
                   {formData.description.length}/1000 ({t('minimum20')})
                 </p>
               </div>
 
               {/* Screenshot Upload */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-[oklch(0.75_0_0)] mb-1">
                   {t('screenshot')}
                 </label>
                 <label
                   className={`flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed rounded cursor-pointer transition-colors ${
                     isUploading
-                      ? 'border-gray-300 bg-gray-50'
-                      : 'border-gray-200 hover:border-gray-300'
+                      ? 'border-gray-300 dark:border-[oklch(0.30_0_0)] bg-gray-50 dark:bg-[oklch(0.22_0_0)]'
+                      : 'border-gray-200 dark:border-[oklch(0.30_0_0)] hover:border-gray-300 dark:hover:border-[oklch(0.40_0_0)]'
                   }`}
                 >
                   {isUploading ? (
-                    <span className="text-sm text-gray-500">
+                    <span className="text-sm text-gray-500 dark:text-[oklch(0.65_0_0)]">
                       {t('uploading')}
                     </span>
                   ) : formData.screenshot ? (
                     <>
-                      <Check className="w-5 h-5 text-green-500" />
-                      <span className="text-sm text-gray-700 truncate max-w-[200px]">
+                      <Check className="w-5 h-5 text-green-500 dark:text-green-400" />
+                      <span className="text-sm text-gray-700 dark:text-[oklch(0.75_0_0)] truncate max-w-[200px]">
                         {formData.screenshot.name}
                       </span>
                     </>
                   ) : (
                     <>
-                      <Upload className="w-5 h-5 text-gray-400" />
-                      <span className="text-sm text-gray-500">
+                      <Upload className="w-5 h-5 text-gray-400 dark:text-[oklch(0.50_0_0)]" />
+                      <span className="text-sm text-gray-500 dark:text-[oklch(0.65_0_0)]">
                         {t('clickToUpload')}
                       </span>
                     </>
@@ -364,11 +364,11 @@ const ReportIssueModal: React.FC<ReportIssueModalProps> = ({
                     disabled={isUploading}
                   />
                 </label>
-                <p className="text-xs text-gray-400 mt-1">{t('maxFileSize')}</p>
+                <p className="text-xs text-gray-400 dark:text-[oklch(0.50_0_0)] mt-1">{t('maxFileSize')}</p>
               </div>
 
               {/* Error */}
-              {error && <p className="text-sm text-red-600">{error}</p>}
+              {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
               {/* Submit */}
               <button
@@ -383,27 +383,27 @@ const ReportIssueModal: React.FC<ReportIssueModalProps> = ({
 
           {step === 'success' && (
             <div className="p-6 text-center">
-              <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-green-100 flex items-center justify-center">
-                <Check className="w-6 h-6 text-green-600" />
+              <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                <Check className="w-6 h-6 text-green-600 dark:text-green-400" />
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-[oklch(0.91_0_0)] mb-2">
                 {t('successMessage')}
               </h3>
-              <p className="text-sm text-gray-600 mb-4">
+              <p className="text-sm text-gray-600 dark:text-[oklch(0.65_0_0)] mb-4">
                 {t('successDescription')}
               </p>
-              <div className="bg-gray-50 rounded p-3 mb-4">
-                <p className="text-xs text-gray-500">{t('referenceNumber')}</p>
-                <p className="text-lg font-mono font-bold text-gray-900">
+              <div className="bg-gray-50 dark:bg-[oklch(0.22_0_0)] rounded p-3 mb-4">
+                <p className="text-xs text-gray-500 dark:text-[oklch(0.65_0_0)]">{t('referenceNumber')}</p>
+                <p className="text-lg font-mono font-bold text-gray-900 dark:text-[oklch(0.91_0_0)]">
                   {reference}
                 </p>
               </div>
-              <p className="text-xs text-gray-500 mb-4">
+              <p className="text-xs text-gray-500 dark:text-[oklch(0.65_0_0)] mb-4">
                 {t('confirmationEmailSent')}
               </p>
               <button
                 onClick={onClose}
-                className="px-6 py-2 bg-gray-100 text-gray-700 font-medium rounded hover:bg-gray-200 transition-colors"
+                className="px-6 py-2 bg-gray-100 dark:bg-[oklch(0.28_0_0)] text-gray-700 dark:text-[oklch(0.75_0_0)] font-medium rounded hover:bg-gray-200 dark:hover:bg-[oklch(0.32_0_0)] transition-colors"
               >
                 {t('close')}
               </button>
@@ -412,28 +412,28 @@ const ReportIssueModal: React.FC<ReportIssueModalProps> = ({
 
           {step === 'existing' && existingDispute && (
             <div className="p-6 text-center">
-              <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-yellow-100 flex items-center justify-center">
-                <Check className="w-6 h-6 text-yellow-600" />
+              <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center">
+                <Check className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-[oklch(0.91_0_0)] mb-2">
                 {t('existingMessage')}
               </h3>
-              <div className="bg-gray-50 rounded p-3 mb-4">
-                <p className="text-xs text-gray-500">{t('referenceNumber')}</p>
-                <p className="text-lg font-mono font-bold text-gray-900">
+              <div className="bg-gray-50 dark:bg-[oklch(0.22_0_0)] rounded p-3 mb-4">
+                <p className="text-xs text-gray-500 dark:text-[oklch(0.65_0_0)]">{t('referenceNumber')}</p>
+                <p className="text-lg font-mono font-bold text-gray-900 dark:text-[oklch(0.91_0_0)]">
                   {existingDispute.reference}
                 </p>
-                <p className="text-xs text-gray-500 mt-2">{t('status')}</p>
-                <p className="text-sm font-medium text-gray-700 capitalize">
+                <p className="text-xs text-gray-500 dark:text-[oklch(0.65_0_0)] mt-2">{t('status')}</p>
+                <p className="text-sm font-medium text-gray-700 dark:text-[oklch(0.75_0_0)] capitalize">
                   {existingDispute.status.replace('_', ' ')}
                 </p>
               </div>
-              <p className="text-xs text-gray-500 mb-4">
+              <p className="text-xs text-gray-500 dark:text-[oklch(0.65_0_0)] mb-4">
                 {t('existingDescription')}
               </p>
               <button
                 onClick={onClose}
-                className="px-6 py-2 bg-gray-100 text-gray-700 font-medium rounded hover:bg-gray-200 transition-colors"
+                className="px-6 py-2 bg-gray-100 dark:bg-[oklch(0.28_0_0)] text-gray-700 dark:text-[oklch(0.75_0_0)] font-medium rounded hover:bg-gray-200 dark:hover:bg-[oklch(0.32_0_0)] transition-colors"
               >
                 {t('close')}
               </button>

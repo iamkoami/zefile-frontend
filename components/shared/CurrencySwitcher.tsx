@@ -50,7 +50,7 @@ const CurrencySwitcher: React.FC<CurrencySwitcherProps> = ({
 
   if (!isHydrated) {
     return (
-      <div className="px-3 py-1.5 text-sm font-medium text-gray-400">
+      <div className="px-3 py-1.5 text-sm font-medium text-gray-400 dark:text-gray-500">
         ---
       </div>
     );
@@ -66,12 +66,12 @@ const CurrencySwitcher: React.FC<CurrencySwitcherProps> = ({
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-        className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded transition-colors text-gray-600 hover:bg-gray-100"
+        className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-gray-100"
       >
         {COUNTRY_CONFIG[countryCode]?.flagCode ? (
           <Flag code={COUNTRY_CONFIG[countryCode].flagCode!} size="s" hasBorder={false} />
         ) : (
-          <Globe className="w-4 h-4 text-gray-500" />
+          <Globe className="w-4 h-4 text-gray-500 dark:text-gray-400" />
         )}
         <span>{pricing.currency}</span>
         <NavArrowDown
@@ -80,7 +80,7 @@ const CurrencySwitcher: React.FC<CurrencySwitcherProps> = ({
       </button>
 
       {isDropdownOpen && (
-        <div className={`${dropdownPositionClass} bg-white border border-gray-200 rounded-lg shadow-lg z-50 py-1`}>
+        <div className={`${dropdownPositionClass} bg-white dark:bg-card border border-gray-200 dark:border-border rounded-lg shadow-lg dark:shadow-[0_4px_16px_rgba(0,0,0,0.3)] z-50 py-1`}>
           {ALL_COUNTRY_CODES.map((code) => {
             const config = COUNTRY_CONFIG[code];
             const isSelected = code === countryCode;
@@ -89,14 +89,14 @@ const CurrencySwitcher: React.FC<CurrencySwitcherProps> = ({
               <button
                 key={code}
                 onClick={() => handleSelect(code)}
-                className={`w-full px-4 py-2.5 text-left text-sm hover:bg-gray-50 transition-colors flex items-center gap-2 ${
-                  isSelected ? "bg-gray-50 font-bold" : "text-gray-700"
+                className={`w-full px-4 py-2.5 text-left text-sm hover:bg-gray-50 dark:hover:bg-accent transition-colors flex items-center gap-2 ${
+                  isSelected ? "bg-gray-50 dark:bg-accent font-bold dark:text-foreground" : "text-gray-700 dark:text-gray-300"
                 }`}
               >
                 {config.flagCode ? (
                   <Flag code={config.flagCode} size="s" hasBorder={false} />
                 ) : (
-                  <Globe className="w-5 h-5 text-gray-500" />
+                  <Globe className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                 )}
                 <span>{config.name}</span>
               </button>

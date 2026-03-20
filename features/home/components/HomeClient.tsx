@@ -259,7 +259,7 @@ export default function HomeClient() {
 
   return (
     <UploadProtectionProvider>
-      <div id="ze-home-page" className="min-h-screen bg-white">
+      <div id="ze-home-page" className="min-h-screen bg-white dark:bg-background">
         {/* Toast notifications */}
         <ToastContainer />
 

@@ -226,8 +226,8 @@ const SubscriptionSettingsPanel: React.FC = () => {
           >
             <span
               className={`
-                inline-block h-4 w-4 transform rounded-full bg-white transition-transform
-                ${status.autoRenewEnabled ? "translate-x-6" : "translate-x-1"}
+                inline-block h-4 w-4 transform rounded-full transition-transform
+                ${status.autoRenewEnabled ? "translate-x-6 bg-[#171717]" : "translate-x-1 bg-white"}
               `}
             />
           </button>

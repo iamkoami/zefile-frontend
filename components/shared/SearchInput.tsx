@@ -24,7 +24,7 @@ const SearchInput: React.FC<SearchInputProps> = ({
   return (
     <div className={`relative ${className}`}>
       <Search
-        className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
+        className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500"
         strokeWidth={1.5}
       />
       <input
@@ -32,7 +32,7 @@ const SearchInput: React.FC<SearchInputProps> = ({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full h-14 pl-14 pr-5 bg-white border border-[#171717] rounded text-base text-gray-900 placeholder:text-gray-400 focus:outline-none transition-colors"
+        className="w-full h-14 pl-14 pr-5 bg-white dark:bg-[var(--input)] border border-[#171717] dark:border-[var(--border)] rounded text-base text-gray-900 dark:text-[var(--foreground)] placeholder:text-gray-400 dark:placeholder:text-[oklch(0.40_0_0)] focus:outline-none transition-colors"
       />
     </div>
   );

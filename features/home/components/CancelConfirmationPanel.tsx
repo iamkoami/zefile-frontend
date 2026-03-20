@@ -68,7 +68,7 @@ const CancelConfirmationPanel: React.FC<CancelConfirmationPanelProps> = ({
       </div>
 
       {/* Cancel Confirmation Message */}
-      <h2 className="text-lg font-bold text-black mb-12 text-center">
+      <h2 className="text-lg font-bold text-black dark:text-[oklch(0.91_0_0)] mb-12 text-center">
         {t("cancelThisTransfer")}
       </h2>
 
@@ -78,7 +78,7 @@ const CancelConfirmationPanel: React.FC<CancelConfirmationPanelProps> = ({
         <button
           onClick={onContinue}
           disabled={isCancelling}
-          className="flex-1 py-4 px-4 bg-white border border-[#171717] rounded font-bold text-[#171717] hover:bg-gray-50 transition-colors disabled:opacity-50"
+          className="flex-1 py-4 px-4 bg-white dark:bg-card border border-[#171717] dark:border-border rounded font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] hover:bg-gray-50 dark:hover:bg-[oklch(0.28_0_0)] transition-colors disabled:opacity-50"
         >
           {t("no")}
         </button>

@@ -354,7 +354,7 @@ export default function PricingClient() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white dark:bg-background">
       <Header />
 
       {/* Hero + decorative crosses */}
@@ -383,13 +383,13 @@ export default function PricingClient() {
         {/* Billing Period Toggle + Currency Selector */}
         <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
           {/* Billing Period Toggle */}
-          <div className="bg-gray-100 p-1 rounded-lg inline-flex">
+          <div className="bg-gray-100 dark:bg-white/10 p-1 rounded-lg inline-flex">
             <button
               onClick={() => setBillingPeriod("monthly")}
               className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${
                 billingPeriod === "monthly"
-                  ? "bg-white text-[#171717] shadow-sm"
-                  : "text-gray-600 hover:text-[#171717]"
+                  ? "bg-white dark:bg-card text-[#171717] dark:text-white shadow-sm"
+                  : "text-gray-600 dark:text-gray-400 hover:text-[#171717] dark:hover:text-white"
               }`}
             >
               {t("monthly")}
@@ -398,8 +398,8 @@ export default function PricingClient() {
               onClick={() => setBillingPeriod("annual")}
               className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${
                 billingPeriod === "annual"
-                  ? "bg-white text-[#171717] shadow-sm"
-                  : "text-gray-600 hover:text-[#171717]"
+                  ? "bg-white dark:bg-card text-[#171717] dark:text-white shadow-sm"
+                  : "text-gray-600 dark:text-gray-400 hover:text-[#171717] dark:hover:text-white"
               }`}
             >
               {t("annual")}
@@ -421,7 +421,7 @@ export default function PricingClient() {
           <div className="relative">
             <button
               onClick={() => setIsCurrencyDropdownOpen(!isCurrencyDropdownOpen)}
-              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-[#171717] hover:border-gray-300 transition-all"
+              className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-card border border-gray-200 dark:border-border rounded-lg text-sm text-[#171717] dark:text-white hover:border-gray-300 dark:hover:border-gray-600 transition-all"
             >
               {COUNTRY_CONFIG[countryCode]?.flagCode ? (
                 <Flag
@@ -447,13 +447,13 @@ export default function PricingClient() {
                   className="fixed inset-0 z-40"
                   onClick={() => setIsCurrencyDropdownOpen(false)}
                 />
-                <div className="absolute z-50 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
+                <div className="absolute z-50 mt-2 w-64 bg-white dark:bg-card border border-gray-200 dark:border-border rounded-lg shadow-lg dark:shadow-black/30 overflow-hidden">
                   {ALL_COUNTRY_CODES.map((code) => (
                     <button
                       key={code}
                       onClick={() => handleCountryChange(code)}
-                      className={`w-full px-4 py-3 text-left text-sm hover:bg-gray-50 transition-colors flex items-center gap-2 ${
-                        code === countryCode ? "bg-gray-50 font-bold" : ""
+                      className={`w-full px-4 py-3 text-left text-sm hover:bg-gray-50 dark:hover:bg-white/10 transition-colors flex items-center gap-2 ${
+                        code === countryCode ? "bg-gray-50 dark:bg-white/10 font-bold" : ""
                       }`}
                     >
                       {COUNTRY_CONFIG[code]?.flagCode ? (
@@ -482,21 +482,21 @@ export default function PricingClient() {
             const isPro = tier.id === "pro";
 
             const cardBgClass =
-              isPro && !isCurrentPlan ? "bg-[#5E53E0]" : "bg-white";
+              isPro && !isCurrentPlan ? "bg-[#5E53E0]" : "bg-white dark:bg-card";
             const textColorClass =
-              isPro && !isCurrentPlan ? "text-white" : "text-[#171717]";
+              isPro && !isCurrentPlan ? "text-white" : "text-[#171717] dark:text-white";
             const subtextColorClass =
-              isPro && !isCurrentPlan ? "text-white/70" : "text-gray-500";
+              isPro && !isCurrentPlan ? "text-white/70" : "text-gray-500 dark:text-gray-400";
             const borderClass =
               isPro && !isCurrentPlan
                 ? "border-transparent"
                 : isHighlighted && !isCurrentPlan
-                  ? "border-2 border-[#171717]"
+                  ? "border-2 border-[#171717] dark:border-[#87E64B]"
                   : isCurrentPlan
                     ? "border-2 border-[#87E64B]"
-                    : "border border-gray-200";
+                    : "border border-gray-200 dark:border-border";
             const metricsBorderClass =
-              isPro && !isCurrentPlan ? "border-white/20" : "border-gray-200";
+              isPro && !isCurrentPlan ? "border-white/20" : "border-gray-200 dark:border-border";
 
             return (
               <div
@@ -579,10 +579,10 @@ export default function PricingClient() {
                   disabled={isAuthenticated && isCurrentPlan}
                   className={`w-full py-3 px-4 rounded font-bold transition-all mb-6 ${
                     isAuthenticated && isCurrentPlan
-                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      ? "bg-gray-100 dark:bg-secondary text-gray-400 cursor-not-allowed"
                       : isPro
                         ? "bg-[#87E64B] text-[#171717] hover:bg-[#78d43f]"
-                        : "border border-gray-300 bg-white text-[#171717] hover:bg-gray-50"
+                        : "border border-gray-300 dark:border-border bg-white dark:bg-secondary text-[#171717] dark:text-white hover:bg-gray-50 dark:hover:bg-accent"
                   }`}
                 >
                   {isAuthenticated && isCurrentPlan
@@ -646,7 +646,7 @@ export default function PricingClient() {
                           className={`font-medium ${
                             isPro && !isCurrentPlan
                               ? "text-white/80"
-                              : "text-gray-600"
+                              : "text-gray-600 dark:text-gray-300"
                           }`}
                         >
                           {feature.text}
@@ -660,7 +660,7 @@ export default function PricingClient() {
                   className={`text-xs mt-3 ${
                     isPro && !isCurrentPlan
                       ? "text-white/40"
-                      : "text-gray-400"
+                      : "text-gray-400 dark:text-gray-500"
                   }`}
                 >
                   {t("includesBasics")}
@@ -672,7 +672,7 @@ export default function PricingClient() {
       </div>
 
       {/* Comparison + FAQ gradient section */}
-      <section className="relative overflow-x-clip bg-gradient-to-b from-white via-[#F3F0FF]/40 to-white">
+      <section className="relative overflow-x-clip bg-gradient-to-b from-white via-[#F3F0FF]/40 to-white dark:from-background dark:via-[#1a1530]/40 dark:to-background">
         <BrandCross
           size={140}
           color="#5E53E0"
@@ -698,10 +698,10 @@ export default function PricingClient() {
         <div className="mx-auto max-w-6xl px-6 py-20 md:pb-32 md:pt-24 relative z-10">
           {/* Feature Comparison Table */}
           <div className="relative">
-            <h2 className="mb-6 text-center text-3xl md:text-5xl font-bold text-[#171717]">
+            <h2 className="mb-6 text-center text-3xl md:text-5xl font-bold text-[#171717] dark:text-white">
               {tPage.rich("compareFeatures", { highlight })}
             </h2>
-            <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
+            <div className="overflow-hidden rounded-2xl border border-gray-200 dark:border-border bg-white dark:bg-card">
               <FeatureComparisonTable currentTier={currentTier} />
             </div>
           </div>
@@ -718,7 +718,7 @@ export default function PricingClient() {
               rotate={-10}
               className="absolute -top-8 -left-20 hidden lg:block"
             />
-            <h2 className="text-3xl md:text-5xl font-bold text-[#171717] mb-12 text-center">
+            <h2 className="text-3xl md:text-5xl font-bold text-[#171717] dark:text-white mb-12 text-center">
               {tPage.rich("faqTitle", { highlight })}
             </h2>
             <div className="space-y-3 md:space-y-4">
@@ -727,14 +727,14 @@ export default function PricingClient() {
                 return (
                   <div
                     key={num}
-                    className="rounded-2xl bg-[#F5F5F4] transition-colors duration-300"
+                    className="rounded-2xl bg-[#F5F5F4] dark:bg-card transition-colors duration-300"
                   >
                     <button
                       onClick={() => setExpandedFaq(isExpanded ? null : num)}
                       className="flex items-center justify-between w-full px-6 md:px-8 py-5 md:py-6 text-left"
                       aria-expanded={isExpanded}
                     >
-                      <span className="text-base md:text-lg font-bold text-[#171717] pr-6">
+                      <span className="text-base md:text-lg font-bold text-[#171717] dark:text-white pr-6">
                         {t(`faqQ${num}`)}
                       </span>
                       <div
@@ -778,13 +778,13 @@ export default function PricingClient() {
           </div>
 
           {/* Footer Note */}
-          <div className="mt-16 text-center text-sm text-gray-500">
+          <div className="mt-16 text-center text-sm text-gray-500 dark:text-gray-400">
             <p>{t("cancelAnytime")}</p>
             <p className="mt-1">
               {t("questionsContact")}{" "}
               <a
                 href="mailto:hello@zefile.io"
-                className="text-[#171717] underline font-medium"
+                className="text-[#171717] dark:text-white underline font-medium"
               >
                 hello@zefile.io
               </a>

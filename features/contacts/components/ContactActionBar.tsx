@@ -54,16 +54,16 @@ const ContactActionBar: React.FC<ContactActionBarProps> = ({
       role="toolbar"
       aria-label={t('bulkActions')}
     >
-      <div className="flex items-center justify-between bg-[#FDF8F0] px-6 py-4 rounded">
+      <div className="flex items-center justify-between bg-[#FDF8F0] dark:bg-[oklch(0.22_0_0)] px-6 py-4 rounded">
         {/* Left side - selection info */}
         <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-600">
+          <span className="text-sm text-gray-600 dark:text-[oklch(0.75_0_0)]">
             {selectedCount} {selectedCount === 1 ? t('contactSelected') : t('contactsSelected')}
           </span>
-          <span className="text-gray-400">-</span>
+          <span className="text-gray-400 dark:text-[oklch(0.60_0_0)]">-</span>
           <button
             onClick={allSelected ? onDeselectAll : onSelectAll}
-            className="text-sm text-gray-900 underline hover:text-gray-700 transition-colors font-medium"
+            className="text-sm text-gray-900 dark:text-[oklch(0.91_0_0)] underline hover:text-gray-700 dark:hover:text-[oklch(0.75_0_0)] transition-colors font-medium"
           >
             {allSelected ? t('deselectAll') : t('selectAll')}
           </button>
@@ -84,7 +84,7 @@ const ContactActionBar: React.FC<ContactActionBarProps> = ({
           <button
             onClick={onCancel}
             disabled={isDeleting}
-            className="px-6 py-2.5 text-sm font-medium text-gray-700 bg-white rounded hover:bg-gray-50 transition-colors disabled:opacity-50"
+            className="px-6 py-2.5 text-sm font-medium text-gray-700 dark:text-[oklch(0.75_0_0)] bg-white dark:bg-[oklch(0.28_0_0)] rounded hover:bg-gray-50 dark:hover:bg-[oklch(0.32_0_0)] transition-colors disabled:opacity-50"
           >
             {t('cancel')}
           </button>

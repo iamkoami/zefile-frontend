@@ -47,7 +47,7 @@ const ContactRow: React.FC<ContactRowProps> = ({
   return (
     <div
       className={`flex items-center gap-4 py-4 px-2 group cursor-pointer rounded-lg transition-colors ${
-        isSelected ? 'bg-gray-50' : 'hover:bg-gray-50'
+        isSelected ? 'bg-gray-50 dark:bg-[oklch(0.22_0_0)]' : 'hover:bg-gray-50 dark:hover:bg-[oklch(0.22_0_0)]'
       }`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -70,7 +70,7 @@ const ContactRow: React.FC<ContactRowProps> = ({
             className={`w-6 h-6 rounded-full border-2 flex items-center justify-center cursor-pointer transition-all ${
               isSelected
                 ? 'bg-[#87E64B] border-[#87E64B]'
-                : 'border-gray-300 hover:border-gray-400'
+                : 'border-gray-300 dark:border-[oklch(0.60_0_0)] hover:border-gray-400 dark:hover:border-[oklch(0.75_0_0)]'
             }`}
             role="checkbox"
             aria-checked={isSelected}
@@ -82,11 +82,11 @@ const ContactRow: React.FC<ContactRowProps> = ({
 
       {/* Contact info */}
       <div className="flex-1 min-w-0">
-        <p className="text-base font-medium text-gray-900 truncate">
+        <p className="text-base font-medium text-gray-900 dark:text-[oklch(0.91_0_0)] truncate">
           {contact.email}
         </p>
         {hasNameOrOrg && (
-          <p className="text-sm text-gray-500 truncate mt-0.5">
+          <p className="text-sm text-gray-500 dark:text-[oklch(0.75_0_0)] truncate mt-0.5">
             {contact.name}
             {contact.name && contact.organization && ' - '}
             {contact.organization}
@@ -105,27 +105,27 @@ const ContactRow: React.FC<ContactRowProps> = ({
             e.stopPropagation();
             onEdit(contact);
           }}
-          className="text-sm text-gray-500 hover:text-gray-700 underline transition-colors focus:outline-none focus:text-gray-700"
+          className="text-sm text-gray-500 dark:text-[oklch(0.75_0_0)] hover:text-gray-700 dark:hover:text-[oklch(0.91_0_0)] underline transition-colors focus:outline-none focus:text-gray-700 dark:focus:text-[oklch(0.91_0_0)]"
         >
           {t('edit')}
         </button>
-        <span className="text-gray-300">-</span>
+        <span className="text-gray-300 dark:text-[oklch(0.60_0_0)]">-</span>
         <button
           onClick={(e) => {
             e.stopPropagation();
             onDelete(contact);
           }}
-          className="text-sm text-gray-500 hover:text-gray-700 underline transition-colors focus:outline-none focus:text-gray-700"
+          className="text-sm text-gray-500 dark:text-[oklch(0.75_0_0)] hover:text-gray-700 dark:hover:text-[oklch(0.91_0_0)] underline transition-colors focus:outline-none focus:text-gray-700 dark:focus:text-[oklch(0.91_0_0)]"
         >
           {t('delete')}
         </button>
-        <span className="text-gray-300">-</span>
+        <span className="text-gray-300 dark:text-[oklch(0.60_0_0)]">-</span>
         <button
           onClick={(e) => {
             e.stopPropagation();
             onAddToTransfer(contact);
           }}
-          className="text-sm text-[#171717] hover:text-gray-700 underline transition-colors focus:outline-none"
+          className="text-sm text-[#171717] dark:text-[oklch(0.91_0_0)] hover:text-gray-700 dark:hover:text-[oklch(0.75_0_0)] underline transition-colors focus:outline-none"
         >
           {t('addToTransfer')}
         </button>

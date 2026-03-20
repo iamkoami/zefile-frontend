@@ -296,7 +296,7 @@ const SideDrawer: React.FC = () => {
       {/* Backdrop - same style as AuthPanel (no blur) */}
       <div
         id="ze-drawer-backdrop"
-        className={`ze-drawer-backdrop fixed inset-0 bg-black/20 z-[9998] transition-opacity duration-300 ${
+        className={`ze-drawer-backdrop fixed inset-0 bg-black/20 dark:bg-black/40 z-[9998] transition-opacity duration-300 ${
           isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
         onClick={handleOverlayClick}
@@ -310,25 +310,25 @@ const SideDrawer: React.FC = () => {
         role="dialog"
         aria-modal="true"
         aria-label={view === 'transfers' ? 'Transfers' : view === 'contacts' ? 'Contacts' : view === 'payment' ? 'Payment' : view === 'account' ? 'Account' : view === 'poll' ? 'Poll' : 'Subscriptions'}
-        className={`ze-drawer-panel fixed top-0 right-0 h-full bg-white z-[9999] shadow-2xl transition-all duration-500 ease-in-out flex flex-col ${
+        className={`ze-drawer-panel fixed top-0 right-0 h-full bg-white dark:bg-[oklch(0.24_0_0)] dark:text-[oklch(0.91_0_0)] z-[9999] shadow-2xl transition-[transform,width] duration-500 ease-in-out flex flex-col ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         } ${
           currentContentView === 'transfer-preview' || view === 'subscriptions' || view === 'payment' || view === 'account' ? 'w-[90vw]' : 'w-[70%]'
         }`}
       >
         {/* Fixed Header with Back/Close Button */}
-        <div className="ze-drawer-header flex-shrink-0 bg-white px-6 py-4 border-b border-gray-200 z-10">
+        <div className="ze-drawer-header flex-shrink-0 bg-white dark:bg-[oklch(0.24_0_0)] px-6 py-4 border-b border-gray-200 dark:border-[oklch(0.30_0_0)] z-10">
           <button
             ref={headerButtonRef}
             type="button"
             onClick={handleHeaderButtonClick}
-            className="ze-drawer-close w-12 h-12 rounded-lg border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors"
+            className="ze-drawer-close w-12 h-12 rounded-lg border border-gray-300 dark:border-[oklch(0.30_0_0)] flex items-center justify-center hover:bg-gray-50 dark:hover:bg-[oklch(0.28_0_0)] transition-colors"
             aria-label={showBackButton ? 'Back' : 'Close'}
           >
             {showBackButton ? (
-              <NavArrowLeft className="w-6 h-6 text-gray-600" />
+              <NavArrowLeft className="w-6 h-6 text-gray-600 dark:text-[oklch(0.75_0_0)]" />
             ) : (
-              <Xmark className="w-6 h-6 text-gray-600" />
+              <Xmark className="w-6 h-6 text-gray-600 dark:text-[oklch(0.75_0_0)]" />
             )}
           </button>
         </div>

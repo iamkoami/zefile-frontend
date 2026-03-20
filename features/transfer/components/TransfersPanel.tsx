@@ -100,15 +100,15 @@ const deduplicateTransfers = (transfers: TransferDto[]): TransferDto[] => {
 
 // Status color mapping for file requests
 const REQUEST_STATUS_COLORS: Record<string, string> = {
-  pending_payment: "bg-yellow-100 text-yellow-800",
-  funded: "bg-blue-100 text-blue-800",
-  delivered: "bg-purple-100 text-purple-800",
-  approved: "bg-green-100 text-green-800",
-  completed: "bg-green-100 text-green-800",
-  revision_requested: "bg-orange-100 text-orange-800",
-  expired: "bg-gray-100 text-gray-500",
-  refunded: "bg-red-100 text-red-700",
-  cancelled: "bg-gray-100 text-gray-500",
+  pending_payment: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300",
+  funded: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
+  delivered: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
+  approved: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
+  completed: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
+  revision_requested: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300",
+  expired: "bg-gray-100 text-gray-500 dark:bg-gray-800/30 dark:text-gray-400",
+  refunded: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",
+  cancelled: "bg-gray-100 text-gray-500 dark:bg-gray-800/30 dark:text-gray-400",
 };
 
 /**
@@ -143,8 +143,8 @@ const RequestItem: React.FC<{
     <div
       className={`relative flex items-center justify-between px-6 py-5 cursor-pointer rounded-xl transition-all duration-300 ease-out ${
         isActive
-          ? "bg-gray-900 scale-[1.01] shadow-lg"
-          : "bg-[#F9F9FA] hover:bg-gray-200 scale-100"
+          ? "bg-gray-900 scale-[1.01] shadow-lg dark:shadow-black/30"
+          : "bg-[#F9F9FA] dark:bg-[oklch(0.22_0_0)] hover:bg-gray-200 dark:hover:bg-[oklch(0.28_0_0)] scale-100"
       }`}
       onClick={() => onSelect(request)}
       onMouseEnter={() => setIsHovered(true)}
@@ -160,7 +160,7 @@ const RequestItem: React.FC<{
         <div className="flex items-center gap-2">
           <h4
             className={`text-base font-bold truncate transition-colors duration-200 ${
-              isActive ? "text-white" : "text-gray-900"
+              isActive ? "text-white" : "text-gray-900 dark:text-[oklch(0.91_0_0)]"
             }`}
           >
             {request.title}
@@ -178,7 +178,7 @@ const RequestItem: React.FC<{
         <div className="relative h-6 mt-1">
           {/* Metadata - fades out on hover */}
           <p
-            className={`absolute inset-0 text-sm truncate transition-all duration-200 flex items-center gap-1 text-gray-500 ${
+            className={`absolute inset-0 text-sm truncate transition-all duration-200 flex items-center gap-1 text-gray-500 dark:text-[oklch(0.65_0_0)] ${
               isActive ? "opacity-0 translate-y-1" : "opacity-100 translate-y-0"
             }`}
           >
@@ -249,7 +249,7 @@ const RequestItem: React.FC<{
         className={`w-5 h-5 flex-shrink-0 ml-4 transition-all duration-200 ${
           isActive
             ? "text-white translate-x-1"
-            : "text-gray-400 translate-x-0"
+            : "text-gray-400 dark:text-[oklch(0.50_0_0)] translate-x-0"
         }`}
         strokeWidth={1.5}
       />
@@ -823,10 +823,10 @@ const TransfersPanel: React.FC = () => {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
-        <p className="text-gray-500 mb-4">{error}</p>
+        <p className="text-gray-500 dark:text-[oklch(0.65_0_0)] mb-4">{error}</p>
         <button
           onClick={() => fetchTransfers()}
-          className="px-4 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-800 transition-colors"
+          className="px-4 py-2 text-sm font-medium text-white bg-gray-900 dark:bg-[oklch(0.28_0_0)] rounded-lg hover:bg-gray-800 dark:hover:bg-[oklch(0.32_0_0)] transition-colors"
         >
           {t("retry")}
         </button>
@@ -837,7 +837,7 @@ const TransfersPanel: React.FC = () => {
   return (
     <div className="w-full">
       {/* Title */}
-      <h1 className="text-4xl font-bold text-gray-900 mt-12 mb-18">
+      <h1 className="text-4xl font-bold text-gray-900 dark:text-[oklch(0.91_0_0)] mt-12 mb-18">
         {t("title")}
       </h1>
 
@@ -863,16 +863,16 @@ const TransfersPanel: React.FC = () => {
             <div className="relative" ref={filterDropdownRef}>
               <button
                 onClick={() => setShowFilterDropdown(!showFilterDropdown)}
-                className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+                className="flex items-center gap-2 text-sm text-gray-500 dark:text-[oklch(0.65_0_0)] hover:text-gray-700 dark:hover:text-[oklch(0.75_0_0)] transition-colors"
               >
                 <span>{t("filterBy")} :</span>
-                <span className="font-bold text-gray-900">
+                <span className="font-bold text-gray-900 dark:text-[oklch(0.91_0_0)]">
                   {currentFilterLabel}
                 </span>
               </button>
 
               {showFilterDropdown && (
-                <div className="absolute top-full right-0 mt-2 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                <div className="absolute top-full right-0 mt-2 w-40 bg-white dark:bg-card rounded-lg shadow-lg dark:shadow-black/30 border border-gray-200 dark:border-border py-1 z-50">
                   {FILTER_OPTIONS.map((option) => (
                     <button
                       key={option.id}
@@ -881,10 +881,10 @@ const TransfersPanel: React.FC = () => {
                         setShowFilterDropdown(false);
                         setCurrentPage(1);
                       }}
-                      className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 transition-colors ${
+                      className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-[oklch(0.28_0_0)] transition-colors ${
                         filterBy === option.id
-                          ? "font-bold text-gray-900"
-                          : "text-gray-600"
+                          ? "font-bold text-gray-900 dark:text-[oklch(0.91_0_0)]"
+                          : "text-gray-600 dark:text-[oklch(0.65_0_0)]"
                       }`}
                     >
                       {option.label}
@@ -900,7 +900,7 @@ const TransfersPanel: React.FC = () => {
                 setSortAscending(!sortAscending);
                 setCurrentPage(1);
               }}
-              className="p-1 text-gray-500 hover:text-gray-700 transition-colors"
+              className="p-1 text-gray-500 dark:text-[oklch(0.65_0_0)] hover:text-gray-700 dark:hover:text-[oklch(0.75_0_0)] transition-colors"
               aria-label={sortAscending ? "Sort descending" : "Sort ascending"}
             >
               {sortAscending ? (
@@ -911,20 +911,20 @@ const TransfersPanel: React.FC = () => {
             </button>
 
             {/* Separator */}
-            <div className="w-px h-4 bg-gray-300 mx-2" />
+            <div className="w-px h-4 bg-gray-300 dark:bg-[oklch(0.40_0_0)] mx-2" />
 
             {/* Page size dropdown */}
             <div className="relative" ref={pageSizeDropdownRef}>
               <button
                 onClick={() => setShowPageSizeDropdown(!showPageSizeDropdown)}
-                className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+                className="flex items-center gap-2 text-sm text-gray-500 dark:text-[oklch(0.65_0_0)] hover:text-gray-700 dark:hover:text-[oklch(0.75_0_0)] transition-colors"
               >
                 <span>{t("itemsPerPage")} :</span>
-                <span className="font-bold text-gray-900">{pageSize}</span>
+                <span className="font-bold text-gray-900 dark:text-[oklch(0.91_0_0)]">{pageSize}</span>
               </button>
 
               {showPageSizeDropdown && (
-                <div className="absolute top-full right-0 mt-2 w-24 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                <div className="absolute top-full right-0 mt-2 w-24 bg-white dark:bg-card rounded-lg shadow-lg dark:shadow-black/30 border border-gray-200 dark:border-border py-1 z-50">
                   {PAGE_SIZE_OPTIONS.map((size) => (
                     <button
                       key={size}
@@ -933,10 +933,10 @@ const TransfersPanel: React.FC = () => {
                         setShowPageSizeDropdown(false);
                         setCurrentPage(1);
                       }}
-                      className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 transition-colors ${
+                      className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-[oklch(0.28_0_0)] transition-colors ${
                         pageSize === size
-                          ? "font-bold text-gray-900"
-                          : "text-gray-600"
+                          ? "font-bold text-gray-900 dark:text-[oklch(0.91_0_0)]"
+                          : "text-gray-600 dark:text-[oklch(0.65_0_0)]"
                       }`}
                     >
                       {size}
@@ -948,7 +948,7 @@ const TransfersPanel: React.FC = () => {
           </div>
         </div>
         {/* Full-width border line below tabs and filter */}
-        <div className="absolute bottom-0 left-0 right-0 h-px bg-gray-200" />
+        <div className="absolute bottom-0 left-0 right-0 h-px bg-gray-200 dark:bg-border" />
       </div>
 
       {/* Search */}
@@ -972,13 +972,13 @@ const TransfersPanel: React.FC = () => {
           </div>
         ) : searchQuery ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <p className="text-gray-500">{t("noResults")}</p>
+            <p className="text-gray-500 dark:text-[oklch(0.65_0_0)]">{t("noResults")}</p>
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-16 text-center px-4">
-            <GitFork className="w-12 h-12 text-gray-200 mb-4" strokeWidth={1.5} />
-            <p className="text-base font-bold text-[#171717] mb-1">{t("emptyState.requests.title")}</p>
-            <p className="text-sm text-gray-500 mb-6">{t("emptyState.requests.subtitle")}</p>
+            <GitFork className="w-12 h-12 text-gray-200 dark:text-[oklch(0.40_0_0)] mb-4" strokeWidth={1.5} />
+            <p className="text-base font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-1">{t("emptyState.requests.title")}</p>
+            <p className="text-sm text-gray-500 dark:text-[oklch(0.65_0_0)] mb-6">{t("emptyState.requests.subtitle")}</p>
             <button
               onClick={closeDrawer}
               className="px-6 py-2.5 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors text-sm"
@@ -1008,15 +1008,15 @@ const TransfersPanel: React.FC = () => {
           </div>
         ) : searchQuery ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <p className="text-gray-500">{t("noResults")}</p>
+            <p className="text-gray-500 dark:text-[oklch(0.65_0_0)]">{t("noResults")}</p>
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-16 text-center px-4">
             {activeTab === "sent" && (
               <>
-                <SendDiagonal className="w-12 h-12 text-gray-200 mb-4" strokeWidth={1.5} />
-                <p className="text-base font-bold text-[#171717] mb-1">{t("emptyState.sent.title")}</p>
-                <p className="text-sm text-gray-500 mb-6">{t("emptyState.sent.subtitle")}</p>
+                <SendDiagonal className="w-12 h-12 text-gray-200 dark:text-[oklch(0.40_0_0)] mb-4" strokeWidth={1.5} />
+                <p className="text-base font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-1">{t("emptyState.sent.title")}</p>
+                <p className="text-sm text-gray-500 dark:text-[oklch(0.65_0_0)] mb-6">{t("emptyState.sent.subtitle")}</p>
                 <button
                   onClick={closeDrawer}
                   className="px-6 py-2.5 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors text-sm"
@@ -1027,16 +1027,16 @@ const TransfersPanel: React.FC = () => {
             )}
             {activeTab === "received" && (
               <>
-                <Download className="w-12 h-12 text-gray-200 mb-4" strokeWidth={1.5} />
-                <p className="text-base font-bold text-[#171717] mb-1">{t("emptyState.received.title")}</p>
-                <p className="text-sm text-gray-500">{t("emptyState.received.subtitle")}</p>
+                <Download className="w-12 h-12 text-gray-200 dark:text-[oklch(0.40_0_0)] mb-4" strokeWidth={1.5} />
+                <p className="text-base font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-1">{t("emptyState.received.title")}</p>
+                <p className="text-sm text-gray-500 dark:text-[oklch(0.65_0_0)]">{t("emptyState.received.subtitle")}</p>
               </>
             )}
             {activeTab === "paid" && (
               <>
-                <HandCash className="w-12 h-12 text-gray-200 mb-4" strokeWidth={1.5} />
-                <p className="text-base font-bold text-[#171717] mb-1">{t("emptyState.paid.title")}</p>
-                <p className="text-sm text-gray-500">{t("emptyState.paid.subtitle")}</p>
+                <HandCash className="w-12 h-12 text-gray-200 dark:text-[oklch(0.40_0_0)] mb-4" strokeWidth={1.5} />
+                <p className="text-base font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-1">{t("emptyState.paid.title")}</p>
+                <p className="text-sm text-gray-500 dark:text-[oklch(0.65_0_0)]">{t("emptyState.paid.subtitle")}</p>
               </>
             )}
           </div>

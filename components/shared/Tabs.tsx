@@ -34,8 +34,8 @@ const Tabs: React.FC<TabsProps> = ({
           onClick={() => onTabChange(tab.id)}
           className={`relative text-base font-bold transition-colors ${
             activeTab === tab.id
-              ? 'text-gray-900'
-              : 'text-gray-400 hover:text-gray-600'
+              ? 'text-gray-900 dark:text-white'
+              : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'
           }`}
         >
           {tab.label}

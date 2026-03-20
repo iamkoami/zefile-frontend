@@ -97,21 +97,21 @@ const OTPVerification: React.FC<OTPVerificationProps> = ({
   return (
     <div className="flex flex-col items-center justify-center">
       {/* Title */}
-      <h2 className="text-lg font-bold text-black mb-4 text-center">
+      <h2 className="text-lg font-bold text-black dark:text-[oklch(0.91_0_0)] mb-4 text-center">
         {t("title")}
       </h2>
 
       {/* Description */}
-      <p className="text-sm text-gray-600 text-center mb-1">
+      <p className="text-sm text-gray-600 dark:text-[oklch(0.65_0_0)] text-center mb-1">
         {t("description")}
       </p>
-      <p className="text-sm font-bold text-black text-center mb-1">
+      <p className="text-sm font-bold text-black dark:text-[oklch(0.91_0_0)] text-center mb-1">
         {email}
       </p>
-      <p className="text-sm text-gray-600 text-center mb-1">
+      <p className="text-sm text-gray-600 dark:text-[oklch(0.65_0_0)] text-center mb-1">
         {t("instruction")}
       </p>
-      <p className="text-xs text-gray-400 text-center mb-6">
+      <p className="text-xs text-gray-400 dark:text-[oklch(0.60_0_0)] text-center mb-6">
         {t("checkSpamFolder")}
       </p>
 
@@ -130,11 +130,11 @@ const OTPVerification: React.FC<OTPVerificationProps> = ({
             }
           }}
           placeholder="000 000"
-          className="w-full text-center font-bold bg-transparent outline-none"
+          className="w-full text-center font-bold bg-transparent outline-none text-[#171717] dark:text-[oklch(0.91_0_0)]"
           style={{
             fontSize: "32px",
             letterSpacing: "0.3em",
-            color: otpCode ? "#171717" : "#D1D5DB",
+            color: otpCode ? undefined : "#D1D5DB",
             border: "none",
             padding: "16px 0",
           }}
@@ -147,27 +147,27 @@ const OTPVerification: React.FC<OTPVerificationProps> = ({
           }}
         />
         {error && (
-          <p className="text-sm text-red-600 mt-2 text-center">{error}</p>
+          <p className="text-sm text-red-600 dark:text-red-400 mt-2 text-center">{error}</p>
         )}
       </div>
 
       {/* Links */}
       <div className="flex items-center gap-2 mb-6 text-sm">
         <button
-          className="font-bold underline text-[#171717] hover:opacity-80 transition-opacity"
+          className="font-bold underline text-[#171717] dark:text-[oklch(0.91_0_0)] hover:opacity-80 transition-opacity"
           onClick={handleLearnMore}
           type="button"
         >
           {t("knowMore")}
         </button>
-        <span className="text-gray-400">{tCommon("or")}</span>
+        <span className="text-gray-400 dark:text-[oklch(0.60_0_0)]">{tCommon("or")}</span>
         {resendCountdown > 0 ? (
           <span className="text-gray-400 text-sm">
             {t("resendOtpCountdown", { seconds: resendCountdown })}
           </span>
         ) : (
           <button
-            className="font-bold underline text-[#171717] hover:opacity-80 transition-opacity"
+            className="font-bold underline text-[#171717] dark:text-[oklch(0.91_0_0)] hover:opacity-80 transition-opacity"
             onClick={handleResendCode}
             type="button"
           >
@@ -199,13 +199,13 @@ const OTPVerification: React.FC<OTPVerificationProps> = ({
 
       {/* Terms & Privacy Agreement - implicit consent by usage */}
       <div className="w-full mt-3">
-        <p className="text-xs text-center text-gray-600">
+        <p className="text-xs text-center text-gray-600 dark:text-[oklch(0.65_0_0)]">
           {t("termsAgreement")}{" "}
           <a
             href="/terms"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[#171717] font-medium underline hover:opacity-80 transition-opacity"
+            className="text-[#171717] dark:text-[oklch(0.91_0_0)] font-medium underline hover:opacity-80 transition-opacity"
           >
             {t("termsOfService")}
           </a>{" "}
@@ -214,7 +214,7 @@ const OTPVerification: React.FC<OTPVerificationProps> = ({
             href="/privacy"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[#171717] font-medium underline hover:opacity-80 transition-opacity"
+            className="text-[#171717] dark:text-[oklch(0.91_0_0)] font-medium underline hover:opacity-80 transition-opacity"
           >
             {t("privacyPolicy")}
           </a>

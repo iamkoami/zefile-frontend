@@ -215,7 +215,7 @@ export function PhoneNumberInput({
 
   return (
     <div className="w-full">
-      <label className="block text-sm font-medium text-gray-700 mb-2">
+      <label className="block text-sm font-medium text-gray-700 dark:text-[oklch(0.75_0_0)] mb-2">
         {t('phoneNumber')}
       </label>
 
@@ -224,38 +224,38 @@ export function PhoneNumberInput({
         <div className="relative flex">
           {hideCountrySelector ? (
             // Static display when country is controlled externally
-            <div className="flex items-center gap-2 px-3 border border-r-0 border-[#171717] rounded-l bg-gray-50 min-w-[110px]">
+            <div className="flex items-center gap-2 px-3 border border-r-0 border-[#171717] dark:border-[oklch(0.50_0_0)] rounded-l bg-gray-50 dark:bg-[oklch(0.24_0_0)] min-w-[110px]">
               <Flag code={selectedCountry.flagCode} size="s" hasBorder={false} />
-              <span className="text-sm font-medium text-gray-700">{selectedCountry.dialCode}</span>
+              <span className="text-sm font-medium text-gray-700 dark:text-[oklch(0.75_0_0)]">{selectedCountry.dialCode}</span>
             </div>
           ) : (
             <button
               type="button"
               onClick={() => !disabled && setIsDropdownOpen(!isDropdownOpen)}
               disabled={disabled}
-              className="flex items-center gap-2 px-3 border border-r-0 border-[#171717] rounded-l bg-gray-50 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed min-w-[110px]"
+              className="flex items-center gap-2 px-3 border border-r-0 border-[#171717] dark:border-[oklch(0.50_0_0)] rounded-l bg-gray-50 dark:bg-[oklch(0.24_0_0)] hover:bg-gray-100 dark:hover:bg-[oklch(0.28_0_0)] disabled:opacity-50 disabled:cursor-not-allowed min-w-[110px]"
             >
               <Flag code={selectedCountry.flagCode} size="s" hasBorder={false} />
-              <span className="text-sm font-medium text-gray-700">{selectedCountry.dialCode}</span>
-              <NavArrowDown className="w-4 h-4 text-gray-500" />
+              <span className="text-sm font-medium text-gray-700 dark:text-[oklch(0.75_0_0)]">{selectedCountry.dialCode}</span>
+              <NavArrowDown className="w-4 h-4 text-gray-500 dark:text-[oklch(0.65_0_0)]" />
             </button>
           )}
 
           {/* Dropdown - only show when not hidden and open */}
           {!hideCountrySelector && isDropdownOpen && (
-            <div className="absolute top-full left-0 mt-1 w-56 bg-white border border-gray-200 rounded shadow-lg z-50">
+            <div className="absolute top-full left-0 mt-1 w-56 bg-white dark:bg-[oklch(0.24_0_0)] border border-gray-200 dark:border-[oklch(0.30_0_0)] rounded shadow-lg dark:shadow-black/30 z-50">
               {SUPPORTED_COUNTRIES.map((country) => (
                 <button
                   key={country.code}
                   type="button"
                   onClick={() => handleCountryChange(country)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 text-left ${
-                    country.code === selectedCountry.code ? 'bg-gray-50' : ''
+                  className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 dark:hover:bg-[oklch(0.28_0_0)] text-left ${
+                    country.code === selectedCountry.code ? 'bg-gray-50 dark:bg-[oklch(0.24_0_0)]' : ''
                   }`}
                 >
                   <Flag code={country.flagCode} size="s" hasBorder={false} />
-                  <span className="flex-1 text-sm text-gray-700">{country.name}</span>
-                  <span className="text-sm text-gray-500">{country.dialCode}</span>
+                  <span className="flex-1 text-sm text-gray-700 dark:text-[oklch(0.75_0_0)]">{country.name}</span>
+                  <span className="text-sm text-gray-500 dark:text-[oklch(0.65_0_0)]">{country.dialCode}</span>
                 </button>
               ))}
             </div>
@@ -270,19 +270,19 @@ export function PhoneNumberInput({
             onChange={handleInputChange}
             disabled={disabled}
             placeholder={t('enterPhoneNumber')}
-            className={`w-full px-4 py-3 border rounded-r text-gray-900 placeholder-[#e1e1e1] focus:outline-none focus:border-[#87e64b] focus:shadow-[0_0_0_2px_rgba(135,230,75,0.1)] disabled:opacity-50 disabled:cursor-not-allowed transition-all ${
+            className={`w-full px-4 py-3 border rounded-r text-gray-900 dark:text-[oklch(0.91_0_0)] placeholder-[#e1e1e1] dark:placeholder-[oklch(0.40_0_0)] bg-white dark:bg-[oklch(0.24_0_0)] focus:outline-none focus:border-[#87e64b] focus:shadow-[0_0_0_2px_rgba(135,230,75,0.1)] disabled:opacity-50 disabled:cursor-not-allowed transition-all ${
               displayError
-                ? 'border-red-500 focus:border-red-500'
-                : 'border-[#171717]'
+                ? 'border-red-500 dark:border-red-400 focus:border-red-500 dark:focus:border-red-400'
+                : 'border-[#171717] dark:border-[oklch(0.50_0_0)]'
             }`}
           />
-          <Phone className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <Phone className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-[oklch(0.50_0_0)]" />
         </div>
       </div>
 
       {/* Error Message */}
       {displayError && (
-        <div className="flex items-center gap-2 mt-2 text-sm text-red-600">
+        <div className="flex items-center gap-2 mt-2 text-sm text-red-600 dark:text-red-400">
           <WarningCircle className="w-4 h-4" />
           <span>{displayError}</span>
         </div>
@@ -290,7 +290,7 @@ export function PhoneNumberInput({
 
       {/* Helper Text */}
       {!displayError && (
-        <p className="mt-2 text-sm text-gray-500">
+        <p className="mt-2 text-sm text-gray-500 dark:text-[oklch(0.65_0_0)]">
           {t('phoneNumberHelper')}
         </p>
       )}

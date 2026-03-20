@@ -95,7 +95,7 @@ function DownloadRedirect() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-white dark:bg-[oklch(0.19_0_0)]">
         <Header />
         <main
           style={{ minHeight: 'calc(100vh - 64px)', position: 'relative' }}
@@ -118,6 +118,7 @@ function DownloadRedirect() {
                       animationData={catAnimationData}
                       loop={true}
                       autoplay={true}
+                      className="ze-lottie-container"
                       style={{
                         width: '300px',
                         height: 'auto',
@@ -125,10 +126,10 @@ function DownloadRedirect() {
                     />
                   )}
                 </div>
-                <h1 className="text-2xl font-bold text-[#171717] mb-3">
+                <h1 className="text-2xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-3">
                   {tNotFound('transferNotFoundTitle')}
                 </h1>
-                <p className="text-gray-600 text-sm font-medium max-w-md mx-auto mb-8 leading-relaxed">
+                <p className="text-gray-600 dark:text-[oklch(0.65_0_0)] text-sm font-medium max-w-md mx-auto mb-8 leading-relaxed">
                   {tNotFound('transferNotFoundSubtitle')}
                 </p>
                 <Link

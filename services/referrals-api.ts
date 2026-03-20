@@ -16,6 +16,8 @@ export interface ReferralHistoryItem {
   maskedEmail: string;
   paidTransferCount: number;
   status: 'ACTIVE' | 'COMPLETED' | 'SUSPENDED';
+  earnedMinorUnits: number;
+  currency: string | null;
   createdAt: string;
 }
 
@@ -53,6 +55,14 @@ export interface ValidateCodeResult {
   referrerName?: string;
 }
 
+export interface RewardInfo {
+  enabled: boolean;
+  bonusPercent: number;
+  maxTransfers: number;
+  minTransferAmount: number;
+  bonusbasis: 'platform_fee';
+}
+
 export class ReferralsApi {
   /**
    * Get the authenticated user's referral code and share URL
@@ -87,6 +97,13 @@ export class ReferralsApi {
    */
   async applyCode(code: string): Promise<ApiResponse<ApplyCodeResult>> {
     return apiClient.post<ApplyCodeResult>('/referrals/apply', { code });
+  }
+
+  /**
+   * Get referral reward configuration (bonus percent, max transfers, min amount)
+   */
+  async getRewardInfo(): Promise<ApiResponse<RewardInfo>> {
+    return apiClient.get<RewardInfo>('/referrals/reward-info');
   }
 
   /**

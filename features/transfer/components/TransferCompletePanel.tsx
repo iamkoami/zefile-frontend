@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useTranslations } from "next-intl";
-import { Link as LinkIcon } from "iconoir-react";
+import { Link as LinkIcon, Copy } from "iconoir-react";
 import Lottie, { LottieRefCurrentProps } from "lottie-react";
 import { TransferDto } from "@/services/transfer-api";
 import { useDrawerStore } from "@/stores/drawer-store";
-import { referralsApi, ReferralMyCode } from "@/services/referrals-api";
+import { referralsApi, ReferralMyCode, RewardInfo } from "@/services/referrals-api";
 import { copyToClipboard } from "@/utils/clipboard";
 import CelebrationModal from "@/features/home/components/CelebrationModal";
 import QuickShareButtons from "./QuickShareButtons";
@@ -39,6 +39,7 @@ const TransferCompletePanel: React.FC<TransferCompletePanelProps> = ({
   const [showSuccess, setShowSuccess] = useState(false);
   const [copied, setCopied] = useState(false);
   const [myCode, setMyCode] = useState<ReferralMyCode | null>(null);
+  const [rewardInfo, setRewardInfo] = useState<RewardInfo | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [showCelebration, setShowCelebration] = useState(isFirstTransfer);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -67,7 +68,7 @@ const TransferCompletePanel: React.FC<TransferCompletePanelProps> = ({
       .catch(() => {});
   }, []);
 
-  // Non-blocking fetch of referral code — only for paid transfers (AC: 1, 2)
+  // Non-blocking fetch of referral code + reward info — only for paid transfers (AC: 1, 2)
   useEffect(() => {
     if (!transfer.price || transfer.price <= 0) return;
     let cancelled = false;
@@ -75,6 +76,12 @@ const TransferCompletePanel: React.FC<TransferCompletePanelProps> = ({
       .getMyCode()
       .then((res) => {
         if (!cancelled && res.data) setMyCode(res.data);
+      })
+      .catch(() => {});
+    referralsApi
+      .getRewardInfo()
+      .then((res) => {
+        if (!cancelled && res.data) setRewardInfo(res.data);
       })
       .catch(() => {});
     return () => { cancelled = true; };
@@ -181,6 +188,7 @@ const TransferCompletePanel: React.FC<TransferCompletePanelProps> = ({
                 animationData={congratsAnimation}
                 loop={true}
                 autoplay={true}
+                className="ze-lottie-container"
                 style={{ width: 176, height: 176 }}
               />
             )}
@@ -305,13 +313,16 @@ const TransferCompletePanel: React.FC<TransferCompletePanelProps> = ({
         </button>
 
         {/* Referral prompt — non-intrusive, below primary actions (AC: 1, 2) */}
-        {myCode && (
+        {myCode && rewardInfo?.enabled && (
           <div className="w-full mt-6 pt-4 border-t border-gray-100">
-            <p className="text-xs text-gray-500 mb-2">
+            <p className="text-sm text-[#171717] font-medium mb-1">
               {tReferrals("tellAFriend")}
             </p>
+            <p className="text-xs text-gray-500 mb-3">
+              {tReferrals("tellAFriendSubtitle", { percent: String(rewardInfo?.bonusPercent || 10) })}
+            </p>
             <div className="flex items-center gap-2">
-              <span className="flex-1 text-xs font-mono text-gray-600 truncate">
+              <span className="flex-1 text-xs font-mono text-gray-600 truncate bg-gray-50 px-3 py-2 rounded">
                 {myCode.shareUrl}
               </span>
               <button
@@ -321,8 +332,9 @@ const TransferCompletePanel: React.FC<TransferCompletePanelProps> = ({
                     errorMessage: tReferrals("copyError"),
                   })
                 }
-                className="text-xs font-medium text-[#5E53E0] hover:underline flex-shrink-0"
+                className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-[#5E53E0] bg-[#F5F3FF] rounded hover:bg-[#E0DAFB] transition-colors flex-shrink-0"
               >
+                <Copy className="w-3.5 h-3.5" />
                 {tReferrals("copyLink")}
               </button>
             </div>

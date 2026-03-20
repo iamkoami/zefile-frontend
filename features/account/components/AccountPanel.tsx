@@ -27,6 +27,7 @@ import AnalyticsPanel from "@/features/analytics/components/AnalyticsPanel";
 import LoadingPanel from "@/components/LoadingPanel";
 import ReferralsPanel from "./ReferralsPanel";
 import { subscriptionApi } from "@/services/subscription-api";
+import { referralsApi } from "@/services/referrals-api";
 
 interface MenuItem {
   id: AccountMenuItem;
@@ -57,13 +58,22 @@ const AccountPanel: React.FC = () => {
   const t = useTranslations("account");
   const { activeAccountMenu, setActiveAccountMenu } = useDrawerStore();
   const [userTier, setUserTier] = useState<string>("free");
+  const [referralsEnabled, setReferralsEnabled] = useState(false);
   const [tierLoading, setTierLoading] = useState(true);
 
-  // Fetch user tier on mount for menu filtering
-  const loadUserTier = useCallback(async () => {
+  // Fetch user tier and referral status on mount for menu filtering
+  const loadConfig = useCallback(async () => {
     try {
-      const res = await subscriptionApi.getCurrentSubscription();
-      setUserTier(res.data?.tier || "free");
+      const [tierRes, rewardRes] = await Promise.allSettled([
+        subscriptionApi.getCurrentSubscription(),
+        referralsApi.getRewardInfo(),
+      ]);
+      if (tierRes.status === "fulfilled") {
+        setUserTier(tierRes.value.data?.tier || "free");
+      }
+      if (rewardRes.status === "fulfilled" && rewardRes.value.data) {
+        setReferralsEnabled(rewardRes.value.data.enabled);
+      }
     } catch {
       setUserTier("free");
     } finally {
@@ -72,17 +82,17 @@ const AccountPanel: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    loadUserTier();
-  }, [loadUserTier]);
+    loadConfig();
+  }, [loadConfig]);
 
-  // Hide analytics for FREE users
+  // Hide menu items based on tier and feature flags
   const menuItems = useMemo(() => {
     return MENU_ITEMS.filter((item) => {
       if (item.id === "branding" && userTier === "free") return false;
       if (item.id === "analytics" && userTier === "free") return false;
       return true;
     });
-  }, [userTier]);
+  }, [userTier, referralsEnabled]);
 
   const renderContent = () => {
     switch (activeAccountMenu) {
@@ -122,9 +132,9 @@ const AccountPanel: React.FC = () => {
   return (
     <div className="flex h-full -mx-16 -my-8">
       {/* Left Sidebar */}
-      <aside className="w-72 flex-shrink-0 border-r border-gray-200 py-8 px-6 sticky top-0 self-start">
+      <aside className="w-72 flex-shrink-0 border-r border-gray-200 dark:border-[oklch(0.30_0_0)] py-8 px-6 sticky top-0 self-start">
         {/* Section Title */}
-        <h2 className="text-3xl font-bold text-[#171717] mb-8 px-4">
+        <h2 className="text-3xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-8 px-4">
           {t("title")}
         </h2>
 
@@ -138,15 +148,15 @@ const AccountPanel: React.FC = () => {
                 onClick={() => setActiveAccountMenu(item.id)}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors relative ${
                   isActive
-                    ? "text-sm bg-[#87E64B]/10 text-[#171717] font-bold"
-                    : "text-sm text-gray-600 hover:bg-gray-50 font-medium hover:text-[#171717]"
+                    ? "text-sm bg-[#87E64B]/10 text-[#171717] dark:text-[oklch(0.91_0_0)] font-bold"
+                    : "text-sm text-gray-600 dark:text-[oklch(0.75_0_0)] hover:bg-gray-50 dark:hover:bg-[oklch(0.28_0_0)] font-medium hover:text-[#171717] dark:hover:text-[oklch(0.91_0_0)]"
                 }`}
               >
                 {/* Active indicator bar */}
                 {isActive && (
                   <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-[#87E64B] rounded-r" />
                 )}
-                <span className={isActive ? "text-[#87E64B]" : "text-gray-400"}>
+                <span className={isActive ? "text-[#87E64B]" : "text-gray-400 dark:text-[oklch(0.60_0_0)]"}>
                   {item.icon}
                 </span>
                 <span>{t(item.labelKey)}</span>
@@ -174,15 +184,15 @@ const AnalyticsUpgradePrompt: React.FC = () => {
 
   return (
     <div className="mb-10">
-      <h3 className="text-2xl font-bold text-[#171717] mb-6">
+      <h3 className="text-2xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-6">
         {t("analytics")}
       </h3>
-      <div className="bg-gray-50 rounded-lg p-8 text-center">
-        <GraphUp className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-        <h4 className="text-lg font-bold text-[#171717] mb-2">
+      <div className="bg-gray-50 dark:bg-[oklch(0.22_0_0)] rounded-lg p-8 text-center">
+        <GraphUp className="w-12 h-12 text-gray-300 dark:text-[oklch(0.60_0_0)] mx-auto mb-4" />
+        <h4 className="text-lg font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-2">
           {t("analyticsUpgradeTitle")}
         </h4>
-        <p className="text-sm text-gray-500 mb-6 max-w-md mx-auto">
+        <p className="text-sm text-gray-500 dark:text-[oklch(0.75_0_0)] mb-6 max-w-md mx-auto">
           {t("analyticsUpgradeDescription")}
         </p>
         <button
@@ -265,15 +275,15 @@ const HelpContent: React.FC = () => {
 
   return (
     <div className="mb-10">
-      <h3 className="text-2xl font-bold text-[#171717] mb-6">
-        {t("title")}
+      <h3 className="text-2xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-6">
+        {t.rich("title", { highlight: (chunks) => chunks })}
       </h3>
 
       {/* Search */}
       <div className="mb-8">
         <div className="relative">
           <svg
-            className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
+            className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-[oklch(0.60_0_0)]"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -290,7 +300,7 @@ const HelpContent: React.FC = () => {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t("searchPlaceholder")}
-            className="w-full pl-12 pr-4 py-3.5 bg-white rounded-lg border border-gray-200 text-sm text-[#171717] placeholder-gray-400 focus:outline-none focus:border-[#171717] focus:ring-1 focus:ring-[#171717] transition-colors"
+            className="w-full pl-12 pr-4 py-3.5 bg-white dark:bg-[oklch(0.22_0_0)] rounded-lg border border-gray-200 dark:border-[oklch(0.30_0_0)] text-sm text-[#171717] dark:text-[oklch(0.91_0_0)] placeholder-gray-400 dark:placeholder-[oklch(0.60_0_0)] focus:outline-none focus:border-[#171717] dark:focus:border-[oklch(0.91_0_0)] focus:ring-1 focus:ring-[#171717] dark:focus:ring-[oklch(0.91_0_0)] transition-colors"
           />
         </div>
       </div>
@@ -299,7 +309,7 @@ const HelpContent: React.FC = () => {
       <div className="space-y-10">
         {filtered.map((section, sIdx) => (
           <div key={sIdx}>
-            <h4 className="text-lg font-bold text-[#171717] mb-4">
+            <h4 className="text-lg font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-4">
               {section.title}
             </h4>
             <div className="space-y-2">
@@ -312,21 +322,21 @@ const HelpContent: React.FC = () => {
       </div>
 
       {filtered.length === 0 && (
-        <p className="text-center text-gray-500 mt-8">
+        <p className="text-center text-gray-500 dark:text-[oklch(0.75_0_0)] mt-8">
           {t("noResults")}
         </p>
       )}
 
       {/* Contact */}
-      <div className="mt-12 pt-8 border-t border-gray-200">
-        <h4 className="text-lg font-bold text-[#171717] mb-2">
+      <div className="mt-12 pt-8 border-t border-gray-200 dark:border-[oklch(0.30_0_0)]">
+        <h4 className="text-lg font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-2">
           {t("contactTitle")}
         </h4>
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-gray-600 dark:text-[oklch(0.75_0_0)]">
           {t("contactContent")}{" "}
           <a
             href={`mailto:${t("contactEmail")}`}
-            className="text-[#171717] underline font-medium"
+            className="text-[#171717] dark:text-[oklch(0.91_0_0)] underline font-medium"
           >
             {t("contactEmail")}
           </a>

@@ -103,7 +103,7 @@ function AnimatedNumber({
 
   return (
     <div ref={ref}>
-      <span className="text-6xl md:text-8xl font-bold text-[#2d6b0e]/[0.12]">
+      <span className="text-6xl md:text-8xl font-bold text-[#2d6b0e]/[0.12] dark:text-[#87E64B]/20">
         {count}
         <span className="text-4xl md:text-5xl">{suffix}</span>
       </span>
@@ -143,7 +143,7 @@ function ImageZone({
 
   return (
     <div
-      className={`relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#F3F0FF] via-[#FDFAF4] to-[#F0FFF4] ${aspect} ${className}`}
+      className={`relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#F3F0FF] via-[#FDFAF4] to-[#F0FFF4] dark:from-[#1a1530] dark:via-[#141218] dark:to-[#0f1a14] ${aspect} ${className}`}
     >
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="w-16 h-16 rounded-full bg-white/60 backdrop-blur-sm flex items-center justify-center">
@@ -232,7 +232,7 @@ function CapabilitiesFanCards({
   return (
     <section className="max-w-5xl mx-auto px-6 pt-20 md:pt-32 pb-8">
       <Reveal>
-        <h2 className="text-3xl md:text-5xl font-bold text-[#171717] mb-24 md:mb-24 text-center">
+        <h2 className="text-3xl md:text-5xl font-bold text-[#171717] dark:text-white mb-24 md:mb-24 text-center">
           {title}
         </h2>
       </Reveal>
@@ -379,10 +379,10 @@ function BrandCross({
 /*  Color palettes                                                      */
 /* ------------------------------------------------------------------ */
 const VALUE_COLORS = [
-  "bg-[#F4F5F7]",
-  "bg-[#F4F5F7]",
-  "bg-[#F4F5F7]",
-  "bg-[#F4F5F7]",
+  "bg-[#F4F5F7] dark:bg-card",
+  "bg-[#F4F5F7] dark:bg-card",
+  "bg-[#F4F5F7] dark:bg-card",
+  "bg-[#F4F5F7] dark:bg-card",
 ];
 
 /* ------------------------------------------------------------------ */
@@ -481,18 +481,18 @@ function TrustCarousel({ items }: { items: { pill: string; desc: string }[] }) {
         {items.map((item, i) => (
           <div
             key={i}
-            className={`bg-white rounded-2xl p-6 shrink-0 flex flex-col transition-opacity duration-300 border border-gray-100 ${
+            className={`bg-white dark:bg-card rounded-2xl p-6 shrink-0 flex flex-col transition-opacity duration-300 border border-gray-100 dark:border-border ${
               i === active ? "opacity-100" : "opacity-70"
             }`}
             style={{ width: TRUST_CARD_WIDTH }}
           >
-            <h3 className="text-[#171717] font-bold text-base mb-2">
+            <h3 className="text-[#171717] dark:text-white font-bold text-base mb-2">
               {item.pill}
             </h3>
-            <p className="text-[#171717] font-medium text-base leading-relaxed mb-4">
+            <p className="text-[#171717] dark:text-white font-medium text-base leading-relaxed mb-4">
               {item.desc}
             </p>
-            <div className="mt-auto rounded-xl bg-[#F3F0FF] aspect-[16/10] flex items-center justify-center">
+            <div className="mt-auto rounded-xl bg-[#F3F0FF] dark:bg-[#1a1530] aspect-[16/10] flex items-center justify-center">
               <div className="w-10 h-10 rounded-full bg-[#5E53E0]/10 flex items-center justify-center">
                 <div className="w-5 h-5 rounded-full bg-[#5E53E0]/20" />
               </div>
@@ -597,7 +597,7 @@ export default function AboutClient() {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-white dark:bg-background">
       <Header />
 
       <SectionIndicator sections={ABOUT_SECTIONS} />
@@ -637,7 +637,7 @@ export default function AboutClient() {
           <Reveal>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-center">
               <div>
-                <h2 className="text-3xl md:text-5xl font-bold text-[#171717] mb-6">
+                <h2 className="text-3xl md:text-5xl font-bold text-[#171717] dark:text-white mb-6">
                   {t.rich("problemTitle", {
                     highlight: (chunks) => (
                       <span className="ze-highlight-purple">{chunks}</span>
@@ -645,13 +645,13 @@ export default function AboutClient() {
                   })}
                 </h2>
                 <div className="space-y-4">
-                  <p className="text-[#171717] font-medium text-base leading-relaxed">
+                  <p className="text-[#171717] dark:text-white font-medium text-base leading-relaxed">
                     {t("problemP1")}
                   </p>
-                  <p className="text-[#171717] font-medium text-base leading-relaxed">
+                  <p className="text-[#171717] dark:text-white font-medium text-base leading-relaxed">
                     {t("problemP2")}
                   </p>
-                  <p className="text-[#171717] font-medium text-base leading-relaxed">
+                  <p className="text-[#171717] dark:text-white font-medium text-base leading-relaxed">
                     {t("problemP3")}
                   </p>
                 </div>
@@ -674,7 +674,7 @@ export default function AboutClient() {
         {/* ── 2b. Pain Points in Numbers (same style as How-It-Works stats bar) */}
         <section
           id="about-stats"
-          className="relative overflow-x-clip bg-gradient-to-b from-white via-[#EAF9DE] to-white"
+          className="relative overflow-x-clip bg-gradient-to-b from-white via-[#EAF9DE] to-white dark:from-background dark:via-[#0f1a14] dark:to-background"
         >
           <BrandCross
             size={160}
@@ -701,7 +701,7 @@ export default function AboutClient() {
           <div className="max-w-7xl mx-auto px-6 py-20 md:py-32 relative z-10">
             <Reveal>
               <div className="mb-20 md:mb-28">
-                <p className="text-2xl md:text-4xl text-[#171717]/50 font-light leading-snug">
+                <p className="text-2xl md:text-4xl text-[#171717]/50 dark:text-white/50 font-light leading-snug">
                   {t("painStatsTagline")}
                 </p>
               </div>
@@ -713,7 +713,7 @@ export default function AboutClient() {
                   <div className="mb-5">
                     <AnimatedNumber target={85} suffix="%" />
                   </div>
-                  <p className="text-[#171717] font-bold text-base leading-snug">
+                  <p className="text-[#171717] dark:text-white font-bold text-base leading-snug">
                     {t("painStat1Label")}
                   </p>
                 </div>
@@ -723,7 +723,7 @@ export default function AboutClient() {
                   <div className="mb-5">
                     <AnimatedNumber target={102} suffix="h" />
                   </div>
-                  <p className="text-[#171717] font-bold text-base leading-snug">
+                  <p className="text-[#171717] dark:text-white font-bold text-base leading-snug">
                     {t("painStat2Label")}
                   </p>
                 </div>
@@ -733,7 +733,7 @@ export default function AboutClient() {
                   <div className="mb-5">
                     <AnimatedNumber target={71} suffix="%" />
                   </div>
-                  <p className="text-[#171717] font-bold text-base leading-snug">
+                  <p className="text-[#171717] dark:text-white font-bold text-base leading-snug">
                     {t("painStat3Label")}
                   </p>
                 </div>
@@ -748,41 +748,51 @@ export default function AboutClient() {
             id="about-origin"
             className="max-w-7xl mx-auto px-6 mt-10 mb-10"
           >
-            <div className="bg-[#FDFAF4] text-white rounded-3xl overflow-hidden relative">
+            <div className="bg-[#FDFAF4] dark:bg-card text-white rounded-3xl overflow-hidden relative">
               <div className="absolute top-8 right-8 w-40 h-28 rounded-3xl bg-[#87E64B]/[0.08] rotate-12 pointer-events-none" />
               <div className="absolute bottom-10 left-12 w-20 h-20 rounded-full bg-[#5E53E0]/10 pointer-events-none" />
 
               <div className="grid grid-cols-1 lg:grid-cols-2 relative z-10">
                 <div className="p-10 md:p-16 flex flex-col justify-center">
-                  <h2 className="text-3xl md:text-5xl text-[#171717] font-bold mb-2">
+                  <h2 className="text-3xl md:text-5xl text-[#171717] dark:text-white font-bold mb-2">
                     {t.rich("storyTitle", {
                       highlight: (chunks) => (
                         <span className="ze-highlight-green">{chunks}</span>
                       ),
                     })}
                   </h2>
-                  <p className="text-gray-500 font-medium text-sm mb-8">
+                  <p className="text-gray-500 dark:text-gray-400 font-medium text-sm mb-8">
                     {t("storyTagline")}
                   </p>
                   <div className="space-y-5">
-                    <p className="text-[#171717] font-medium text-base leading-relaxed">
+                    <p className="text-[#171717] dark:text-white font-medium text-base leading-relaxed">
                       {t("storyP1")}
                     </p>
-                    <p className="text-[#171717] font-medium text-base leading-relaxed">
+                    <p className="text-[#171717] dark:text-white font-medium text-base leading-relaxed">
                       {t("storyP2")}
                     </p>
-                    <p className="text-[#171717] font-medium text-base leading-relaxed">
+                    <p className="text-[#171717] dark:text-white font-medium text-base leading-relaxed">
                       {t("storyP3")}
                     </p>
                   </div>
                 </div>
                 <div className="relative min-h-[300px] lg:min-h-0">
-                  <ImageZone
-                    src="/images/about-how-it-started.png"
-                    alt="African creatives collaborating"
-                    aspect="aspect-auto"
-                    className="h-full rounded-none lg:rounded-none"
-                  />
+                  <div className="relative overflow-hidden aspect-auto h-full">
+                    <Image
+                      src="/images/about-how-it-started.png"
+                      alt="African creatives collaborating"
+                      fill
+                      className="object-cover dark:hidden"
+                      sizes="(max-width: 768px) 100vw, 50vw"
+                    />
+                    <Image
+                      src="/images/about-how-it-started-white.png"
+                      alt="African creatives collaborating"
+                      fill
+                      className="object-cover hidden dark:block"
+                      sizes="(max-width: 768px) 100vw, 50vw"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -818,7 +828,7 @@ export default function AboutClient() {
         {/* ── 5. Security — trust cards ──────────────────────── */}
         <section
           id="about-trust"
-          className="bg-gradient-to-b from-white via-[#FDFAF4] to-white relative overflow-x-clip"
+          className="bg-gradient-to-b from-white via-[#FDFAF4] to-white dark:from-background dark:via-[#1a1520] dark:to-background relative overflow-x-clip"
         >
           <BrandCross
             size={200}
@@ -845,14 +855,14 @@ export default function AboutClient() {
           <div className="max-w-7xl mx-auto px-6 py-32 md:py-40 relative z-10">
             <Reveal>
               <div className="text-center mb-12">
-                <h2 className="text-3xl md:text-5xl font-bold text-[#171717] mb-3">
+                <h2 className="text-3xl md:text-5xl font-bold text-[#171717] dark:text-white mb-3">
                   {t.rich("trustTitle", {
                     highlight: (chunks) => (
                       <span className="ze-highlight-purple">{chunks}</span>
                     ),
                   })}
                 </h2>
-                <p className="text-gray-500 text-base max-w-xl mx-auto leading-relaxed">
+                <p className="text-gray-500 dark:text-gray-400 text-base max-w-xl mx-auto leading-relaxed">
                   {t("trustIntro")}
                 </p>
               </div>
@@ -865,7 +875,7 @@ export default function AboutClient() {
         {/* ── 6. Made in Africa — green gradient + shapes ──────── */}
         <section
           id="about-africa"
-          className="pt-10 relative overflow-x-clip bg-gradient-to-br from-[#87E64B]/10 via-white to-[#87E64B]/5"
+          className="pt-10 relative overflow-x-clip bg-gradient-to-br from-[#87E64B]/10 via-white to-[#87E64B]/5 dark:from-[#87E64B]/5 dark:via-background dark:to-[#87E64B]/[0.02]"
         >
           <BrandCross
             size={80}
@@ -888,7 +898,7 @@ export default function AboutClient() {
                   />
                 </Reveal>
                 <div>
-                  <h2 className="text-3xl md:text-5xl font-bold text-[#171717] mb-6">
+                  <h2 className="text-3xl md:text-5xl font-bold text-[#171717] dark:text-white mb-6">
                     {t.rich("africaTitle", {
                       highlight: (chunks) => (
                         <span className="ze-highlight-green">{chunks}</span>
@@ -896,10 +906,10 @@ export default function AboutClient() {
                     })}
                   </h2>
                   <div className="space-y-5">
-                    <p className="text-[#171717] font-medium text-base md:text-base leading-relaxed">
+                    <p className="text-[#171717] dark:text-white font-medium text-base md:text-base leading-relaxed">
                       {t("africaP1")}
                     </p>
-                    <p className="text-[#171717] font-medium text-base md:text-base leading-relaxed">
+                    <p className="text-[#171717] dark:text-white font-medium text-base md:text-base leading-relaxed">
                       {t("africaP2")}
                     </p>
                   </div>
@@ -913,7 +923,7 @@ export default function AboutClient() {
         <section id="about-values">
           <div className="max-w-7xl mx-auto px-6 pb-22 pt-8 md:pt-8 md:pb-22">
             <Reveal>
-              <h2 className="text-3xl md:text-5xl font-bold text-[#171717] mb-14 text-center">
+              <h2 className="text-3xl md:text-5xl font-bold text-[#171717] dark:text-white mb-14 text-center">
                 {t.rich("valuesTitle", {
                   highlight: (chunks) => (
                     <span className="ze-highlight-green">{chunks}</span>
@@ -927,14 +937,14 @@ export default function AboutClient() {
                   <div
                     className={`rounded-2xl p-8 ${VALUE_COLORS[i]} relative overflow-hidden transition-transform duration-300 hover:-translate-y-1`}
                   >
-                    <span className="absolute -top-4 -right-2 text-[120px] font-black leading-none text-[#171717]/[0.04] pointer-events-none select-none">
+                    <span className="absolute -top-4 -right-2 text-[120px] font-black leading-none text-[#171717]/[0.04] dark:text-white/[0.04] pointer-events-none select-none">
                       {v.num}
                     </span>
                     <div className="relative z-10">
-                      <h3 className="text-lg font-bold text-[#171717] mb-2">
+                      <h3 className="text-lg font-bold text-[#171717] dark:text-white mb-2">
                         {t(v.titleKey)}
                       </h3>
-                      <p className="text-[#171717] font-medium text-base">
+                      <p className="text-[#171717] dark:text-white font-medium text-base">
                         {t(v.contentKey)}
                       </p>
                     </div>

@@ -7,7 +7,7 @@ import { apiClient, ApiResponse } from './api-client';
 
 export interface CreateTransferDto {
   senderId: string;
-  recipientEmails: string[]; // Changed to array (1-10 emails)
+  recipientEmails: string[]; // Always passed; empty array when isPublicSales is true
   title: string; // Required by backend
   price?: number;
   currency?: string;
@@ -22,6 +22,8 @@ export interface CreateTransferDto {
   wallpaperKey?: string;
   coverKey?: string;
   paymentRequired?: boolean;
+  /** Public sales mode — transfer is available for purchase by anyone */
+  isPublicSales?: boolean;
 }
 
 export interface CreateTransferWithFilesDto extends CreateTransferDto {
@@ -97,6 +99,14 @@ export interface TransferDto {
   customDomainUrl?: string;
   // Sender branding from BrandingProfile (STARTER+ only, story 57.3)
   senderBranding?: SenderBrandingDto | null;
+  // Public sales mode — transfer is available for purchase by anyone
+  isPublicSales?: boolean;
+  // Sales analytics (populated for public sales transfers viewed by sender)
+  salesStats?: {
+    totalSales: number;
+    totalRevenueMinor: number;
+    currency: string;
+  };
 }
 
 export interface UpdateTransferDto {
@@ -146,6 +156,7 @@ export interface ReuseTransferDto {
   recipientEmails: string[];
   title?: string;
   message?: string;
+  isPublicSales?: boolean;
 }
 
 export interface ReuseTransferResponse {
@@ -486,6 +497,55 @@ export class TransferApi {
    */
   async getTransferByShortCode(shortCode: string): Promise<ApiResponse<TransferDto>> {
     return apiClient.get<TransferDto>(`/transfers/code/${shortCode}`);
+  }
+
+  /**
+   * Initiate a public sale purchase (returns Paystack authorization URL)
+   */
+  async initiatePurchase(shortCode: string, buyerEmail: string): Promise<ApiResponse<{ authorizationUrl: string; reference: string }>> {
+    return apiClient.post<{ authorizationUrl: string; reference: string }>(
+      `/transfers/${shortCode}/buy`,
+      { buyerEmail },
+    );
+  }
+
+  /**
+   * Verify a public sale purchase and get download token
+   */
+  async verifyPurchase(shortCode: string, reference: string): Promise<ApiResponse<{ downloadToken: string; expiresAt: string }>> {
+    return apiClient.get<{ downloadToken: string; expiresAt: string }>(
+      `/transfers/${shortCode}/buy/verify?reference=${encodeURIComponent(reference)}`,
+    );
+  }
+
+  /**
+   * Check if a buyer has already purchased a public sale transfer
+   */
+  async checkPurchase(shortCode: string, email: string): Promise<ApiResponse<{ hasPurchase: boolean }>> {
+    return apiClient.post<{ hasPurchase: boolean }>(
+      `/transfers/${shortCode}/buy/check`,
+      { email },
+    );
+  }
+
+  /**
+   * Recover a previous purchase by sending OTP to buyer's email
+   */
+  async recoverPurchase(shortCode: string, email: string): Promise<ApiResponse<{ otpSent: boolean }>> {
+    return apiClient.post<{ otpSent: boolean }>(
+      `/transfers/${shortCode}/buy/recover`,
+      { email },
+    );
+  }
+
+  /**
+   * Verify OTP for purchase recovery and get download token
+   */
+  async verifyRecovery(shortCode: string, email: string, otp: string): Promise<ApiResponse<{ downloadToken: string; expiresAt: string }>> {
+    return apiClient.post<{ downloadToken: string; expiresAt: string }>(
+      `/transfers/${shortCode}/buy/recover/verify`,
+      { email, otp },
+    );
   }
 
   /**

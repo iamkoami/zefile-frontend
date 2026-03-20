@@ -154,9 +154,9 @@ const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({
     >
       <div id="ze-file-preview-content" className="ze-file-preview-content">
         {/* Header */}
-        <h2 className="text-lg font-bold mb-6 text-black">
+        <h2 className="text-lg font-bold mb-6 text-black dark:text-[oklch(0.91_0_0)]">
           {getTotalFileCount()} {getTotalFileCount() > 1 ? t('elements') : t('element')}{' '}
-          <span className="font-normal text-gray-500">({getTotalSize()})</span>
+          <span className="font-normal text-gray-500 dark:text-[oklch(0.65_0_0)]">({getTotalSize()})</span>
         </h2>
 
         {/* File List */}
@@ -172,19 +172,19 @@ const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({
                 className="ze-file-item flex items-center justify-between bg-[#87E64B]/10 border border-[#87E64B]/30 rounded-lg"
               >
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-black truncate">
+                  <p className="text-sm font-medium text-black dark:text-[oklch(0.91_0_0)] truncate">
                     {fileName}
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 dark:text-[oklch(0.65_0_0)]">
                     {formatFileSize(fileSizeNum as number)} - {getFileExtension(fileName)}
                   </p>
                 </div>
                 <button
                   onClick={() => onClearReuseData?.()}
-                  className="ml-3 flex-shrink-0 p-1 hover:bg-gray-200 rounded transition-colors"
+                  className="ml-3 flex-shrink-0 p-1 hover:bg-gray-200 dark:hover:bg-[oklch(0.28_0_0)] rounded transition-colors"
                   aria-label={t('removeFile')}
                 >
-                  <Xmark width={20} height={20} color="#171717" strokeWidth={2} />
+                  <Xmark width={20} height={20} color="currentColor" strokeWidth={2} />
                 </button>
               </div>
             );
@@ -197,19 +197,19 @@ const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({
               className="ze-file-item flex items-center justify-between bg-[#87E64B]/10 border border-[#87E64B]/30 rounded-lg"
             >
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-black truncate">
+                <p className="text-sm font-medium text-black dark:text-[oklch(0.91_0_0)] truncate">
                   {file.name}
                 </p>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-gray-500 dark:text-[oklch(0.65_0_0)]">
                   {formatFileSize(file.size)} - {getFileExtension(file.name)}
                 </p>
               </div>
               <button
                 onClick={() => onRemoveFile(index)}
-                className="ml-3 flex-shrink-0 p-1 hover:bg-gray-200 rounded transition-colors"
+                className="ml-3 flex-shrink-0 p-1 hover:bg-gray-200 dark:hover:bg-[oklch(0.28_0_0)] rounded transition-colors"
                 aria-label={t('removeFile')}
               >
-                <Xmark width={20} height={20} color="#171717" strokeWidth={2} />
+                <Xmark width={20} height={20} color="currentColor" strokeWidth={2} />
               </button>
             </div>
           ))}
@@ -223,14 +223,14 @@ const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({
                 className={`flex items-center gap-3 ${selectedFilesSize >= maxUploadSize ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                 onClick={selectedFilesSize >= maxUploadSize ? undefined : handleClick}
               >
-                <div className="w-12 h-12 flex items-center justify-center border-2 border-[#E1E1E1] rounded flex-shrink-0">
-                  <Plus width={24} height={24} color="#171717" strokeWidth={2} />
+                <div className="w-12 h-12 flex items-center justify-center border-2 border-[#E1E1E1] dark:border-[oklch(0.40_0_0)] rounded flex-shrink-0 text-[#171717] dark:text-[oklch(0.91_0_0)]">
+                  <Plus width={24} height={24} color="currentColor" strokeWidth={2} />
                 </div>
                 <div className="text-left">
-                  <p className="text-sm font-bold text-black">
+                  <p className="text-sm font-bold text-black dark:text-[oklch(0.91_0_0)]">
                     {t('addMoreFiles')}
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 dark:text-[oklch(0.65_0_0)]">
                     {selectedFilesSize >= maxUploadSize
                       ? tUpload('uploadLimitReached')
                       : `${tUpload('upTo')} ${formatBytes(maxUploadSize - selectedFilesSize)}`
@@ -253,13 +253,13 @@ const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({
 
           {/* Error Message */}
           {fileError && (
-            <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-600">{fileError}</p>
+            <div className="mb-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30 rounded-lg">
+              <p className="text-sm text-red-600 dark:text-red-400">{fileError}</p>
             </div>
           )}
 
           {!isTestMode && (
-            <p className="text-sm font-medium text-center text-gray-500">
+            <p className="text-sm font-medium text-center text-gray-500 dark:text-[oklch(0.65_0_0)]">
               {t('dropFilesToAdd')}
             </p>
           )}
@@ -267,7 +267,7 @@ const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({
           {/* Transfer Options Display - Inline */}
           {isTestMode ? (
             <div
-              className="mt-4 px-3 py-2 bg-gray-50 rounded-lg text-sm text-gray-600"
+              className="mt-4 px-3 py-2 bg-gray-50 dark:bg-[oklch(0.22_0_0)] rounded-lg text-sm text-gray-600 dark:text-[oklch(0.65_0_0)]"
               role="region"
               aria-label={t('transferOptionsLabel')}
             >
@@ -279,7 +279,7 @@ const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({
             </div>
           ) : transferOptions && transferOptions.accessControl ? (
             <div
-              className="mt-4 px-3 py-2 bg-gray-50 rounded-lg text-sm text-gray-600"
+              className="mt-4 px-3 py-2 bg-gray-50 dark:bg-[oklch(0.22_0_0)] rounded-lg text-sm text-gray-600 dark:text-[oklch(0.65_0_0)]"
               role="region"
               aria-label={t('transferOptionsLabel')}
             >

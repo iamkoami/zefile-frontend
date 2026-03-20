@@ -51,13 +51,13 @@ const DrawerFooter: React.FC = () => {
   ];
 
   return (
-    <footer className="ze-drawer-footer flex-shrink-0 bg-white py-4 px-16">
-      <div className="flex items-center justify-between border-t border-gray-200 pt-4">
+    <footer className="ze-drawer-footer flex-shrink-0 bg-white dark:bg-[oklch(0.24_0_0)] py-4 px-16">
+      <div className="flex items-center justify-between border-t border-gray-200 dark:border-[oklch(0.30_0_0)] pt-4">
         {/* Language Selector */}
         <div className="relative">
           <button
             onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
-            className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+            className="flex items-center gap-2 text-sm text-gray-600 dark:text-[oklch(0.75_0_0)] hover:text-gray-900 dark:hover:text-[oklch(0.91_0_0)] transition-colors"
           >
             <Globe className="w-4 h-4" />
             <span>{currentLanguageLabel}</span>
@@ -65,19 +65,19 @@ const DrawerFooter: React.FC = () => {
           </button>
 
           {showLanguageDropdown && (
-            <div className="absolute bottom-full left-0 mb-2 w-32 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+            <div className="absolute bottom-full left-0 mb-2 w-32 bg-white dark:bg-[oklch(0.22_0_0)] rounded-lg shadow-lg dark:shadow-[0_4px_12px_rgba(0,0,0,0.5)] border border-gray-200 dark:border-[oklch(0.30_0_0)] py-1 z-50">
               <button
                 onClick={() => changeLanguage("en")}
-                className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 transition-colors ${
-                  currentLocale === "en" ? "font-bold text-gray-900" : "text-gray-600"
+                className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-[oklch(0.28_0_0)] transition-colors ${
+                  currentLocale === "en" ? "font-bold text-gray-900 dark:text-[oklch(0.91_0_0)]" : "text-gray-600 dark:text-[oklch(0.75_0_0)]"
                 }`}
               >
                 English
               </button>
               <button
                 onClick={() => changeLanguage("fr")}
-                className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 transition-colors ${
-                  currentLocale === "fr" ? "font-bold text-gray-900" : "text-gray-600"
+                className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-[oklch(0.28_0_0)] transition-colors ${
+                  currentLocale === "fr" ? "font-bold text-gray-900 dark:text-[oklch(0.91_0_0)]" : "text-gray-600 dark:text-[oklch(0.75_0_0)]"
                 }`}
               >
                 Français
@@ -94,12 +94,12 @@ const DrawerFooter: React.FC = () => {
                 href={link.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                className="text-sm text-gray-600 dark:text-[oklch(0.75_0_0)] hover:text-gray-900 dark:hover:text-[oklch(0.91_0_0)] transition-colors"
               >
                 {link.label}
               </Link>
               {index < footerLinks.length - 1 && (
-                <span className="text-gray-400 mx-1">-</span>
+                <span className="text-gray-400 dark:text-[oklch(0.60_0_0)] mx-1">-</span>
               )}
             </React.Fragment>
           ))}
@@ -113,7 +113,7 @@ const DrawerFooter: React.FC = () => {
               href={social.href}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-gray-500 hover:text-gray-900 transition-colors"
+              className="text-gray-500 dark:text-[oklch(0.65_0_0)] hover:text-gray-900 dark:hover:text-[oklch(0.91_0_0)] transition-colors"
               aria-label={social.label}
             >
               <social.icon className="w-5 h-5" />

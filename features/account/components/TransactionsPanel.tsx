@@ -241,30 +241,30 @@ const TransactionsPanel: React.FC = () => {
       case TransactionStatus.SUCCESS:
         return {
           label: t("statusSuccess"),
-          className: "bg-green-100 text-green-700",
+          className: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
         };
       case TransactionStatus.PENDING:
         return {
           label: t("statusPending"),
-          className: "bg-yellow-100 text-yellow-700",
+          className: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
         };
       case TransactionStatus.FAILED:
         return {
           label: t("statusFailed"),
-          className: "bg-red-100 text-red-700",
+          className: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
         };
       case TransactionStatus.REFUNDED:
         return {
           label: t("statusRefunded"),
-          className: "bg-blue-100 text-blue-700",
+          className: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
         };
       case TransactionStatus.CANCELLED:
         return {
           label: t("statusCancelled"),
-          className: "bg-gray-100 text-gray-700",
+          className: "bg-gray-100 text-gray-700 dark:bg-[oklch(0.28_0_0)] dark:text-[oklch(0.75_0_0)]",
         };
       default:
-        return { label: status, className: "bg-gray-100 text-gray-700" };
+        return { label: status, className: "bg-gray-100 text-gray-700 dark:bg-[oklch(0.28_0_0)] dark:text-[oklch(0.75_0_0)]" };
     }
   };
 
@@ -340,13 +340,13 @@ const TransactionsPanel: React.FC = () => {
     <div>
       {/* Header */}
       <div className="mb-10">
-        <h3 className="text-2xl font-bold text-[#171717] mb-2">
+        <h3 className="text-2xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-2">
           {t("title")}
         </h3>
         {/* Balance display */}
-        <div className="flex items-center gap-2 text-gray-600">
+        <div className="flex items-center gap-2 text-gray-600 dark:text-[oklch(0.75_0_0)]">
           <span>{t("availableBalance")}:</span>
-          <span className="font-bold text-[#171717]">
+          <span className="font-bold text-[#171717] dark:text-[oklch(0.91_0_0)]">
             {formatCurrencyAmount(totalBalance, displayCurrency)}
           </span>
         </div>
@@ -362,7 +362,7 @@ const TransactionsPanel: React.FC = () => {
               setIsCategoryOpen(false);
               setIsContactOpen(false);
             }}
-            className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded bg-white hover:border-gray-400 transition-colors min-w-[140px]"
+            className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-[oklch(0.30_0_0)] rounded bg-white dark:bg-[oklch(0.22_0_0)] hover:border-gray-400 dark:hover:border-[oklch(0.40_0_0)] transition-colors min-w-[140px]"
           >
             <Calendar className="w-4 h-4 text-gray-500" />
             <span className="flex-1 text-left text-sm">
@@ -373,7 +373,7 @@ const TransactionsPanel: React.FC = () => {
             />
           </button>
           {isPeriodOpen && (
-            <div className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-200 rounded shadow-lg z-10">
+            <div className="absolute top-full left-0 mt-1 w-full bg-white dark:bg-[oklch(0.22_0_0)] border border-gray-200 dark:border-[oklch(0.30_0_0)] rounded shadow-lg dark:shadow-black/30 z-10">
               {periodOptions.map((option) => (
                 <button
                   key={option.value}
@@ -381,10 +381,10 @@ const TransactionsPanel: React.FC = () => {
                     setPeriodFilter(option.value);
                     setIsPeriodOpen(false);
                   }}
-                  className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 ${
+                  className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-[oklch(0.28_0_0)] ${
                     periodFilter === option.value
-                      ? "bg-[#87E64B]/10 text-[#171717] font-medium"
-                      : "text-gray-700"
+                      ? "bg-[#87E64B]/10 text-[#171717] dark:text-[oklch(0.91_0_0)] font-medium"
+                      : "text-gray-700 dark:text-[oklch(0.75_0_0)]"
                   }`}
                 >
                   {option.label}
@@ -402,7 +402,7 @@ const TransactionsPanel: React.FC = () => {
               setIsPeriodOpen(false);
               setIsContactOpen(false);
             }}
-            className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded bg-white hover:border-gray-400 transition-colors min-w-[140px]"
+            className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-[oklch(0.30_0_0)] rounded bg-white dark:bg-[oklch(0.22_0_0)] hover:border-gray-400 dark:hover:border-[oklch(0.40_0_0)] transition-colors min-w-[140px]"
           >
             <Filter className="w-4 h-4 text-gray-500" />
             <span className="flex-1 text-left text-sm">
@@ -413,7 +413,7 @@ const TransactionsPanel: React.FC = () => {
             />
           </button>
           {isCategoryOpen && (
-            <div className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-200 rounded shadow-lg z-10">
+            <div className="absolute top-full left-0 mt-1 w-full bg-white dark:bg-[oklch(0.22_0_0)] border border-gray-200 dark:border-[oklch(0.30_0_0)] rounded shadow-lg dark:shadow-black/30 z-10">
               {categoryOptions.map((option) => (
                 <button
                   key={option.value}
@@ -421,10 +421,10 @@ const TransactionsPanel: React.FC = () => {
                     setCategoryFilter(option.value);
                     setIsCategoryOpen(false);
                   }}
-                  className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 ${
+                  className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-[oklch(0.28_0_0)] ${
                     categoryFilter === option.value
-                      ? "bg-[#87E64B]/10 text-[#171717] font-medium"
-                      : "text-gray-700"
+                      ? "bg-[#87E64B]/10 text-[#171717] dark:text-[oklch(0.91_0_0)] font-medium"
+                      : "text-gray-700 dark:text-[oklch(0.75_0_0)]"
                   }`}
                 >
                   {option.label}
@@ -443,7 +443,7 @@ const TransactionsPanel: React.FC = () => {
                 setIsPeriodOpen(false);
                 setIsCategoryOpen(false);
               }}
-              className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded bg-white hover:border-gray-400 transition-colors min-w-[180px]"
+              className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-[oklch(0.30_0_0)] rounded bg-white dark:bg-[oklch(0.22_0_0)] hover:border-gray-400 dark:hover:border-[oklch(0.40_0_0)] transition-colors min-w-[180px]"
             >
               <User className="w-4 h-4 text-gray-500" />
               <span className="flex-1 text-left text-sm truncate">
@@ -454,16 +454,16 @@ const TransactionsPanel: React.FC = () => {
               />
             </button>
             {isContactOpen && (
-              <div className="absolute top-full left-0 mt-1 w-64 bg-white border border-gray-200 rounded shadow-lg z-10 max-h-60 overflow-y-auto">
+              <div className="absolute top-full left-0 mt-1 w-64 bg-white dark:bg-[oklch(0.22_0_0)] border border-gray-200 dark:border-[oklch(0.30_0_0)] rounded shadow-lg dark:shadow-black/30 z-10 max-h-60 overflow-y-auto">
                 <button
                   onClick={() => {
                     setContactFilter("");
                     setIsContactOpen(false);
                   }}
-                  className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 ${
+                  className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-[oklch(0.28_0_0)] ${
                     !contactFilter
-                      ? "bg-[#87E64B]/10 text-[#171717] font-medium"
-                      : "text-gray-700"
+                      ? "bg-[#87E64B]/10 text-[#171717] dark:text-[oklch(0.91_0_0)] font-medium"
+                      : "text-gray-700 dark:text-[oklch(0.75_0_0)]"
                   }`}
                 >
                   {t("contactAll")}
@@ -475,10 +475,10 @@ const TransactionsPanel: React.FC = () => {
                       setContactFilter(email);
                       setIsContactOpen(false);
                     }}
-                    className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 truncate ${
+                    className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-[oklch(0.28_0_0)] truncate ${
                       contactFilter === email
-                        ? "bg-[#87E64B]/10 text-[#171717] font-medium"
-                        : "text-gray-700"
+                        ? "bg-[#87E64B]/10 text-[#171717] dark:text-[oklch(0.91_0_0)] font-medium"
+                        : "text-gray-700 dark:text-[oklch(0.75_0_0)]"
                     }`}
                   >
                     {email}
@@ -497,21 +497,21 @@ const TransactionsPanel: React.FC = () => {
             placeholder={t("searchPlaceholder")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded focus:outline-none hover:border-[#171717] focus:border-[#171717] text-sm"
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-[oklch(0.30_0_0)] rounded bg-white dark:bg-[oklch(0.22_0_0)] text-sm dark:text-[oklch(0.91_0_0)] dark:placeholder-[oklch(0.60_0_0)] focus:outline-none hover:border-[#171717] dark:hover:border-[oklch(0.40_0_0)] focus:border-[#171717] dark:focus:border-[oklch(0.91_0_0)]"
           />
         </div>
       </div>
 
       {/* Download error banner (inline, doesn't replace table) */}
       {downloadError && (
-        <div className="mb-4 px-4 py-3 bg-red-50 text-red-700 text-sm rounded">
+        <div className="mb-4 px-4 py-3 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 text-sm rounded">
           {downloadError}
         </div>
       )}
 
       {/* Transactions Table */}
       {filteredTransactions.length === 0 ? (
-        <div className="text-center py-12 text-gray-500">
+        <div className="text-center py-12 text-gray-500 dark:text-[oklch(0.75_0_0)]">
           {searchQuery ||
           periodFilter !== "all" ||
           categoryFilter !== "all" ||
@@ -523,23 +523,23 @@ const TransactionsPanel: React.FC = () => {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-gray-200">
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">
+              <tr className="border-b border-gray-200 dark:border-[oklch(0.30_0_0)]">
+                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-[oklch(0.60_0_0)]">
                   {t("colDate")}
                 </th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">
+                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-[oklch(0.60_0_0)]">
                   {t("colType")}
                 </th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">
+                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-[oklch(0.60_0_0)]">
                   {t("colDescription")}
                 </th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">
+                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-[oklch(0.60_0_0)]">
                   {t("colContact")}
                 </th>
-                <th className="text-right py-3 px-4 text-sm font-medium text-gray-500">
+                <th className="text-right py-3 px-4 text-sm font-medium text-gray-500 dark:text-[oklch(0.60_0_0)]">
                   {t("colAmount")}
                 </th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">
+                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-[oklch(0.60_0_0)]">
                   {t("colRefId")}
                 </th>
                 <th className="w-12 py-3 px-4"></th>
@@ -551,9 +551,9 @@ const TransactionsPanel: React.FC = () => {
                 return (
                   <tr
                     key={tx.id}
-                    className="border-b border-gray-100 hover:bg-gray-50"
+                    className="border-b border-gray-100 dark:border-[oklch(0.30_0_0)] hover:bg-gray-50 dark:hover:bg-[oklch(0.28_0_0)]"
                   >
-                    <td className="py-4 px-4 text-sm text-gray-900">
+                    <td className="py-4 px-4 text-sm text-gray-900 dark:text-[oklch(0.91_0_0)]">
                       {formatDate(tx.transactionDate)}
                     </td>
                     <td className="py-4 px-4">
@@ -563,23 +563,23 @@ const TransactionsPanel: React.FC = () => {
                         {statusBadge.label}
                       </span>
                     </td>
-                    <td className="py-4 px-4 text-sm text-gray-900">
+                    <td className="py-4 px-4 text-sm text-gray-900 dark:text-[oklch(0.91_0_0)]">
                       <div>
                         <p className="font-medium">
                           {tx.transferId?.title || t("untitledTransfer")}
                         </p>
-                        <p className="text-gray-500 text-xs">
+                        <p className="text-gray-500 dark:text-[oklch(0.60_0_0)] text-xs">
                           {getPaymentMethodLabel(tx.paymentMethod)}
                         </p>
                       </div>
                     </td>
-                    <td className="py-4 px-4 text-sm text-gray-600">
+                    <td className="py-4 px-4 text-sm text-gray-600 dark:text-[oklch(0.75_0_0)]">
                       {tx.user?.email || "-"}
                     </td>
-                    <td className="py-4 px-4 text-sm text-right font-medium text-gray-900">
+                    <td className="py-4 px-4 text-sm text-right font-medium text-gray-900 dark:text-[oklch(0.91_0_0)]">
                       {formatAmount(tx.amountPaid, tx.currency)}
                     </td>
-                    <td className="py-4 px-4 text-sm text-gray-500 font-mono">
+                    <td className="py-4 px-4 text-sm text-gray-500 dark:text-[oklch(0.60_0_0)] font-mono">
                       {tx.paymentReference?.slice(0, 12) || "-"}
                     </td>
                     <td className="py-4 px-4">
@@ -589,7 +589,7 @@ const TransactionsPanel: React.FC = () => {
                           onClick={() => handleDownloadReceipt(tx.id)}
                           disabled={downloadingTxId === tx.id}
                           title={t("downloadReceipt")}
-                          className="p-1.5 rounded hover:bg-gray-100 transition-colors text-gray-500 hover:text-[#171717] disabled:opacity-50 disabled:cursor-wait"
+                          className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-[oklch(0.28_0_0)] transition-colors text-gray-500 dark:text-[oklch(0.60_0_0)] hover:text-[#171717] dark:hover:text-[oklch(0.91_0_0)] disabled:opacity-50 disabled:cursor-wait"
                         >
                           <Download
                             className={`w-4 h-4 ${downloadingTxId === tx.id ? "animate-pulse" : ""}`}
@@ -621,7 +621,7 @@ const TransactionsPanel: React.FC = () => {
           totalItems={filteredTransactions.length}
           itemsPerPage={ITEMS_PER_PAGE}
           onPageChange={setCurrentPage}
-          className="mt-4 border-t border-gray-200"
+          className="mt-4 border-t border-gray-200 dark:border-[oklch(0.30_0_0)]"
         />
       )}
     </div>

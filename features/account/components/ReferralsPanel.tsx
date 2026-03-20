@@ -10,6 +10,7 @@ import {
   ReferralStats,
   ReferralHistoryItem,
   ShareMessage,
+  RewardInfo,
 } from "@/services/referrals-api";
 import { copyToClipboard } from "@/utils/clipboard";
 
@@ -17,7 +18,7 @@ const HISTORY_PAGE_SIZE = 10;
 
 /**
  * ReferralsPanel - Referral dashboard in Account Settings
- * Shows referral link, share buttons, stats cards, and paginated history
+ * Shows referral link, share buttons, how it works, stats cards, and paginated history
  */
 const ReferralsPanel: React.FC = () => {
   const t = useTranslations("referrals");
@@ -31,15 +32,16 @@ const ReferralsPanel: React.FC = () => {
   const [historyPage, setHistoryPage] = useState(1);
   const [shareMessages, setShareMessages] = useState<ShareMessage | null>(null);
   const [aiInsight, setAiInsight] = useState<string | null>(null);
+  const [rewardInfo, setRewardInfo] = useState<RewardInfo | null>(null);
 
-  // Fetch code, stats, and history independently so partial failures don't block other data (H2 fix)
   const loadData = useCallback(async () => {
     setLoading(true);
 
-    const [codeRes, statsRes, historyRes] = await Promise.allSettled([
+    const [codeRes, statsRes, historyRes, rewardRes] = await Promise.allSettled([
       referralsApi.getMyCode(),
       referralsApi.getStats(),
       referralsApi.getHistory(1, HISTORY_PAGE_SIZE),
+      referralsApi.getRewardInfo(),
     ]);
 
     if (codeRes.status === "fulfilled" && codeRes.value.data) {
@@ -59,6 +61,10 @@ const ReferralsPanel: React.FC = () => {
       setHistoryTotal(historyRes.value.data.total);
     }
 
+    if (rewardRes.status === "fulfilled" && rewardRes.value.data) {
+      setRewardInfo(rewardRes.value.data);
+    }
+
     setLoading(false);
   }, []);
 
@@ -67,23 +73,17 @@ const ReferralsPanel: React.FC = () => {
 
     loadData();
 
-    // Fetch AI share messages non-blocking (AC4: buttons enabled immediately with static fallback)
     referralsApi.getShareMessage().then((res) => {
       if (!cancelled && res.data) {
         setShareMessages(res.data);
       }
-    }).catch(() => {
-      // Static fallback is already in place — no action needed
-    });
+    }).catch(() => {});
 
-    // Fetch AI insight non-blocking (AC5: graceful degradation)
     referralsApi.getAiInsight().then((res) => {
       if (!cancelled && res.data?.insight) {
         setAiInsight(res.data.insight);
       }
-    }).catch(() => {
-      // Insight is optional — no action needed
-    });
+    }).catch(() => {});
 
     return () => { cancelled = true; };
   }, [loadData]);
@@ -109,7 +109,6 @@ const ReferralsPanel: React.FC = () => {
     });
   };
 
-  // Share using AI messages when available, static i18n fallback otherwise
   const handleShare = (network: "whatsapp" | "twitter" | "email") => {
     if (!shareUrl) return;
     const staticMessage = t("shareMessage");
@@ -141,22 +140,19 @@ const ReferralsPanel: React.FC = () => {
     return <LoadingPanel className="py-12" />;
   }
 
+  const programEnabled = rewardInfo?.enabled ?? false;
   const isDisabled = !referralCode;
+  const showShareSection = programEnabled && !isDisabled;
   const isEmpty = stats && stats.invitedCount === 0;
+  const maxTransfers = rewardInfo?.maxTransfers || 3;
+  const bonusPercent = rewardInfo?.bonusPercent || 10;
 
   return (
     <div className="mb-10">
       <h3 className="text-2xl font-bold text-[#171717] mb-6">{t("title")}</h3>
 
-      {/* Disabled state — share section hidden, but stats/history still shown below (AC4) */}
-      {isDisabled && (
-        <div className="bg-gray-50 rounded-lg p-8 text-center mb-8">
-          <p className="text-sm text-gray-500">{t("disabled")}</p>
-        </div>
-      )}
-
-      {/* Referral link + share section — only when program is active */}
-      {!isDisabled && (
+      {/* Referral link + share section — only when program is enabled */}
+      {showShareSection && (
         <div className="mb-8">
           <label className="block text-sm font-medium text-gray-600 mb-2">
             {t("yourLink")}
@@ -201,37 +197,63 @@ const ReferralsPanel: React.FC = () => {
         </div>
       )}
 
-      {/* Stats cards — visible even when program is disabled (AC4) */}
+      {/* How it works — only when program is enabled */}
+      {showShareSection && (
+        <div className="bg-[#FDFAF4] border border-gray-100 rounded-lg p-6 mb-8">
+          <h4 className="text-sm font-bold text-[#171717] mb-4">
+            {t("howItWorksTitle")}
+          </h4>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <HowItWorksStep number={1} text={t("howItWorksStep1")} />
+            <HowItWorksStep number={2} text={t("howItWorksStep2")} />
+            <HowItWorksStep
+              number={3}
+              text={t("howItWorksStep3", { max: String(maxTransfers), percent: String(bonusPercent) })}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Stats cards — visible even when program is disabled */}
       {stats && (
         <div className="grid grid-cols-3 gap-4 mb-8">
-          <StatCard label={t("statsInvited")} value={stats.invitedCount} />
-          <StatCard label={t("statsActive")} value={stats.activeCount} />
+          <StatCard
+            label={t("statsFriendsJoined")}
+            value={stats.invitedCount}
+          />
+          <StatCard
+            label={t("statsEarningForYou")}
+            value={stats.activeCount}
+          />
           <StatCard
             label={t("statsEarned")}
             value={formatEarnings(stats.earnedPerCurrency)}
+            isHero
           />
         </div>
       )}
 
-      {/* AI insight — shown when user has referrals and AI returns an insight */}
+      {/* AI insight */}
       {aiInsight && stats && stats.invitedCount > 0 && (
         <div className="bg-[#F5F3FF] border border-[#E0DAFB] rounded-lg px-4 py-3 mb-8">
           <p className="text-sm text-[#5E53E0]">{aiInsight}</p>
         </div>
       )}
 
-      {/* Empty state — only when program is active and no referrals */}
-      {isEmpty && !isDisabled && (
+      {/* Empty state — always visible when no referrals */}
+      {isEmpty && (
         <div className="bg-gray-50 rounded-lg p-8 text-center">
           <ShareIos className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-          <h4 className="text-base font-bold text-[#171717] mb-1">
+          <h4 className="text-base font-bold text-[#171717] mb-2">
             {t("emptyTitle")}
           </h4>
-          <p className="text-sm text-gray-500">{t("emptyDescription")}</p>
+          <p className="text-sm text-gray-500 max-w-sm mx-auto leading-relaxed">
+            {t("emptyDescription", { percent: String(bonusPercent) })}
+          </p>
         </div>
       )}
 
-      {/* Referral history — visible even when program is disabled (AC4) */}
+      {/* Referral history with progress */}
       {!isEmpty && history.length > 0 && (
         <div>
           <h4 className="text-lg font-bold text-[#171717] mb-4">
@@ -245,10 +267,13 @@ const ReferralsPanel: React.FC = () => {
                     {t("emailColumn")}
                   </th>
                   <th className="text-left text-xs font-medium text-gray-500 uppercase px-4 py-3">
-                    {t("statsActive")}
+                    {t("statusColumn")}
                   </th>
                   <th className="text-right text-xs font-medium text-gray-500 uppercase px-4 py-3">
-                    {t("transfersColumn")}
+                    {t("profitColumn")}
+                  </th>
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase px-4 py-3">
+                    {t("progressColumn")}
                   </th>
                 </tr>
               </thead>
@@ -264,8 +289,22 @@ const ReferralsPanel: React.FC = () => {
                     <td className="px-4 py-3">
                       <StatusBadge status={item.status} />
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-500 text-right">
-                      {item.paidTransferCount}
+                    <td className="px-4 py-3 text-right">
+                      <span className="text-sm font-medium text-[#171717]">
+                        {item.earnedMinorUnits > 0
+                          ? `${item.earnedMinorUnits.toLocaleString()} ${item.currency}`
+                          : "-"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <ProgressBar
+                        current={item.paidTransferCount}
+                        max={maxTransfers}
+                        label={t("progressLabel", {
+                          current: String(item.paidTransferCount),
+                          max: String(maxTransfers),
+                        })}
+                      />
                     </td>
                   </tr>
                 ))}
@@ -301,16 +340,60 @@ function formatEarnings(
     .join(" \u00B7 ") || "0";
 }
 
-/** Stat card component */
-const StatCard: React.FC<{ label: string; value: number | string }> = ({
-  label,
-  value,
+/** How it works step */
+const HowItWorksStep: React.FC<{ number: number; text: string }> = ({
+  number,
+  text,
 }) => (
-  <div className="bg-gray-50 rounded-lg p-4">
-    <p className="text-sm text-gray-500 mb-1">{label}</p>
-    <p className="text-xl font-bold text-[#171717]">{value}</p>
+  <div className="flex-1 flex items-start gap-3">
+    <span className="flex-shrink-0 w-7 h-7 rounded-full bg-[#87E64B] text-[#171717] text-sm font-bold flex items-center justify-center">
+      {number}
+    </span>
+    <p className="text-sm text-gray-600 leading-snug pt-0.5">{text}</p>
   </div>
 );
+
+/** Stat card component */
+const StatCard: React.FC<{
+  label: string;
+  value: number | string;
+  isHero?: boolean;
+}> = ({ label, value, isHero }) => (
+  <div
+    className={`rounded-lg p-4 ${
+      isHero
+        ? "bg-gradient-to-br from-[#87E64B]/10 to-[#87E64B]/5 border border-[#87E64B]/30"
+        : "bg-gray-50"
+    }`}
+  >
+    <p className="text-sm text-gray-500 mb-1">{label}</p>
+    <p className={`font-bold text-[#171717] ${isHero ? "text-2xl" : "text-xl"}`}>
+      {value}
+    </p>
+  </div>
+);
+
+/** Progress bar for transfer count */
+const ProgressBar: React.FC<{
+  current: number;
+  max: number;
+  label: string;
+}> = ({ current, max, label }) => {
+  const percent = Math.min((current / max) * 100, 100);
+  return (
+    <div className="flex items-center gap-2 justify-end">
+      <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
+        <div
+          className="h-full bg-[#87E64B] rounded-full transition-all"
+          style={{ width: `${percent}%` }}
+        />
+      </div>
+      <span className="text-xs text-gray-500 font-medium w-8 text-right">
+        {label}
+      </span>
+    </div>
+  );
+};
 
 /** Status badge for referral history */
 const StatusBadge: React.FC<{

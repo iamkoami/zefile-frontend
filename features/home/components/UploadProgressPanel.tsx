@@ -75,7 +75,7 @@ const UploadProgressPanel: React.FC<UploadProgressPanelProps> = ({
   };
 
   return (
-    <div className="flex flex-col items-center justify-center pt-[60px]">
+    <div className="ze-upload-progress flex flex-col items-center justify-center pt-[60px]">
       {/* Progress Number - Large display without background */}
       <div className="relative mb-6 flex items-center justify-center">
         {showCheck ? (
@@ -135,20 +135,20 @@ const UploadProgressPanel: React.FC<UploadProgressPanelProps> = ({
       </div>
 
       {/* Transfer Processing Message */}
-      <h2 className="text-lg font-bold text-black mb-3 text-center">
+      <h2 className="text-lg font-bold text-black dark:text-[oklch(0.91_0_0)] mb-3 text-center">
         {isComplete ? t("processingFiles") : t("transferProcessing")}
       </h2>
 
       {/* File Count - Medium 500 weight */}
       <p
-        className="text-sm font-medium text-gray-700 text-center mb-1"
+        className="text-sm font-medium text-gray-700 dark:text-[oklch(0.75_0_0)] text-center mb-1"
         style={{ fontWeight: 500 }}
       >
         {t("sendingFilesCount", { count: fileCount })}
       </p>
 
       {/* Upload Progress */}
-      <p className="text-xs text-gray-600 text-center mb-1">
+      <p className="text-xs text-gray-600 dark:text-[oklch(0.65_0_0)] text-center mb-1">
         {t("uploadedBytes", {
           uploaded: formatBytes(uploadedSize),
           total: formatBytes(totalSize),
@@ -156,7 +156,7 @@ const UploadProgressPanel: React.FC<UploadProgressPanelProps> = ({
       </p>
 
       {/* Estimated Time Remaining - Always show space */}
-      <p className="text-xs text-gray-600 text-center mb-8">
+      <p className="text-xs text-gray-600 dark:text-[oklch(0.65_0_0)] text-center mb-8">
         {progress < 100 && estimatedTimeRemaining > 0
           ? t("remainingTime", {
               time: formatTimeRemaining(estimatedTimeRemaining),
@@ -167,21 +167,21 @@ const UploadProgressPanel: React.FC<UploadProgressPanelProps> = ({
       {/* Cancel Button */}
       <button
         onClick={onCancel}
-        className="ze-form-input w-full text-center font-bold text-[#171717] hover:bg-gray-50 transition-colors"
+        className="ze-form-input w-full text-center font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] hover:bg-gray-50 dark:hover:bg-[oklch(0.28_0_0)] transition-colors"
       >
         {t("cancel")}
       </button>
 
       {/* Security Note */}
-      <div className="w-full mb-3 mt-6 text-xs text-center text-gray-600">
+      <div className="w-full mb-3 mt-6 text-xs text-center text-gray-600 dark:text-[oklch(0.65_0_0)]">
         <p>{t("securityNote")}</p>
       </div>
 
       {/* Warning Banner - Don't close page */}
       {!isComplete && (
-        <div className="w-full mt-4 px-4 py-3 bg-amber-50 border border-amber-200 rounded-lg flex items-center gap-3">
-          <WarningTriangle className="w-5 h-5 text-amber-600 flex-shrink-0" />
-          <p className="text-xs text-amber-800">{t("doNotClosePage")}</p>
+        <div className="w-full mt-4 px-4 py-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/30 rounded-lg flex items-center gap-3">
+          <WarningTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+          <p className="text-xs text-amber-800 dark:text-amber-300">{t("doNotClosePage")}</p>
         </div>
       )}
     </div>

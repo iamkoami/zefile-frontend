@@ -34,6 +34,13 @@ export default function ReferralPage() {
     }
 
     async function validateCode() {
+      // Check if referrals are enabled before validating
+      const rewardRes = await referralsApi.getRewardInfo();
+      if (!rewardRes.data?.enabled) {
+        setState("invalid");
+        return;
+      }
+
       const response = await referralsApi.validateCode(code!);
 
       if (response.data?.valid) {
@@ -46,7 +53,7 @@ export default function ReferralPage() {
 
         redirectTimer.current = setTimeout(() => {
           router.push("/");
-        }, 1500);
+        }, 3000);
       } else {
         setState("invalid");
       }
@@ -62,7 +69,7 @@ export default function ReferralPage() {
   }, [params?.code, router]);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white dark:bg-[oklch(0.19_0_0)]">
       <Header />
       <main
         className="flex flex-col items-center justify-center px-4"
@@ -72,10 +79,13 @@ export default function ReferralPage() {
 
         {state === "valid" && (
           <>
-            <h1 className="text-2xl font-bold text-[#171717] mb-3 text-center">
+            <h1 className="text-2xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-3 text-center">
               {t("validTitle", { name: referrerName })}
             </h1>
-            <p className="text-gray-500 mb-8 text-center max-w-md leading-relaxed">
+            <p className="text-gray-600 dark:text-[oklch(0.65_0_0)] mb-2 text-center max-w-md leading-relaxed">
+              {t("validValueProp")}
+            </p>
+            <p className="text-gray-400 dark:text-[oklch(0.50_0_0)] text-sm mb-8 text-center max-w-md leading-relaxed">
               {t("validSubtitle")}
             </p>
           </>
@@ -83,10 +93,10 @@ export default function ReferralPage() {
 
         {state === "invalid" && (
           <>
-            <h1 className="text-2xl font-bold text-[#171717] mb-3 text-center">
+            <h1 className="text-2xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-3 text-center">
               {t("invalidLink")}
             </h1>
-            <p className="text-gray-500 mb-8 text-center max-w-md leading-relaxed">
+            <p className="text-gray-500 dark:text-[oklch(0.65_0_0)] mb-8 text-center max-w-md leading-relaxed">
               {t("invalidSubtitle")}
             </p>
             <Link
@@ -100,10 +110,10 @@ export default function ReferralPage() {
 
         {state === "already-authenticated" && (
           <>
-            <h1 className="text-2xl font-bold text-[#171717] mb-3 text-center">
+            <h1 className="text-2xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-3 text-center">
               {t("alreadyHaveAccount")}
             </h1>
-            <p className="text-gray-500 mb-8 text-center max-w-md leading-relaxed">
+            <p className="text-gray-500 dark:text-[oklch(0.65_0_0)] mb-8 text-center max-w-md leading-relaxed">
               {t("alreadyHaveAccountSubtitle")}
             </p>
             <Link

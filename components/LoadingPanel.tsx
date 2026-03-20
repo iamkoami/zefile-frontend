@@ -43,6 +43,7 @@ const LoadingPanel: React.FC<LoadingPanelProps> = ({
           animationData={animationData}
           loop={true}
           autoplay={true}
+          className="ze-lottie-container"
           style={{ width: 160, height: 160 }}
         />
       ) : (

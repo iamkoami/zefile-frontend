@@ -84,6 +84,7 @@ export default function MaintenancePage({
             animationData={logoAnimation}
             loop={true}
             autoplay={true}
+            className="ze-lottie-container"
             style={{ width: "100%", height: "100%" }}
           />
         )}
@@ -109,6 +110,7 @@ export default function MaintenancePage({
               animationData={logoAnimation}
               loop={true}
               autoplay={true}
+              className="ze-lottie-container"
               style={{ width: 120, height: 120 }}
             />
           )}

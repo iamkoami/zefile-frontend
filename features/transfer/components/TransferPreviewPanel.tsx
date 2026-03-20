@@ -98,7 +98,7 @@ const ThumbnailCell = ({
       {imgStatus !== "loaded" && (
         <div
           className={`absolute inset-0 flex items-center justify-center ${
-            showShimmer ? "animate-shimmer" : "bg-gray-200"
+            showShimmer ? "animate-shimmer" : "bg-gray-200 dark:bg-[oklch(0.28_0_0)]"
           }`}
         >
           {icon}
@@ -327,11 +327,11 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
   const getFileIcon = (fileType: FilePreviewType) => {
     switch (fileType) {
       case "image":
-        return <MediaImage className="w-12 h-12 text-gray-400" />;
+        return <MediaImage className="w-12 h-12 text-gray-400 dark:text-[oklch(0.50_0_0)]" />;
       case "video":
-        return <VideoCamera className="w-12 h-12 text-gray-400" />;
+        return <VideoCamera className="w-12 h-12 text-gray-400 dark:text-[oklch(0.50_0_0)]" />;
       case "audio":
-        return <MusicDoubleNote className="w-12 h-12 text-gray-400" />;
+        return <MusicDoubleNote className="w-12 h-12 text-gray-400 dark:text-[oklch(0.50_0_0)]" />;
       case "pdf":
         return <PageEdit className="w-12 h-12 text-red-400" />;
       case "archive":
@@ -339,7 +339,7 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
       case "document":
         return <PageEdit className="w-12 h-12 text-blue-400" />;
       default:
-        return <Page className="w-12 h-12 text-gray-400" />;
+        return <Page className="w-12 h-12 text-gray-400 dark:text-[oklch(0.50_0_0)]" />;
     }
   };
 
@@ -930,16 +930,16 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
       {/* Header */}
       <div className="flex items-start justify-between gap-4 mb-8">
         <div className="flex-1 min-w-0">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4 line-clamp-2">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-[oklch(0.91_0_0)] mb-4 line-clamp-2">
             {getDisplayTitle()}
           </h1>
           {senderEmail && (
-            <p className="text-sm text-gray-600 mb-2 flex items-center gap-1">
+            <p className="text-sm text-gray-600 dark:text-[oklch(0.65_0_0)] mb-2 flex items-center gap-1">
               {t("from", { email: senderEmail })}
               {senderVerified && <VerifiedBadge size="sm" />}
             </p>
           )}
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-500 dark:text-[oklch(0.65_0_0)]">
             {fileCountText} • {formatSize(totalSize)} • {getExpiryText()}
           </p>
         </div>
@@ -951,7 +951,7 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
             userEmail={senderEmail || undefined}
             role={role === "sender" ? "sender" : "recipient"}
             variant="button"
-            className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 border-0"
+            className="text-gray-500 dark:text-[oklch(0.65_0_0)] hover:text-gray-700 dark:hover:text-[oklch(0.75_0_0)] hover:bg-gray-100 dark:hover:bg-[oklch(0.28_0_0)] border-0"
           />
 
           {/* Pay Button (shown when transfer has price, user is receiver, and not already paid) */}
@@ -975,8 +975,8 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
 
       {/* Public Access Message - shown for public transfers */}
       {isPublicTransfer && (
-        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg mb-4">
-          <p className="text-sm text-yellow-800 text-center">
+        <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700/30 rounded-lg mb-4">
+          <p className="text-sm text-yellow-800 dark:text-yellow-300 text-center">
             {t("publicAccessMessage")}
           </p>
         </div>
@@ -984,17 +984,17 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
 
       {/* Version Context Bar - shows when multiple versions exist */}
       {versions.length > 1 && selectedVersion && (
-        <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 mb-4">
+        <div className="flex items-center justify-between bg-gray-50 dark:bg-[oklch(0.22_0_0)] border border-gray-200 dark:border-border rounded-lg px-4 py-3 mb-4">
           <div className="flex items-center gap-3">
-            <RefreshDouble className="w-5 h-5 text-gray-500" />
-            <span className="text-sm text-gray-700">
+            <RefreshDouble className="w-5 h-5 text-gray-500 dark:text-[oklch(0.65_0_0)]" />
+            <span className="text-sm text-gray-700 dark:text-[oklch(0.75_0_0)]">
               {versionT("viewingVersion", {
                 current: selectedVersion.versionNumber,
                 total: versions.length,
               })}
             </span>
             {!selectedVersion.isDefault && (
-              <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded">
+              <span className="text-xs bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 px-2 py-0.5 rounded">
                 {versionT("notLatest")}
               </span>
             )}
@@ -1004,7 +1004,7 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
           <div className="relative" data-version-dropdown>
             <button
               onClick={() => setIsVersionDropdownOpen(!isVersionDropdownOpen)}
-              className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 rounded transition-colors"
+              className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 dark:text-[oklch(0.75_0_0)] bg-white dark:bg-card border border-gray-200 dark:border-border hover:bg-gray-50 dark:hover:bg-[oklch(0.28_0_0)] rounded transition-colors"
             >
               <span className="font-medium">
                 {selectedVersion.versionLabel}
@@ -1015,7 +1015,7 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
             </button>
 
             {isVersionDropdownOpen && (
-              <div className="absolute right-0 mt-1 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
+              <div className="absolute right-0 mt-1 w-56 bg-white dark:bg-card border border-gray-200 dark:border-border rounded-lg shadow-lg dark:shadow-black/30 z-20">
                 {versions.map((version) => (
                   <button
                     key={version.id}
@@ -1023,13 +1023,13 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
                       setSelectedVersionId(version.id);
                       setIsVersionDropdownOpen(false);
                     }}
-                    className={`w-full flex items-center justify-between px-3 py-2 text-sm text-left hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg ${
-                      selectedVersionId === version.id ? "bg-gray-50" : ""
+                    className={`w-full flex items-center justify-between px-3 py-2 text-sm text-left hover:bg-gray-50 dark:hover:bg-[oklch(0.28_0_0)] first:rounded-t-lg last:rounded-b-lg ${
+                      selectedVersionId === version.id ? "bg-gray-50 dark:bg-[oklch(0.28_0_0)]" : ""
                     }`}
                   >
                     <div className="flex flex-col">
                       <span
-                        className={`font-medium ${version.isDefault ? "text-[#5E53E0]" : "text-gray-700"}`}
+                        className={`font-medium ${version.isDefault ? "text-[#5E53E0]" : "text-gray-700 dark:text-[oklch(0.75_0_0)]"}`}
                       >
                         {version.versionLabel}
                         {version.isDefault && (
@@ -1038,7 +1038,7 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
                           </span>
                         )}
                       </span>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-gray-500 dark:text-[oklch(0.65_0_0)]">
                         {versionT("fileCount", { count: version.fileCount })}
                       </span>
                     </div>
@@ -1058,7 +1058,7 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
         <div className="relative" data-sort-dropdown>
           <button
             onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
+            className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 dark:text-[oklch(0.75_0_0)] bg-gray-100 dark:bg-[oklch(0.22_0_0)] hover:bg-gray-200 dark:hover:bg-[oklch(0.28_0_0)] rounded transition-colors"
           >
             <Sort className="w-4 h-4" />
             {getSortLabel(sortField)}
@@ -1068,20 +1068,20 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
           </button>
 
           {isSortDropdownOpen && (
-            <div className="absolute right-0 mt-1 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+            <div className="absolute right-0 mt-1 w-40 bg-white dark:bg-card border border-gray-200 dark:border-border rounded-lg shadow-lg dark:shadow-black/30 z-10">
               {(["name", "date", "size"] as SortField[]).map((field) => (
                 <button
                   key={field}
                   onClick={() => handleSortChange(field)}
-                  className={`w-full flex items-center justify-between px-3 py-2 text-sm text-left hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg ${
+                  className={`w-full flex items-center justify-between px-3 py-2 text-sm text-left hover:bg-gray-50 dark:hover:bg-[oklch(0.28_0_0)] first:rounded-t-lg last:rounded-b-lg ${
                     sortField === field
-                      ? "bg-gray-50 text-[#5E53E0] font-medium"
-                      : "text-gray-700"
+                      ? "bg-gray-50 dark:bg-[oklch(0.28_0_0)] text-[#5E53E0] font-medium"
+                      : "text-gray-700 dark:text-[oklch(0.75_0_0)]"
                   }`}
                 >
                   <span>{getSortLabel(field)}</span>
                   {sortField === field && (
-                    <span className="text-xs text-gray-400">
+                    <span className="text-xs text-gray-400 dark:text-[oklch(0.50_0_0)]">
                       {sortDirection === "asc" ? "↑" : "↓"}
                     </span>
                   )}
@@ -1097,11 +1097,11 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
         {sortedFiles.map((file, index) => (
           <div
             key={file.id || index}
-            className="group relative bg-gray-50 rounded-xl overflow-hidden transition-all duration-200 cursor-pointer hover:shadow-lg hover:scale-[1.02]"
+            className="group relative bg-gray-50 dark:bg-[oklch(0.22_0_0)] rounded-xl overflow-hidden transition-all duration-200 cursor-pointer hover:shadow-lg dark:hover:shadow-black/30 hover:scale-[1.02]"
             onClick={() => openFilePreview(index)}
           >
             {/* Preview area */}
-            <div className="aspect-square flex items-center justify-center bg-gray-100 relative overflow-hidden">
+            <div className="aspect-square flex items-center justify-center bg-gray-100 dark:bg-[oklch(0.19_0_0)] relative overflow-hidden">
               <ThumbnailCell
                 url={getThumbnailUrl(file)}
                 icon={getFileIcon(file.fileType)}
@@ -1124,12 +1124,12 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
             {/* File info */}
             <div className="p-3">
               <p
-                className="text-sm font-medium text-gray-900 truncate"
+                className="text-sm font-medium text-gray-900 dark:text-[oklch(0.91_0_0)] truncate"
                 title={file.fileName}
               >
                 {file.fileName}
               </p>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-500 dark:text-[oklch(0.65_0_0)] mt-1">
                 {formatSize(file.fileSize)}
               </p>
             </div>

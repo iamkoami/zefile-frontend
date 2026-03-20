@@ -61,15 +61,15 @@ export default function SectionIndicator({ sections }: SectionIndicatorProps) {
             aria-label={`Jump to ${label}`}
           >
             {/* Tooltip */}
-            <span className="absolute right-full mr-3 px-2.5 py-1 text-xs font-medium text-white bg-[#171717] rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+            <span className="absolute right-full mr-3 px-2.5 py-1 text-xs font-medium text-white bg-[#171717] dark:bg-white dark:text-[#171717] rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
               {label}
             </span>
             {/* Dot */}
             <span
               className={`rounded-full transition-all duration-200 ${
                 isActive
-                  ? "w-2.5 h-2.5 bg-[#171717]"
-                  : "w-1.5 h-1.5 bg-gray-300 group-hover:bg-gray-500"
+                  ? "w-2.5 h-2.5 bg-[#171717] dark:bg-white"
+                  : "w-1.5 h-1.5 bg-gray-300 dark:bg-gray-600 group-hover:bg-gray-500 dark:group-hover:bg-gray-400"
               }`}
             />
           </button>

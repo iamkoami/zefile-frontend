@@ -339,10 +339,10 @@ const ContactsPanel: React.FC = () => {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
-        <p className="text-gray-500 mb-4">{error}</p>
+        <p className="text-gray-500 dark:text-[oklch(0.75_0_0)] mb-4">{error}</p>
         <button
           onClick={() => fetchContacts()}
-          className="px-4 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-800 transition-colors"
+          className="px-4 py-2 text-sm font-medium text-white bg-gray-900 dark:bg-[oklch(0.91_0_0)] dark:text-[oklch(0.16_0_0)] rounded-lg hover:bg-gray-800 dark:hover:bg-[oklch(0.85_0_0)] transition-colors"
         >
           {t("retry")}
         </button>
@@ -356,16 +356,16 @@ const ContactsPanel: React.FC = () => {
       <div className="flex items-start justify-between mb-10">
         <div>
           {/* Title */}
-          <h1 className="text-4xl font-bold text-gray-900 mt-12 mb-3">
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-[oklch(0.91_0_0)] mt-12 mb-3">
             {t("title")}
           </h1>
 
           {/* Subtitle with count and add link */}
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-500 dark:text-[oklch(0.75_0_0)]">
             {getContactsCountText()} ·{" "}
             <button
               onClick={handleAddContact}
-              className="text-gray-900 underline hover:text-gray-700 transition-colors font-medium"
+              className="text-gray-900 dark:text-[oklch(0.91_0_0)] underline hover:text-gray-700 dark:hover:text-[oklch(0.75_0_0)] transition-colors font-medium"
             >
               {t("addContact")}
             </button>
@@ -399,13 +399,13 @@ const ContactsPanel: React.FC = () => {
           ))
         ) : (
           <div className="flex flex-col items-center justify-center mt-10 py-16 text-center">
-            <p className="text-gray-500">
+            <p className="text-gray-500 dark:text-[oklch(0.75_0_0)]">
               {searchQuery ? t("noResults") : t("noContacts")}
             </p>
             {!searchQuery && (
               <button
                 onClick={handleAddContact}
-                className="mt-4 px-4 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-800 transition-colors"
+                className="mt-4 px-4 py-2 text-sm font-medium text-white bg-gray-900 dark:bg-[oklch(0.91_0_0)] dark:text-[oklch(0.16_0_0)] rounded-lg hover:bg-gray-800 dark:hover:bg-[oklch(0.85_0_0)] transition-colors"
               >
                 {t("addContact")}
               </button>

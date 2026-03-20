@@ -23,23 +23,28 @@ function getTimeOfDay(hour: number): TimeOfDay {
 /**
  * Hook that provides time-of-day value
  * Updates every minute to catch time changes
+ *
+ * Returns "day" during SSR and first render to avoid hydration mismatch,
+ * then updates to the real time of day on the client.
  */
-export function useTimeOfDay(): { timeOfDay: TimeOfDay } {
+export function useTimeOfDay(): { timeOfDay: TimeOfDay; isHydrated: boolean } {
   const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>("day");
+  const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
-    const updateTimeOfDay = () => {
-      const hour = new Date().getHours();
-      setTimeOfDay(getTimeOfDay(hour));
-    };
+    const hour = new Date().getHours();
+    setTimeOfDay(getTimeOfDay(hour));
+    setIsHydrated(true);
 
-    updateTimeOfDay();
-    const interval = setInterval(updateTimeOfDay, 60000);
+    const interval = setInterval(() => {
+      const h = new Date().getHours();
+      setTimeOfDay(getTimeOfDay(h));
+    }, 60000);
 
     return () => clearInterval(interval);
   }, []);
 
-  return { timeOfDay };
+  return { timeOfDay, isHydrated };
 }
 
 export default useTimeOfDay;

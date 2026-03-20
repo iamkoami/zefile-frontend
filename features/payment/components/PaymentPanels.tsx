@@ -369,10 +369,10 @@ export function PaymentMethodPanel() {
       <div className="flex-1 min-w-0">
         {/* Header */}
         <div className="mb-6">
-          <h2 className="text-2xl font-bold text-[#171717]">
+          <h2 className="text-2xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)]">
             {t("securePayment")}
           </h2>
-          <p className="text-gray-600 mt-1 text-sm">
+          <p className="text-gray-600 dark:text-[oklch(0.75_0_0)] mt-1 text-sm">
             {t("makePaymentToDownload")}
           </p>
         </div>
@@ -385,7 +385,7 @@ export function PaymentMethodPanel() {
               value={customerName}
               onChange={(e) => setCustomerName(e.target.value)}
               placeholder={t("yourName")}
-              className="w-full px-4 py-3 border border-gray-200 rounded text-[#171717] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#171717] focus:border-transparent"
+              className="w-full px-4 py-3 border border-gray-200 dark:border-[oklch(0.30_0_0)] rounded text-[#171717] dark:text-[oklch(0.91_0_0)] placeholder:text-gray-400 dark:placeholder-[oklch(0.60_0_0)] bg-white dark:bg-[oklch(0.22_0_0)] focus:outline-none focus:ring-2 focus:ring-[#171717] focus:border-transparent"
             />
           </div>
         )}
@@ -398,14 +398,14 @@ export function PaymentMethodPanel() {
               value={customerEmail}
               onChange={(e) => setCustomerEmail(e.target.value)}
               placeholder={t("yourEmail")}
-              className="w-full px-4 py-3 border border-gray-200 rounded text-[#171717] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#171717] focus:border-transparent"
+              className="w-full px-4 py-3 border border-gray-200 dark:border-[oklch(0.30_0_0)] rounded text-[#171717] dark:text-[oklch(0.91_0_0)] placeholder:text-gray-400 dark:placeholder-[oklch(0.60_0_0)] bg-white dark:bg-[oklch(0.22_0_0)] focus:outline-none focus:ring-2 focus:ring-[#171717] focus:border-transparent"
             />
           </div>
         )}
 
         {/* Payment Method Section */}
         <div className="mb-5">
-          <p className="text-sm font-medium text-gray-700 mb-2">
+          <p className="text-sm font-medium text-gray-700 dark:text-[oklch(0.75_0_0)] mb-2">
             {t("paymentMethodTitle")}
           </p>
 
@@ -414,25 +414,25 @@ export function PaymentMethodPanel() {
             <button
               type="button"
               onClick={() => setIsCountryDropdownOpen(!isCountryDropdownOpen)}
-              className="w-full flex items-center justify-between px-4 py-3 border border-gray-200 rounded text-[#171717] bg-white hover:bg-gray-50 transition-colors"
+              className="w-full flex items-center justify-between px-4 py-3 border border-gray-200 dark:border-[oklch(0.30_0_0)] rounded text-[#171717] dark:text-[oklch(0.91_0_0)] bg-white dark:bg-[oklch(0.22_0_0)] hover:bg-gray-50 dark:hover:bg-[oklch(0.28_0_0)] transition-colors"
             >
               <div className="flex items-center gap-2">
                 {selectedCountry.flagCode ? (
                   <Flag code={selectedCountry.flagCode} size="s" hasBorder={false} />
                 ) : (
-                  <Globe className="w-5 h-5 text-gray-500" />
+                  <Globe className="w-5 h-5 text-gray-500 dark:text-[oklch(0.75_0_0)]" />
                 )}
                 <span className="text-sm font-medium">
                   {selectedCountry.name}
                 </span>
               </div>
               <NavArrowDown
-                className={`w-4 h-4 text-gray-400 transition-transform ${isCountryDropdownOpen ? "rotate-180" : ""}`}
+                className={`w-4 h-4 text-gray-400 dark:text-[oklch(0.60_0_0)] transition-transform ${isCountryDropdownOpen ? "rotate-180" : ""}`}
               />
             </button>
 
             {isCountryDropdownOpen && (
-              <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded shadow-lg max-h-[220px] overflow-y-auto">
+              <div className="absolute z-50 w-full mt-1 bg-white dark:bg-[oklch(0.22_0_0)] border border-gray-200 dark:border-[oklch(0.30_0_0)] rounded shadow-lg dark:shadow-black/30 max-h-[220px] overflow-y-auto">
                 {PAYMENT_COUNTRIES.map((country) => {
                   const isSelected = selectedCountry.code === country.code;
                   return (
@@ -446,16 +446,16 @@ export function PaymentMethodPanel() {
                         setPhoneNumber("");
                         setIsPhoneValid(false);
                       }}
-                      className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 text-left ${
-                        isSelected ? "bg-gray-50" : ""
+                      className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 dark:hover:bg-[oklch(0.28_0_0)] text-left ${
+                        isSelected ? "bg-gray-50 dark:bg-[oklch(0.22_0_0)]" : ""
                       }`}
                     >
                       {country.flagCode ? (
                         <Flag code={country.flagCode} size="s" hasBorder={false} />
                       ) : (
-                        <Globe className="w-5 h-5 text-gray-500" />
+                        <Globe className="w-5 h-5 text-gray-500 dark:text-[oklch(0.75_0_0)]" />
                       )}
-                      <span className="text-sm text-[#171717]">{country.name}</span>
+                      <span className="text-sm text-[#171717] dark:text-[oklch(0.91_0_0)]">{country.name}</span>
                     </button>
                   );
                 })}
@@ -466,10 +466,10 @@ export function PaymentMethodPanel() {
           {/* Payment Methods Grid — API-driven */}
           {loadingMethods ? (
             <div className="flex items-center justify-center py-6">
-              <div className="w-5 h-5 border-2 border-gray-300 border-t-[#5E53E0] rounded-full animate-spin" />
+              <div className="w-5 h-5 border-2 border-gray-300 dark:border-[oklch(0.30_0_0)] border-t-[#5E53E0] rounded-full animate-spin" />
             </div>
           ) : paymentMethods.length === 0 ? (
-            <p className="text-sm text-gray-500 py-4 text-center">
+            <p className="text-sm text-gray-500 dark:text-[oklch(0.75_0_0)] py-4 text-center">
               {t("noMethodsAvailable")}
             </p>
           ) : (
@@ -487,12 +487,12 @@ export function PaymentMethodPanel() {
                     className={`flex items-center gap-2 p-2.5 rounded border-2 transition-colors ${
                       isSelected
                         ? "border-[#5E53E0] bg-[#5E53E0]/5"
-                        : "border-gray-200 hover:border-gray-300"
+                        : "border-gray-200 dark:border-[oklch(0.30_0_0)] hover:border-gray-300 dark:hover:border-[oklch(0.40_0_0)]"
                     }`}
                   >
-                    <div className="w-7 h-7 flex-shrink-0 flex items-center justify-center bg-gray-100 rounded">
+                    <div className="w-7 h-7 flex-shrink-0 flex items-center justify-center bg-gray-100 dark:bg-[oklch(0.28_0_0)] rounded">
                       {failedIcons.has(method.icon) ? (
-                        <SmartphoneDevice className="w-4 h-4 text-gray-500" />
+                        <SmartphoneDevice className="w-4 h-4 text-gray-500 dark:text-[oklch(0.75_0_0)]" />
                       ) : (
                         <Image
                           src={getProviderIconPath(method.icon)}
@@ -505,7 +505,7 @@ export function PaymentMethodPanel() {
                         />
                       )}
                     </div>
-                    <span className="text-xs font-medium text-[#171717] truncate">
+                    <span className="text-xs font-medium text-[#171717] dark:text-[oklch(0.91_0_0)] truncate">
                       {method.name}
                     </span>
                   </button>
@@ -528,13 +528,13 @@ export function PaymentMethodPanel() {
                     className={`flex items-center gap-2 p-2.5 rounded border-2 transition-colors ${
                       isSelected
                         ? "border-[#5E53E0] bg-[#5E53E0]/5"
-                        : "border-gray-200 hover:border-gray-300"
+                        : "border-gray-200 dark:border-[oklch(0.30_0_0)] hover:border-gray-300 dark:hover:border-[oklch(0.40_0_0)]"
                     }`}
                   >
-                    <div className="w-7 h-7 flex-shrink-0 flex items-center justify-center bg-gray-100 rounded">
-                      <MethodIcon className="w-4 h-4 text-gray-500" />
+                    <div className="w-7 h-7 flex-shrink-0 flex items-center justify-center bg-gray-100 dark:bg-[oklch(0.28_0_0)] rounded">
+                      <MethodIcon className="w-4 h-4 text-gray-500 dark:text-[oklch(0.75_0_0)]" />
                     </div>
-                    <span className="text-xs font-medium text-[#171717] truncate">
+                    <span className="text-xs font-medium text-[#171717] dark:text-[oklch(0.91_0_0)] truncate">
                       {method.name}
                     </span>
                   </button>
@@ -549,13 +549,13 @@ export function PaymentMethodPanel() {
                   className={`flex items-center gap-2 p-2.5 rounded border-2 transition-colors ${
                     selectedMethod?.type === "card"
                       ? "border-[#5E53E0] bg-[#5E53E0]/5"
-                      : "border-gray-200 hover:border-gray-300"
+                      : "border-gray-200 dark:border-[oklch(0.30_0_0)] hover:border-gray-300 dark:hover:border-[oklch(0.40_0_0)]"
                   }`}
                 >
-                  <div className="w-7 h-7 flex-shrink-0 flex items-center justify-center bg-gray-100 rounded">
-                    <CreditCard className="w-4 h-4 text-gray-500" />
+                  <div className="w-7 h-7 flex-shrink-0 flex items-center justify-center bg-gray-100 dark:bg-[oklch(0.28_0_0)] rounded">
+                    <CreditCard className="w-4 h-4 text-gray-500 dark:text-[oklch(0.75_0_0)]" />
                   </div>
-                  <span className="text-xs font-medium text-[#171717] truncate">
+                  <span className="text-xs font-medium text-[#171717] dark:text-[oklch(0.91_0_0)] truncate">
                     {cardMethod.name}
                   </span>
                 </button>
@@ -582,7 +582,7 @@ export function PaymentMethodPanel() {
           <button
             onClick={closeDrawer}
             disabled={isLoading}
-            className="px-8 py-3 bg-gray-100 text-[#171717] font-bold rounded hover:bg-gray-200 transition-colors disabled:opacity-50"
+            className="px-8 py-3 bg-gray-100 dark:bg-[oklch(0.28_0_0)] text-[#171717] dark:text-[oklch(0.91_0_0)] font-bold rounded hover:bg-gray-200 dark:hover:bg-[oklch(0.32_0_0)] transition-colors disabled:opacity-50"
           >
             {t("cancel")}
           </button>
@@ -596,7 +596,7 @@ export function PaymentMethodPanel() {
         </div>
 
         {/* Security Notice */}
-        <div className="flex items-start gap-3 text-sm text-gray-500">
+        <div className="flex items-start gap-3 text-sm text-gray-500 dark:text-[oklch(0.75_0_0)]">
           <Lock className="w-4 h-4 mt-0.5 flex-shrink-0" />
           <p>{t("securityGuarantee")}</p>
         </div>
@@ -781,10 +781,10 @@ export function PaymentPhonePanel() {
       <div className="flex-1 min-w-0">
         {/* Header */}
         <div className="mb-8">
-          <h2 className="text-3xl font-bold text-[#171717]">
+          <h2 className="text-3xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)]">
             {t("enterPhoneNumber")}
           </h2>
-          <p className="text-gray-600 mt-2">{t("enterPhoneForMobileMoney")}</p>
+          <p className="text-gray-600 dark:text-[oklch(0.75_0_0)] mt-2">{t("enterPhoneForMobileMoney")}</p>
         </div>
 
         {/* Provider Selection */}
@@ -794,7 +794,7 @@ export function PaymentPhonePanel() {
           </div>
         ) : (
           <div className="mb-6">
-            <h3 className="text-sm font-bold text-[#171717] mb-3">
+            <h3 className="text-sm font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-3">
               {t("selectProvider")}
             </h3>
             <div className="flex flex-wrap gap-3">
@@ -805,7 +805,7 @@ export function PaymentPhonePanel() {
                   className={`px-4 py-2 border-2 rounded font-medium transition-all ${
                     selectedProvider === provider.provider
                       ? "border-[#5E53E0] bg-[#5E53E0]/5 text-[#5E53E0]"
-                      : "border-gray-200 text-gray-700 hover:border-gray-300"
+                      : "border-gray-200 dark:border-[oklch(0.30_0_0)] text-gray-700 dark:text-[oklch(0.75_0_0)] hover:border-gray-300 dark:hover:border-[oklch(0.40_0_0)]"
                   }`}
                 >
                   {provider.name}
@@ -829,7 +829,7 @@ export function PaymentPhonePanel() {
           <button
             onClick={popView}
             disabled={isLoading}
-            className="flex-1 px-6 py-3 bg-gray-100 text-[#171717] font-medium rounded hover:bg-gray-200 transition-colors disabled:opacity-50"
+            className="flex-1 px-6 py-3 bg-gray-100 dark:bg-[oklch(0.28_0_0)] text-[#171717] dark:text-[oklch(0.91_0_0)] font-medium rounded hover:bg-gray-200 dark:hover:bg-[oklch(0.32_0_0)] transition-colors disabled:opacity-50"
           >
             {t("cancel")}
           </button>
@@ -843,7 +843,7 @@ export function PaymentPhonePanel() {
         </div>
 
         {/* Security Notice */}
-        <div className="flex items-start gap-3 text-sm text-gray-500">
+        <div className="flex items-start gap-3 text-sm text-gray-500 dark:text-[oklch(0.75_0_0)]">
           <Lock className="w-4 h-4 mt-0.5 flex-shrink-0" />
           <p>{t("securityGuarantee")}</p>
         </div>
@@ -1034,16 +1034,16 @@ export function PaymentPromptPanel() {
         {/* Status Icon */}
         <div className="mb-6">
           {isSuccess ? (
-            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center">
-              <CheckCircle className="w-10 h-10 text-green-600" />
+            <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+              <CheckCircle className="w-10 h-10 text-green-600 dark:text-green-400" />
             </div>
           ) : isFailed ? (
-            <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center">
-              <XmarkCircle className="w-10 h-10 text-red-600" />
+            <div className="w-20 h-20 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
+              <XmarkCircle className="w-10 h-10 text-red-600 dark:text-red-400" />
             </div>
           ) : isTimeout ? (
-            <div className="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center">
-              <WarningCircle className="w-10 h-10 text-yellow-600" />
+            <div className="w-20 h-20 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center">
+              <WarningCircle className="w-10 h-10 text-yellow-600 dark:text-yellow-400" />
             </div>
           ) : (
             <div className="w-20 h-20 bg-[#5E53E0]/10 rounded-full flex items-center justify-center animate-pulse">
@@ -1056,52 +1056,52 @@ export function PaymentPromptPanel() {
         <div className="mb-6">
           {isSuccess ? (
             <>
-              <h2 className="text-3xl font-bold text-[#171717] mb-2">
+              <h2 className="text-3xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-2">
                 {t("paymentSuccessful")}
               </h2>
-              <p className="text-gray-600">{t("redirectingToDownload")}</p>
+              <p className="text-gray-600 dark:text-[oklch(0.75_0_0)]">{t("redirectingToDownload")}</p>
             </>
           ) : isFailed ? (
             <>
-              <h2 className="text-3xl font-bold text-[#171717] mb-2">
+              <h2 className="text-3xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-2">
                 {t("paymentFailed")}
               </h2>
-              <p className="text-gray-600">{error || t("youWereNotCharged")}</p>
+              <p className="text-gray-600 dark:text-[oklch(0.75_0_0)]">{error || t("youWereNotCharged")}</p>
             </>
           ) : isTimeout ? (
             <>
-              <h2 className="text-3xl font-bold text-[#171717] mb-2">
+              <h2 className="text-3xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-2">
                 {t("takingLongerThanUsual")}
               </h2>
-              <p className="text-gray-600">{t("didntReceivePrompt")}</p>
+              <p className="text-gray-600 dark:text-[oklch(0.75_0_0)]">{t("didntReceivePrompt")}</p>
             </>
           ) : (
             <>
-              <h2 className="text-3xl font-bold text-[#171717] mb-2">
+              <h2 className="text-3xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-2">
                 {t("checkYourPhone")}
               </h2>
-              <p className="text-gray-600">{t("confirmPaymentOn")}</p>
+              <p className="text-gray-600 dark:text-[oklch(0.75_0_0)]">{t("confirmPaymentOn")}</p>
             </>
           )}
         </div>
 
         {/* Payment Details */}
-        <div className="bg-gray-50 rounded-lg p-5 mb-6">
+        <div className="bg-gray-50 dark:bg-[oklch(0.22_0_0)] rounded-lg p-5 mb-6">
           <div className="flex justify-between items-center mb-3">
-            <span className="text-gray-600">{t("payWith")}</span>
-            <span className="font-medium text-[#171717]">
+            <span className="text-gray-600 dark:text-[oklch(0.75_0_0)]">{t("payWith")}</span>
+            <span className="font-medium text-[#171717] dark:text-[oklch(0.91_0_0)]">
               {getProviderName(paymentMethod.provider)}
             </span>
           </div>
           <div className="flex justify-between items-center mb-3">
-            <span className="text-gray-600">{t("phoneNumber")}</span>
-            <span className="font-medium text-[#171717]">
+            <span className="text-gray-600 dark:text-[oklch(0.75_0_0)]">{t("phoneNumber")}</span>
+            <span className="font-medium text-[#171717] dark:text-[oklch(0.91_0_0)]">
               {flowData.phoneNumber}
             </span>
           </div>
-          <div className="flex justify-between items-center pt-3 border-t border-gray-200">
-            <span className="text-gray-600">{t("amount")}</span>
-            <span className="font-bold text-lg text-[#171717]">
+          <div className="flex justify-between items-center pt-3 border-t border-gray-200 dark:border-[oklch(0.30_0_0)]">
+            <span className="text-gray-600 dark:text-[oklch(0.75_0_0)]">{t("amount")}</span>
+            <span className="font-bold text-lg text-[#171717] dark:text-[oklch(0.91_0_0)]">
               {formatAmount(
                 flowData.paymentAmount || transfer.price || 0,
                 transfer.currency,
@@ -1112,7 +1112,7 @@ export function PaymentPromptPanel() {
 
         {/* Polling Status */}
         {isPolling && (
-          <p className="text-sm text-gray-500 mb-6">
+          <p className="text-sm text-gray-500 dark:text-[oklch(0.75_0_0)] mb-6">
             {t("waitingForConfirmation")}
           </p>
         )}
@@ -1131,7 +1131,7 @@ export function PaymentPromptPanel() {
           {!isSuccess && (
             <button
               onClick={handleChangeMethod}
-              className="w-full px-6 py-3 bg-gray-100 text-[#171717] font-medium rounded hover:bg-gray-200 transition-colors"
+              className="w-full px-6 py-3 bg-gray-100 dark:bg-[oklch(0.28_0_0)] text-[#171717] dark:text-[oklch(0.91_0_0)] font-medium rounded hover:bg-gray-200 dark:hover:bg-[oklch(0.32_0_0)] transition-colors"
             >
               {t("useDifferentMethod")}
             </button>
@@ -1140,7 +1140,7 @@ export function PaymentPromptPanel() {
           {!isSuccess && (
             <button
               onClick={handleCancel}
-              className="w-full px-6 py-2 text-sm font-medium text-gray-600 hover:text-gray-800"
+              className="w-full px-6 py-2 text-sm font-medium text-gray-600 dark:text-[oklch(0.75_0_0)] hover:text-gray-800 dark:hover:text-[oklch(0.91_0_0)]"
             >
               {t("cancel")}
             </button>
@@ -1310,21 +1310,21 @@ export function CardPaymentPanel() {
       <div className="flex flex-col lg:flex-row gap-8 py-4">
         {/* Left Column - Error Content */}
         <div className="flex-1 flex flex-col items-center justify-center py-12">
-          <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-6">
-            <XmarkCircle className="w-10 h-10 text-red-600" />
+          <div className="w-20 h-20 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-6">
+            <XmarkCircle className="w-10 h-10 text-red-600 dark:text-red-400" />
           </div>
-          <h2 className="text-2xl font-bold mb-2">{t("paymentFailed")}</h2>
-          <p className="text-gray-600 text-center mb-6">{initError}</p>
+          <h2 className="text-2xl font-bold mb-2 dark:text-[oklch(0.91_0_0)]">{t("paymentFailed")}</h2>
+          <p className="text-gray-600 dark:text-[oklch(0.75_0_0)] text-center mb-6">{initError}</p>
           <div className="flex gap-4">
             <button
               onClick={handleBack}
-              className="px-6 py-3 bg-gray-100 text-[#171717] font-medium rounded hover:bg-gray-200 transition-colors"
+              className="px-6 py-3 bg-gray-100 dark:bg-[oklch(0.28_0_0)] text-[#171717] dark:text-[oklch(0.91_0_0)] font-medium rounded hover:bg-gray-200 dark:hover:bg-[oklch(0.32_0_0)] transition-colors"
             >
               {t("useDifferentMethod")}
             </button>
             <button
               onClick={closeDrawer}
-              className="px-6 py-3 text-gray-600 hover:text-gray-800"
+              className="px-6 py-3 text-gray-600 dark:text-[oklch(0.75_0_0)] hover:text-gray-800 dark:hover:text-[oklch(0.91_0_0)]"
             >
               {t("cancel")}
             </button>
@@ -1382,10 +1382,10 @@ export function CardPaymentPanel() {
           <div className="animate-pulse mb-4">
             <Clock className="w-12 h-12 text-[#5E53E0] mx-auto" />
           </div>
-          <p className="text-lg font-medium text-[#171717]">
+          <p className="text-lg font-medium text-[#171717] dark:text-[oklch(0.91_0_0)]">
             {t("openingSecurePayment")}
           </p>
-          <p className="text-gray-600 text-sm mt-2">
+          <p className="text-gray-600 dark:text-[oklch(0.75_0_0)] text-sm mt-2">
             {t("paymentWindowOpening")}
           </p>
         </div>
@@ -1393,7 +1393,7 @@ export function CardPaymentPanel() {
         {/* Cancel button */}
         <button
           onClick={handleBack}
-          className="mt-6 text-[#171717] underline font-medium"
+          className="mt-6 text-[#171717] dark:text-[oklch(0.91_0_0)] underline font-medium"
         >
           {t("cancel")}
         </button>
@@ -1639,20 +1639,20 @@ export function PaymentProcessingPanel() {
         </div>
 
         {/* Heading */}
-        <h2 className="text-2xl font-bold mb-2">
+        <h2 className="text-2xl font-bold mb-2 dark:text-[oklch(0.91_0_0)]">
           {timeoutReached ? t("takingLongerThanUsual") : t("processing")}
         </h2>
 
         {/* Instructions */}
-        <p className="text-gray-600 text-center mb-6">
+        <p className="text-gray-600 dark:text-[oklch(0.75_0_0)] text-center mb-6">
           {timeoutReached ? t("didntReceivePrompt") : getMethodInstructions()}
         </p>
 
         {/* Payment Details */}
-        <div className="bg-gray-50 rounded-lg p-4 w-full max-w-sm mb-6">
+        <div className="bg-gray-50 dark:bg-[oklch(0.22_0_0)] rounded-lg p-4 w-full max-w-sm mb-6">
           <div className="flex justify-between mb-2">
-            <span className="text-gray-600">{t("amount")}</span>
-            <span className="font-medium">
+            <span className="text-gray-600 dark:text-[oklch(0.75_0_0)]">{t("amount")}</span>
+            <span className="font-medium dark:text-[oklch(0.91_0_0)]">
               {formatAmount(
                 flowData?.paymentAmount || transfer.price || 0,
                 transfer.currency,
@@ -1660,14 +1660,14 @@ export function PaymentProcessingPanel() {
             </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-600">{t("transactionReference")}</span>
-            <span className="font-mono text-sm">{reference}</span>
+            <span className="text-gray-600 dark:text-[oklch(0.75_0_0)]">{t("transactionReference")}</span>
+            <span className="font-mono text-sm dark:text-[oklch(0.91_0_0)]">{reference}</span>
           </div>
         </div>
 
         {/* Status */}
         {(isVerifying || pollingStatus === "polling") && !timeoutReached && (
-          <p className="text-sm text-gray-500 mb-6">
+          <p className="text-sm text-gray-500 dark:text-[oklch(0.75_0_0)] mb-6">
             {isVerifying
               ? t("verifyingPayment") || "Verifying payment..."
               : t("waitingForConfirmation")}
@@ -1685,7 +1685,7 @@ export function PaymentProcessingPanel() {
             </button>
             <button
               onClick={handleCancel}
-              className="w-full px-6 py-3 text-gray-600 hover:text-gray-800"
+              className="w-full px-6 py-3 text-gray-600 dark:text-[oklch(0.75_0_0)] hover:text-gray-800 dark:hover:text-[oklch(0.91_0_0)]"
             >
               {t("cancel")}
             </button>
@@ -1693,7 +1693,7 @@ export function PaymentProcessingPanel() {
         )}
 
         {!timeoutReached && (
-          <button onClick={handleCancel} className="text-[#171717] underline font-medium">
+          <button onClick={handleCancel} className="text-[#171717] dark:text-[oklch(0.91_0_0)] underline font-medium">
             {t("cancel")}
           </button>
         )}
@@ -1809,34 +1809,34 @@ export function PaymentSuccessPanel() {
       {/* Left Column - Success Content */}
       <div className="flex-1 flex flex-col items-center py-8">
         {/* Success Icon */}
-        <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6">
-          <CheckCircle className="w-10 h-10 text-green-600" />
+        <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-6">
+          <CheckCircle className="w-10 h-10 text-green-600 dark:text-green-400" />
         </div>
 
         {/* Heading */}
-        <h2 className="text-2xl font-bold mb-2">
+        <h2 className="text-2xl font-bold mb-2 dark:text-[oklch(0.91_0_0)]">
           {t("paymentSuccessful")}
         </h2>
-        <p className="text-gray-600 text-center mb-6">
+        <p className="text-gray-600 dark:text-[oklch(0.75_0_0)] text-center mb-6">
           {t("paymentSuccessMessage")}
         </p>
 
         {/* Transaction Details */}
         {transaction && (
-          <div className="bg-gray-50 rounded-lg p-4 w-full max-w-sm mb-6">
+          <div className="bg-gray-50 dark:bg-[oklch(0.22_0_0)] rounded-lg p-4 w-full max-w-sm mb-6">
             <div className="flex justify-between mb-2">
-              <span className="text-gray-600">{t("amount")}</span>
-              <span className="font-medium">
+              <span className="text-gray-600 dark:text-[oklch(0.75_0_0)]">{t("amount")}</span>
+              <span className="font-medium dark:text-[oklch(0.91_0_0)]">
                 {formatAmount(transaction.amount, transaction.currency)}
               </span>
             </div>
             <div className="flex justify-between mb-2">
-              <span className="text-gray-600">{t("transactionReference")}</span>
-              <span className="font-mono text-sm">{transaction.reference}</span>
+              <span className="text-gray-600 dark:text-[oklch(0.75_0_0)]">{t("transactionReference")}</span>
+              <span className="font-mono text-sm dark:text-[oklch(0.91_0_0)]">{transaction.reference}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">{t("paidOn")}</span>
-              <span>{formatDate(transaction.paidAt)}</span>
+              <span className="text-gray-600 dark:text-[oklch(0.75_0_0)]">{t("paidOn")}</span>
+              <span className="dark:text-[oklch(0.91_0_0)]">{formatDate(transaction.paidAt)}</span>
             </div>
           </div>
         )}
@@ -1961,21 +1961,21 @@ export function PaymentFailedPanel() {
       {/* Left Column - Failed Content */}
       <div className="flex-1 flex flex-col items-center py-8">
         {/* Failed Icon */}
-        <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-6">
-          <XmarkCircle className="w-10 h-10 text-red-600" />
+        <div className="w-20 h-20 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-6">
+          <XmarkCircle className="w-10 h-10 text-red-600 dark:text-red-400" />
         </div>
 
         {/* Heading */}
-        <h2 className="text-2xl font-bold mb-2">{t("paymentFailed")}</h2>
+        <h2 className="text-2xl font-bold mb-2 dark:text-[oklch(0.91_0_0)]">{t("paymentFailed")}</h2>
 
         {/* Error Message */}
-        <p className="text-gray-600 text-center mb-2">
+        <p className="text-gray-600 dark:text-[oklch(0.75_0_0)] text-center mb-2">
           {getErrorMessage(error?.code)}
         </p>
 
         {/* Reassurance */}
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg px-4 py-3 mb-6 w-full max-w-sm">
-          <p className="text-yellow-800 text-sm text-center">
+        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/30 rounded-lg px-4 py-3 mb-6 w-full max-w-sm">
+          <p className="text-yellow-800 dark:text-amber-300 text-sm text-center">
             ⚠️ {t("youWereNotCharged")}
           </p>
         </div>
@@ -1991,13 +1991,13 @@ export function PaymentFailedPanel() {
         {/* Different Method Link */}
         <button
           onClick={handleDifferentMethod}
-          className="text-[#171717] underline font-medium mb-4"
+          className="text-[#171717] dark:text-[oklch(0.91_0_0)] underline font-medium mb-4"
         >
           {t("useDifferentMethod")}
         </button>
 
         {/* Close Link */}
-        <button onClick={handleClose} className="text-gray-500">
+        <button onClick={handleClose} className="text-gray-500 dark:text-[oklch(0.75_0_0)]">
           {t("cancel")}
         </button>
       </div>

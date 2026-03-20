@@ -31,12 +31,12 @@ const HeroText: React.FC<HeroTextProps> = ({
   // Adjust text colors based on time of day
   const textColors = {
     day: {
-      title: "text-[#171717]",
-      subtitle: "text-[#4B5563]",
+      title: "text-[#171717] dark:text-white",
+      subtitle: "text-[#4B5563] dark:text-gray-300",
     },
     evening: {
-      title: "text-[#171717]",
-      subtitle: "text-[#4B5563]",
+      title: "text-[#171717] dark:text-white",
+      subtitle: "text-[#4B5563] dark:text-gray-300",
     },
     night: {
       title: "text-white",

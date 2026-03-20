@@ -135,6 +135,7 @@ export default function NotFoundContent() {
             animationData={error404Animation}
             loop={true}
             autoplay={true}
+            className="ze-lottie-container"
             style={{ width: 500, height: 380 }}
           />}
         </div>

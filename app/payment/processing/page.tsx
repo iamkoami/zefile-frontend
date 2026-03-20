@@ -66,6 +66,7 @@ export default function PaymentProcessingPage() {
           animationData={paymentAnimation}
           loop={true}
           autoplay={true}
+          className="ze-lottie-container"
           style={{ width: 172, height: 172 }}
         />
       </div>

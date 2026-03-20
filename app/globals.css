@@ -50,6 +50,8 @@
   --font-weight-bold: 700;
   --font-weight-extrabold: 800;
   --font-weight-black: 900;
+  --color-ze-elevated: var(--ze-elevated);
+  --color-ze-footer: var(--ze-footer);
 }
 
 :root {
@@ -85,51 +87,83 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  --ze-elevated: oklch(1 0 0);
+  --ze-footer: oklch(0.98 0.005 85);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  /* ZeFile dim palette — Story 91.3 OKLch tokens */
+  --background: oklch(0.19 0 0);
+  --foreground: oklch(0.91 0 0);
+  --card: oklch(0.24 0 0);
+  --card-foreground: oklch(0.91 0 0);
+  --popover: oklch(0.24 0 0);
+  --popover-foreground: oklch(0.91 0 0);
+  --primary: oklch(0.91 0 0);
+  --primary-foreground: oklch(0.19 0 0);
+  --secondary: oklch(0.28 0 0);
+  --secondary-foreground: oklch(0.91 0 0);
+  --muted: oklch(0.28 0 0);
+  --muted-foreground: oklch(0.65 0 0);
+  --accent: oklch(0.28 0 0);
+  --accent-foreground: oklch(0.91 0 0);
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
+  --border: oklch(0.30 0 0);
+  --input: oklch(0.22 0 0);
   --ring: oklch(0.556 0 0);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar: oklch(0.19 0 0);
+  --sidebar-foreground: oklch(0.91 0 0);
   --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-primary-foreground: oklch(0.91 0 0);
+  --sidebar-accent: oklch(0.28 0 0);
+  --sidebar-accent-foreground: oklch(0.91 0 0);
+  --sidebar-border: oklch(0.30 0 0);
   --sidebar-ring: oklch(0.556 0 0);
+
+  /* Additional semantic tokens */
+  --ze-elevated: oklch(0.28 0 0);
+  --ze-footer: oklch(0.16 0.005 85);
+
+  /* Toast dark surfaces — tinted by type for distinguishability */
+  --ze-toast-success: oklch(0.28 0.04 140);
+  --ze-toast-error: oklch(0.28 0.05 25);
+  --ze-toast-warning: oklch(0.28 0.05 85);
+  --ze-toast-info: oklch(0.28 0.05 270);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    transition-property: color, background-color, border-color, fill, stroke;
+    transition-duration: 200ms;
+    transition-timing-function: ease;
   }
   body {
     @apply bg-background text-foreground;
   }
   button {
     font-weight: 600;
+  }
+
+  /* AC 4: Elements with ze-keep-white retain white background in dark mode */
+  .dark .ze-keep-white {
+    background-color: white !important;
+  }
+
+  /* AC 5: Opt-out class for elements that must not get theme transitions */
+  .ze-no-theme-transition {
+    transition-property: none !important;
+  }
+
+  /* AC 5: Animation protection — prevent theme color transition on Lottie/progress containers */
+  .ze-upload-progress,
+  .ze-lottie-container {
+    transition-property: none !important;
   }
 }
 
@@ -140,6 +174,10 @@
     @apply w-full bg-white;
     position: relative;
     z-index: 100;
+  }
+
+  .dark .ze-header {
+    background-color: var(--background);
   }
 
   /* Both hidden and floating share fixed pill positioning */
@@ -158,6 +196,15 @@
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     background-color: rgba(255, 255, 255, 0.92);
+  }
+
+  .dark .ze-header-hidden,
+  .dark .ze-header-floating {
+    border-color: var(--border);
+    box-shadow:
+      0 4px 16px 0 rgba(0, 0, 0, 0.3),
+      0 1px 4px 0 rgba(0, 0, 0, 0.2);
+    background-color: oklch(0.19 0 0 / 0.92);
   }
 
   /* Hidden: instantly off-screen (no transition to avoid flash) */
@@ -248,6 +295,22 @@
 
   .ze-content-panel.ze-wallpaper-mode {
     background-color: transparent;
+  }
+
+  /* Dark mode: override time-of-day backgrounds + match global 200ms theme transition */
+  .dark .ze-content-panel {
+    transition-duration: 200ms;
+    transition-timing-function: ease;
+    background-color: #1a1a2e;
+  }
+  .dark .ze-content-panel.ze-time-day {
+    background-color: #0f1a2e;
+  }
+  .dark .ze-content-panel.ze-time-evening {
+    background-color: #1a1520;
+  }
+  .dark .ze-content-panel.ze-time-night {
+    background-color: #0d0c18;
   }
 
   /* Night mode text adjustments */
@@ -375,6 +438,12 @@
     pointer-events: auto;
   }
 
+  .dark .ze-upload-panel {
+    background-color: var(--card);
+    border-color: #87e64b;
+    color: var(--foreground);
+  }
+
   .ze-upload-panel.ze-test-result {
     min-width: 430px;
     max-width: 430px;
@@ -415,6 +484,14 @@
     background-color: #e5e5e5;
   }
 
+  .dark .ze-menu-item {
+    color: var(--foreground);
+  }
+
+  .dark .ze-menu-item:hover {
+    background-color: var(--accent);
+  }
+
   /* Primary Button */
   .ze-button-primary {
     @apply px-4 text-sm transition-colors flex items-center;
@@ -448,6 +525,11 @@
     cursor: not-allowed;
   }
 
+  .dark .ze-transfer-button:disabled {
+    background-color: oklch(0.30 0 0);
+    color: oklch(0.60 0 0);
+  }
+
   /* Options Button */
   .ze-options-button {
     @apply px-4 py-3 transition-colors;
@@ -459,6 +541,16 @@
 
   .ze-options-button:hover {
     background-color: #f9fafb;
+  }
+
+  .dark .ze-options-button {
+    background-color: var(--card);
+    border-color: var(--border);
+    color: var(--foreground);
+  }
+
+  .dark .ze-options-button:hover {
+    background-color: oklch(0.28 0 0);
   }
 
   /* Choice Blocks (two-block upload selection for visitors) */
@@ -524,6 +616,23 @@
     color: #c0b8ae;
   }
 
+  /* Dark mode: choice blocks use dark surface */
+  .dark .ze-choice-block {
+    background-color: oklch(0.22 0 0);
+    border-color: var(--border);
+    color: var(--foreground);
+  }
+  .dark .ze-choice-block:hover {
+    background-color: oklch(0.25 0 0);
+    border-color: oklch(0.35 0 0);
+  }
+  .dark .ze-choice-desc {
+    opacity: 0.5;
+  }
+  .dark .ze-choice-arrow {
+    color: oklch(0.60 0 0);
+  }
+
   /* Form Controls */
   .ze-form-select,
   .ze-form-input {
@@ -550,6 +659,32 @@
     box-shadow: 0 0 0 2px rgba(135, 230, 75, 0.1);
   }
 
+  .dark .ze-form-select,
+  .dark .ze-form-input {
+    background-color: var(--input);
+    border-color: var(--border);
+    color: var(--foreground);
+  }
+
+  /* Override browser autofill background in dark mode */
+  .dark .ze-form-input:-webkit-autofill,
+  .dark .ze-form-input:-webkit-autofill:hover,
+  .dark .ze-form-input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 1000px var(--input) inset !important;
+    -webkit-text-fill-color: var(--foreground) !important;
+    caret-color: var(--foreground);
+  }
+
+  .dark .ze-form-select {
+    background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%23e8e8e8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  }
+
+  .dark .ze-form-select:focus,
+  .dark .ze-form-input:focus {
+    border-color: #87e64b;
+    box-shadow: 0 0 0 2px rgba(135, 230, 75, 0.15);
+  }
+
   /* Upload Area */
   .ze-upload-area {
     @apply border border-dashed cursor-pointer transition-colors;
@@ -562,6 +697,16 @@
   .ze-upload-area.dragging {
     border-color: #87e64b;
     background-color: #f0fdf4;
+  }
+
+  .dark .ze-upload-area {
+    border-color: var(--border);
+    background-color: oklch(0.22 0 0);
+  }
+
+  .dark .ze-upload-area.dragging {
+    border-color: #87e64b;
+    background-color: oklch(0.22 0.02 140);
   }
 
   /* Options Panel */
@@ -597,6 +742,11 @@
     width: 320px;
   }
 
+  .dark .ze-options-panel-content {
+    background-color: var(--card);
+    border-color: var(--border);
+  }
+
   /* File Preview Panel */
   .ze-file-preview-panel {
     @apply transition-all ease-in-out;
@@ -628,6 +778,11 @@
     width: 320px;
   }
 
+  .dark .ze-file-preview-content {
+    background-color: var(--card);
+    border-color: var(--border);
+  }
+
   .ze-file-item {
     @apply transition-all;
     padding: 16px;
@@ -637,8 +792,27 @@
     background-color: #e5e5e5;
   }
 
+  .dark .ze-file-item:hover {
+    background-color: oklch(0.28 0 0);
+  }
+
   .ze-add-more-section {
     background-color: #fff5ed;
+  }
+
+  .dark .ze-add-more-section {
+    background-color: oklch(0.22 0 0);
+  }
+
+  /* Dark mode: inactive tab pill */
+  .dark .ze-tab-inactive-pill {
+    background: oklch(0.30 0 0);
+    color: var(--foreground);
+  }
+
+  .dark .ze-tab-inactive-pill:hover {
+    background: oklch(0.35 0 0);
+    color: var(--foreground);
   }
 }
 
@@ -886,9 +1060,36 @@
   color: #e1e1e1;
 }
 
+.dark .ze-form-input::placeholder {
+  color: oklch(0.40 0 0);
+}
+
 /* OTP Input with light green placeholder */
 .ze-form-input.otp-input::placeholder {
   color: #c8e6a8;
+}
+
+.dark .ze-form-input.otp-input::placeholder {
+  color: oklch(0.35 0.04 140);
+}
+
+/* Auth form large inputs - email and phone */
+.dark .ze-email-input::placeholder,
+.dark .ze-phone-input::placeholder,
+.dark .ze-country-code option {
+  color: oklch(0.40 0 0);
+}
+
+/* Override browser autofill background in dark mode for auth inputs */
+.dark .ze-email-input:-webkit-autofill,
+.dark .ze-email-input:-webkit-autofill:hover,
+.dark .ze-email-input:-webkit-autofill:focus,
+.dark .ze-phone-input:-webkit-autofill,
+.dark .ze-phone-input:-webkit-autofill:hover,
+.dark .ze-phone-input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px oklch(0.19 0 0) inset !important;
+  -webkit-text-fill-color: oklch(0.91 0 0) !important;
+  caret-color: oklch(0.91 0 0);
 }
 
 /* Custom Spacing Utilities - mt (margin-top) and mb (margin-bottom) 11-20 */
@@ -977,4 +1178,21 @@
 .ze-otp-input::placeholder {
   color: rgba(0, 0, 0, 0.15);
   opacity: 1;
+}
+
+.dark .ze-otp-input::placeholder {
+  color: rgba(255, 255, 255, 0.2);
+}
+
+/* Dark mode shimmer */
+.dark .animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    oklch(0.28 0 0) 0%,
+    oklch(0.32 0 0) 40%,
+    oklch(0.35 0 0) 50%,
+    oklch(0.32 0 0) 60%,
+    oklch(0.28 0 0) 100%
+  );
+  background-size: 200% 100%;
 }

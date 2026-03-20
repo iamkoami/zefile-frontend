@@ -71,7 +71,7 @@ function renderMarkdown(text: string): React.ReactNode[] {
       parts.push(<em key={key++}>{match[3]}</em>);
     } else if (match[4]) {
       parts.push(
-        <code key={key++} className="bg-gray-100 px-1 py-0.5 rounded text-xs">
+        <code key={key++} className="bg-gray-100 dark:bg-gray-700 dark:bg-gray-700 px-1 py-0.5 rounded text-xs">
           {match[4]}
         </code>,
       );
@@ -82,7 +82,7 @@ function renderMarkdown(text: string): React.ReactNode[] {
           href={match[6]}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-[#171717] underline font-medium"
+          className="text-[#171717] dark:text-gray-200 underline font-medium"
         >
           {match[5]}
         </a>,
@@ -158,7 +158,7 @@ function ChatHeader({
   const t = useTranslations("support");
 
   return (
-    <div className={`flex items-center px-4 py-3 border-b border-gray-100 bg-gray-50 rounded-t-lg ${onBack ? "relative justify-center" : "justify-between"}`}>
+    <div className={`flex items-center px-4 py-3 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-t-lg ${onBack ? "relative justify-center" : "justify-between"}`}>
       {onBack ? (
         <>
           <button
@@ -169,12 +169,12 @@ function ChatHeader({
           </button>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-[#87E64B]" />
-            <span className="font-bold text-sm text-[#171717]">ZeFile</span>
-            <span className="text-xs text-gray-500">{t("title")}</span>
+            <span className="font-bold text-sm text-[#171717] dark:text-white">ZeFile</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500">{t("title")}</span>
           </div>
           <button
             onClick={onClose}
-            className="absolute right-4 p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+            className="absolute right-4 p-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:text-gray-300 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 dark:bg-gray-700 rounded transition-colors"
           >
             <Xmark className="w-4 h-4" />
           </button>
@@ -183,12 +183,12 @@ function ChatHeader({
         <>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-[#87E64B]" />
-            <span className="font-bold text-sm text-[#171717]">Zefi</span>
-            <span className="text-xs text-gray-500">{t("title")}</span>
+            <span className="font-bold text-sm text-[#171717] dark:text-white">Zefi</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500">{t("title")}</span>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+            className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:text-gray-300 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 dark:bg-gray-700 rounded transition-colors"
           >
             <Xmark className="w-4 h-4" />
           </button>
@@ -225,14 +225,14 @@ function MessageFeedback({
     <div className="flex items-center gap-1 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
       <button
         onClick={() => onFeedback(messageId, "up")}
-        className="p-0.5 text-gray-300 hover:text-[#87E64B] transition-colors"
+        className="p-0.5 text-gray-300 dark:text-gray-500 hover:text-[#87E64B] transition-colors"
         title="Helpful"
       >
         <ThumbsUp className="w-3 h-3" />
       </button>
       <button
         onClick={() => onFeedback(messageId, "down")}
-        className="p-0.5 text-gray-300 hover:text-red-400 transition-colors"
+        className="p-0.5 text-gray-300 dark:text-gray-500 hover:text-red-400 transition-colors"
         title="Not helpful"
       >
         <ThumbsDown className="w-3 h-3" />
@@ -258,7 +258,7 @@ function ChatMessageBubble({
   if (isSystem) {
     return (
       <div className="flex justify-center my-2">
-        <span className="text-xs text-gray-500 bg-gray-50 px-3 py-1 rounded-full">
+        <span className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-gray-800 px-3 py-1 rounded-full">
           {message.content}
         </span>
       </div>
@@ -271,7 +271,7 @@ function ChatMessageBubble({
         className={`max-w-[80%] px-3 py-2 rounded-lg text-sm ${
           isUser
             ? "bg-[#87E64B] text-[#171717] rounded-br-none"
-            : "bg-gray-100 text-[#171717] rounded-bl-none"
+            : "bg-gray-100 dark:bg-gray-700 text-[#171717] dark:text-gray-200 rounded-bl-none"
         }`}
       >
         {!isUser && (
@@ -286,7 +286,7 @@ function ChatMessageBubble({
         </div>
         <div
           className={`text-[10px] mt-1 ${
-            isUser ? "text-[#171717]/50" : "text-gray-400"
+            isUser ? "text-[#171717]/50" : "text-gray-400 dark:text-gray-500"
           }`}
         >
           {getRelativeTime(message.createdAt, t)}
@@ -308,21 +308,21 @@ function TypingIndicator() {
 
   return (
     <div className="flex justify-start mb-3">
-      <div className="bg-gray-100 px-3 py-2 rounded-lg rounded-bl-none">
+      <div className="bg-gray-100 dark:bg-gray-700 px-3 py-2 rounded-lg rounded-bl-none">
         <div className="text-xs font-medium text-[#5E53E0] mb-1">Zefi</div>
-        <div className="flex items-center gap-1 text-sm text-gray-500">
+        <div className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 dark:text-gray-500">
           <span>{t("typing")}</span>
           <span className="flex gap-0.5">
             <span
-              className="w-1 h-1 bg-gray-400 rounded-full animate-bounce"
+              className="w-1 h-1 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce"
               style={{ animationDelay: "0ms" }}
             />
             <span
-              className="w-1 h-1 bg-gray-400 rounded-full animate-bounce"
+              className="w-1 h-1 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce"
               style={{ animationDelay: "150ms" }}
             />
             <span
-              className="w-1 h-1 bg-gray-400 rounded-full animate-bounce"
+              className="w-1 h-1 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce"
               style={{ animationDelay: "300ms" }}
             />
           </span>
@@ -348,7 +348,7 @@ function EmailPrompt({ onSubmit }: { onSubmit: (email: string) => void }) {
 
   return (
     <div className="p-4 space-y-3">
-      <p className="text-sm text-gray-600">{t("enterEmail")}</p>
+      <p className="text-sm text-gray-600 dark:text-gray-300 dark:text-gray-500">{t("enterEmail")}</p>
       <input
         type="email"
         value={email}
@@ -357,7 +357,7 @@ function EmailPrompt({ onSubmit }: { onSubmit: (email: string) => void }) {
           if (error) setError("");
         }}
         placeholder={t("emailPlaceholder")}
-        className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-[#171717] focus:border-transparent"
+        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded text-sm focus:outline-none focus:ring-2 focus:ring-[#171717] focus:border-transparent"
         onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
       />
       {error && <p className="text-xs text-red-500">{error}</p>}
@@ -387,12 +387,12 @@ function ConversationStarters({
   return (
     <div className="flex-1 px-4 pt-6 pb-12 space-y-4">
       <div className="text-center space-y-1">
-        <h3 className="text-lg font-bold text-[#171717]">
+        <h3 className="text-lg font-bold text-[#171717] dark:text-white">
           {firstName
             ? t("greetingWithName", { name: firstName })
             : t("greeting")}
         </h3>
-        <p className="text-sm text-gray-500">{t("subtitle")}</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">{t("subtitle")}</p>
       </div>
       <div className="space-y-2 pt-4">
         {starters.map((starter) => (
@@ -404,10 +404,10 @@ function ConversationStarters({
                 t(starter.messageKey || starter.labelKey),
               )
             }
-            className="w-full flex items-center gap-3 px-3 py-3 rounded-lg border border-gray-200 hover:border-[#5E53E0] hover:bg-[#5E53E0]/5 transition-all text-left text-sm"
+            className="w-full flex items-center gap-3 px-3 py-3 rounded-lg border border-gray-200 dark:border-gray-600 hover:border-[#5E53E0] hover:bg-[#5E53E0]/5 transition-all text-left text-sm"
           >
             <starter.icon className="w-5 h-5 text-[#5E53E0] flex-shrink-0" />
-            <span className="text-[#171717]">{t(starter.labelKey)}</span>
+            <span className="text-[#171717] dark:text-gray-200">{t(starter.labelKey)}</span>
           </button>
         ))}
       </div>
@@ -426,7 +426,7 @@ function LeaveConversationPrompt({
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-6 py-8 space-y-4">
-      <p className="text-sm font-medium text-[#171717] text-center">
+      <p className="text-sm font-medium text-[#171717] dark:text-gray-200 text-center">
         {t("leave.title")}
       </p>
       <div className="w-full space-y-2">
@@ -438,7 +438,7 @@ function LeaveConversationPrompt({
         </button>
         <button
           onClick={onCloseAndNew}
-          className="w-full py-2.5 border border-gray-300 text-[#171717] rounded text-sm font-medium hover:bg-gray-50 transition-colors"
+          className="w-full py-2.5 border border-gray-300 dark:border-gray-600 text-[#171717] dark:text-gray-200 rounded text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800 transition-colors"
         >
           {t("leave.closeAndNew")}
         </button>
@@ -464,27 +464,27 @@ function SatisfactionRating({
 
   return (
     <div className="text-center py-4 space-y-3">
-      <p className="text-xs text-gray-500">{t("resolved")}</p>
+      <p className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500">{t("resolved")}</p>
 
       {!rated ? (
         <div className="space-y-2">
-          <p className="text-sm font-medium text-[#171717]">
+          <p className="text-sm font-medium text-[#171717] dark:text-gray-200">
             {t("rateExperience")}
           </p>
           <div className="flex items-center justify-center gap-4">
             <button
               onClick={() => handleRate("up")}
-              className="p-2.5 rounded-full border border-gray-200 hover:border-[#87E64B] hover:bg-[#87E64B]/10 transition-all"
+              className="p-2.5 rounded-full border border-gray-200 dark:border-gray-600 hover:border-[#87E64B] hover:bg-[#87E64B]/10 transition-all"
               title="Good"
             >
-              <ThumbsUp className="w-5 h-5 text-gray-500 hover:text-[#87E64B]" />
+              <ThumbsUp className="w-5 h-5 text-gray-500 dark:text-gray-400 dark:text-gray-500 hover:text-[#87E64B]" />
             </button>
             <button
               onClick={() => handleRate("down")}
-              className="p-2.5 rounded-full border border-gray-200 hover:border-red-400 hover:bg-red-50 transition-all"
+              className="p-2.5 rounded-full border border-gray-200 dark:border-gray-600 hover:border-red-400 hover:bg-red-50 transition-all"
               title="Could be better"
             >
-              <ThumbsDown className="w-5 h-5 text-gray-500 hover:text-red-400" />
+              <ThumbsDown className="w-5 h-5 text-gray-500 dark:text-gray-400 dark:text-gray-500 hover:text-red-400" />
             </button>
           </div>
         </div>
@@ -496,7 +496,7 @@ function SatisfactionRating({
 
       <button
         onClick={onNewConversation}
-        className="flex items-center gap-1.5 mx-auto text-xs text-[#171717] underline font-medium transition-colors"
+        className="flex items-center gap-1.5 mx-auto text-xs text-[#171717] dark:text-gray-300 underline font-medium transition-colors"
       >
         <RefreshDouble className="w-3.5 h-3.5" />
         {t("newConversation")}
@@ -542,7 +542,7 @@ function ChatInput({
   }, [value]);
 
   return (
-    <div className="p-3 border-t border-gray-100 bg-white rounded-b-lg">
+    <div className="p-3 border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-[#1c1c1e] rounded-b-lg">
       <div className="flex items-end gap-2">
         <textarea
           ref={textareaRef}
@@ -552,7 +552,7 @@ function ChatInput({
           placeholder={t("placeholder")}
           rows={1}
           maxLength={2000}
-          className="flex-1 resize-none px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#171717] focus:border-transparent"
+          className="flex-1 resize-none px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#171717] focus:border-transparent"
           disabled={disabled}
         />
         <button
@@ -733,7 +733,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ context: contextProp }) => {
     <>
       {/* Chat panel */}
       {isOpen && (
-        <div className="fixed bottom-20 right-6 z-[9100] w-96 max-h-[80vh] bg-white rounded-lg shadow-2xl border border-gray-200 flex flex-col animate-in slide-in-from-bottom-4 duration-300">
+        <div className="fixed bottom-20 right-6 z-[9100] w-96 max-h-[80vh] bg-white dark:bg-[#1c1c1e] rounded-lg shadow-2xl dark:shadow-black/30 border border-gray-200 dark:border-gray-700 flex flex-col animate-in slide-in-from-bottom-4 duration-300">
           <ChatHeader
             onClose={closeChat}
             onBack={
@@ -788,7 +788,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ context: contextProp }) => {
                       {t("escalation.waiting")}
                     </p>
                     {userEmail && (
-                      <p className="text-[10px] text-gray-400">
+                      <p className="text-[10px] text-gray-400 dark:text-gray-500">
                         {t("escalation.waitingEmail", { email: userEmail })}
                       </p>
                     )}
@@ -817,10 +817,10 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ context: contextProp }) => {
 
           {/* Action buttons for active conversations */}
           {hasConversation && isAiHandled && !isResolved && !showLeavePrompt && (
-            <div className="flex items-center justify-end px-3 py-2 border-t border-gray-50 bg-gray-50 rounded-b-lg">
+            <div className="flex items-center justify-end px-3 py-2 border-t border-gray-50 bg-gray-50 dark:bg-gray-800 rounded-b-lg">
               <button
                 onClick={escalateConversation}
-                className="text-xs text-gray-500 hover:text-[#171717] transition-colors"
+                className="text-xs text-gray-500 dark:text-gray-400 hover:text-[#171717] dark:hover:text-gray-200 transition-colors"
               >
                 {t("escalate")}
               </button>

@@ -8,6 +8,7 @@ import { Menu, NavArrowDown, Sparks } from "iconoir-react";
 import MobileMenu from "./MobileMenu";
 import LanguageSwitcher from "./LanguageSwitcher";
 import CurrencySwitcher from "./CurrencySwitcher";
+import ThemeToggle from "./ThemeToggle";
 import AuthPanel from "@/features/auth/components/AuthPanel";
 import { authApi } from "@/services/auth-api";
 import { apiClient } from "@/services/api-client";
@@ -445,7 +446,7 @@ const Header = () => {
               onClick={() => setIsMobileMenuOpen(true)}
               aria-label={t("openMenu")}
             >
-              <Menu className="w-6 h-6 text-[#171717]" />
+              <Menu className="w-6 h-6 text-[#171717] dark:text-gray-100" />
             </button>
 
             <Link href="/" className="flex items-center">
@@ -455,7 +456,15 @@ const Header = () => {
                 width={130}
                 height={33}
                 priority
-                className="w-[130px] h-[33px]"
+                className="w-[130px] h-[33px] dark:hidden"
+              />
+              <Image
+                src="/zefile-logo-white.svg"
+                alt={tCommon("logoAlt")}
+                width={130}
+                height={33}
+                priority
+                className="w-[130px] h-[33px] hidden dark:block"
               />
             </Link>
           </div>
@@ -510,12 +519,12 @@ const Header = () => {
                   >
                     <button className="ze-menu-item flex items-center gap-1">
                       {t("resources")}
-                      <NavArrowDown className="w-4 h-4" />
+                      <NavArrowDown className="w-4 h-4 dark:text-gray-400" />
                     </button>
 
                     {showResourcesDropdown && (
                       <div
-                        className="ze-resources-dropdown-menu absolute top-full left-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50"
+                        className="ze-resources-dropdown-menu absolute top-full left-0 mt-2 w-56 bg-white dark:bg-card rounded-lg shadow-lg dark:shadow-[0_4px_16px_rgba(0,0,0,0.3)] border border-gray-200 dark:border-border py-2 z-50"
                         onMouseEnter={handleResourcesMouseEnter}
                         onMouseLeave={handleResourcesMouseLeave}
                       >
@@ -523,7 +532,7 @@ const Header = () => {
                           <Link
                             key={item.label}
                             href={item.href}
-                            className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                            className="block px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-accent transition-colors"
                           >
                             {item.label}
                           </Link>
@@ -538,19 +547,20 @@ const Header = () => {
 
           {/* Right: Currency + Language Switcher + Auth/User Menu */}
           <div className="ze-header-right">
-            {/* Language + Currency Switchers */}
+            {/* Language + Currency + Theme Switchers */}
             <div className="flex items-center">
               <LanguageSwitcher />
-              <span className="text-gray-300 text-sm hidden lg:inline">|</span>
+              <span className="text-gray-300 dark:text-gray-600 text-sm hidden lg:inline">|</span>
               <div className="hidden lg:block">
                 <CurrencySwitcher />
               </div>
+              <ThemeToggle />
             </div>
 
             {/* Separator (desktop only) */}
             <div
               id="ze-menu-separator"
-              className={`ze-menu-separator h-6 mx-3 w-px bg-gray-300 hidden lg:block transition-opacity duration-300 ease-in-out ${
+              className={`ze-menu-separator h-6 mx-3 w-px bg-gray-300 dark:bg-gray-600 hidden lg:block transition-opacity duration-300 ease-in-out ${
                 isAuthTransitioning ? "opacity-0" : "opacity-100"
               }`}
             />
@@ -639,7 +649,7 @@ const Header = () => {
                 {subscriptionTier === "free" && (
                   <button
                     onClick={() => handleOpenDrawer("subscriptions")}
-                    className="flex items-center gap-1.5 px-3 py-2 text-sm font-bold text-[#5E53E0] hover:text-[#4a42b8] transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-2 text-sm font-bold text-[#5E53E0] hover:text-[#4a42b8] dark:text-[#8B83F0] dark:hover:text-[#A9A3F5] transition-colors"
                   >
                     <Sparks className="w-4 h-4" />
                     {t("upgrade")}
@@ -650,7 +660,7 @@ const Header = () => {
                 {subscriptionTier === "free" && (
                   <div
                     id="ze-menu-separator"
-                    className="ze-menu-separator h-6 mx-3 w-px bg-gray-300"
+                    className="ze-menu-separator h-6 mx-3 w-px bg-gray-300 dark:bg-gray-600"
                   />
                 )}
 
@@ -661,7 +671,7 @@ const Header = () => {
                   onMouseLeave={handleUserMouseLeave}
                 >
                   <button className="ze-user-button flex items-center space-x-3 hover:opacity-80 transition-opacity">
-                    <span className="text-sm font-bold text-gray-900">
+                    <span className="text-sm font-bold text-gray-900 dark:text-gray-100">
                       {user.email}
                     </span>
                     <div className={`w-10 h-10 rounded-lg overflow-hidden ${
@@ -687,12 +697,12 @@ const Header = () => {
                   {/* User Dropdown Menu */}
                   {showUserDropdown && (
                     <div
-                      className="ze-user-dropdown-menu absolute top-full right-0 mt-2 w-72 bg-white rounded-xl shadow-lg border border-gray-200 py-3 z-50"
+                      className="ze-user-dropdown-menu absolute top-full right-0 mt-2 w-72 bg-white dark:bg-card rounded-xl shadow-lg dark:shadow-[0_4px_16px_rgba(0,0,0,0.3)] border border-gray-200 dark:border-border py-3 z-50"
                       onMouseEnter={handleUserMouseEnter}
                       onMouseLeave={handleUserMouseLeave}
                     >
                       {/* User Info Header */}
-                      <div className="px-4 py-3 border-b border-gray-100">
+                      <div className="px-4 py-3 border-b border-gray-100 dark:border-border">
                         <div className="flex items-center space-x-3">
                           <div className={`w-12 h-12 rounded-lg overflow-hidden ${
                             !user.profilePictureUrl ? "bg-gradient-to-br from-orange-400 to-pink-400" : ""
@@ -713,10 +723,10 @@ const Header = () => {
                             )}
                           </div>
                           <div className="flex-1">
-                            <p className="text-sm font-bold text-gray-900">
+                            <p className="text-sm font-bold text-gray-900 dark:text-gray-100">
                               {user.email}
                             </p>
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
                               {subscriptionTier === "free"
                                 ? t("freePlan")
                                 : subscriptionTier === "starter"
@@ -734,7 +744,7 @@ const Header = () => {
                             setShowUserDropdown(false);
                             openAccountView("settings");
                           }}
-                          className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                          className="w-full px-4 py-3 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-accent transition-colors"
                         >
                           {t("accountSettings")}
                         </button>
@@ -743,17 +753,17 @@ const Header = () => {
                             setShowUserDropdown(false);
                             openAccountView("help");
                           }}
-                          className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                          className="w-full px-4 py-3 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-accent transition-colors"
                         >
                           {t("help")}
                         </button>
                       </div>
 
                       {/* Logout */}
-                      <div className="border-t border-gray-100 pt-2">
+                      <div className="border-t border-gray-100 dark:border-border pt-2">
                         <button
                           onClick={handleLogoutClick}
-                          className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors font-medium"
+                          className="w-full px-4 py-3 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-accent transition-colors font-medium"
                         >
                           {t("logout")}
                         </button>
@@ -772,11 +782,11 @@ const Header = () => {
         isAuthenticated &&
         subscriptionTier === "free" &&
         !upgradeBannerDismissed && (
-          <div className="lg:hidden flex items-center justify-center gap-2 py-1.5 px-4 bg-[#5E53E0]/5 border-b border-[#5E53E0]/10">
-            <span className="text-xs text-gray-500">{t("freePlan")}</span>
+          <div className="lg:hidden flex items-center justify-center gap-2 py-1.5 px-4 bg-[#5E53E0]/5 dark:bg-[#5E53E0]/10 border-b border-[#5E53E0]/10 dark:border-[#5E53E0]/20">
+            <span className="text-xs text-gray-500 dark:text-gray-400">{t("freePlan")}</span>
             <button
               onClick={() => handleOpenDrawer("subscriptions")}
-              className="text-xs font-bold text-[#5E53E0] hover:text-[#4a42b8] transition-colors"
+              className="text-xs font-bold text-[#5E53E0] hover:text-[#4a42b8] dark:text-[#8B83F0] dark:hover:text-[#A9A3F5] transition-colors"
             >
               {t("upgrade")}
             </button>
@@ -792,7 +802,7 @@ const Header = () => {
                   // localStorage unavailable
                 }
               }}
-              className="ml-auto text-gray-400 hover:text-gray-600 transition-colors p-0.5"
+              className="ml-auto text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors p-0.5"
               aria-label="Dismiss"
             >
               <svg

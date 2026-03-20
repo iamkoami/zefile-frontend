@@ -68,11 +68,11 @@ export function FeatureComparisonTable({ currentTier }: FeatureComparisonTablePr
           <Check className="h-3.5 w-3.5 text-[#87E64B]" />
         </div>
       ) : (
-        <span className="text-gray-300 text-sm">--</span>
+        <span className="text-gray-300 dark:text-gray-600 text-sm">--</span>
       );
     }
     return (
-      <span className={`text-sm font-bold ${isPro ? 'text-[#5E53E0]' : 'text-[#171717]'}`}>
+      <span className={`text-sm font-bold ${isPro ? 'text-[#5E53E0]' : 'text-[#171717] dark:text-white'}`}>
         {value}
       </span>
     );
@@ -82,7 +82,7 @@ export function FeatureComparisonTable({ currentTier }: FeatureComparisonTablePr
     <div className="overflow-x-auto">
       <div className="grid grid-cols-[1.5fr_1fr_1fr_1fr] min-w-[640px]">
         {/* Header Row */}
-        <div className="px-6 py-5 text-sm font-medium text-gray-500 border-b border-gray-200">
+        <div className="px-6 py-5 text-sm font-medium text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-border">
           {t('feature')}
         </div>
         {tiers.map((tier) => {
@@ -95,7 +95,7 @@ export function FeatureComparisonTable({ currentTier }: FeatureComparisonTablePr
               className={`px-6 py-5 text-center text-sm font-bold border-b ${
                 isPro
                   ? 'bg-[#5E53E0] text-white border-[#5E53E0]'
-                  : 'text-[#171717] border-gray-200'
+                  : 'text-[#171717] dark:text-white border-gray-200 dark:border-border'
               }`}
             >
               {tierNames[tier]}
@@ -117,13 +117,13 @@ export function FeatureComparisonTable({ currentTier }: FeatureComparisonTablePr
         {/* Feature Rows */}
         {features.map((feature, index) => {
           const isLast = index === features.length - 1;
-          const borderClass = isLast ? '' : 'border-b border-gray-100';
+          const borderClass = isLast ? '' : 'border-b border-gray-100 dark:border-border';
 
           return (
             <Fragment key={feature.key}>
               {/* Feature label */}
               <div
-                className={`px-6 py-5 text-sm font-medium text-gray-600 flex items-center sticky left-0 bg-white z-10 ${borderClass}`}
+                className={`px-6 py-5 text-sm font-medium text-gray-600 dark:text-gray-300 flex items-center sticky left-0 bg-white dark:bg-card z-10 ${borderClass}`}
               >
                 {feature.label}
               </div>

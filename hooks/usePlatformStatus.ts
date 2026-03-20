@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { platformApi, PlatformStatus } from "@/services/platform-api";
+import { useThemeStore } from "@/stores/theme-store";
 
 const CACHE_KEY = "ze-platform-status";
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
@@ -47,14 +48,18 @@ export function usePlatformStatus() {
   const [status, setStatus] = useState<PlatformStatus | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const setDarkModeEnabled = useThemeStore((s) => s.setDarkModeEnabled);
+
   const fetchStatus = useCallback(async () => {
     const response = await platformApi.getStatus();
     if (!response.error && response.data) {
       setStatus(response.data);
       setCachedStatus(response.data);
+      // Sync dark mode kill switch with theme store (sets cookie + forces light if disabled)
+      setDarkModeEnabled(response.data.darkModeEnabled ?? true);
     }
     setLoading(false);
-  }, []);
+  }, [setDarkModeEnabled]);
 
   // On mount: read cache first, then fetch fresh data
   useEffect(() => {

@@ -290,26 +290,26 @@ const SubscriptionPanel: React.FC = () => {
     <div className="subscription-panel">
       {/* Header */}
       <div className="mt-8 mb-16">
-        <h1 className="text-4xl font-bold text-[#171717] mb-2">
+        <h1 className="text-4xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-2">
           {t.rich("title", {
             highlight: (chunks: ReactNode) => (
               <span className="ze-highlight-green">{chunks}</span>
             ),
           })}
         </h1>
-        <p className="text-gray-600">{t("subtitle")}</p>
+        <p className="text-gray-600 dark:text-[oklch(0.75_0_0)]">{t("subtitle")}</p>
       </div>
 
       {/* Billing Period Toggle and Currency Selector */}
       <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-14">
         {/* Billing Period Toggle */}
-        <div className="bg-gray-100 p-1 rounded-lg inline-flex">
+        <div className="bg-gray-100 dark:bg-[oklch(0.28_0_0)] p-1 rounded-lg inline-flex">
           <button
             onClick={() => setBillingPeriod("monthly")}
             className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${
               billingPeriod === "monthly"
-                ? "bg-white text-[#171717] shadow-sm"
-                : "text-gray-600 hover:text-[#171717]"
+                ? "bg-white dark:bg-[oklch(0.24_0_0)] text-[#171717] dark:text-[oklch(0.91_0_0)] shadow-sm dark:shadow-black/30"
+                : "text-gray-600 dark:text-[oklch(0.75_0_0)] hover:text-[#171717] dark:hover:text-[oklch(0.91_0_0)]"
             }`}
           >
             {t("monthly")}
@@ -318,8 +318,8 @@ const SubscriptionPanel: React.FC = () => {
             onClick={() => setBillingPeriod("annual")}
             className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${
               billingPeriod === "annual"
-                ? "bg-white text-[#171717] shadow-sm"
-                : "text-gray-600 hover:text-[#171717]"
+                ? "bg-white dark:bg-[oklch(0.24_0_0)] text-[#171717] dark:text-[oklch(0.91_0_0)] shadow-sm dark:shadow-black/30"
+                : "text-gray-600 dark:text-[oklch(0.75_0_0)] hover:text-[#171717] dark:hover:text-[oklch(0.91_0_0)]"
             }`}
           >
             {t("annual")}
@@ -341,12 +341,12 @@ const SubscriptionPanel: React.FC = () => {
         <div className="relative">
           <button
             onClick={() => setIsCurrencyDropdownOpen(!isCurrencyDropdownOpen)}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-[#171717] hover:border-gray-300 transition-all"
+            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-[oklch(0.24_0_0)] border border-gray-200 dark:border-[oklch(0.30_0_0)] rounded-lg text-sm text-[#171717] dark:text-[oklch(0.91_0_0)] hover:border-gray-300 dark:hover:border-[oklch(0.40_0_0)] transition-all"
           >
             {COUNTRY_CONFIG[countryCode]?.flagCode ? (
               <Flag code={COUNTRY_CONFIG[countryCode].flagCode!} size="s" hasBorder={false} />
             ) : (
-              <Globe className="w-5 h-5 text-gray-500" />
+              <Globe className="w-5 h-5 text-gray-500 dark:text-[oklch(0.75_0_0)]" />
             )}
             <span>
               {COUNTRY_CONFIG[countryCode]?.name || COUNTRY_CONFIG.DEFAULT.name}
@@ -363,19 +363,19 @@ const SubscriptionPanel: React.FC = () => {
                 className="fixed inset-0 z-40"
                 onClick={() => setIsCurrencyDropdownOpen(false)}
               />
-              <div className="absolute z-50 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
+              <div className="absolute z-50 mt-2 w-64 bg-white dark:bg-[oklch(0.24_0_0)] border border-gray-200 dark:border-[oklch(0.30_0_0)] rounded-lg shadow-lg dark:shadow-black/30 overflow-hidden">
                 {ALL_COUNTRY_CODES.map((code) => (
                   <button
                     key={code}
                     onClick={() => handleCountryChange(code)}
-                    className={`w-full px-4 py-3 text-left text-sm hover:bg-gray-50 transition-colors flex items-center gap-2 ${
-                      code === countryCode ? "bg-gray-50 font-bold" : ""
+                    className={`w-full px-4 py-3 text-left text-sm hover:bg-gray-50 dark:hover:bg-[oklch(0.28_0_0)] transition-colors flex items-center gap-2 ${
+                      code === countryCode ? "bg-gray-50 dark:bg-[oklch(0.28_0_0)] font-bold" : ""
                     }`}
                   >
                     {COUNTRY_CONFIG[code]?.flagCode ? (
                       <Flag code={COUNTRY_CONFIG[code].flagCode!} size="s" hasBorder={false} />
                     ) : (
-                      <Globe className="w-5 h-5 text-gray-500" />
+                      <Globe className="w-5 h-5 text-gray-500 dark:text-[oklch(0.75_0_0)]" />
                     )}
                     {COUNTRY_CONFIG[code]?.name}
                   </button>
@@ -395,11 +395,11 @@ const SubscriptionPanel: React.FC = () => {
 
           // Card styling based on tier
           const cardBgClass =
-            isPro && !isCurrentPlan ? "bg-[#5E53E0]" : "bg-white";
+            isPro && !isCurrentPlan ? "bg-[#5E53E0]" : "bg-white dark:bg-[oklch(0.24_0_0)]";
           const textColorClass =
-            isPro && !isCurrentPlan ? "text-white" : "text-[#171717]";
+            isPro && !isCurrentPlan ? "text-white" : "text-[#171717] dark:text-[oklch(0.91_0_0)]";
           const subtextColorClass =
-            isPro && !isCurrentPlan ? "text-white/70" : "text-gray-500";
+            isPro && !isCurrentPlan ? "text-white/70" : "text-gray-500 dark:text-[oklch(0.75_0_0)]";
           const borderClass =
             isPro && !isCurrentPlan
               ? "border-transparent"
@@ -407,18 +407,18 @@ const SubscriptionPanel: React.FC = () => {
                 ? "border-2 border-[#171717]"
                 : isCurrentPlan
                   ? "border-2 border-[#87E64B]"
-                  : "border border-gray-200";
+                  : "border border-gray-200 dark:border-[oklch(0.30_0_0)]";
           const metricsBorderClass =
-            isPro && !isCurrentPlan ? "border-white/20" : "border-gray-200";
+            isPro && !isCurrentPlan ? "border-white/20" : "border-gray-200 dark:border-[oklch(0.30_0_0)]";
 
           return (
             <div
               key={tier.id}
               className={`relative rounded-2xl p-6 transition-all flex flex-col ${cardBgClass} ${borderClass} ${
                 isPro && !isCurrentPlan
-                  ? "shadow-xl"
+                  ? "shadow-xl dark:shadow-black/30"
                   : isHighlighted && !isCurrentPlan
-                    ? "shadow-lg"
+                    ? "shadow-lg dark:shadow-black/30"
                     : ""
               }`}
             >
@@ -467,7 +467,7 @@ const SubscriptionPanel: React.FC = () => {
                         ? "invisible"
                         : isPro && !isCurrentPlan
                           ? "text-white/50"
-                          : "text-gray-400"
+                          : "text-gray-400 dark:text-[oklch(0.60_0_0)]"
                     }`}
                   >
                     {tier.id !== "free"
@@ -490,10 +490,10 @@ const SubscriptionPanel: React.FC = () => {
                 disabled={isAuthenticated && isCurrentPlan}
                 className={`w-full py-3 px-4 rounded font-bold transition-all mb-6 ${
                   isAuthenticated && isCurrentPlan
-                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                    ? "bg-gray-100 dark:bg-[oklch(0.28_0_0)] text-gray-400 dark:text-[oklch(0.60_0_0)] cursor-not-allowed"
                     : isPro
                       ? "bg-[#87E64B] text-[#171717] hover:bg-[#78d43f]"
-                      : "border border-gray-300 bg-white text-[#171717] hover:bg-gray-50"
+                      : "border border-gray-300 dark:border-[oklch(0.30_0_0)] bg-white dark:bg-[oklch(0.24_0_0)] text-[#171717] dark:text-[oklch(0.91_0_0)] hover:bg-gray-50 dark:hover:bg-[oklch(0.28_0_0)]"
                 }`}
               >
                 {isAuthenticated && isCurrentPlan
@@ -552,7 +552,7 @@ const SubscriptionPanel: React.FC = () => {
                         className={`font-medium ${
                           isPro && !isCurrentPlan
                             ? "text-white/80"
-                            : "text-gray-600"
+                            : "text-gray-600 dark:text-[oklch(0.75_0_0)]"
                         }`}
                       >
                         {feature.text}
@@ -566,7 +566,7 @@ const SubscriptionPanel: React.FC = () => {
                 className={`text-xs mt-3 ${
                   isPro && !isCurrentPlan
                     ? "text-white/40"
-                    : "text-gray-400"
+                    : "text-gray-400 dark:text-[oklch(0.60_0_0)]"
                 }`}
               >
                 {t("includesBasics")}
@@ -581,7 +581,7 @@ const SubscriptionPanel: React.FC = () => {
 
       {/* FAQ Section */}
       <div className="mt-20 mb-16">
-        <h2 className="mb-6 text-xl font-bold text-[#171717] mb-4 text-center">
+        <h2 className="mb-6 text-xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-4 text-center">
           {t.rich("faqTitle", {
             highlight: (chunks: ReactNode) => (
               <span className="ze-highlight-green">{chunks}</span>
@@ -594,13 +594,13 @@ const SubscriptionPanel: React.FC = () => {
             return (
               <div
                 key={num}
-                className="rounded-2xl bg-[#F5F5F4] transition-colors duration-300"
+                className="rounded-2xl bg-[#F5F5F4] dark:bg-[oklch(0.22_0_0)] transition-colors duration-300"
               >
                 <button
                   onClick={() => setExpandedFaq(isExpanded ? null : num)}
                   className="w-full flex items-center justify-between px-5 py-4 text-left"
                 >
-                  <span className="text-[15px] font-bold text-[#171717] pr-4">
+                  <span className="text-[15px] font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] pr-4">
                     {t(`faqQ${num}`)}
                   </span>
                   <div
@@ -608,7 +608,7 @@ const SubscriptionPanel: React.FC = () => {
                       isExpanded ? "rotate-180" : ""
                     }`}
                   >
-                    <NavArrowDown className="w-3.5 h-3.5 text-gray-400" />
+                    <NavArrowDown className="w-3.5 h-3.5 text-gray-400 dark:text-[oklch(0.60_0_0)]" />
                   </div>
                 </button>
                 <div
@@ -617,8 +617,8 @@ const SubscriptionPanel: React.FC = () => {
                 >
                   <div className="overflow-hidden">
                     <div className="px-5 pb-5">
-                      <div className="border-t border-black/[0.06] pt-3">
-                        <p className="text-sm text-gray-500 leading-relaxed">
+                      <div className="border-t border-black/[0.06] dark:border-[oklch(0.30_0_0)] pt-3">
+                        <p className="text-sm text-gray-500 dark:text-[oklch(0.75_0_0)] leading-relaxed">
                           {t(`faqA${num}`)}
                         </p>
                       </div>
@@ -632,13 +632,13 @@ const SubscriptionPanel: React.FC = () => {
       </div>
 
       {/* Footer Note */}
-      <div className="text-center text-sm text-gray-500">
+      <div className="text-center text-sm text-gray-500 dark:text-[oklch(0.75_0_0)]">
         <p>{t("cancelAnytime")}</p>
         <p className="mt-1">
           {t("questionsContact")}{" "}
           <a
             href="mailto:hello@zefile.io"
-            className="text-[#171717] underline font-medium"
+            className="text-[#171717] dark:text-[oklch(0.91_0_0)] underline font-medium"
           >
             hello@zefile.io
           </a>

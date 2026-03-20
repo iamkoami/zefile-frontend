@@ -205,13 +205,13 @@ const TransferOptionsPanel: React.FC<TransferOptionsPanelProps> = ({
     >
       <div id="ze-options-panel-content" className="ze-options-panel-content">
         <div className="flex items-center justify-between mb-6">
-          <h2 id="ze-options-title" className="ze-options-title text-lg font-bold text-black">
+          <h2 id="ze-options-title" className="ze-options-title text-lg font-bold text-black dark:text-[oklch(0.91_0_0)]">
             {t('title')}
           </h2>
           {onClose && (
             <button
               onClick={onClose}
-              className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+              className="p-1 text-gray-400 dark:text-[oklch(0.60_0_0)] hover:text-gray-600 dark:hover:text-[oklch(0.75_0_0)] transition-colors"
               aria-label="Close"
             >
               <Xmark className="w-5 h-5" />
@@ -274,11 +274,11 @@ const TransferOptionsPanel: React.FC<TransferOptionsPanelProps> = ({
                 value={options.password}
                 onChange={(e) => handlePasswordChange(e.target.value)}
                 placeholder={t('setPassword')}
-                className={`ze-form-input ${isPasswordTooShort ? 'border-red-500' : ''}`}
+                className={`ze-form-input ${isPasswordTooShort ? 'border-red-500 dark:border-red-400' : ''}`}
                 minLength={MIN_PASSWORD_LENGTH}
               />
               {isPasswordTooShort && (
-                <p className="text-red-500 text-xs mt-1">
+                <p className="text-red-500 dark:text-red-400 text-xs mt-1">
                   {t('passwordMinLength', { min: MIN_PASSWORD_LENGTH })}
                 </p>
               )}
@@ -287,7 +287,7 @@ const TransferOptionsPanel: React.FC<TransferOptionsPanelProps> = ({
 
           {/* Wallpaper Upload */}
           <div className="ze-form-field">
-            <label className="text-xs font-medium text-gray-500 mb-2 block">
+            <label className="text-xs font-medium text-gray-500 dark:text-[oklch(0.65_0_0)] mb-2 block">
               {t('wallpaperLabel')}
               {isWallpaperDisabled && (
                 <span className="ml-1 text-[#5E53E0] text-[10px] font-bold uppercase">
@@ -333,16 +333,16 @@ const TransferOptionsPanel: React.FC<TransferOptionsPanelProps> = ({
                 onClick={() => !isWallpaperDisabled && fileInputRef.current?.click()}
                 className={`w-full h-[60px] rounded border-2 border-dashed flex items-center justify-center gap-2 transition-colors ${
                   isWallpaperDisabled
-                    ? 'opacity-50 cursor-not-allowed border-gray-200 bg-gray-50'
-                    : 'cursor-pointer border-gray-300 bg-gray-50 hover:border-[#5E53E0] hover:bg-gray-100'
+                    ? 'opacity-50 cursor-not-allowed border-gray-200 dark:border-border bg-gray-50 dark:bg-[oklch(0.22_0_0)]'
+                    : 'cursor-pointer border-gray-300 dark:border-border bg-gray-50 dark:bg-[oklch(0.22_0_0)] hover:border-[#5E53E0] hover:bg-gray-100 dark:hover:bg-[oklch(0.28_0_0)]'
                 }`}
                 disabled={isWallpaperDisabled}
               >
-                <MediaImagePlus className="w-5 h-5 text-gray-400" />
-                <span className="text-xs text-gray-400">{t('uploadWallpaper')}</span>
+                <MediaImagePlus className="w-5 h-5 text-gray-400 dark:text-[oklch(0.60_0_0)]" />
+                <span className="text-xs text-gray-400 dark:text-[oklch(0.60_0_0)]">{t('uploadWallpaper')}</span>
               </button>
             )}
-            <p className="text-[10px] text-gray-400 mt-1">{t('wallpaperHint')}</p>
+            <p className="text-[10px] text-gray-400 dark:text-[oklch(0.60_0_0)] mt-1">{t('wallpaperHint')}</p>
           </div>
         </div>
       </div>

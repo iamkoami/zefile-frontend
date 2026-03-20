@@ -31,6 +31,7 @@ import { storageApi } from "@/services/storage-api";
 import { platformApi } from "@/services/platform-api";
 import LoadingPanel from "@/components/LoadingPanel";
 import VerifiedBadge from "@/components/shared/VerifiedBadge";
+import { formatCurrencyAmount } from "@/lib/currency";
 
 interface TransferDetailsPanelProps {
   transfer: TransferDto;
@@ -316,6 +317,13 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
     }
   }, [transfer]);
 
+  // Fetch full transfer details on mount (includes salesStats for public sales)
+  useEffect(() => {
+    if (transfer?.id && transfer?.isPublicSales) {
+      refreshTransferData();
+    }
+  }, [transfer?.id]);
+
   // Listen for refresh-transfer-data event
   useEffect(() => {
     const handleRefresh = (event: CustomEvent<{ transferId: string }>) => {
@@ -384,11 +392,9 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
   const { totalSize, fileCount } = useMemo(() => {
     const files = currentVersionFiles;
     const total = files.reduce((acc, file) => {
-      const size =
-        typeof file?.size === "string"
-          ? parseInt(file.size, 10)
-          : file?.size || 0;
-      return acc + size;
+      const raw = file?.fileSize ?? file?.size ?? 0;
+      const size = typeof raw === "string" ? parseInt(raw, 10) : raw;
+      return acc + (isNaN(size) ? 0 : size);
     }, 0);
     return { totalSize: total, fileCount: files.length };
   }, [currentVersionFiles]);
@@ -1003,7 +1009,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
                   type="text"
                   value={titleValue}
                   onChange={(e) => setTitleValue(e.target.value)}
-                  className="flex-1 text-3xl font-bold text-gray-900 border-b-2 border-[#87E64B] focus:outline-none bg-transparent"
+                  className="flex-1 text-3xl font-bold text-gray-900 dark:text-[oklch(0.91_0_0)] border-b-2 border-[#87E64B] focus:outline-none bg-transparent"
                   autoFocus
                   onKeyDown={(e) => {
                     if (e.key === "Enter") handleSaveTitle();
@@ -1013,7 +1019,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
                 <button
                   onClick={handleSaveTitle}
                   disabled={isSavingTitle || !titleValue.trim()}
-                  className="p-2 text-[#87E64B] hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-50"
+                  className="p-2 text-[#87E64B] hover:bg-gray-50 dark:hover:bg-[oklch(0.28_0_0)] rounded-lg transition-colors disabled:opacity-50"
                   aria-label="Save title"
                 >
                   <Check className="w-5 h-5" />
@@ -1021,7 +1027,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
                 <button
                   onClick={handleCancelTitle}
                   disabled={isSavingTitle}
-                  className="p-2 text-gray-400 hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-50"
+                  className="p-2 text-gray-400 dark:text-[oklch(0.50_0_0)] hover:bg-gray-50 dark:hover:bg-[oklch(0.28_0_0)] rounded-lg transition-colors disabled:opacity-50"
                   aria-label="Cancel edit"
                 >
                   <Xmark className="w-5 h-5" />
@@ -1029,14 +1035,14 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
               </div>
             ) : (
               <>
-                <h1 className="text-3xl font-bold text-gray-900">
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-[oklch(0.91_0_0)]">
                   {displayTitle}
                 </h1>
                 {actionPermissions.canEditTitle && (
                   <button
                     onClick={handleEditTitle}
                     disabled={expiryStatus.isExpired}
-                    className="p-1 text-gray-400 hover:text-gray-600 transition-colors mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="p-1 text-gray-400 dark:text-[oklch(0.50_0_0)] hover:text-gray-600 dark:hover:text-[oklch(0.75_0_0)] transition-colors mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     aria-label={t("editTitle")}
                     title={
                       expiryStatus.isExpired ? t("transferExpired") : undefined
@@ -1050,42 +1056,42 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
           </div>
           {typeof currentTransfer.senderId === "object" &&
             currentTransfer.senderId?.email && (
-              <p className="text-sm text-gray-600 mb-1 flex items-center gap-1">
+              <p className="text-sm text-gray-600 dark:text-[oklch(0.65_0_0)] mb-1 flex items-center gap-1">
                 {t("from", { email: currentTransfer.senderId.email })}
                 {isSenderVerified && <VerifiedBadge size="sm" />}
               </p>
             )}
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-500 dark:text-[oklch(0.65_0_0)]">
             {fileCountText} - {formatSize(totalSize)} -{" "}
             {t("sentOn", { date: formatDate(createdDateStr) })}
           </p>
         </div>
 
         {/* Short link and actions row */}
-        <div className="flex items-center justify-between gap-4 mb-4 border-t border-b border-gray-200 py-5">
+        <div className="flex items-center justify-between gap-4 mb-4 border-t border-b border-gray-200 dark:border-border py-5">
           {/* Short link input with copy button */}
           <div className="flex-1 max-w-md">
-            <div className="flex items-center border border-[#171717] rounded overflow-hidden">
+            <div className="flex items-center border border-[#171717] dark:border-[oklch(0.40_0_0)] rounded overflow-hidden">
               <input
                 type="text"
                 value={shortUrl}
                 readOnly
-                className="flex-1 px-4 py-3 text-sm text-[#5E53E0] bg-white border-none focus:outline-none"
+                className="flex-1 px-4 py-3 text-sm text-[#5E53E0] bg-white dark:bg-[oklch(0.22_0_0)] border-none focus:outline-none"
               />
               <button
                 onClick={handleCopyLink}
-                className="p-3 hover:bg-gray-50 transition-colors border-l border-gray-200"
+                className="p-3 hover:bg-gray-50 dark:hover:bg-[oklch(0.28_0_0)] transition-colors border-l border-gray-200 dark:border-border"
                 aria-label={t("copyLink")}
               >
                 {isCopied ? (
                   <Check className="w-5 h-5 text-[#87E64B]" />
                 ) : (
-                  <Copy className="w-5 h-5 text-gray-400" />
+                  <Copy className="w-5 h-5 text-gray-400 dark:text-[oklch(0.50_0_0)]" />
                 )}
               </button>
             </div>
             {hasCustomDomain && standardUrl && (
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs text-gray-400 dark:text-[oklch(0.50_0_0)] mt-1">
                 {t("alsoAvailableAt", { url: standardUrl })}
               </p>
             )}
@@ -1109,7 +1115,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
               <button
                 onClick={handleDownload}
                 disabled={isDownloadingAll || expiryStatus.isExpired}
-                className="flex flex-col items-center gap-1 px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex flex-col items-center gap-1 px-4 py-2 text-gray-600 dark:text-[oklch(0.65_0_0)] hover:text-gray-900 dark:hover:text-[oklch(0.91_0_0)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label={expiryStatus.isExpired ? t("expired") : t("download")}
                 title={expiryStatus.isExpired ? t("transferExpired") : undefined}
               >
@@ -1124,7 +1130,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
             <button
               onClick={handlePreview}
               disabled={expiryStatus.isExpired}
-              className="flex flex-col items-center gap-1 px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex flex-col items-center gap-1 px-4 py-2 text-gray-600 dark:text-[oklch(0.65_0_0)] hover:text-gray-900 dark:hover:text-[oklch(0.91_0_0)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               aria-label={expiryStatus.isExpired ? t("expired") : t("preview")}
               title={expiryStatus.isExpired ? t("transferExpired") : undefined}
             >
@@ -1148,7 +1154,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
               <button
                 onClick={() => setShowVersionUploadModal(true)}
                 disabled={expiryStatus.isExpired}
-                className="flex flex-col items-center gap-1 px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex flex-col items-center gap-1 px-4 py-2 text-gray-600 dark:text-[oklch(0.65_0_0)] hover:text-gray-900 dark:hover:text-[oklch(0.91_0_0)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label={
                   expiryStatus.isExpired ? t("expired") : t("uploadVersion")
                 }
@@ -1164,7 +1170,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
               <button
                 onClick={handleTransfer}
                 disabled={expiryStatus.isExpired}
-                className="flex flex-col items-center gap-1 px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex flex-col items-center gap-1 px-4 py-2 text-gray-600 dark:text-[oklch(0.65_0_0)] hover:text-gray-900 dark:hover:text-[oklch(0.91_0_0)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label={
                   expiryStatus.isExpired ? t("expired") : t("transfer")
                 }
@@ -1181,7 +1187,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
             {actionPermissions.canDeleteTransfer && (
               <button
                 onClick={handleDeleteClick}
-                className="flex flex-col items-center gap-1 px-4 py-2 text-red-500 hover:text-red-600 transition-colors"
+                className="flex flex-col items-center gap-1 px-4 py-2 text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 transition-colors"
                 aria-label={t("delete")}
               >
                 <Trash className="w-6 h-6" strokeWidth={1.5} />
@@ -1190,6 +1196,24 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
             )}
           </div>
         </div>
+
+        {/* Sales stats - seller only, public sales transfers */}
+        {role === "sender" && currentTransfer?.isPublicSales && (
+          <div className="grid grid-cols-2 gap-4 mb-6" role="region" aria-label={t("sales")}>
+            <div className="rounded border border-neutral-200 dark:border-border p-3">
+              <p className="text-xs text-neutral-500 dark:text-[oklch(0.65_0_0)]" id="sales-label">{t("sales")}</p>
+              <p className="text-lg font-semibold dark:text-[oklch(0.91_0_0)]" aria-labelledby="sales-label">{currentTransfer.salesStats?.totalSales ?? 0}</p>
+            </div>
+            <div className="rounded border border-neutral-200 dark:border-border p-3">
+              <p className="text-xs text-neutral-500 dark:text-[oklch(0.65_0_0)]" id="revenue-label">{t("revenue")}</p>
+              <p className="text-lg font-semibold dark:text-[oklch(0.91_0_0)]" aria-labelledby="revenue-label">
+                {currentTransfer.salesStats
+                  ? formatCurrencyAmount(currentTransfer.salesStats.totalRevenueMinor, currentTransfer.salesStats.currency, locale)
+                  : formatCurrencyAmount(0, currentTransfer.currency || "XOF", locale)}
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Share buttons - sender when unpaid, receiver when paid */}
         {actionPermissions.canTransferForward && currentTransfer?.shortCode && !expiryStatus.isExpired && (
@@ -1209,7 +1233,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
             {/* Expiry date */}
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <h3 className="text-sm font-bold text-gray-900">
+                <h3 className="text-sm font-bold text-gray-900 dark:text-[oklch(0.91_0_0)]">
                   {t("expiryDate")}
                 </h3>
                 <div
@@ -1222,7 +1246,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
                   }`}
                 />
               </div>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-600 dark:text-[oklch(0.65_0_0)]">
                 {expiryDateStr ? formatDate(expiryDateStr) : t("noExpiration")}
               </p>
             </div>
@@ -1231,12 +1255,12 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
             {actionPermissions.canEditPassword && (
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <h3 className="text-sm font-bold text-gray-900">
+                  <h3 className="text-sm font-bold text-gray-900 dark:text-[oklch(0.91_0_0)]">
                     {t("password")}
                   </h3>
                   <div
                     className={`w-3 h-3 rounded-full ${
-                      hasPassword ? "bg-[#87E64B]" : "bg-gray-300"
+                      hasPassword ? "bg-[#87E64B]" : "bg-gray-300 dark:bg-[oklch(0.40_0_0)]"
                     }`}
                   />
                 </div>
@@ -1247,7 +1271,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
                       value={passwordValue}
                       onChange={(e) => setPasswordValue(e.target.value)}
                       placeholder={t("enterPassword")}
-                      className="flex-1 px-3 py-2 text-sm border border-[#171717] rounded focus:outline-none focus:ring-2 focus:ring-[#87E64B]/50"
+                      className="flex-1 px-3 py-2 text-sm border border-[#171717] dark:border-[oklch(0.40_0_0)] rounded focus:outline-none focus:ring-2 focus:ring-[#87E64B]/50 bg-transparent dark:text-[oklch(0.91_0_0)]"
                       autoFocus
                       onKeyDown={(e) => {
                         if (e.key === "Enter") handleSavePassword();
@@ -1257,7 +1281,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
                     <button
                       onClick={handleSavePassword}
                       disabled={isSavingPassword}
-                      className="p-2 text-[#87E64B] hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-50"
+                      className="p-2 text-[#87E64B] hover:bg-gray-50 dark:hover:bg-[oklch(0.28_0_0)] rounded-lg transition-colors disabled:opacity-50"
                       aria-label="Save password"
                     >
                       <Check className="w-5 h-5" />
@@ -1265,7 +1289,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
                     <button
                       onClick={handleCancelPassword}
                       disabled={isSavingPassword}
-                      className="p-2 text-gray-400 hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-50"
+                      className="p-2 text-gray-400 dark:text-[oklch(0.50_0_0)] hover:bg-gray-50 dark:hover:bg-[oklch(0.28_0_0)] rounded-lg transition-colors disabled:opacity-50"
                       aria-label="Cancel"
                     >
                       <Xmark className="w-5 h-5" />
@@ -1275,7 +1299,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
                   <button
                     onClick={() => setIsEditingPassword(true)}
                     disabled={expiryStatus.isExpired}
-                    className="text-sm text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="text-sm text-gray-400 dark:text-[oklch(0.50_0_0)] hover:text-gray-600 dark:hover:text-[oklch(0.75_0_0)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     title={
                       expiryStatus.isExpired ? t("transferExpired") : undefined
                     }
@@ -1286,8 +1310,8 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
               </div>
             )}
 
-            {/* Recipient management - sender when unpaid, receiver when paid */}
-            {actionPermissions.canAddRecipient ? (
+            {/* Recipient management - hidden for public sales, sender when unpaid, receiver when paid */}
+            {currentTransfer?.isPublicSales ? null : actionPermissions.canAddRecipient ? (
               <div>
                 <h3 className="text-sm font-bold text-gray-900 mb-1">
                   {role === "sender" ? t("sentTo", { count: recipients.length }) : t("recipients", { count: recipients.length })}
@@ -1303,7 +1327,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
                               type="email"
                               value={editedRecipientValue}
                               onChange={(e) => setEditedRecipientValue(e.target.value)}
-                              className="flex-1 text-sm px-3 py-1.5 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-[#171717] focus:border-transparent"
+                              className="flex-1 text-sm px-3 py-1.5 border border-gray-200 dark:border-border rounded focus:outline-none focus:ring-2 focus:ring-[#171717] focus:border-transparent bg-transparent dark:text-[oklch(0.91_0_0)]"
                               autoFocus
                               onKeyDown={(e) => {
                                 if (e.key === "Enter") handleSaveEditedRecipient();
@@ -1313,7 +1337,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
                             <button
                               onClick={handleSaveEditedRecipient}
                               disabled={isSavingEditedRecipient || !editedRecipientValue.trim()}
-                              className="p-1.5 text-[#87E64B] hover:bg-gray-50 rounded transition-colors disabled:opacity-50"
+                              className="p-1.5 text-[#87E64B] hover:bg-gray-50 dark:hover:bg-[oklch(0.28_0_0)] rounded transition-colors disabled:opacity-50"
                               aria-label={t("save")}
                             >
                               <Check className="w-4 h-4" />
@@ -1321,7 +1345,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
                             <button
                               onClick={handleCancelEditRecipient}
                               disabled={isSavingEditedRecipient}
-                              className="p-1.5 text-gray-400 hover:bg-gray-50 rounded transition-colors disabled:opacity-50"
+                              className="p-1.5 text-gray-400 dark:text-[oklch(0.50_0_0)] hover:bg-gray-50 dark:hover:bg-[oklch(0.28_0_0)] rounded transition-colors disabled:opacity-50"
                               aria-label={t("cancel")}
                             >
                               <Xmark className="w-4 h-4" />
@@ -1329,7 +1353,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
                           </div>
                           {/* Only show "Add to contacts" for sender (receivers don't have contact list for sender) */}
                           {role === "sender" && (
-                            <label className="flex items-center gap-2 text-xs text-gray-500">
+                            <label className="flex items-center gap-2 text-xs text-gray-500 dark:text-[oklch(0.65_0_0)]">
                               <input
                                 type="checkbox"
                                 checked={addToContactsOnEdit}
@@ -1343,9 +1367,9 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
                       ) : (
                         // Display mode
                         <div className="flex items-start justify-between">
-                          <div className="text-sm text-gray-600">
+                          <div className="text-sm text-gray-600 dark:text-[oklch(0.65_0_0)]">
                             <p>{email}</p>
-                            <p className="text-xs text-gray-400">
+                            <p className="text-xs text-gray-400 dark:text-[oklch(0.50_0_0)]">
                               {(currentTransfer.downloadCount || 0) > 0
                                 ? t("downloaded")
                                 : t("notYetDownloaded")}
@@ -1356,7 +1380,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
                               {actionPermissions.canEditRecipient && (
                                 <button
                                   onClick={() => handleStartEditRecipient(email)}
-                                  className="p-1 text-gray-400 hover:text-[#171717] rounded transition-colors"
+                                  className="p-1 text-gray-400 dark:text-[oklch(0.50_0_0)] hover:text-[#171717] dark:hover:text-[oklch(0.91_0_0)] rounded transition-colors"
                                   aria-label={t("editRecipient")}
                                   title={t("editRecipient")}
                                 >
@@ -1366,7 +1390,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
                               {actionPermissions.canRemoveRecipient && recipients.length > 1 && (
                                 <button
                                   onClick={() => handleDeleteRecipientClick(email)}
-                                  className="p-1 text-gray-400 hover:text-red-500 rounded transition-colors"
+                                  className="p-1 text-gray-400 dark:text-[oklch(0.50_0_0)] hover:text-red-500 dark:hover:text-red-400 rounded transition-colors"
                                   aria-label={t("removeRecipient")}
                                   title={t("removeRecipient")}
                                 >
@@ -1391,7 +1415,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
                           value={newRecipientEmail}
                           onChange={(e) => setNewRecipientEmail(e.target.value)}
                           placeholder={t("enterRecipientEmail")}
-                          className="flex-1 text-sm px-3 py-1.5 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-[#171717] focus:border-transparent"
+                          className="flex-1 text-sm px-3 py-1.5 border border-gray-200 dark:border-border rounded focus:outline-none focus:ring-2 focus:ring-[#171717] focus:border-transparent bg-transparent dark:text-[oklch(0.91_0_0)]"
                           autoFocus
                           onKeyDown={(e) => {
                             if (e.key === "Enter") handleAddRecipient();
@@ -1401,7 +1425,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
                         <button
                           onClick={handleAddRecipient}
                           disabled={isSavingRecipient || !newRecipientEmail.trim()}
-                          className="p-1.5 text-[#87E64B] hover:bg-gray-50 rounded transition-colors disabled:opacity-50"
+                          className="p-1.5 text-[#87E64B] hover:bg-gray-50 dark:hover:bg-[oklch(0.28_0_0)] rounded transition-colors disabled:opacity-50"
                           aria-label={t("addRecipient")}
                         >
                           <Check className="w-4 h-4" />
@@ -1409,7 +1433,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
                         <button
                           onClick={handleCancelAddRecipient}
                           disabled={isSavingRecipient}
-                          className="p-1.5 text-gray-400 hover:bg-gray-50 rounded transition-colors disabled:opacity-50"
+                          className="p-1.5 text-gray-400 dark:text-[oklch(0.50_0_0)] hover:bg-gray-50 dark:hover:bg-[oklch(0.28_0_0)] rounded transition-colors disabled:opacity-50"
                           aria-label={t("cancel")}
                         >
                           <Xmark className="w-4 h-4" />
@@ -1418,7 +1442,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
                     ) : (
                       <button
                         onClick={() => setIsAddingRecipient(true)}
-                        className="text-sm text-[#171717] underline font-medium hover:text-[#171717] transition-colors"
+                        className="text-sm text-[#171717] dark:text-[oklch(0.91_0_0)] underline font-medium hover:text-[#171717] dark:hover:text-white transition-colors"
                       >
                         + {t("addRecipient")}
                       </button>
@@ -1444,7 +1468,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
                 <h3 className="text-sm font-bold text-gray-900 mb-1">
                   {t("downloadCount")}
                 </h3>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-600 dark:text-[oklch(0.65_0_0)]">
                   {currentTransfer.downloadCount || 0}
                 </p>
               </div>
@@ -1454,11 +1478,11 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
             {role === "sender" && (
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <h3 className="text-sm font-bold text-gray-900">
+                  <h3 className="text-sm font-bold text-gray-900 dark:text-[oklch(0.91_0_0)]">
                     {t("appearance")}
                   </h3>
                   {isAppearanceLocked && (
-                    <span className="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
+                    <span className="text-[10px] text-gray-400 dark:text-[oklch(0.50_0_0)] bg-gray-100 dark:bg-[oklch(0.28_0_0)] px-1.5 py-0.5 rounded">
                       {t("appearanceLockedLabel")}
                     </span>
                   )}
@@ -1466,8 +1490,8 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
                 <div className="space-y-3">
                   {/* Cover */}
                   <div className={isAppearanceLocked || expiryStatus.isExpired ? "opacity-50 pointer-events-none" : ""}>
-                    <p className="text-sm text-gray-700">{t("cover")}</p>
-                    <p className="text-xs text-gray-400 mb-1">
+                    <p className="text-sm text-gray-700 dark:text-[oklch(0.75_0_0)]">{t("cover")}</p>
+                    <p className="text-xs text-gray-400 dark:text-[oklch(0.50_0_0)] mb-1">
                       {t("coverDescription")}
                     </p>
                     {coverUrl ? (
@@ -1513,8 +1537,8 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
 
                   {/* Wallpaper */}
                   <div className={isAppearanceLocked || expiryStatus.isExpired ? "opacity-50 pointer-events-none" : ""}>
-                    <p className="text-sm text-gray-700">{t("wallpaper")}</p>
-                    <p className="text-xs text-gray-400 mb-1">
+                    <p className="text-sm text-gray-700 dark:text-[oklch(0.75_0_0)]">{t("wallpaper")}</p>
+                    <p className="text-xs text-gray-400 dark:text-[oklch(0.50_0_0)] mb-1">
                       {t("wallpaperDescription")}
                     </p>
                     {wallpaperUrl ? (
@@ -1609,13 +1633,13 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
                 return (
                   <div
                     key={file.id || index}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                    className="flex items-center justify-between p-3 bg-gray-50 dark:bg-[oklch(0.22_0_0)] rounded-lg"
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
+                      <p className="text-sm font-medium text-gray-900 dark:text-[oklch(0.91_0_0)] truncate">
                         {fileName}
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-gray-500 dark:text-[oklch(0.65_0_0)]">
                         {formatSize(fileSizeNum)} - {extension}
                       </p>
                     </div>
@@ -1627,7 +1651,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
                           disabled={
                             regeneratingFileId === file.id || expiryStatus.isExpired
                           }
-                          className="p-2 text-gray-400 hover:text-[#171717] hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="p-2 text-gray-400 dark:text-[oklch(0.50_0_0)] hover:text-[#171717] dark:hover:text-[oklch(0.91_0_0)] hover:bg-gray-100 dark:hover:bg-[oklch(0.28_0_0)] rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           aria-label={t("regeneratePreview")}
                           title={t("regeneratePreviewTooltip")}
                         >
@@ -1641,7 +1665,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
                         disabled={
                           downloadingFileId === file.id || expiryStatus.isExpired || showPayButton
                         }
-                        className="p-2 text-[#87E64B] hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="p-2 text-[#87E64B] hover:bg-gray-100 dark:hover:bg-[oklch(0.28_0_0)] rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         aria-label={
                           expiryStatus.isExpired
                             ? t("expired")

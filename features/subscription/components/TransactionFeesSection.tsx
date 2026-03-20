@@ -262,8 +262,8 @@ export function TransactionFeesSection({
       <h2
         className={
           compact
-            ? "text-xl font-bold text-[#171717] mb-4 text-center"
-            : "text-3xl md:text-5xl font-bold text-[#171717] mb-4 text-center"
+            ? "text-xl font-bold text-[#171717] dark:text-white mb-4 text-center"
+            : "text-3xl md:text-5xl font-bold text-[#171717] dark:text-white mb-4 text-center"
         }
       >
         {t.rich("earningsCalcTitle", { highlight })}
@@ -271,8 +271,8 @@ export function TransactionFeesSection({
       <p
         className={
           compact
-            ? "text-sm text-gray-500 text-center max-w-2xl mx-auto mb-8"
-            : "text-sm md:text-base text-gray-500 text-center max-w-2xl mx-auto mb-10"
+            ? "text-sm text-gray-500 dark:text-gray-400 text-center max-w-2xl mx-auto mb-8"
+            : "text-sm md:text-base text-gray-500 dark:text-gray-400 text-center max-w-2xl mx-auto mb-10"
         }
       >
         {t("earningsCalcSubtitle")}
@@ -292,7 +292,7 @@ export function TransactionFeesSection({
           ref={scrollRef}
           onScroll={updateScrollState}
           onMouseDown={onMouseDown}
-          className="flex flex-nowrap justify-center gap-2 overflow-x-auto scroll-smooth p-2 bg-gray-50/80 rounded-xl cursor-grab [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+          className="flex flex-nowrap justify-center gap-2 overflow-x-auto scroll-smooth p-2 bg-gray-50/80 dark:bg-white/5 rounded-xl cursor-grab [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
         >
           {COUNTRY_CALC_DATA.map((entry) => {
             const isSelected = selectedCountry === entry.countryCode;
@@ -308,7 +308,7 @@ export function TransactionFeesSection({
                 className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-200 flex-shrink-0 ${
                   isSelected
                     ? "bg-[#5E53E0] text-white shadow-md scale-[1.02]"
-                    : "bg-white/80 text-[#171717] hover:bg-white hover:shadow-sm"
+                    : "bg-white/80 dark:bg-white/10 text-[#171717] dark:text-gray-300 hover:bg-white dark:hover:bg-white/20 hover:shadow-sm"
                 }`}
               >
                 {entry.flagCode ? (
@@ -330,20 +330,20 @@ export function TransactionFeesSection({
       </div>
 
       {/* Available countries note */}
-      <p className="text-xs text-gray-400 font-medium text-left max-w-lg mx-auto mb-6">
+      <p className="text-xs text-gray-400 dark:text-gray-500 font-medium text-left max-w-lg mx-auto mb-6">
         {t("availableCountriesNote")}
       </p>
 
       {/* Calculator card */}
       {selectedData && (
-        <div className="max-w-lg mx-auto rounded-2xl border border-gray-200 bg-white p-6 md:p-8">
+        <div className="max-w-lg mx-auto rounded-2xl border border-gray-200 dark:border-border bg-white dark:bg-card p-6 md:p-8">
           {/* Price input */}
           <div className="mb-5">
-            <label className="text-sm font-bold text-[#171717] mb-2 block">
+            <label className="text-sm font-bold text-[#171717] dark:text-white mb-2 block">
               {t("calcYourPrice")}
             </label>
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-gray-400 font-medium pointer-events-none">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-gray-400 dark:text-gray-500 font-medium pointer-events-none">
                 {selectedData.currencySymbol}
               </span>
               <input
@@ -354,7 +354,7 @@ export function TransactionFeesSection({
                   const val = e.target.value.replace(/[^0-9.,]/g, "");
                   setPriceInput(val);
                 }}
-                className="w-full pl-14 pr-4 py-3 border border-gray-200 rounded-lg text-lg font-bold text-[#171717] focus:outline-none focus:border-[#5E53E0] focus:ring-1 focus:ring-[#5E53E0] transition-colors"
+                className="w-full pl-14 pr-4 py-3 border border-gray-200 dark:border-border rounded-lg text-lg font-bold text-[#171717] dark:text-white dark:bg-secondary focus:outline-none focus:border-[#5E53E0] focus:ring-1 focus:ring-[#5E53E0] transition-colors"
                 placeholder="0"
               />
             </div>
@@ -362,7 +362,7 @@ export function TransactionFeesSection({
 
           {/* Tier selector */}
           <div className="mb-6">
-            <label className="text-sm font-bold text-[#171717] mb-2 block">
+            <label className="text-sm font-bold text-[#171717] dark:text-white mb-2 block">
               {t("calcYourPlan")}
             </label>
             <div className="flex gap-2">
@@ -373,7 +373,7 @@ export function TransactionFeesSection({
                   className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${
                     selectedTier === tier.id
                       ? "bg-[#171717] text-white"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      : "bg-gray-100 dark:bg-secondary text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-accent"
                   }`}
                 >
                   {t(`tiers.${tier.id}.name`)}
@@ -385,31 +385,31 @@ export function TransactionFeesSection({
 
           {/* Breakdown */}
           {breakdown && price > 0 ? (
-            <div className="border-t border-gray-100 pt-5 space-y-3">
+            <div className="border-t border-gray-100 dark:border-border pt-5 space-y-3">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-500">{t("calcYourPrice")}</span>
-                <span className="font-medium text-[#171717]">{fmt(price)}</span>
+                <span className="text-gray-500 dark:text-gray-400">{t("calcYourPrice")}</span>
+                <span className="font-medium text-[#171717] dark:text-white">{fmt(price)}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-500">
+                <span className="text-gray-500 dark:text-gray-400">
                   {t("platformFee")} ({platformFeePercent}%)
                 </span>
-                <span className="font-medium text-gray-400">
+                <span className="font-medium text-gray-400 dark:text-gray-500">
                   -{fmt(breakdown.platformFee)}
                 </span>
               </div>
               {breakdown.hasPayoutFee && (
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-500">
+                  <span className="text-gray-500 dark:text-gray-400">
                     {t("payoutFee")} ({breakdown.payoutFeeLabel})
                   </span>
-                  <span className="font-medium text-gray-400">
+                  <span className="font-medium text-gray-400 dark:text-gray-500">
                     -{fmt(breakdown.payoutFee)}
                   </span>
                 </div>
               )}
-              <div className="border-t border-gray-100 pt-3 flex items-center justify-between">
-                <span className="text-base font-bold text-[#171717]">
+              <div className="border-t border-gray-100 dark:border-border pt-3 flex items-center justify-between">
+                <span className="text-base font-bold text-[#171717] dark:text-white">
                   {t("calcYouEarn")}
                 </span>
                 <span className="text-xl font-bold text-[#87E64B]">
@@ -418,7 +418,7 @@ export function TransactionFeesSection({
               </div>
             </div>
           ) : (
-            <div className="border-t border-gray-100 pt-5 text-center text-sm text-gray-400">
+            <div className="border-t border-gray-100 dark:border-border pt-5 text-center text-sm text-gray-400 dark:text-gray-500">
               {t("calcEnterPrice")}
             </div>
           )}

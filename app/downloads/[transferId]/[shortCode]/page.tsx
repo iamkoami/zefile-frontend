@@ -63,6 +63,7 @@ import type { CountryCode } from "libphonenumber-js";
 import usePaymentStatus from "@/hooks/usePaymentStatus";
 import ReportIssueModal from "@/components/shared/ReportIssueModal";
 import TransferPreviewModal from "@/features/transfer/components/TransferPreviewModal";
+import { SaleCheckoutPanel } from "@/features/payment/components/SaleCheckoutPanel";
 import { useDrawerStore } from "@/stores/drawer-store";
 import FloatingPollWidget from "@/components/shared/FloatingPollWidget";
 import { usePollEligibility } from "@/hooks/usePollEligibility";
@@ -114,7 +115,12 @@ type PageState =
   | "preview"
   | "ready"
   | "downloaded"
-  | "error";
+  | "error"
+  | "sale-preview"
+  | "sale-checkout"
+  | "sale-processing"
+  | "sale-ready"
+  | "sale-expired";
 
 function ContentPanelBackground({
   wallpaperUrl,
@@ -129,14 +135,29 @@ function ContentPanelBackground({
   showUpgradeCta?: boolean;
   onUpgradeClick?: () => void;
 }) {
+  const [wallpaperLoaded, setWallpaperLoaded] = useState(false);
+
+  useEffect(() => {
+    if (!wallpaperUrl) return;
+    setWallpaperLoaded(false);
+    const img = new window.Image();
+    img.onload = () => setWallpaperLoaded(true);
+    img.src = wallpaperUrl;
+  }, [wallpaperUrl]);
+
   if (wallpaperUrl) {
     // Sanitize URL to prevent CSS injection via url() breakout
     const safeUrl = wallpaperUrl.replace(/['"()]/g, encodeURIComponent);
     return (
-      <div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat rounded-2xl"
-        style={{ backgroundImage: `url('${safeUrl}')` }}
-      />
+      <>
+        {!wallpaperLoaded && (
+          <div className="absolute inset-0 rounded-2xl animate-shimmer" />
+        )}
+        <div
+          className={`absolute inset-0 bg-cover bg-center bg-no-repeat rounded-2xl transition-opacity duration-500 ${wallpaperLoaded ? "opacity-100" : "opacity-0"}`}
+          style={{ backgroundImage: `url('${safeUrl}')` }}
+        />
+      </>
     );
   }
   return (
@@ -164,6 +185,7 @@ export default function TransferLandingPage() {
   const t = useTranslations("transferLanding");
   const tPayment = useTranslations("payment");
   const tNotFound = useTranslations("notFound");
+  const tSale = useTranslations("publicSale");
   const { timeOfDay } = useTimeOfDay();
 
   // Parse tracking params from URL query string (memoized to prevent useEffect re-runs)
@@ -370,6 +392,17 @@ export default function TransferLandingPage() {
   // Download state
   const [isDownloading, setIsDownloading] = useState(false);
 
+  // Public sales state
+  const [saleDownloadToken, setSaleDownloadToken] = useState<string | null>(null);
+  const [saleBuyerEmail, setSaleBuyerEmail] = useState("");
+  const [saleEmailChecked, setSaleEmailChecked] = useState(false);
+  const [saleHasPurchase, setSaleHasPurchase] = useState(false);
+  const [saleOtpSent, setSaleOtpSent] = useState(false);
+  const [saleOtp, setSaleOtp] = useState("");
+  const [saleCheckingEmail, setSaleCheckingEmail] = useState(false);
+  const [saleVerifyingOtp, setSaleVerifyingOtp] = useState(false);
+  const saleVerifyAttemptedRef = useRef(false);
+
   // Dispute modal
   const [showDisputeModal, setShowDisputeModal] = useState(false);
 
@@ -535,8 +568,36 @@ export default function TransferLandingPage() {
             }
           });
 
-          // Always show download panel first (payment happens when clicking download)
-          setPageState("ready");
+          // Public sales mode: skip OTP, show preview + buy button
+          if (response.data.isPublicSales) {
+            setPageState("sale-preview");
+            // Auto-detect purchase for logged-in users
+            const loggedInEmail = getCurrentUserEmail();
+            if (loggedInEmail) {
+              setSaleBuyerEmail(loggedInEmail);
+              transferApi.checkPurchase(response.data.shortCode, loggedInEmail).then((checkRes) => {
+                if (checkRes.data?.hasPurchase) {
+                  setSaleHasPurchase(true);
+                  setSaleEmailChecked(true);
+                  // Auto-send OTP for logged-in users with existing purchase
+                  transferApi.recoverPurchase(response.data!.shortCode, loggedInEmail).then((recoverRes) => {
+                    if (recoverRes.data?.otpSent) {
+                      setSaleOtpSent(true);
+                    }
+                  }).catch(() => {
+                    // If recover fails, still show the already-owned state
+                  });
+                } else {
+                  setSaleEmailChecked(true);
+                }
+              }).catch(() => {
+                // If check fails, show normal sale-preview
+              });
+            }
+          } else {
+            // Always show download panel first (payment happens when clicking download)
+            setPageState("ready");
+          }
         } else {
           setError(response.error?.message || t("transferNotFound"));
           setErrorType("not-found");
@@ -555,6 +616,36 @@ export default function TransferLandingPage() {
       loadTransfer();
     }
   }, [shortCode, transferId, t]);
+
+  // Handle Paystack callback for public sales (URL has ?reference=xxx&trxref=xxx)
+  useEffect(() => {
+    if (!transfer?.isPublicSales) return;
+    if (saleVerifyAttemptedRef.current) return;
+
+    const reference = searchParams.get("reference") || searchParams.get("trxref");
+    if (!reference) return;
+
+    // Guard: prevent double-execution on re-renders
+    saleVerifyAttemptedRef.current = true;
+    setPageState("sale-processing");
+
+    const verifyPayment = async () => {
+      try {
+        const response = await transferApi.verifyPurchase(shortCode, reference);
+        if (!response.error && response.data) {
+          setSaleDownloadToken(response.data.downloadToken);
+          setPageState("sale-ready");
+        } else {
+          // Token expired or payment failed
+          setPageState("sale-expired");
+        }
+      } catch {
+        setPageState("sale-expired");
+      }
+    };
+
+    verifyPayment();
+  }, [transfer, shortCode, searchParams]);
 
   // Update page title when transfer is loaded
   useEffect(() => {
@@ -1166,6 +1257,87 @@ export default function TransferLandingPage() {
     }
   };
 
+  // Handle email check for public sale gateway
+  const handleSaleEmailCheck = async () => {
+    if (!transfer || !saleBuyerEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(saleBuyerEmail)) return;
+
+    setSaleCheckingEmail(true);
+    try {
+      const checkRes = await transferApi.checkPurchase(transfer.shortCode, saleBuyerEmail);
+      if (checkRes.data?.hasPurchase) {
+        setSaleHasPurchase(true);
+        // Auto-send OTP
+        const recoverRes = await transferApi.recoverPurchase(transfer.shortCode, saleBuyerEmail);
+        if (recoverRes.data?.otpSent) {
+          setSaleOtpSent(true);
+        }
+      }
+      setSaleEmailChecked(true);
+    } catch {
+      setSaleEmailChecked(true);
+    } finally {
+      setSaleCheckingEmail(false);
+    }
+  };
+
+  // Handle OTP verification for purchase recovery
+  const handleSaleOtpVerify = async () => {
+    if (!transfer || !saleOtp.trim()) return;
+
+    setSaleVerifyingOtp(true);
+    try {
+      const res = await transferApi.verifyRecovery(transfer.shortCode, saleBuyerEmail, saleOtp);
+      if (res.data?.downloadToken) {
+        setSaleDownloadToken(res.data.downloadToken);
+        setPageState("sale-ready");
+      } else if (res.error) {
+        toast.error(res.error.message || tSale("buyFailed"));
+      }
+    } catch {
+      toast.error(tSale("buyFailed"));
+    } finally {
+      setSaleVerifyingOtp(false);
+    }
+  };
+
+  // Handle public sale purchase — open checkout flow
+  const handleBuy = () => {
+    if (!transfer) return;
+    setPageState("sale-checkout");
+  };
+
+  // Called by SaleCheckoutPanel after payment is initialized
+  const handleSalePaymentInitiated = (reference: string, isMobileMoney: boolean) => {
+    setPaymentReference(reference);
+    if (isMobileMoney) {
+      // Mobile money: transition to polling state
+      setPageState("payment-prompt");
+    } else {
+      // Card/redirect: browser will redirect, store reference for callback
+      setPageState("sale-processing");
+    }
+  };
+
+  // Handle download for public sale (uses saleToken)
+  const handleSaleDownload = async () => {
+    if (!transfer || !saleDownloadToken) return;
+
+    setIsDownloading(true);
+    try {
+      const response = await storageApi.streamZipDownload(transfer.shortCode, {
+        saleToken: saleDownloadToken,
+      });
+
+      if (response.error) {
+        toast.error(response.error.message || t("downloadFailed"));
+      }
+    } catch {
+      toast.error(t("downloadFailed"));
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   const calculateTotalSize = (): number => {
     if (!transfer?.files) return 0;
     return transfer.files.reduce((acc, file) => {
@@ -1245,7 +1417,7 @@ export default function TransferLandingPage() {
             : "transferNotFoundSubtitle";
 
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-white dark:bg-[oklch(0.19_0_0)]">
         {pageHeader}
         <main style={{ minHeight: "calc(100vh - 64px)", position: "relative" }}>
           <div
@@ -1274,6 +1446,7 @@ export default function TransferLandingPage() {
                       animationData={catAnimationData}
                       loop={true}
                       autoplay={true}
+                      className="ze-lottie-container"
                       style={{
                         width: "300px",
                         height: "auto",
@@ -1281,10 +1454,10 @@ export default function TransferLandingPage() {
                     />
                   )}
                 </div>
-                <h1 className="text-2xl font-bold text-[#171717] mb-3">
+                <h1 className="text-2xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-3">
                   {tNotFound(errorTitleKey)}
                 </h1>
-                <p className="text-gray-600 text-sm font-medium max-w-md mx-auto mb-8 leading-relaxed">
+                <p className="text-gray-600 dark:text-[oklch(0.65_0_0)] text-sm font-medium max-w-md mx-auto mb-8 leading-relaxed">
                   {tNotFound(errorSubtitleKey)}
                 </p>
                 <Link
@@ -1305,7 +1478,7 @@ export default function TransferLandingPage() {
   if (pageState === "password") {
     return (
       <div
-        className="min-h-screen bg-white"
+        className="min-h-screen bg-white dark:bg-[oklch(0.19_0_0)]"
         style={
           isBranded && activeBranding?.backgroundColor
             ? { backgroundColor: activeBranding.backgroundColor }
@@ -1344,13 +1517,13 @@ export default function TransferLandingPage() {
                 )}
                 {/* Lock Icon */}
                 <div className="flex flex-col items-center mb-6">
-                  <Lock className="w-12 h-12 text-gray-300" strokeWidth={1.5} />
+                  <Lock className="w-12 h-12 text-gray-300 dark:text-[oklch(0.40_0_0)]" strokeWidth={1.5} />
                 </div>
 
-                <h1 className="text-xl font-bold text-[#171717] text-center mb-2">
+                <h1 className="text-xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] text-center mb-2">
                   {t("passwordProtected")}
                 </h1>
-                <p className="text-sm text-gray-500 text-center mb-6">
+                <p className="text-sm text-gray-500 dark:text-[oklch(0.65_0_0)] text-center mb-6">
                   {t("enterPasswordToAccess")}
                 </p>
 
@@ -1362,19 +1535,19 @@ export default function TransferLandingPage() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder={t("enterPassword")}
-                        className="w-full px-4 py-3 border border-gray-200 rounded text-[#171717] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#171717] focus:border-transparent pr-12 text-sm"
+                        className="w-full px-4 py-3 border border-gray-200 dark:border-[oklch(0.30_0_0)] rounded text-[#171717] dark:text-[oklch(0.91_0_0)] dark:bg-[oklch(0.22_0_0)] placeholder:text-gray-400 dark:placeholder:text-[oklch(0.45_0_0)] focus:outline-none focus:ring-2 focus:ring-[#171717] dark:focus:ring-[#5E53E0] focus:border-transparent pr-12 text-sm"
                         required
                       />
                       <button
                         type="button"
                         onClick={() => setIsPasswordVisible(!isPasswordVisible)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-[oklch(0.50_0_0)] hover:text-gray-600 dark:hover:text-[oklch(0.75_0_0)]"
                       >
                         <Eye className="w-5 h-5" />
                       </button>
                     </div>
                     {error && (
-                      <p className="text-sm text-red-500 mt-2">{error}</p>
+                      <p className="text-sm text-red-500 dark:text-red-400 mt-2">{error}</p>
                     )}
                   </div>
 
@@ -1408,7 +1581,7 @@ export default function TransferLandingPage() {
   // Payment state
   if (pageState === "payment") {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-white dark:bg-[oklch(0.19_0_0)]">
         <ToastContainer />
         {pageHeader}
         <main style={{ minHeight: "calc(100vh - 64px)", position: "relative" }}>
@@ -1433,10 +1606,10 @@ export default function TransferLandingPage() {
             >
               {/* Payment Form Panel */}
               <div className="ze-upload-panel" style={{ maxWidth: "400px" }}>
-                <h1 className="text-xl font-bold text-[#171717] mb-1">
+                <h1 className="text-xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-1">
                   {tPayment("securePayment")}
                 </h1>
-                <p className="text-sm text-gray-500 mb-6">
+                <p className="text-sm text-gray-500 dark:text-[oklch(0.65_0_0)] mb-6">
                   {tPayment("makePaymentToDownload")}
                 </p>
 
@@ -1448,7 +1621,7 @@ export default function TransferLandingPage() {
                       value={customerName}
                       onChange={(e) => setCustomerName(e.target.value)}
                       placeholder={tPayment("yourName")}
-                      className="w-full px-4 py-3 border border-gray-200 rounded text-[#171717] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#171717] focus:border-transparent text-sm"
+                      className="w-full px-4 py-3 border border-gray-200 dark:border-[oklch(0.30_0_0)] rounded text-[#171717] dark:text-[oklch(0.91_0_0)] dark:bg-[oklch(0.22_0_0)] placeholder:text-gray-400 dark:placeholder:text-[oklch(0.45_0_0)] focus:outline-none focus:ring-2 focus:ring-[#171717] dark:focus:ring-[#5E53E0] focus:border-transparent text-sm"
                     />
                   </div>
                 )}
@@ -1461,14 +1634,14 @@ export default function TransferLandingPage() {
                       value={customerEmail}
                       onChange={(e) => setCustomerEmail(e.target.value)}
                       placeholder={tPayment("yourEmail")}
-                      className="w-full px-4 py-3 border border-gray-200 rounded text-[#171717] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#171717] focus:border-transparent text-sm"
+                      className="w-full px-4 py-3 border border-gray-200 dark:border-[oklch(0.30_0_0)] rounded text-[#171717] dark:text-[oklch(0.91_0_0)] dark:bg-[oklch(0.22_0_0)] placeholder:text-gray-400 dark:placeholder:text-[oklch(0.45_0_0)] focus:outline-none focus:ring-2 focus:ring-[#171717] dark:focus:ring-[#5E53E0] focus:border-transparent text-sm"
                     />
                   </div>
                 )}
 
                 {/* Payment Method Section */}
                 <div className="mb-4">
-                  <p className="text-sm font-medium text-gray-700 mb-2">
+                  <p className="text-sm font-medium text-gray-700 dark:text-[oklch(0.75_0_0)] mb-2">
                     {tPayment("paymentMethodTitle")}
                   </p>
 
@@ -1479,7 +1652,7 @@ export default function TransferLandingPage() {
                       onClick={() =>
                         setIsCountryDropdownOpen(!isCountryDropdownOpen)
                       }
-                      className="w-full flex items-center justify-between px-4 py-3 border border-gray-200 rounded text-[#171717] bg-white hover:bg-gray-50 transition-colors text-sm"
+                      className="w-full flex items-center justify-between px-4 py-3 border border-gray-200 dark:border-[oklch(0.30_0_0)] rounded text-[#171717] dark:text-[oklch(0.91_0_0)] bg-white dark:bg-[oklch(0.24_0_0)] hover:bg-gray-50 dark:hover:bg-[oklch(0.28_0_0)] transition-colors text-sm"
                     >
                       <div className="flex items-center gap-2">
                         {selectedCountry.flagCode ? (
@@ -1489,19 +1662,19 @@ export default function TransferLandingPage() {
                             hasBorder={false}
                           />
                         ) : (
-                          <Globe className="w-5 h-5 text-gray-500" />
+                          <Globe className="w-5 h-5 text-gray-500 dark:text-[oklch(0.65_0_0)]" />
                         )}
                         <span className="font-medium">
                           {selectedCountry.name}
                         </span>
                       </div>
                       <NavArrowDown
-                        className={`w-4 h-4 text-gray-400 transition-transform ${isCountryDropdownOpen ? "rotate-180" : ""}`}
+                        className={`w-4 h-4 text-gray-400 dark:text-[oklch(0.50_0_0)] transition-transform ${isCountryDropdownOpen ? "rotate-180" : ""}`}
                       />
                     </button>
 
                     {isCountryDropdownOpen && (
-                      <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded shadow-lg max-h-[220px] overflow-y-auto">
+                      <div className="absolute z-50 w-full mt-1 bg-white dark:bg-[oklch(0.24_0_0)] border border-gray-200 dark:border-[oklch(0.30_0_0)] rounded shadow-lg dark:shadow-black/30 max-h-[220px] overflow-y-auto">
                         {DOWNLOAD_PAYMENT_COUNTRIES.map((country) => (
                           <button
                             key={country.code}
@@ -1516,9 +1689,9 @@ export default function TransferLandingPage() {
                               setPhoneNumber("");
                               setIsPhoneValid(false);
                             }}
-                            className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 text-left ${
+                            className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 dark:hover:bg-[oklch(0.28_0_0)] text-left ${
                               country.code === selectedCountry.code
-                                ? "bg-gray-50"
+                                ? "bg-gray-50 dark:bg-[oklch(0.24_0_0)]"
                                 : ""
                             }`}
                           >
@@ -1529,9 +1702,9 @@ export default function TransferLandingPage() {
                                 hasBorder={false}
                               />
                             ) : (
-                              <Globe className="w-5 h-5 text-gray-500" />
+                              <Globe className="w-5 h-5 text-gray-500 dark:text-[oklch(0.65_0_0)]" />
                             )}
-                            <span className="text-sm text-[#171717]">
+                            <span className="text-sm text-[#171717] dark:text-[oklch(0.91_0_0)]">
                               {country.name}
                             </span>
                           </button>
@@ -1543,10 +1716,10 @@ export default function TransferLandingPage() {
                   {/* Payment Methods Grid */}
                   {loadingMethods ? (
                     <div className="flex items-center justify-center py-6">
-                      <div className="w-5 h-5 border-2 border-gray-300 border-t-[#5E53E0] rounded-full animate-spin" />
+                      <div className="w-5 h-5 border-2 border-gray-300 dark:border-[oklch(0.30_0_0)] border-t-[#5E53E0] rounded-full animate-spin" />
                     </div>
                   ) : paymentMethods.length === 0 ? (
-                    <p className="text-sm text-gray-500 py-4 text-center">
+                    <p className="text-sm text-gray-500 dark:text-[oklch(0.65_0_0)] py-4 text-center">
                       {tPayment("noMethodsAvailable")}
                     </p>
                   ) : (
@@ -1564,12 +1737,12 @@ export default function TransferLandingPage() {
                             className={`flex items-center gap-2 p-2.5 rounded border-2 transition-colors ${
                               isSelected
                                 ? "border-[#5E53E0] bg-[#5E53E0]/5"
-                                : "border-gray-200 hover:border-gray-300"
+                                : "border-gray-200 dark:border-[oklch(0.30_0_0)] hover:border-gray-300 dark:hover:border-[oklch(0.40_0_0)]"
                             }`}
                           >
-                            <div className="w-7 h-7 flex-shrink-0 flex items-center justify-center bg-gray-100 rounded">
+                            <div className="w-7 h-7 flex-shrink-0 flex items-center justify-center bg-gray-100 dark:bg-[oklch(0.28_0_0)] rounded">
                               {failedIcons.has(method.icon) ? (
-                                <SmartphoneDevice className="w-4 h-4 text-gray-500" />
+                                <SmartphoneDevice className="w-4 h-4 text-gray-500 dark:text-[oklch(0.65_0_0)]" />
                               ) : (
                                 <Image
                                   src={getProviderIconPath(method.icon)}
@@ -1584,7 +1757,7 @@ export default function TransferLandingPage() {
                                 />
                               )}
                             </div>
-                            <span className="text-xs font-medium text-[#171717] truncate">
+                            <span className="text-xs font-medium text-[#171717] dark:text-[oklch(0.91_0_0)] truncate">
                               {method.name}
                             </span>
                           </button>
@@ -1610,13 +1783,13 @@ export default function TransferLandingPage() {
                             className={`flex items-center gap-2 p-2.5 rounded border-2 transition-colors ${
                               isSelected
                                 ? "border-[#5E53E0] bg-[#5E53E0]/5"
-                                : "border-gray-200 hover:border-gray-300"
+                                : "border-gray-200 dark:border-[oklch(0.30_0_0)] hover:border-gray-300 dark:hover:border-[oklch(0.40_0_0)]"
                             }`}
                           >
-                            <div className="w-7 h-7 flex-shrink-0 flex items-center justify-center bg-gray-100 rounded">
-                              <MethodIcon className="w-4 h-4 text-gray-500" />
+                            <div className="w-7 h-7 flex-shrink-0 flex items-center justify-center bg-gray-100 dark:bg-[oklch(0.28_0_0)] rounded">
+                              <MethodIcon className="w-4 h-4 text-gray-500 dark:text-[oklch(0.65_0_0)]" />
                             </div>
-                            <span className="text-xs font-medium text-[#171717] truncate">
+                            <span className="text-xs font-medium text-[#171717] dark:text-[oklch(0.91_0_0)] truncate">
                               {method.name}
                             </span>
                           </button>
@@ -1631,13 +1804,13 @@ export default function TransferLandingPage() {
                           className={`flex items-center gap-2 p-2.5 rounded border-2 transition-colors ${
                             selectedMethod?.type === "card"
                               ? "border-[#5E53E0] bg-[#5E53E0]/5"
-                              : "border-gray-200 hover:border-gray-300"
+                              : "border-gray-200 dark:border-[oklch(0.30_0_0)] hover:border-gray-300 dark:hover:border-[oklch(0.40_0_0)]"
                           }`}
                         >
-                          <div className="w-7 h-7 flex-shrink-0 flex items-center justify-center bg-gray-100 rounded">
-                            <CreditCard className="w-4 h-4 text-gray-500" />
+                          <div className="w-7 h-7 flex-shrink-0 flex items-center justify-center bg-gray-100 dark:bg-[oklch(0.28_0_0)] rounded">
+                            <CreditCard className="w-4 h-4 text-gray-500 dark:text-[oklch(0.65_0_0)]" />
                           </div>
-                          <span className="text-xs font-medium text-[#171717] truncate">
+                          <span className="text-xs font-medium text-[#171717] dark:text-[oklch(0.91_0_0)] truncate">
                             {cardMethod.name}
                           </span>
                         </button>
@@ -1664,7 +1837,7 @@ export default function TransferLandingPage() {
                   <button
                     onClick={() => setPageState("ready")}
                     disabled={isLoading}
-                    className="flex-1 px-4 py-3.5 bg-gray-100 text-[#171717] font-medium rounded hover:bg-gray-200 transition-colors disabled:opacity-50 text-sm"
+                    className="flex-1 px-4 py-3.5 bg-gray-100 dark:bg-[oklch(0.28_0_0)] text-[#171717] dark:text-[oklch(0.91_0_0)] font-medium rounded hover:bg-gray-200 dark:hover:bg-[oklch(0.32_0_0)] transition-colors disabled:opacity-50 text-sm"
                   >
                     {tPayment("cancel")}
                   </button>
@@ -1685,7 +1858,7 @@ export default function TransferLandingPage() {
                 </div>
 
                 {/* Security Notice */}
-                <div className="flex items-start gap-2 text-xs text-gray-400">
+                <div className="flex items-start gap-2 text-xs text-gray-400 dark:text-[oklch(0.50_0_0)]">
                   <Lock className="w-3 h-3 mt-0.5 flex-shrink-0" />
                   <p>{tPayment("securityGuarantee")}</p>
                 </div>
@@ -1724,7 +1897,7 @@ export default function TransferLandingPage() {
     const isPolling = pollingStatus === "polling";
 
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-white dark:bg-[oklch(0.19_0_0)]">
         <ToastContainer />
         {pageHeader}
         <main style={{ minHeight: "calc(100vh - 64px)", position: "relative" }}>
@@ -1751,16 +1924,16 @@ export default function TransferLandingPage() {
                 {/* Status Icon */}
                 <div className="flex justify-center mb-4">
                   {isSuccess ? (
-                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-                      <Download className="w-8 h-8 text-green-600" />
+                    <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                      <Download className="w-8 h-8 text-green-600 dark:text-green-400" />
                     </div>
                   ) : isFailed ? (
-                    <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
-                      <Xmark className="w-8 h-8 text-red-600" />
+                    <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
+                      <Xmark className="w-8 h-8 text-red-600 dark:text-red-400" />
                     </div>
                   ) : isTimeout ? (
-                    <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center">
-                      <WarningCircle className="w-8 h-8 text-yellow-600" />
+                    <div className="w-16 h-16 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center">
+                      <WarningCircle className="w-8 h-8 text-yellow-600 dark:text-yellow-400" />
                     </div>
                   ) : (
                     <LoadingPanel />
@@ -1771,37 +1944,37 @@ export default function TransferLandingPage() {
                 <div className="text-center mb-4">
                   {isSuccess ? (
                     <>
-                      <h1 className="text-xl font-bold text-[#171717] mb-2">
+                      <h1 className="text-xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-2">
                         {tPayment("paymentSuccessful")}
                       </h1>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-gray-600 dark:text-[oklch(0.65_0_0)]">
                         {t("readyToDownload")}
                       </p>
                     </>
                   ) : isFailed ? (
                     <>
-                      <h1 className="text-xl font-bold text-[#171717] mb-2">
+                      <h1 className="text-xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-2">
                         {tPayment("paymentFailed")}
                       </h1>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-gray-600 dark:text-[oklch(0.65_0_0)]">
                         {pollingError || tPayment("youWereNotCharged")}
                       </p>
                     </>
                   ) : isTimeout ? (
                     <>
-                      <h1 className="text-xl font-bold text-[#171717] mb-2">
+                      <h1 className="text-xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-2">
                         {tPayment("takingLongerThanUsual")}
                       </h1>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-gray-600 dark:text-[oklch(0.65_0_0)]">
                         {tPayment("didntReceivePrompt")}
                       </p>
                     </>
                   ) : (
                     <>
-                      <h1 className="text-xl font-bold text-[#171717] mb-2">
+                      <h1 className="text-xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-2">
                         {tPayment("checkYourPhone")}
                       </h1>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-gray-600 dark:text-[oklch(0.65_0_0)]">
                         {tPayment("confirmPaymentOn")}
                       </p>
                     </>
@@ -1809,36 +1982,36 @@ export default function TransferLandingPage() {
                 </div>
 
                 {/* Payment Details */}
-                <div className="bg-gray-50 rounded-lg p-4 mb-4 text-sm">
+                <div className="bg-gray-50 dark:bg-[oklch(0.24_0_0)] rounded-lg p-4 mb-4 text-sm">
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-gray-600">{tPayment("payWith")}</span>
-                    <span className="font-medium text-[#171717]">
+                    <span className="text-gray-600 dark:text-[oklch(0.65_0_0)]">{tPayment("payWith")}</span>
+                    <span className="font-medium text-[#171717] dark:text-[oklch(0.91_0_0)]">
                       {selectedMethod?.name ||
                         getProviderName(selectedMethod?.provider || "")}
                     </span>
                   </div>
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-gray-600">
+                    <span className="text-gray-600 dark:text-[oklch(0.65_0_0)]">
                       {tPayment("phoneNumber")}
                     </span>
-                    <span className="font-medium text-[#171717]">
+                    <span className="font-medium text-[#171717] dark:text-[oklch(0.91_0_0)]">
                       {phoneNumber}
                     </span>
                   </div>
                   {processingFee > 0 ? (
                     <>
-                      <div className="flex justify-between items-center pt-2 border-t border-gray-200 mb-1">
-                        <span className="text-gray-600">
+                      <div className="flex justify-between items-center pt-2 border-t border-gray-200 dark:border-[oklch(0.30_0_0)] mb-1">
+                        <span className="text-gray-600 dark:text-[oklch(0.65_0_0)]">
                           {tPayment("filePrice")}
                         </span>
-                        <span className="font-medium text-[#171717]">
+                        <span className="font-medium text-[#171717] dark:text-[oklch(0.91_0_0)]">
                           {paymentAmount
                             ? `${(paymentAmount / 100).toLocaleString()} ${transfer?.currency === "XOF" ? "Fr CFA" : transfer?.currency || ""}`
                             : ""}
                         </span>
                       </div>
                       <div className="flex justify-between items-center mb-1">
-                        <span className="text-gray-500">
+                        <span className="text-gray-500 dark:text-[oklch(0.65_0_0)]">
                           {processingFeePercent
                             ? tPayment("processingFee", {
                                 percent: processingFeePercent.toFixed(
@@ -1847,25 +2020,25 @@ export default function TransferLandingPage() {
                               })
                             : tPayment("processingFeeGeneric")}
                         </span>
-                        <span className="font-medium text-[#171717]">
+                        <span className="font-medium text-[#171717] dark:text-[oklch(0.91_0_0)]">
                           {`${(processingFee / 100).toLocaleString()} ${transfer?.currency === "XOF" ? "Fr CFA" : transfer?.currency || ""}`}
                         </span>
                       </div>
-                      <div className="flex justify-between items-center pt-1 border-t border-gray-200">
-                        <span className="text-gray-600 font-bold">
+                      <div className="flex justify-between items-center pt-1 border-t border-gray-200 dark:border-[oklch(0.30_0_0)]">
+                        <span className="text-gray-600 dark:text-[oklch(0.65_0_0)] font-bold">
                           {tPayment("totalCharged")}
                         </span>
-                        <span className="font-bold text-[#171717]">
+                        <span className="font-bold text-[#171717] dark:text-[oklch(0.91_0_0)]">
                           {`${(totalAmountCharged / 100).toLocaleString()} ${transfer?.currency === "XOF" ? "Fr CFA" : transfer?.currency || ""}`}
                         </span>
                       </div>
                     </>
                   ) : (
-                    <div className="flex justify-between items-center pt-2 border-t border-gray-200">
-                      <span className="text-gray-600">
+                    <div className="flex justify-between items-center pt-2 border-t border-gray-200 dark:border-[oklch(0.30_0_0)]">
+                      <span className="text-gray-600 dark:text-[oklch(0.65_0_0)]">
                         {tPayment("amount")}
                       </span>
-                      <span className="font-bold text-[#171717]">
+                      <span className="font-bold text-[#171717] dark:text-[oklch(0.91_0_0)]">
                         {paymentAmount
                           ? `${(paymentAmount / 100).toLocaleString()} ${transfer?.currency === "XOF" ? "Fr CFA" : transfer?.currency || ""}`
                           : ""}
@@ -1876,7 +2049,7 @@ export default function TransferLandingPage() {
 
                 {/* Polling Status */}
                 {isPolling && (
-                  <p className="text-xs text-gray-500 text-center mb-4">
+                  <p className="text-xs text-gray-500 dark:text-[oklch(0.65_0_0)] text-center mb-4">
                     {tPayment("waitingForConfirmation")}
                   </p>
                 )}
@@ -1913,7 +2086,7 @@ export default function TransferLandingPage() {
                         resetPolling();
                         setPageState("payment");
                       }}
-                      className="w-full px-6 py-3.5 bg-gray-100 text-[#171717] font-medium rounded hover:bg-gray-200 transition-colors text-sm"
+                      className="w-full px-6 py-3.5 bg-gray-100 dark:bg-[oklch(0.28_0_0)] text-[#171717] dark:text-[oklch(0.91_0_0)] font-medium rounded hover:bg-gray-200 dark:hover:bg-[oklch(0.32_0_0)] transition-colors text-sm"
                     >
                       {tPayment("useDifferentMethod")}
                     </button>
@@ -1923,7 +2096,7 @@ export default function TransferLandingPage() {
                   {isPolling && paymentReference && (
                     <button
                       onClick={() => startPolling(paymentReference)}
-                      className="text-sm text-[#171717] underline font-medium mt-2"
+                      className="text-sm text-[#171717] dark:text-[oklch(0.91_0_0)] underline font-medium mt-2"
                     >
                       {tPayment("iAlreadyPaid")}
                     </button>
@@ -1960,7 +2133,7 @@ export default function TransferLandingPage() {
   // Email confirmation state
   if (pageState === "email" && transfer) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-white dark:bg-[oklch(0.19_0_0)]">
         <ToastContainer />
         {pageHeader}
         <main style={{ minHeight: "calc(100vh - 64px)", position: "relative" }}>
@@ -2007,7 +2180,7 @@ export default function TransferLandingPage() {
                       viewBox="0 0 64 64"
                       fill="none"
                       xmlns="http://www.w3.org/2000/svg"
-                      className="text-gray-300"
+                      className="text-gray-300 dark:text-[oklch(0.40_0_0)]"
                     >
                       <rect
                         x="8"
@@ -2036,21 +2209,21 @@ export default function TransferLandingPage() {
                     }`}
                   >
                     <Lock
-                      className="w-12 h-12 text-gray-300"
+                      className="w-12 h-12 text-gray-300 dark:text-[oklch(0.40_0_0)]"
                       strokeWidth={1.5}
                     />
                   </div>
                 </div>
 
                 {/* Title — transitions on email submit */}
-                <h1 className="text-xl font-bold text-[#171717] text-center mb-2 transition-all duration-300">
+                <h1 className="text-xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] text-center mb-2 transition-all duration-300">
                   {emailSubmitted ? t("verifyEmail") : t("enterEmailToAccess")}
                 </h1>
-                <p className="text-sm text-gray-500 text-center mb-1 transition-all duration-300">
+                <p className="text-sm text-gray-500 dark:text-[oklch(0.65_0_0)] text-center mb-1 transition-all duration-300">
                   {emailSubmitted ? (
                     <>
                       {t("otpSentTo")}{" "}
-                      <span className="font-medium text-[#171717]">
+                      <span className="font-medium text-[#171717] dark:text-[oklch(0.91_0_0)]">
                         {customerEmail}
                       </span>
                     </>
@@ -2059,7 +2232,7 @@ export default function TransferLandingPage() {
                   )}
                 </p>
                 {emailSubmitted && (
-                  <p className="text-xs text-gray-400 text-center mb-1">
+                  <p className="text-xs text-gray-400 dark:text-[oklch(0.50_0_0)] text-center mb-1">
                     {t("checkSpamFolder")}
                   </p>
                 )}
@@ -2079,8 +2252,8 @@ export default function TransferLandingPage() {
                       placeholder={t("yourEmail")}
                       className={`w-full px-4 py-3 border rounded text-sm focus:outline-none transition-all duration-300 ${
                         emailSubmitted
-                          ? "border-[#87E64B] bg-[#87E64B]/5 text-[#171717] cursor-default"
-                          : "border-gray-200 text-[#171717] placeholder:text-gray-400 focus:ring-2 focus:ring-[#171717] focus:border-transparent"
+                          ? "border-[#87E64B] bg-[#87E64B]/5 text-[#171717] dark:text-[oklch(0.91_0_0)] cursor-default"
+                          : "border-gray-200 dark:border-[oklch(0.30_0_0)] text-[#171717] dark:text-[oklch(0.91_0_0)] dark:bg-[oklch(0.22_0_0)] placeholder:text-gray-400 dark:placeholder:text-[oklch(0.45_0_0)] focus:ring-2 focus:ring-[#171717] dark:focus:ring-[#5E53E0] focus:border-transparent"
                       }`}
                       readOnly={emailSubmitted}
                       required
@@ -2112,13 +2285,13 @@ export default function TransferLandingPage() {
                         setOtpValue("");
                         setError("");
                       }}
-                      className="text-xs text-[#171717] underline font-medium mt-1.5"
+                      className="text-xs text-[#171717] dark:text-[oklch(0.91_0_0)] underline font-medium mt-1.5"
                     >
                       {t("changeEmail")}
                     </button>
                   )}
                   {!emailSubmitted && error && (
-                    <p className="text-sm text-red-500 mt-2">{error}</p>
+                    <p className="text-sm text-red-500 dark:text-red-400 mt-2">{error}</p>
                   )}
                 </div>
 
@@ -2157,11 +2330,10 @@ export default function TransferLandingPage() {
                           if (value.length <= 6) setOtpValue(value);
                         }}
                         placeholder="000 000"
-                        className="w-full text-center font-bold bg-transparent outline-none"
+                        className={`w-full text-center font-bold bg-transparent outline-none ${otpValue ? "text-[#171717] dark:text-[oklch(0.91_0_0)]" : "text-[#D1D5DB] dark:text-[oklch(0.45_0_0)]"}`}
                         style={{
                           fontSize: "32px",
                           letterSpacing: "0.3em",
-                          color: otpValue ? "#171717" : "#D1D5DB",
                           border: "none",
                           padding: "16px 0",
                         }}
@@ -2175,7 +2347,7 @@ export default function TransferLandingPage() {
                         }}
                       />
                       {emailSubmitted && error && (
-                        <p className="text-sm text-red-500 mt-2 text-center">
+                        <p className="text-sm text-red-500 dark:text-red-400 mt-2 text-center">
                           {error}
                         </p>
                       )}
@@ -2196,12 +2368,12 @@ export default function TransferLandingPage() {
                       <button
                         onClick={handleResendOtp}
                         disabled={isLoading}
-                        className="text-sm text-[#171717] underline font-medium disabled:opacity-50"
+                        className="text-sm text-[#171717] dark:text-[oklch(0.91_0_0)] underline font-medium disabled:opacity-50"
                       >
                         {t("resendOtp")}
                       </button>
                     ) : (
-                      <p className="text-sm text-gray-400">
+                      <p className="text-sm text-gray-400 dark:text-[oklch(0.50_0_0)]">
                         {t("resendOtpCountdown", {
                           seconds: otpResendCountdown,
                         })}
@@ -2218,7 +2390,7 @@ export default function TransferLandingPage() {
                     setError("");
                     setPageState("ready");
                   }}
-                  className="w-full mt-4 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+                  className="w-full mt-4 text-sm text-gray-500 dark:text-[oklch(0.65_0_0)] hover:text-gray-700 dark:hover:text-[oklch(0.91_0_0)] transition-colors"
                 >
                   ← {tPayment("cancel")}
                 </button>
@@ -2241,7 +2413,7 @@ export default function TransferLandingPage() {
     };
 
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-white dark:bg-[oklch(0.19_0_0)]">
         <ToastContainer />
         {pageHeader}
 
@@ -2287,10 +2459,10 @@ export default function TransferLandingPage() {
                   <Eye className="w-12 h-12 text-[#5E53E0]" />
                 </div>
 
-                <h1 className="text-xl font-bold text-[#171717] text-center mb-2">
+                <h1 className="text-xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] text-center mb-2">
                   {t("previewingFiles")}
                 </h1>
-                <p className="text-sm text-gray-500 text-center mb-4">
+                <p className="text-sm text-gray-500 dark:text-[oklch(0.65_0_0)] text-center mb-4">
                   {fileCount} {fileCount === 1 ? t("file") : t("files")} •{" "}
                   {formatSize(calculateTotalSize())}
                 </p>
@@ -2298,7 +2470,7 @@ export default function TransferLandingPage() {
                 {/* View Files Button */}
                 <button
                   onClick={() => setShowPreviewModal(true)}
-                  className="w-full px-6 py-3 mb-4 border border-gray-200 text-[#171717] font-medium rounded hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+                  className="w-full px-6 py-3 mb-4 border border-gray-200 dark:border-[oklch(0.30_0_0)] text-[#171717] dark:text-[oklch(0.91_0_0)] font-medium rounded hover:bg-gray-50 dark:hover:bg-[oklch(0.28_0_0)] transition-colors flex items-center justify-center gap-2"
                 >
                   <Eye className="w-5 h-5" />
                   {t("preview")}
@@ -2306,12 +2478,12 @@ export default function TransferLandingPage() {
 
                 {/* Price Info for Paid Transfers */}
                 {requiresPaymentAction && (
-                  <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                  <div className="bg-gray-50 dark:bg-[oklch(0.24_0_0)] rounded-lg p-4 mb-4">
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">
+                      <span className="text-sm text-gray-600 dark:text-[oklch(0.65_0_0)]">
                         {tPayment("price")}
                       </span>
-                      <span className="font-bold text-[#171717]">
+                      <span className="font-bold text-[#171717] dark:text-[oklch(0.91_0_0)]">
                         {formatPrice(
                           transfer.price!,
                           transfer.currency || "XOF",
@@ -2346,7 +2518,7 @@ export default function TransferLandingPage() {
                 {/* Back Link */}
                 <button
                   onClick={() => setPageState("ready")}
-                  className="w-full mt-4 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+                  className="w-full mt-4 text-sm text-gray-500 dark:text-[oklch(0.65_0_0)] hover:text-gray-700 dark:hover:text-[oklch(0.91_0_0)] transition-colors"
                 >
                   ← {tPayment("cancel")}
                 </button>
@@ -2359,10 +2531,467 @@ export default function TransferLandingPage() {
   }
 
   // Ready to download state (free transfer or paid)
+  // ──── Public Sale: Preview + Buy ─────────────────────────────────────
+  if (pageState === "sale-preview" && transfer) {
+    const priceDisplay = transfer.price
+      ? `${(transfer.price / 100).toLocaleString()} ${transfer.currency === "XOF" ? "Fr CFA" : transfer.currency || ""}`
+      : "";
+
+    return (
+      <div className="min-h-screen bg-white dark:bg-[oklch(0.19_0_0)]">
+        <ToastContainer />
+        {pageHeader}
+
+        {/* Report Issue Modal */}
+        {showDisputeModal && (
+          <ReportIssueModal
+            transferId={transfer.id}
+            shortCode={shortCode}
+            role="recipient"
+            onClose={() => setShowDisputeModal(false)}
+          />
+        )}
+
+        <main style={{ minHeight: "calc(100vh - 64px)", position: "relative" }}>
+          <div
+            className={`ze-content-panel ${transfer?.wallpaperUrl ? "ze-wallpaper-mode" : `ze-time-${timeOfDay}`}`}
+            style={{ position: "relative", overflow: "hidden" }}
+          >
+            <ContentPanelBackground
+              wallpaperUrl={transfer?.wallpaperUrl}
+              timeOfDay={timeOfDay}
+              isAuthenticated={isAuthenticated}
+              showUpgradeCta={isAuthenticated && userTier === "free"}
+              onUpgradeClick={() => openDrawer("subscriptions")}
+            />
+            <div
+              className="ze-panels-container"
+              style={{
+                position: "relative",
+                zIndex: 10,
+                pointerEvents: "none",
+              }}
+            >
+              <div className="ze-upload-panel">
+                {/* Cover Image or Download Icon */}
+                <div className="flex flex-col items-center mb-6">
+                  {transfer?.coverUrl ? (
+                    <div className="w-[200px] h-[200px] overflow-hidden rounded relative">
+                      <div className="absolute inset-0 animate-shimmer rounded" />
+                      <Image
+                        src={transfer.coverUrl}
+                        alt={transfer.title || ""}
+                        width={200}
+                        height={200}
+                        className="w-full h-full object-cover relative z-10 transition-opacity duration-500"
+                        unoptimized
+                        onLoad={(e) => {
+                          const prev = e.currentTarget.previousElementSibling as HTMLElement;
+                          if (prev) prev.style.display = "none";
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <CreditCard
+                      className="w-20 h-20 text-gray-300 dark:text-[oklch(0.40_0_0)]"
+                      strokeWidth={1}
+                    />
+                  )}
+                </div>
+
+                {/* Title */}
+                <h1 className="text-xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] text-center mb-2">
+                  {transfer.title || t("untitled")}
+                </h1>
+
+                {/* Message */}
+                {transfer.message && (
+                  <p className="text-sm text-gray-500 dark:text-[oklch(0.65_0_0)] text-center mb-4 leading-relaxed">
+                    {transfer.message}
+                  </p>
+                )}
+
+                {/* File Info Row */}
+                <div className="flex items-center justify-between py-5 px-4 bg-gray-100 dark:bg-[oklch(0.28_0_0)] rounded mb-4">
+                  <div>
+                    <p className="text-sm font-medium text-[#171717] dark:text-[oklch(0.91_0_0)]">
+                      {fileCount} {fileCount === 1 ? t("file") : t("files")}
+                    </p>
+                  </div>
+                  <p className="text-sm font-medium text-gray-400 dark:text-[oklch(0.50_0_0)]">
+                    {formatSize(calculateTotalSize())}
+                  </p>
+                </div>
+
+                {/* Preview button */}
+                <button
+                  onClick={() => {
+                    if (transfer) {
+                      openDrawerToView(
+                        "transfers",
+                        "transfer-preview",
+                        transfer,
+                        "receiver",
+                      );
+                    }
+                  }}
+                  className="w-full px-6 py-3 border-2 border-gray-300 dark:border-[oklch(0.30_0_0)] bg-white dark:bg-[oklch(0.24_0_0)] text-[#171717] dark:text-[oklch(0.91_0_0)] font-medium rounded hover:bg-gray-50 dark:hover:bg-[oklch(0.28_0_0)] transition-colors flex items-center justify-center gap-2 mb-4"
+                >
+                  <Eye className="w-5 h-5" />
+                  {t("preview")}
+                </button>
+
+                {/* Email Gateway */}
+                {!isAuthenticated && (
+                  <div className="mb-4">
+                    <div className="flex gap-2">
+                      <input
+                        type="email"
+                        value={saleBuyerEmail}
+                        onChange={(e) => {
+                          setSaleBuyerEmail(e.target.value);
+                          setSaleEmailChecked(false);
+                          setSaleHasPurchase(false);
+                          setSaleOtpSent(false);
+                          setSaleOtp("");
+                        }}
+                        placeholder={tSale("emailPlaceholder")}
+                        required
+                        className="flex-1 px-4 py-3 border border-gray-200 dark:border-[oklch(0.30_0_0)] rounded text-[#171717] dark:text-[oklch(0.91_0_0)] dark:bg-[oklch(0.22_0_0)] placeholder:text-gray-400 dark:placeholder:text-[oklch(0.45_0_0)] focus:outline-none focus:ring-2 focus:ring-[#171717] dark:focus:ring-[#5E53E0] focus:border-transparent text-sm"
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !saleEmailChecked) {
+                            e.preventDefault();
+                            handleSaleEmailCheck();
+                          }
+                        }}
+                      />
+                      {!saleEmailChecked && (
+                        <button
+                          onClick={handleSaleEmailCheck}
+                          disabled={saleCheckingEmail || !saleBuyerEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(saleBuyerEmail)}
+                          className="px-4 py-3 bg-[#171717] dark:bg-[oklch(0.91_0_0)] text-white dark:text-[oklch(0.19_0_0)] font-medium rounded hover:bg-[#333] dark:hover:bg-[oklch(0.85_0_0)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm whitespace-nowrap"
+                        >
+                          {saleCheckingEmail ? tSale("checking") : tSale("continue")}
+                        </button>
+                      )}
+                    </div>
+                    {!saleEmailChecked && (
+                      <p className="text-xs text-gray-400 dark:text-[oklch(0.50_0_0)] mt-1">
+                        {tSale("enterEmail")}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Already purchased: OTP verification */}
+                {saleEmailChecked && saleHasPurchase && (
+                  <div className="mb-4 bg-[#F0FDE4] dark:bg-[oklch(0.25_0.05_130)] rounded p-5">
+                    <p className="font-semibold text-[#171717] dark:text-[oklch(0.91_0_0)] text-sm mb-1">
+                      {tSale("alreadyOwned")}
+                    </p>
+                    {saleOtpSent && (
+                      <>
+                        <p className="text-sm text-gray-600 dark:text-[oklch(0.65_0_0)] mb-3">
+                          {tSale("otpSent").replace("{email}", saleBuyerEmail)}
+                        </p>
+                        <input
+                          type="text"
+                          value={saleOtp}
+                          onChange={(e) => setSaleOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                          placeholder="000000"
+                          maxLength={6}
+                          className="w-full px-4 py-3 border border-gray-200 dark:border-[oklch(0.30_0_0)] rounded text-[#171717] dark:text-[oklch(0.91_0_0)] dark:bg-[oklch(0.22_0_0)] text-center text-lg font-mono tracking-[0.5em] focus:outline-none focus:ring-2 focus:ring-[#171717] dark:focus:ring-[#5E53E0] focus:border-transparent mb-3"
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && saleOtp.length === 6) {
+                              e.preventDefault();
+                              handleSaleOtpVerify();
+                            }
+                          }}
+                        />
+                        <button
+                          onClick={handleSaleOtpVerify}
+                          disabled={saleVerifyingOtp || saleOtp.length !== 6}
+                          className="w-full px-6 py-3 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        >
+                          <Download className="w-5 h-5" />
+                          {saleVerifyingOtp ? tSale("checking") : tSale("verifyAndDownload")}
+                        </button>
+                        <p className="text-xs text-gray-500 dark:text-[oklch(0.50_0_0)] mt-2 text-center">
+                          {tSale("noCharge")}
+                        </p>
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {/* New purchase: Buy button */}
+                {(saleEmailChecked && !saleHasPurchase) || (isAuthenticated && !saleHasPurchase) ? (
+                  <button
+                    onClick={handleBuy}
+                    disabled={isLoading}
+                    className="w-full px-6 py-3.5 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    style={
+                      isBranded && activeBranding?.primaryColor
+                        ? {
+                            backgroundColor: activeBranding.primaryColor,
+                            color:
+                              activeBranding.buttonTextColor ||
+                              activeBranding.textColor ||
+                              "#171717",
+                          }
+                        : undefined
+                    }
+                  >
+                    <CreditCard className="w-5 h-5" />
+                    {isLoading
+                      ? tPayment("processing")
+                      : `${tSale("buy")} ${priceDisplay}`}
+                  </button>
+                ) : null}
+
+                {/* Security Notice */}
+                <div className="flex items-start gap-2 text-xs text-gray-400 dark:text-[oklch(0.50_0_0)] mt-3">
+                  <Lock className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                  <p>{tPayment("securityGuarantee")}</p>
+                </div>
+
+                {/* Report Link */}
+                <button
+                  onClick={() => setShowDisputeModal(true)}
+                  className="flex w-full justify-center items-center gap-2 text-sm text-gray-400 dark:text-[oklch(0.50_0_0)] hover:text-gray-500 dark:hover:text-[oklch(0.65_0_0)] mt-4 transition-colors"
+                >
+                  <MessageAlert className="w-4 h-4" />
+                  {t("reportTransfer")}
+                </button>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // ──── Public Sale: Checkout ────────────────────────────────────────────
+  if (pageState === "sale-checkout" && transfer) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-[oklch(0.19_0_0)]">
+        <ToastContainer />
+        {pageHeader}
+        <main style={{ minHeight: "calc(100vh - 64px)", position: "relative" }}>
+          <div
+            className={`ze-content-panel !items-start ${transfer?.wallpaperUrl ? "ze-wallpaper-mode" : `ze-time-${timeOfDay}`}`}
+            style={{ position: "relative", overflow: "hidden" }}
+          >
+            <ContentPanelBackground
+              wallpaperUrl={transfer?.wallpaperUrl}
+              timeOfDay={timeOfDay}
+              isAuthenticated={isAuthenticated}
+              showUpgradeCta={false}
+            />
+            <div
+              className="ze-panels-container !items-start flex-col lg:flex-row gap-6 pt-8"
+              style={{
+                position: "relative",
+                zIndex: 10,
+                pointerEvents: "none",
+              }}
+            >
+              {/* Payment Form Panel */}
+              <div className="ze-upload-panel" style={{ maxWidth: "400px" }}>
+                <SaleCheckoutPanel
+                  transferId={transfer.id}
+                  transferCurrency={transfer.currency || "XOF"}
+                  buyerEmail={saleBuyerEmail}
+                  onBack={() => setPageState("sale-preview")}
+                  onPaymentInitiated={handleSalePaymentInitiated}
+                />
+              </div>
+
+              {/* Transfer Summary */}
+              <div className="w-full lg:w-[400px] flex-shrink-0">
+                <TransferSummaryCard
+                  title={transfer.title || "Untitled"}
+                  fileCount={transfer.files?.length || 0}
+                  totalSize={calculateTotalSize()}
+                  price={transfer.price || 0}
+                  currency={transfer.currency || "XOF"}
+                  message={transfer.message}
+                  createdAt={transfer.createdAt}
+                  versionCount={transfer.versionCount}
+                />
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // ──── Public Sale: Processing Payment ──────────────────────────────────
+  if (pageState === "sale-processing" && transfer) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-[oklch(0.19_0_0)]">
+        <ToastContainer />
+        {pageHeader}
+        <main style={{ minHeight: "calc(100vh - 64px)", position: "relative" }}>
+          <div
+            className={`ze-content-panel ${transfer?.wallpaperUrl ? "ze-wallpaper-mode" : `ze-time-${timeOfDay}`}`}
+            style={{ position: "relative", overflow: "hidden" }}
+          >
+            <ContentPanelBackground
+              wallpaperUrl={transfer?.wallpaperUrl}
+              timeOfDay={timeOfDay}
+            />
+            <div
+              className="ze-panels-container"
+              style={{
+                position: "relative",
+                zIndex: 10,
+                pointerEvents: "none",
+              }}
+            >
+              <div className="ze-upload-panel text-center">
+                <div className="flex justify-center mb-4">
+                  <LoadingPanel />
+                </div>
+                <h1 className="text-xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-2">
+                  {tSale("confirmingPayment")}
+                </h1>
+                <p className="text-sm text-gray-500 dark:text-[oklch(0.65_0_0)]">
+                  {tSale("pleaseWait")}
+                </p>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // ──── Public Sale: Ready to Download ───────────────────────────────────
+  if (pageState === "sale-ready" && transfer) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-[oklch(0.19_0_0)]">
+        <ToastContainer />
+        {pageHeader}
+        <main style={{ minHeight: "calc(100vh - 64px)", position: "relative" }}>
+          <div
+            className={`ze-content-panel ${transfer?.wallpaperUrl ? "ze-wallpaper-mode" : `ze-time-${timeOfDay}`}`}
+            style={{ position: "relative", overflow: "hidden" }}
+          >
+            <ContentPanelBackground
+              wallpaperUrl={transfer?.wallpaperUrl}
+              timeOfDay={timeOfDay}
+            />
+            <div
+              className="ze-panels-container"
+              style={{
+                position: "relative",
+                zIndex: 10,
+                pointerEvents: "none",
+              }}
+            >
+              <div className="ze-upload-panel text-center">
+                <div className="flex flex-col items-center mb-6">
+                  <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                    <Download className="w-8 h-8 text-green-600 dark:text-green-400" />
+                  </div>
+                </div>
+                <h1 className="text-xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-2">
+                  {tSale("paymentConfirmed")}
+                </h1>
+                <p className="text-sm text-gray-500 dark:text-[oklch(0.65_0_0)] mb-6">
+                  {tSale("downloadReady")}
+                </p>
+
+                <button
+                  onClick={handleSaleDownload}
+                  disabled={isDownloading}
+                  className="w-full px-6 py-3.5 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  style={
+                    isBranded && activeBranding?.primaryColor
+                      ? {
+                          backgroundColor: activeBranding.primaryColor,
+                          color:
+                            activeBranding.buttonTextColor ||
+                            activeBranding.textColor ||
+                            "#171717",
+                        }
+                      : undefined
+                  }
+                >
+                  <Download className="w-5 h-5" />
+                  {isDownloading
+                    ? t("preparingDownload")
+                    : t("downloadAllFiles")}
+                </button>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // ──── Public Sale: Expired Token ───────────────────────────────────────
+  if (pageState === "sale-expired" && transfer) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-[oklch(0.19_0_0)]">
+        <ToastContainer />
+        {pageHeader}
+        <main style={{ minHeight: "calc(100vh - 64px)", position: "relative" }}>
+          <div
+            className={`ze-content-panel ${transfer?.wallpaperUrl ? "ze-wallpaper-mode" : `ze-time-${timeOfDay}`}`}
+            style={{ position: "relative", overflow: "hidden" }}
+          >
+            <ContentPanelBackground
+              wallpaperUrl={transfer?.wallpaperUrl}
+              timeOfDay={timeOfDay}
+            />
+            <div
+              className="ze-panels-container"
+              style={{
+                position: "relative",
+                zIndex: 10,
+                pointerEvents: "none",
+              }}
+            >
+              <div className="ze-upload-panel text-center">
+                <div className="flex flex-col items-center mb-6">
+                  <div className="w-16 h-16 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center">
+                    <WarningCircle className="w-8 h-8 text-yellow-600 dark:text-yellow-400" />
+                  </div>
+                </div>
+                <h1 className="text-xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-2">
+                  {tSale("downloadExpired")}
+                </h1>
+                <p className="text-sm text-gray-500 dark:text-[oklch(0.65_0_0)] mb-6">
+                  {tSale("downloadExpiredHint")}
+                </p>
+
+                <button
+                  onClick={() => {
+                    setSaleDownloadToken(null);
+                    saleVerifyAttemptedRef.current = false;
+                    setPageState("sale-preview");
+                  }}
+                  className="w-full px-6 py-3.5 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors flex items-center justify-center gap-2"
+                >
+                  <CreditCard className="w-5 h-5" />
+                  {tSale("buyAgain")}
+                </button>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   if (pageState === "ready" && transfer) {
     return (
       <div
-        className="min-h-screen bg-white"
+        className="min-h-screen bg-white dark:bg-[oklch(0.19_0_0)]"
         style={
           isBranded && activeBranding?.backgroundColor
             ? { backgroundColor: activeBranding.backgroundColor }
@@ -2410,12 +3039,12 @@ export default function TransferLandingPage() {
                     role="status"
                     aria-live="polite"
                   >
-                    <p className="text-sm font-medium text-[#171717] leading-relaxed">
+                    <p className="text-sm font-medium text-[#171717] dark:text-[oklch(0.91_0_0)] leading-relaxed">
                       {t("newUserWelcomeBanner")}
                     </p>
                     <button
                       onClick={() => setShowNewUserBanner(false)}
-                      className="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0 mt-0.5 pointer-events-auto"
+                      className="text-gray-400 dark:text-[oklch(0.50_0_0)] hover:text-gray-600 dark:hover:text-[oklch(0.75_0_0)] transition-colors flex-shrink-0 mt-0.5 pointer-events-auto"
                       aria-label={t("dismissBanner")}
                     >
                       <Xmark className="w-4 h-4" />
@@ -2435,31 +3064,31 @@ export default function TransferLandingPage() {
                     </div>
                   ) : (
                     <Download
-                      className="w-30 h-30 text-gray-300"
+                      className="w-30 h-30 text-gray-300 dark:text-[oklch(0.40_0_0)]"
                       strokeWidth={1.5}
                     />
                   )}
                 </div>
 
                 {/* Title */}
-                <h1 className="text-xl font-bold text-[#171717] text-center mb-2">
+                <h1 className="text-xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] text-center mb-2">
                   {t("downloadFiles")} !
                 </h1>
 
                 {/* Expiry Info */}
                 {transfer.expireAt && (
-                  <p className="text-sm font-medium text-gray-500 text-center mb-1">
+                  <p className="text-sm font-medium text-gray-500 dark:text-[oklch(0.65_0_0)] text-center mb-1">
                     {t("filesExpireIn")}
                   </p>
                 )}
                 {transfer.expireAt && (
-                  <p className="text-sm font-bold text-[#171717] text-center mb-6">
+                  <p className="text-sm font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] text-center mb-6">
                     {getDaysUntilExpiry()}
                   </p>
                 )}
 
                 {/* Transfer Title */}
-                <h2 className="text-base font-bold text-[#171717] mb-1 break-all">
+                <h2 className="text-base font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-1 break-all">
                   {transfer.title || t("untitled")}
                 </h2>
 
@@ -2476,13 +3105,13 @@ export default function TransferLandingPage() {
                   transfer.isPaid) && <div className="mb-3" />}
 
                 {/* File Info Row */}
-                <div className="flex items-center justify-between py-5 px-4 bg-gray-100 rounded mb-4">
+                <div className="flex items-center justify-between py-5 px-4 bg-gray-100 dark:bg-[oklch(0.28_0_0)] rounded mb-4">
                   <div>
-                    <p className="text-sm font-medium text-[#171717]">
+                    <p className="text-sm font-medium text-[#171717] dark:text-[oklch(0.91_0_0)]">
                       {fileCount} {fileCount === 1 ? t("file") : t("files")}
                     </p>
                   </div>
-                  <p className="text-sm font-medium text-gray-400">
+                  <p className="text-sm font-medium text-gray-400 dark:text-[oklch(0.50_0_0)]">
                     {formatSize(calculateTotalSize())}
                   </p>
                 </div>
@@ -2490,7 +3119,7 @@ export default function TransferLandingPage() {
                 {/* Report Link */}
                 <button
                   onClick={() => setShowDisputeModal(true)}
-                  className="flex w-full justify-center items-center gap-2 text-sm text-gray-400 hover:text-gray-500 mb-6 transition-colors"
+                  className="flex w-full justify-center items-center gap-2 text-sm text-gray-400 dark:text-[oklch(0.50_0_0)] hover:text-gray-500 dark:hover:text-[oklch(0.65_0_0)] mb-6 transition-colors"
                 >
                   <MessageAlert className="w-4 h-4" />
                   {t("reportTransfer")}
@@ -2501,13 +3130,13 @@ export default function TransferLandingPage() {
                   transfer.price &&
                   transfer.price > 0 &&
                   !transfer.isPaid && (
-                    <div className="bg-yellow-50 border border-yellow-200 rounded p-4 mb-4 flex items-start gap-3">
-                      <WarningCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                    <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/40 rounded p-4 mb-4 flex items-start gap-3">
+                      <WarningCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
                       <div>
-                        <p className="text-sm font-bold text-yellow-800">
+                        <p className="text-sm font-bold text-yellow-800 dark:text-yellow-200">
                           {tPayment("systemUnavailable")}
                         </p>
-                        <p className="text-xs text-yellow-700 mt-1">
+                        <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">
                           {tPayment("systemUnavailableDesc")}
                         </p>
                       </div>
@@ -2561,7 +3190,7 @@ export default function TransferLandingPage() {
 
                   <button
                     onClick={handlePreviewClick}
-                    className="w-full px-6 py-3.5 border-2 border-gray-300 bg-white text-[#171717] font-medium rounded hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+                    className="w-full px-6 py-3.5 border-2 border-gray-300 dark:border-[oklch(0.30_0_0)] bg-white dark:bg-[oklch(0.24_0_0)] text-[#171717] dark:text-[oklch(0.91_0_0)] font-medium rounded hover:bg-gray-50 dark:hover:bg-[oklch(0.28_0_0)] transition-colors flex items-center justify-center gap-2"
                   >
                     <Eye className="w-5 h-5" />
                     {t("preview")}
@@ -2579,7 +3208,7 @@ export default function TransferLandingPage() {
               href="https://zefile.io"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-500 transition-colors"
+              className="inline-flex items-center gap-1.5 text-xs text-gray-400 dark:text-[oklch(0.50_0_0)] hover:text-gray-500 dark:hover:text-[oklch(0.65_0_0)] transition-colors"
             >
               Powered by
               <Image
@@ -2604,7 +3233,7 @@ export default function TransferLandingPage() {
     const frontendUrl =
       process.env.NEXT_PUBLIC_FRONTEND_URL || "https://zefile.io";
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-white dark:bg-[oklch(0.19_0_0)]">
         <ToastContainer />
         {pageHeader}
         <main style={{ minHeight: "calc(100vh - 64px)", position: "relative" }}>
@@ -2631,13 +3260,13 @@ export default function TransferLandingPage() {
                     strokeWidth={1.5}
                   />
                 </div>
-                <h1 className="text-xl font-bold text-[#171717] mb-2">
+                <h1 className="text-xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-2">
                   {t("downloadedTitle")}
                 </h1>
-                <p className="text-sm text-gray-500 mb-1">
+                <p className="text-sm text-gray-500 dark:text-[oklch(0.65_0_0)] mb-1">
                   {transfer.title || t("untitled")}
                 </p>
-                <p className="text-sm text-gray-500 mb-8">
+                <p className="text-sm text-gray-500 dark:text-[oklch(0.65_0_0)] mb-8">
                   {t("downloadedSubtitle")}
                 </p>
                 <a

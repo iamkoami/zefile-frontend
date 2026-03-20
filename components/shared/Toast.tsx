@@ -73,28 +73,28 @@ const ToastItem: React.FC<{ toast: Toast; onRemove: (id: string) => void }> = ({
   const getIcon = () => {
     switch (toast.type) {
       case 'success':
-        return <Check className="w-5 h-5 text-[#171717]" />;
+        return <Check className="w-5 h-5 text-[#171717] dark:text-[#87E64B]" />;
       case 'error':
-        return <Xmark className="w-5 h-5 text-[#171717]" />;
+        return <Xmark className="w-5 h-5 text-[#171717] dark:text-red-400" />;
       case 'warning':
-        return <WarningCircle className="w-5 h-5 text-[#171717]" />;
+        return <WarningCircle className="w-5 h-5 text-[#171717] dark:text-yellow-400" />;
       case 'info':
       default:
-        return <InfoCircle className="w-5 h-5 text-[#171717]" />;
+        return <InfoCircle className="w-5 h-5 text-[#171717] dark:text-[#5E53E0]" />;
     }
   };
 
   const getBackgroundColor = () => {
     switch (toast.type) {
       case 'success':
-        return 'bg-[#87E64B]';
+        return 'bg-[#87E64B] dark:bg-[var(--ze-toast-success)]';
       case 'error':
-        return 'bg-red-400';
+        return 'bg-red-400 dark:bg-[var(--ze-toast-error)]';
       case 'warning':
-        return 'bg-yellow-400';
+        return 'bg-yellow-400 dark:bg-[var(--ze-toast-warning)]';
       case 'info':
       default:
-        return 'bg-[#87E64B]';
+        return 'bg-[#87E64B] dark:bg-[var(--ze-toast-info)]';
     }
   };
 
@@ -102,18 +102,18 @@ const ToastItem: React.FC<{ toast: Toast; onRemove: (id: string) => void }> = ({
     <div
       role="alert"
       aria-live="polite"
-      className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg transition-all duration-200 ${getBackgroundColor()} ${
+      className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg dark:shadow-black/30 transition-all duration-200 ${getBackgroundColor()} ${
         isExiting ? 'opacity-0 translate-x-4' : 'opacity-100 translate-x-0'
       }`}
     >
       <div className="flex-shrink-0">{getIcon()}</div>
-      <p className="text-sm font-medium text-[#171717] flex-1">{toast.message}</p>
+      <p className="text-sm font-medium text-[#171717] dark:text-[oklch(0.91_0_0)] flex-1">{toast.message}</p>
       <button
         onClick={handleRemove}
-        className="flex-shrink-0 p-1 rounded hover:bg-white transition-colors"
+        className="flex-shrink-0 p-1 rounded hover:bg-white dark:hover:bg-white/10 transition-colors"
         aria-label="Dismiss"
       >
-        <Xmark className="w-4 h-4 text-[#171717]" />
+        <Xmark className="w-4 h-4 text-[#171717] dark:text-[oklch(0.65_0_0)]" />
       </button>
     </div>
   );

@@ -247,13 +247,13 @@ const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
             {emails.map((email, index) => (
               <div
                 key={index}
-                className="flex items-center gap-1 bg-[#F9F9FA] text-[#171717] px-2 py-1 rounded text-xs"
+                className="flex items-center gap-1 bg-[#F9F9FA] dark:bg-[oklch(0.28_0_0)] text-[#171717] dark:text-[oklch(0.91_0_0)] px-2 py-1 rounded text-xs"
               >
                 <span>{email}</span>
                 <button
                   type="button"
                   onClick={() => removeEmail(email)}
-                  className="hover:bg-gray-200 rounded p-0.5 transition-colors"
+                  className="hover:bg-gray-200 dark:hover:bg-[oklch(0.35_0_0)] rounded p-0.5 transition-colors"
                 >
                   <Xmark width={12} height={12} strokeWidth={2} />
                 </button>
@@ -264,7 +264,7 @@ const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
             <button
               type="button"
               onClick={openInput}
-              className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center w-7 h-7 rounded-full bg-[#87E64B] hover:bg-[#75D43A] transition-colors"
+              className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center w-7 h-7 rounded-full bg-[#87E64B] hover:bg-[#75D43A] text-[#171717] transition-colors"
             >
               <Plus width={16} height={16} strokeWidth={2} />
             </button>
@@ -281,7 +281,7 @@ const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
             }`}
             style={{ padding: '8px 12px' }}
           >
-            <span className="text-sm text-gray-500">{t('maxRecipientsReached', { max: maxEmails })}</span>
+            <span className="text-sm text-gray-500 dark:text-[oklch(0.65_0_0)]">{t('maxRecipientsReached', { max: maxEmails })}</span>
           </div>
         ) : (
           <div
@@ -326,22 +326,22 @@ const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
         {showSuggestions && suggestions.length > 0 && (
           <div
             ref={suggestionsRef}
-            className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden"
-            style={{ color: '#171717' }}
+            className="absolute z-50 w-full mt-1 bg-white dark:bg-card border border-gray-200 dark:border-border rounded-lg shadow-lg overflow-hidden"
+            style={{ color: 'var(--foreground)' }}
           >
             {suggestions.map((contact, index) => (
               <button
                 key={contact.id}
                 type="button"
-                className={`w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex flex-col ${
-                  index === selectedSuggestionIndex ? 'bg-gray-100' : ''
+                className={`w-full px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-[oklch(0.28_0_0)] transition-colors flex flex-col ${
+                  index === selectedSuggestionIndex ? 'bg-gray-100 dark:bg-[oklch(0.28_0_0)]' : ''
                 }`}
                 onClick={() => selectSuggestion(contact)}
                 onMouseEnter={() => setSelectedSuggestionIndex(index)}
               >
-                <span className="text-sm font-medium" style={{ color: '#171717' }}>{contact.email}</span>
+                <span className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>{contact.email}</span>
                 {contact.name && (
-                  <span className="text-xs" style={{ color: '#6b7280' }}>{contact.name}</span>
+                  <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>{contact.name}</span>
                 )}
               </button>
             ))}
@@ -351,11 +351,11 @@ const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
 
       {/* Error messages */}
       {(error || inputError) && (
-        <p className="text-sm text-red-600 mt-1">{error || inputError}</p>
+        <p className="text-sm text-red-600 dark:text-red-400 mt-1">{error || inputError}</p>
       )}
 
       {/* Helper text */}
-      <p className="text-xs text-gray-500 mt-1">
+      <p className="text-xs text-gray-500 dark:text-[oklch(0.65_0_0)] mt-1">
         {t('recipientsCount', { count: emails.length, max: maxEmails })} • {t('helperText')}
       </p>
     </div>

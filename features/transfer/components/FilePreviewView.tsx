@@ -210,7 +210,7 @@ const FilePreviewView: React.FC<FilePreviewViewProps> = ({
 
   // Get file icon based on type
   const getFileIcon = (fileType: FilePreviewType) => {
-    const iconClass = "w-24 h-24 text-gray-300";
+    const iconClass = "w-24 h-24 text-gray-300 dark:text-[oklch(0.40_0_0)]";
     switch (fileType) {
       case "image":
         return <MediaImage className={iconClass} />;
@@ -427,7 +427,7 @@ const FilePreviewView: React.FC<FilePreviewViewProps> = ({
                 className="w-full max-w-md mb-8 rounded-lg"
               />
             ) : (
-              <MusicDoubleNote className="w-32 h-32 text-gray-300 mb-8" />
+              <MusicDoubleNote className="w-32 h-32 text-gray-300 dark:text-[oklch(0.40_0_0)] mb-8" />
             )}
             <audio src={previewUrl} controls className="w-full max-w-md">
               {t("audioNotSupported")}
@@ -441,7 +441,7 @@ const FilePreviewView: React.FC<FilePreviewViewProps> = ({
             <embed
               src={`${previewUrl}#toolbar=0&navpanes=0&scrollbar=0`}
               type="application/pdf"
-              className="w-full h-full border-0 rounded-lg bg-white"
+              className="w-full h-full border-0 rounded-lg bg-white dark:bg-[oklch(0.22_0_0)]"
               style={{ minHeight: "80vh" }}
             />
           );
@@ -467,19 +467,19 @@ const FilePreviewView: React.FC<FilePreviewViewProps> = ({
   return (
     <div className="flex h-full min-h-[500px]">
       {/* Left panel - File info */}
-      <div className="w-64 flex-shrink-0 border-r border-gray-200 p-6 flex flex-col">
+      <div className="w-64 flex-shrink-0 border-r border-gray-200 dark:border-border p-6 flex flex-col">
         {/* File name */}
-        <h2 className="text-lg font-bold text-gray-900 mb-6 break-words">
+        <h2 className="text-lg font-bold text-gray-900 dark:text-[oklch(0.91_0_0)] mb-6 break-words">
           {file.name}
         </h2>
 
         {/* File metadata */}
         <div className="space-y-4 mb-8">
           <div>
-            <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">
+            <p className="text-xs text-gray-500 dark:text-[oklch(0.65_0_0)] uppercase tracking-wide mb-1">
               {t("format")}
             </p>
-            <p className="text-sm font-medium text-gray-900">
+            <p className="text-sm font-medium text-gray-900 dark:text-[oklch(0.91_0_0)]">
               {extension ||
                 file.mimeType.split("/")[1]?.toUpperCase() ||
                 "Unknown"}
@@ -487,10 +487,10 @@ const FilePreviewView: React.FC<FilePreviewViewProps> = ({
           </div>
 
           <div>
-            <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">
+            <p className="text-xs text-gray-500 dark:text-[oklch(0.65_0_0)] uppercase tracking-wide mb-1">
               {t("size")}
             </p>
-            <p className="text-sm font-medium text-gray-900">
+            <p className="text-sm font-medium text-gray-900 dark:text-[oklch(0.91_0_0)]">
               {formatSize(file.size)}
             </p>
           </div>
@@ -507,7 +507,7 @@ const FilePreviewView: React.FC<FilePreviewViewProps> = ({
             {isDownloading ? t("downloading") : t("download")}
           </button>
         ) : (
-          <div className="w-full text-gray-500 text-sm text-center py-3 bg-gray-100 rounded-lg">
+          <div className="w-full text-gray-500 dark:text-[oklch(0.65_0_0)] text-sm text-center py-3 bg-gray-100 dark:bg-[oklch(0.22_0_0)] rounded-lg">
             {t("paymentRequiredToDownload")}
           </div>
         )}
