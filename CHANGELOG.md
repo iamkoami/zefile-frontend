@@ -5,6 +5,26 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.41.0] - 2026-03-20
+
+### Added
+
+- Dark mode: ThemeToggle component, theme-store (Zustand), FOWT prevention
+- Dark palette CSS variables and transition rules across all components
+- SaleCheckoutPanel for public sales buyer purchase flow
+- Download page layout with sale-aware routing
+- ReferralsPanel in account section with referral API client
+- Public sales endpoints in transfer-api
+
+### Changed
+
+- All components updated with dark mode class variants
+- Removed axios dependency (using native fetch)
+
+### Fixed
+
+- Updated EN/FR translations for dark mode and sales features
+
 ## [1.40.0] - 2026-03-17
 
 ### Added
