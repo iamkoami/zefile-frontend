@@ -6,6 +6,7 @@ import Image from "next/image";
 import Lottie from "lottie-react";
 import { Check, Copy } from "iconoir-react";
 import LanguageSwitcher from "@/components/shared/LanguageSwitcher";
+import ThemeToggle from "@/components/shared/ThemeToggle";
 import { platformApi } from "@/services/platform-api";
 
 type WaitlistState = "form" | "success" | "already";
@@ -110,7 +111,10 @@ export default function WaitlistPage() {
               height={24}
             />
           </div>
-          <LanguageSwitcher />
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <LanguageSwitcher />
+          </div>
         </div>
 
         {/* Content area */}
