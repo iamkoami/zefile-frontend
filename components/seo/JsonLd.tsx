@@ -273,6 +273,7 @@ interface ArticleJsonLdProps {
   image?: string;
   description: string;
   url: string;
+  locale?: string;
 }
 
 export function ArticleJsonLd({
@@ -283,14 +284,17 @@ export function ArticleJsonLd({
   image,
   description,
   url,
+  locale,
 }: ArticleJsonLdProps) {
   const schema = {
     "@context": "https://schema.org",
     "@type": "Article",
     headline,
+    url,
+    ...(locale && { inLanguage: locale }),
     datePublished,
     dateModified,
-    author: { "@type": "Organization", name: author },
+    author: { "@type": "Person", name: author },
     publisher: { "@id": `${SITE_URL}/#org` },
     ...(image && {
       image: { "@type": "ImageObject", url: image, width: 1200, height: 630 },

@@ -5,6 +5,7 @@ import Header from "@/components/shared/Header";
 import Footer from "@/components/shared/Footer";
 import PageHero from "@/components/shared/PageHero";
 import BlogListClient from "@/components/blog/BlogListClient";
+import { BreadcrumbJsonLd } from "@/components/seo/JsonLd";
 import type { BlogPostDto } from "@/services/blog-api";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
@@ -48,8 +49,14 @@ export default async function BlogListPage() {
     <span className="ze-highlight-green">{chunks}</span>
   );
 
+  const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://zefile.io";
+
   return (
     <div className="min-h-screen flex flex-col bg-[#F5F5F0]">
+      <BreadcrumbJsonLd items={[
+        { name: 'Home', url: SITE_URL },
+        { name: 'Blog', url: `${SITE_URL}/blog` },
+      ]} />
       <Header />
 
       <main className="flex-1">

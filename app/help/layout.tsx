@@ -7,11 +7,11 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://zefile.io';
 const seoContent = {
   en: {
     title: 'Help Center - Support & FAQ',
-    description: 'Get help with ZeFile. Find answers to frequently asked questions about file transfers, payments, account settings, and troubleshooting. Contact our support team.',
+    description: 'Get help with ZeFile. Answers to your questions about file transfers, payments, account settings, and troubleshooting. Contact our support team.',
   },
   fr: {
     title: 'Centre d\'aide - Support et FAQ',
-    description: 'Obtenez de l\'aide avec ZeFile. R\u00e9ponses aux questions fr\u00e9quentes sur les transferts, paiements et param\u00e8tres de compte. Contactez notre \u00e9quipe.',
+    description: 'Obtenez de l\'aide avec ZeFile. R\u00e9ponses \u00e0 vos questions sur les transferts, paiements et param\u00e8tres de compte. Contactez notre \u00e9quipe.',
   },
 };
 
@@ -27,8 +27,10 @@ export async function generateMetadata(): Promise<Metadata> {
       description: content.description,
       url: `${SITE_URL}/help`,
       type: 'website',
+      images: [{ url: `${SITE_URL}/og-image.png`, width: 1200, height: 630, alt: 'ZeFile Help Center' }],
     },
     twitter: {
+      card: 'summary_large_image',
       title: content.title,
       description: content.description,
     },

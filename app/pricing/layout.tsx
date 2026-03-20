@@ -27,7 +27,7 @@ const pricingTiers = {
       price: '9.99',
       priceCurrency: 'EUR',
       billingPeriod: 'P1M',
-      features: ['50GB per transfer', 'Up to 10 recipients', '90-day expiry', '5% platform fee', 'Custom branding', 'Priority support'],
+      features: ['50GB per transfer', 'Up to 10 recipients', '90-day expiry', '3% platform fee', 'Custom branding', 'Priority support'],
     },
   ],
   fr: [
@@ -52,14 +52,14 @@ const pricingTiers = {
       price: '9.99',
       priceCurrency: 'EUR',
       billingPeriod: 'P1M',
-      features: ['50 Go par transfert', 'Jusqu\'a 10 destinataires', 'Expiration 90 jours', 'Frais de plateforme 5%', 'Image de marque personnalisee', 'Support prioritaire'],
+      features: ['50 Go par transfert', 'Jusqu\'a 10 destinataires', 'Expiration 90 jours', 'Frais de plateforme 3%', 'Image de marque personnalisee', 'Support prioritaire'],
     },
   ],
 };
 
 const seoContent = {
   en: {
-    title: 'Pricing Plans - Choose Your Perfect Plan',
+    title: 'Pricing - Free, Starter & Pro Plans',
     description: 'Compare ZeFile plans: Free, Starter, and Pro. Secure file transfers with payment protection. Free plan includes 5GB. No credit card required.',
     faqs: [
       {
@@ -132,8 +132,10 @@ export async function generateMetadata(): Promise<Metadata> {
       description: content.description,
       url: `${SITE_URL}/pricing`,
       type: 'website',
+      images: [{ url: `${SITE_URL}/og-image.png`, width: 1200, height: 630, alt: 'ZeFile Pricing' }],
     },
     twitter: {
+      card: 'summary_large_image',
       title: content.title,
       description: content.description,
     },

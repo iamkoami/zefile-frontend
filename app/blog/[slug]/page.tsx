@@ -82,6 +82,7 @@ export default async function BlogPostPage({
         image={post.coverImageUrl || undefined}
         description={post.metaDescription || post.excerpt || post.title}
         url={`${SITE_URL}/blog/${post.slug}`}
+        locale={post.locale}
       />
 
       <ReadingProgressBar />

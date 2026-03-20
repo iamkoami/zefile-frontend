@@ -8,6 +8,8 @@
   },
   "hero": {
     "title": "Livrez votre travail. Soyez payé d'abord.",
+    "titleLine1": "Livrez votre travail.",
+    "titleLine2": "Soyez payé d'abord.",
     "subtitle": "Vos fichiers restent verrouillés jusqu'au paiement — par Mobile Money, carte ou virement.",
     "subtitle2": "Pas besoin de carte bancaire.",
     "proofStat1": "85 % des freelances font face aux retards de paiement",

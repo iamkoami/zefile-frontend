@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { getLocale } from "next-intl/server";
-import { BreadcrumbJsonLd } from "@/components/seo/JsonLd";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://zefile.io';
 
@@ -27,8 +26,10 @@ export async function generateMetadata(): Promise<Metadata> {
       description: content.description,
       url: `${SITE_URL}/blog`,
       type: 'website',
+      images: [{ url: `${SITE_URL}/og-image.png`, width: 1200, height: 630, alt: 'ZeFile Blog' }],
     },
     twitter: {
+      card: 'summary_large_image',
       title: content.title,
       description: content.description,
     },
@@ -48,13 +49,7 @@ export default function BlogLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <>
-      <BreadcrumbJsonLd items={[
-        { name: 'Home', url: SITE_URL },
-        { name: 'Blog', url: `${SITE_URL}/blog` },
-      ]} />
-      {children}
-    </>
-  );
+  // Note: BreadcrumbJsonLd for the blog index is rendered in blog/page.tsx.
+  // Blog post pages render their own 3-level breadcrumb via blog/[slug]/layout.tsx.
+  return <>{children}</>;
 }

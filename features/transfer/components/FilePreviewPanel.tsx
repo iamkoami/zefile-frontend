@@ -154,10 +154,10 @@ const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({
     >
       <div id="ze-file-preview-content" className="ze-file-preview-content">
         {/* Header */}
-        <h2 className="text-lg font-bold mb-6 text-black dark:text-[oklch(0.91_0_0)]">
+        <p className="text-lg font-bold mb-6 text-black dark:text-[oklch(0.91_0_0)]">
           {getTotalFileCount()} {getTotalFileCount() > 1 ? t('elements') : t('element')}{' '}
           <span className="font-normal text-gray-500 dark:text-[oklch(0.65_0_0)]">({getTotalSize()})</span>
-        </h2>
+        </p>
 
         {/* File List */}
         <div className="space-y-3 mb-6 max-h-[280px] overflow-y-auto">

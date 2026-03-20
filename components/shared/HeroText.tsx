@@ -74,7 +74,8 @@ const HeroText: React.FC<HeroTextProps> = ({
           transition: "color 1.5s ease-in-out",
         }}
       >
-        {t("title")}
+        <div>{t("titleLine1")}</div>
+        {t("titleLine2") && <div>{t("titleLine2")}</div>}
       </div>
 
       {/* Subtitle */}

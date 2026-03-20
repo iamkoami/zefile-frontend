@@ -6,12 +6,12 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://zefile.io';
 
 const seoContent = {
   en: {
-    title: 'Security - Responsible Disclosure Policy',
-    description: 'ZeFile takes security seriously. Learn about our responsible disclosure policy, how to report vulnerabilities, and our commitment to keeping your files safe.',
+    title: 'Security at ZeFile - How We Protect Your Files',
+    description: 'ZeFile takes security seriously. Learn how we protect your files, our responsible disclosure policy, and how to report vulnerabilities.',
   },
   fr: {
-    title: 'Securite - Politique de divulgation responsable',
-    description: 'ZeFile prend la securite au serieux. Decouvrez notre politique de divulgation responsable, comment signaler des vulnerabilites, et notre engagement a proteger vos fichiers.',
+    title: 'Securite chez ZeFile - Comment nous protegeons vos fichiers',
+    description: 'ZeFile prend la securite au serieux. Decouvrez comment nous protegeon vos fichiers, notre politique de divulgation responsable et comment signaler des vulnerabilites.',
   },
 };
 

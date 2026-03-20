@@ -24,6 +24,14 @@ async function fetchPostMeta(slug: string, locale: string): Promise<BlogPostMeta
     if (response.ok) {
       return await response.json();
     }
+    // Fallback: try alternate locale (slug may belong to the other language)
+    const altLocale = locale === 'en' ? 'fr' : 'en';
+    const altResponse = await fetch(`${API_URL}/blog/${slug}?locale=${altLocale}`, {
+      next: { revalidate: 3600 },
+    });
+    if (altResponse.ok) {
+      return await altResponse.json();
+    }
   } catch {
     // Graceful fallback
   }
@@ -57,22 +65,16 @@ export async function generateMetadata({
       type: "article",
       ...(post.publishedAt && { publishedTime: post.publishedAt }),
       ...(post.coverImageUrl && {
-        images: [{ url: post.coverImageUrl, alt: post.title }],
+        images: [{ url: post.coverImageUrl, width: 1200, height: 630, alt: title }],
       }),
     },
     twitter: {
-      card: post.coverImageUrl ? "summary_large_image" : "summary",
+      card: "summary_large_image",
       title,
       description,
-      ...(post.coverImageUrl && { images: [post.coverImageUrl] }),
     },
     alternates: {
       canonical: url,
-      languages: {
-        'en': url,
-        'fr': url,
-        'x-default': url,
-      },
     },
   };
 }
