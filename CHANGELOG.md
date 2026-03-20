@@ -5,6 +5,14 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.42.1] - 2026-03-20
+
+### Fixed
+
+- Add `/fr` locale routing via middleware rewrite so French pages are indexable by Google
+- Add page-specific hreflang tags (`en`/`fr`/`x-default`) generated from `x-canonical-path` header
+- Remove `isLoading` gate in `HowItWorksClient` that caused Google to see a loading screen instead of page content
+
 ## [1.41.1] - 2026-03-20
 
 ### Fixed
