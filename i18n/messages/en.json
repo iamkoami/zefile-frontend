@@ -554,7 +554,7 @@
     "paymentConfirmed": "Payment confirmed.",
     "downloadReady": "Your download is ready.",
     "downloadExpired": "This download link has expired.",
-    "downloadExpiredHint": "No worries \u2014 you can buy again to get a new download link.",
+    "downloadExpiredHint": "No worries — you can buy again to get a new download link.",
     "buyAgain": "Buy again",
     "enterEmail": "Enter your email to continue",
     "continue": "Continue",
@@ -1946,7 +1946,8 @@
     "referrals": "Referrals",
     "analyticsUpgradeTitle": "See how your transfers perform",
     "analyticsUpgradeDescription": "Download trends, revenue insights, and transfer performance — all in one place. Available on Starter and Pro plans.",
-    "analyticsUpgradeCta": "View plans"
+    "analyticsUpgradeCta": "View plans",
+    "handle": "My ZeFile Link"
   },
   "subscriptionSettings": {
     "title": "Subscription Settings",
@@ -3046,5 +3047,27 @@
     "howItWorksStep2": "They sign up and make paid transfers",
     "howItWorksStep3": "You earn {percent}% of the platform fee per qualifying transfer (up to {max} per friend)",
     "progressLabel": "{current}/{max}"
+  },
+  "handle": {
+    "title": "Your ZeFile link",
+    "description": "Claim a personal link on zefile.io — share it instead of a full URL.",
+    "upgradeTitle": "Get your personal link",
+    "upgradeDescription": "A personal zefile.io link is available on Starter and Pro plans.",
+    "viewPlans": "View plans",
+    "handleLabel": "Your handle",
+    "placeholder": "yourname",
+    "hint": "Letters, numbers, and hyphens only — 3 to 30 characters.",
+    "checking": "Checking availability...",
+    "available": "is available",
+    "taken": "That handle is already taken.",
+    "reserved": "That handle is reserved.",
+    "invalidFormat": "Letters, numbers, and hyphens only — no leading or trailing hyphens.",
+    "claim": "Claim it",
+    "update": "Update",
+    "saving": "Saving...",
+    "saved": "Your link is set.",
+    "saveError": "Could not save your handle. Try again.",
+    "copyLink": "Copy link",
+    "copied": "Copied"
   }
 }

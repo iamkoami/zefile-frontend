@@ -13,6 +13,7 @@ import {
   GraphUp,
   Palette,
   Gift,
+  AtSign,
 } from "iconoir-react";
 import AccordionItem from "@/components/shared/AccordionItem";
 import { useDrawerStore, AccountMenuItem } from "@/stores/drawer-store";
@@ -22,6 +23,7 @@ import SubscriptionSettingsPanel from "./SubscriptionSettingsPanel";
 import AccountSettingsContent from "./AccountSettingsContent";
 import { KYCFlowPanel } from "@/features/kyc/components/KYCFlowPanel";
 import CustomDomainPanel from "./CustomDomainPanel";
+import HandlePanel from "./HandlePanel";
 import BrandingPanel from "./BrandingPanel";
 import AnalyticsPanel from "@/features/analytics/components/AnalyticsPanel";
 import LoadingPanel from "@/components/LoadingPanel";
@@ -41,6 +43,7 @@ const MENU_ITEMS: MenuItem[] = [
   { id: "subscription", icon: <RefreshDouble className="w-5 h-5" />, labelKey: "subscription" },
   { id: "transactions", icon: <Page className="w-5 h-5" />, labelKey: "transactions" },
   { id: "payouts", icon: <Wallet className="w-5 h-5" />, labelKey: "payouts" },
+  { id: "handle", icon: <AtSign className="w-5 h-5" />, labelKey: "handle" },
   { id: "branding", icon: <Palette className="w-5 h-5" />, labelKey: "branding" },
   { id: "analytics", icon: <GraphUp className="w-5 h-5" />, labelKey: "analytics" },
   { id: "referrals", icon: <Gift className="w-5 h-5" />, labelKey: "referrals" },
@@ -88,6 +91,7 @@ const AccountPanel: React.FC = () => {
   // Hide menu items based on tier and feature flags
   const menuItems = useMemo(() => {
     return MENU_ITEMS.filter((item) => {
+      if (item.id === "handle" && userTier === "free") return false;
       if (item.id === "branding" && userTier === "free") return false;
       if (item.id === "analytics" && userTier === "free") return false;
       return true;
@@ -116,6 +120,8 @@ const AccountPanel: React.FC = () => {
         return <ReferralsPanel />;
       case "verification":
         return <VerificationContent />;
+      case "handle":
+        return <HandlePanel />;
       case "custom-domain":
         return <CustomDomainPanel />;
       case "help":

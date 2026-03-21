@@ -230,6 +230,23 @@ export class UsersApi {
   async getOnboardingStatus(): Promise<ApiResponse<OnboardingStatus>> {
     return apiClient.get<OnboardingStatus>('/users/me/onboarding-status');
   }
+
+  /**
+   * Claim or update the user's ZeFile handle (e.g. "amara" → amara.zefile.io).
+   * Requires STARTER or PRO tier.
+   */
+  async updateHandle(handle: string): Promise<ApiResponse<{ handle: string }>> {
+    return apiClient.put<{ handle: string }>('/users/me/handle', { handle });
+  }
+
+  /**
+   * Check if a handle is available (debounce before calling).
+   */
+  async checkHandle(handle: string): Promise<ApiResponse<{ available: boolean; reason?: string }>> {
+    return apiClient.get<{ available: boolean; reason?: string }>(
+      `/users/me/handle/check?handle=${encodeURIComponent(handle)}`,
+    );
+  }
 }
 
 // Export singleton instance
