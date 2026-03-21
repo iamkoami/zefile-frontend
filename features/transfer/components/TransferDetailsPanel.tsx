@@ -32,6 +32,8 @@ import { platformApi } from "@/services/platform-api";
 import LoadingPanel from "@/components/LoadingPanel";
 import VerifiedBadge from "@/components/shared/VerifiedBadge";
 import { formatCurrencyAmount } from "@/lib/currency";
+import { invoicesApi, InvoiceDto, VerifyDeliveryProofResponse } from "@/services/invoices-api";
+import DeliveryProofCard from "./DeliveryProofCard";
 
 interface TransferDetailsPanelProps {
   transfer: TransferDto;
@@ -109,6 +111,11 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
   const [isWallpaperRemoving, setIsWallpaperRemoving] = useState(false);
   const coverInputRef = React.useRef<HTMLInputElement>(null);
   const wallpaperInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Delivery proof certificate state
+  const [deliveryProofInvoice, setDeliveryProofInvoice] = useState<InvoiceDto | null>(null);
+  const [deliveryProofSummary, setDeliveryProofSummary] = useState<VerifyDeliveryProofResponse | null>(null);
+  const [isLoadingProof, setIsLoadingProof] = useState(false);
 
   // Fetch user tier on mount (defaults to "free" = locked if fetch fails)
   useEffect(() => {
@@ -323,6 +330,32 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
       refreshTransferData();
     }
   }, [transfer?.id]);
+
+  // Fetch delivery proof certificate for public sales with confirmed sales (sender only)
+  useEffect(() => {
+    if (role === "sender" && currentTransfer?.isPublicSales && (currentTransfer?.salesStats?.totalSales ?? 0) > 0 && currentTransfer?.id) {
+      setIsLoadingProof(true);
+      invoicesApi
+        .getDeliveryProofForTransfer(currentTransfer.id)
+        .then(async (res) => {
+          const invoice = res.data?.data?.[0];
+          if (invoice) {
+            setDeliveryProofInvoice(invoice);
+            // Fetch summary data via verify endpoint for card display
+            try {
+              const verifyRes = await invoicesApi.verifyDeliveryProof(invoice.invoiceNumber);
+              if (verifyRes.data?.valid) {
+                setDeliveryProofSummary(verifyRes.data);
+              }
+            } catch {
+              // Summary fetch is best-effort; card still shows with invoice fallback data
+            }
+          }
+        })
+        .catch(() => {})
+        .finally(() => setIsLoadingProof(false));
+    }
+  }, [currentTransfer?.id, currentTransfer?.isPublicSales, currentTransfer?.salesStats?.totalSales, role]);
 
   // Listen for refresh-transfer-data event
   useEffect(() => {
@@ -1213,6 +1246,30 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
               </p>
             </div>
           </div>
+        )}
+
+        {/* Delivery proof certificate card - sender only, public sales with confirmed sales */}
+        {role === "sender" && currentTransfer?.isPublicSales && (currentTransfer?.salesStats?.totalSales ?? 0) > 0 && (
+          isLoadingProof ? (
+            <div className="bg-[#FDFAF4] dark:bg-[oklch(0.22_0.01_80)] border border-[#E5E5E5] dark:border-border rounded p-4 mt-4 mb-6 animate-pulse">
+              <div className="h-4 bg-neutral-200 dark:bg-[oklch(0.30_0_0)] rounded w-1/3" />
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <div className="h-3 bg-neutral-200 dark:bg-[oklch(0.30_0_0)] rounded w-2/3" />
+                <div className="h-3 bg-neutral-200 dark:bg-[oklch(0.30_0_0)] rounded w-1/2" />
+              </div>
+            </div>
+          ) : deliveryProofInvoice && (
+            <DeliveryProofCard
+              certificateNumber={deliveryProofSummary?.certificateNumber || deliveryProofInvoice.invoiceNumber}
+              recipientEmail={deliveryProofSummary?.recipientEmail}
+              paymentDate={deliveryProofSummary?.paymentDate || deliveryProofInvoice.generatedAt}
+              paymentAmount={deliveryProofSummary?.paymentAmount ?? deliveryProofInvoice.totalMinorUnits}
+              paymentCurrency={deliveryProofSummary?.paymentCurrency || deliveryProofInvoice.currency}
+              fileCount={deliveryProofSummary?.fileCount}
+              invoiceId={deliveryProofInvoice.id}
+              verifyUrl={`${process.env.NEXT_PUBLIC_SITE_URL || "https://zefile.io"}/verify/${deliveryProofSummary?.certificateNumber || deliveryProofInvoice.invoiceNumber}`}
+            />
+          )
         )}
 
         {/* Share buttons - sender when unpaid, receiver when paid */}

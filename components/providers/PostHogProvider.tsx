@@ -1,21 +1,31 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { initPostHog, disablePostHog, isPostHogInitialized } from '@/lib/posthog';
 import posthog from 'posthog-js';
+import { platformApi } from '@/services/platform-api';
 
 /**
  * PostHog Provider Component
  * Initializes PostHog only when analytics cookies are consented (RGPD)
+ * Reads sessionReplayEnabled from platform config to drive replay toggle
  * Listens for cookie consent changes to enable/disable tracking
  */
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const sessionReplayEnabled = useRef(false);
 
-  // Initialize PostHog on mount (will skip if no analytics consent)
+  // Initialize PostHog on mount — fetch replay flag from platform config first
   useEffect(() => {
-    initPostHog();
+    platformApi.getPublicConfig().then((res) => {
+      if (res.data) {
+        sessionReplayEnabled.current = res.data.sessionReplayEnabled ?? false;
+      }
+      initPostHog(sessionReplayEnabled.current);
+    }).catch(() => {
+      initPostHog(false);
+    });
   }, []);
 
   // Listen for cookie consent changes
@@ -23,7 +33,7 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
     const handleConsentChange = (event: Event) => {
       const detail = (event as CustomEvent).detail;
       if (detail?.analytics) {
-        initPostHog();
+        initPostHog(sessionReplayEnabled.current);
       } else {
         disablePostHog();
       }

@@ -1799,14 +1799,14 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                     />
                   </div>
 
-                  {/* Message (optional) */}
+                  {/* Delivery note (optional) */}
                   <textarea
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     placeholder={t("message")}
                     className="ze-form-input resize-none pt-4"
-                    rows={2}
-                    style={{ height: "60px" }}
+                    rows={3}
+                    style={{ height: "80px" }}
                   />
 
                   {/* First-Free Banner - shown when user hasn't used their first free transfer */}

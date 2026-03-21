@@ -13,6 +13,7 @@ export enum InvoiceType {
   SUBSCRIPTION_RECEIPT = 'SUBSCRIPTION_RECEIPT',
   ESCROW_HOLD_RECEIPT = 'ESCROW_HOLD_RECEIPT',
   ESCROW_RELEASE_RECEIPT = 'ESCROW_RELEASE_RECEIPT',
+  DELIVERY_PROOF = 'DELIVERY_PROOF',
 }
 
 export interface InvoiceDto {
@@ -34,6 +35,7 @@ export interface InvoiceDto {
 export interface ListInvoicesParams {
   type?: InvoiceType;
   transactionId?: string;
+  transferId?: string;
   withdrawalId?: string;
   page?: number;
   limit?: number;
@@ -53,6 +55,20 @@ export interface DownloadInvoiceResponse {
   expiresIn: number;
 }
 
+export interface VerifyDeliveryProofResponse {
+  valid: boolean;
+  certificateNumber?: string;
+  issuedAt?: string;
+  transferTitle?: string;
+  senderName?: string;
+  recipientEmail?: string;
+  fileCount?: number;
+  totalFileSize?: number;
+  paymentAmount?: number;
+  paymentCurrency?: string;
+  paymentDate?: string;
+}
+
 class InvoicesApi {
   /**
    * List invoices for the current user with optional filters
@@ -61,6 +77,7 @@ class InvoicesApi {
     const searchParams = new URLSearchParams();
     if (params?.type) searchParams.set('type', params.type);
     if (params?.transactionId) searchParams.set('transactionId', params.transactionId);
+    if (params?.transferId) searchParams.set('transferId', params.transferId);
     if (params?.withdrawalId) searchParams.set('withdrawalId', params.withdrawalId);
     if (params?.page) searchParams.set('page', String(params.page));
     if (params?.limit) searchParams.set('limit', String(params.limit));
@@ -69,6 +86,20 @@ class InvoicesApi {
     const endpoint = query ? `/invoices?${query}` : '/invoices';
 
     return apiClient.get<PaginatedInvoicesResponse>(endpoint);
+  }
+
+  /**
+   * Get delivery proof certificate for a transfer (if it exists)
+   */
+  async getDeliveryProofForTransfer(transferId: string): Promise<ApiResponse<PaginatedInvoicesResponse>> {
+    return this.listInvoices({ type: InvoiceType.DELIVERY_PROOF, transferId, limit: 1 });
+  }
+
+  /**
+   * Verify a delivery proof certificate (public endpoint, no auth required)
+   */
+  async verifyDeliveryProof(certificateNumber: string): Promise<ApiResponse<VerifyDeliveryProofResponse>> {
+    return apiClient.get<VerifyDeliveryProofResponse>(`/invoices/verify/${encodeURIComponent(certificateNumber)}`);
   }
 
   /**

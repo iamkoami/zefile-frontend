@@ -1057,7 +1057,7 @@
 
 /* OTP Input Placeholder */
 .ze-form-input::placeholder {
-  color: #e1e1e1;
+  color: #a3a3a3;
 }
 
 .dark .ze-form-input::placeholder {

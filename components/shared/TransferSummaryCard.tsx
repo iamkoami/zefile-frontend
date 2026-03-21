@@ -101,6 +101,11 @@ export function TransferSummaryCard({
       {/* Transfer Title */}
       <h4 className="text-xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-2">
         {title || "Untitled Transfer"}
+        {fileCount > 1 && (
+          <span className="ml-2 text-xs font-normal text-gray-400 dark:text-[oklch(0.50_0_0)]">
+            {t("plusFiles", { count: fileCount - 1 })}
+          </span>
+        )}
       </h4>
 
       {/* Version indicator */}
@@ -128,9 +133,11 @@ export function TransferSummaryCard({
           <span className="font-medium text-[#171717] dark:text-[oklch(0.91_0_0)]">{senderEmail}</span>
         </p>
       )}
-      {/* Message/Description */}
+      {/* Delivery Note */}
       {message && (
-        <p className="text-xs text-gray-600 dark:text-[oklch(0.65_0_0)] mb-6 leading-relaxed">{message}</p>
+        <div className="border-l-2 border-[#5E53E0] pl-3 mb-6">
+          <p className="text-sm text-[#171717] dark:text-[oklch(0.85_0_0)] leading-relaxed whitespace-pre-line">{message}</p>
+        </div>
       )}
 
       {/* Spacer to push file stats and total to bottom */}

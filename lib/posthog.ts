@@ -86,8 +86,9 @@ function hasAnalyticsConsent(): boolean {
 
 /**
  * Initialize PostHog (only if analytics cookies are consented)
+ * @param sessionReplayEnabled - When true, enables PostHog session replay recording
  */
-export function initPostHog(): void {
+export function initPostHog(sessionReplayEnabled = false): void {
   const apiKey = process.env.NEXT_PUBLIC_POSTHOG_KEY;
   const host = process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://app.posthog.com';
 
@@ -102,8 +103,13 @@ export function initPostHog(): void {
         capture_pageleave: true,
         persistence: 'localStorage',
         autocapture: false, // We'll track events manually for more control
-        disable_session_recording: true, // Enable if needed for debugging
+        disable_session_recording: !sessionReplayEnabled,
         disable_external_dependency_loading: true, // Prevent script injection that causes hydration mismatch
+        ...(sessionReplayEnabled && {
+          session_recording: {
+            maskAllInputs: true, // Mask all inputs for privacy (OTP, email, phone, etc.)
+          },
+        }),
       });
       _posthogInitialized = true;
     } catch (error) {

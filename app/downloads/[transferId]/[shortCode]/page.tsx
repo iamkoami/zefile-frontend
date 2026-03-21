@@ -2603,13 +2603,25 @@ export default function TransferLandingPage() {
                 {/* Title */}
                 <h1 className="text-xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] text-center mb-2">
                   {transfer.title || t("untitled")}
+                  {fileCount > 1 && (
+                    <span className="ml-2 text-xs font-normal text-gray-400 dark:text-[oklch(0.50_0_0)]">
+                      {t("plusFiles", { count: fileCount - 1 })}
+                    </span>
+                  )}
                 </h1>
 
-                {/* Message */}
+                {/* Delivery Note */}
                 {transfer.message && (
-                  <p className="text-sm text-gray-500 dark:text-[oklch(0.65_0_0)] text-center mb-4 leading-relaxed">
-                    {transfer.message}
-                  </p>
+                  <div className="w-full bg-[#FDFAF4] dark:bg-[oklch(0.22_0_0)] border-l-2 border-[#5E53E0] rounded-r-lg px-5 py-4 mb-5">
+                    {getSenderEmail(transfer) && (
+                      <p className="text-xs font-medium text-gray-400 dark:text-[oklch(0.50_0_0)] mb-1.5">
+                        {getSenderEmail(transfer)}
+                      </p>
+                    )}
+                    <p className="text-base text-[#171717] dark:text-[oklch(0.91_0_0)] leading-relaxed whitespace-pre-line">
+                      {transfer.message}
+                    </p>
+                  </div>
                 )}
 
                 {/* File Info Row */}
@@ -3091,6 +3103,11 @@ export default function TransferLandingPage() {
                 {/* Transfer Title */}
                 <h2 className="text-base font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-1 break-all">
                   {transfer.title || t("untitled")}
+                  {fileCount > 1 && (
+                    <span className="ml-2 text-xs font-normal text-gray-400 dark:text-[oklch(0.50_0_0)]">
+                      {t("plusFiles", { count: fileCount - 1 })}
+                    </span>
+                  )}
                 </h2>
 
                 {/* Preview Before You Pay subtitle (paid transfers only) */}
@@ -3266,6 +3283,11 @@ export default function TransferLandingPage() {
                 </h1>
                 <p className="text-sm text-gray-500 dark:text-[oklch(0.65_0_0)] mb-1">
                   {transfer.title || t("untitled")}
+                  {fileCount > 1 && (
+                    <span className="ml-1.5 text-xs text-gray-400 dark:text-[oklch(0.50_0_0)]">
+                      {t("plusFiles", { count: fileCount - 1 })}
+                    </span>
+                  )}
                 </p>
                 <p className="text-sm text-gray-500 dark:text-[oklch(0.65_0_0)] mb-8">
                   {t("downloadedSubtitle")}
