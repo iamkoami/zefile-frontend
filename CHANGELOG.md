@@ -5,6 +5,18 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.43.0] - 2026-03-21
+
+### Added
+
+- HandlePanel: claim and manage your `amara.zefile.io` subdomain (STARTER+ only)
+- Real-time handle availability check with 500ms debounce
+- Active handle card with copy-to-clipboard button
+- Handle menu item in AccountPanel sidebar, filtered to STARTER/PRO tiers
+- `updateHandle()` and `checkHandle()` methods in UsersApi
+- Full EN/FR translations for handle feature
+- `NEXT_PUBLIC_ZEFILE_SUBDOMAIN_BASE` env var for configurable subdomain base
+
 ## [1.42.1] - 2026-03-20
 
 ### Fixed
