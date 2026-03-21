@@ -5,6 +5,17 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.44.0] - 2026-03-21
+
+### Added
+
+- DeliveryProofCard component showing certificate details for paid file transfers
+- Delivery proof fetch and display in TransferDetailsPanel (sender view, public sales)
+- Invoices API: `getDeliveryProofForTransfer()` and `verifyDeliveryProof()` methods
+- DELIVERY_PROOF invoice type and transferId filter support
+- PostHog session replay toggle driven by platform config (`sessionReplayEnabled`)
+- EN/FR translations for delivery proof card and session replay
+
 ## [1.43.0] - 2026-03-21
 
 ### Added
