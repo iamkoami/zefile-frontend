@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import type { PublicProfileDto } from "@/services/creators-api";
+import type { PublicProfileDto } from "@/services/creators-public-api";
 import ProfileIdentityBlock from "./ProfileIdentityBlock";
 import ProfileBioSection from "./ProfileBioSection";
 import ProfileServicesSection from "./ProfileServicesSection";

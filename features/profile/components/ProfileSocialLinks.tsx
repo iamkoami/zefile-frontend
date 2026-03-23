@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import type { SocialLink } from "@/services/creators-api";
+import type { SocialLink } from "@/services/creators-public-api";
 import {
   Instagram,
   Linkedin,

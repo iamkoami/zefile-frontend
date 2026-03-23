@@ -18,6 +18,7 @@ export interface RequestOtpDto {
 export interface OtpResponseDto {
   message: string;
   isNewUser: boolean;
+  email?: string;
 }
 
 export interface VerifyOtpDto {

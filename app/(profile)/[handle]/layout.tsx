@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { getLocale } from "next-intl/server";
-import { fetchPublicProfile } from "@/services/creators-api";
+import { fetchPublicProfile } from "@/services/creators-public-api";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://zefile.io";
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import type { PublicProfileDto } from "@/services/creators-api";
+import type { PublicProfileDto } from "@/services/creators-public-api";
 
 interface ProfileBioSectionProps {
   profile: PublicProfileDto;

@@ -1,7 +1,7 @@
 export const runtime = "edge";
 
 import { getLocale, getTranslations } from "next-intl/server";
-import { fetchPublicProfile } from "@/services/creators-api";
+import { fetchPublicProfile } from "@/services/creators-public-api";
 import PublicProfilePage from "@/features/profile/components/PublicProfilePage";
 import ProfileNotFound from "@/features/profile/components/ProfileNotFound";
 

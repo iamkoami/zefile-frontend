@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import Image from "next/image";
-import type { PublicProfileDto } from "@/services/creators-api";
+import type { PublicProfileDto } from "@/services/creators-public-api";
 import { CheckCircle, Globe } from "@/utils/icons";
 
 interface ProfileIdentityBlockProps {

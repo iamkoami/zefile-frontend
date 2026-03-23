@@ -477,7 +477,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
     userTier !== "free" &&
     !currentTransfer?.isPaid &&
     currentTransfer?.status === "active" &&
-    currentTransfer?.price > 0 &&
+    (currentTransfer?.price ?? 0) > 0 &&
     !expiryStatus.isExpired;
 
   // Fetch WhatsApp reminder status for eligible transfers
