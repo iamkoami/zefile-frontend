@@ -5,6 +5,24 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.45.0] - 2026-03-23
+
+### Added
+
+- Public creator profile page (`/@handle`) with identity block, bio, social links, services, and stats
+- Profile settings panel in account with social links editor and services selector
+- Creator strip component on download page showing sender profile info
+- WhatsApp prompt component for post-transfer contact saving
+- Creator profiles API service (`creators-api.ts`)
+- Dynamic sitemap generation for creator profiles
+- Middleware routing for profile pages
+- Phone auth form improvements for WhatsApp login flow
+- i18n translations for all new profile and WhatsApp features (en/fr)
+
+### Changed
+
+- Updated OG image
+
 ## [1.44.0] - 2026-03-21
 
 ### Added
