@@ -1,15 +1,33 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { authApi } from '@/services/auth-api';
+import { referralsApi } from '@/services/referrals-api';
+import { useCaptcha, CAPTCHA_ACTIONS } from '@/hooks/useCaptcha';
+import { usersApi } from '@/services/users-api';
+import { getAnalyticsConsent } from '@/components/shared/CookieConsentBanner';
+import { toast } from '@/components/shared/Toast';
+import LoadingFullscreen from '@/components/LoadingFullscreen';
 
 interface PhoneAuthFormProps {
   onSuccess: () => void;
+  onSwitchToEmail?: () => void;
   termsAccepted?: boolean;
+  consentRequired?: boolean;
 }
 
-const PhoneAuthForm: React.FC<PhoneAuthFormProps> = ({ onSuccess, termsAccepted }) => {
+const PhoneAuthForm: React.FC<PhoneAuthFormProps> = ({
+  onSuccess,
+  onSwitchToEmail,
+  termsAccepted,
+}) => {
+  const router = useRouter();
   const t = useTranslations('auth');
+  const tErrors = useTranslations('errors');
+  const tReferrals = useTranslations('referrals');
+  const { executeAsync: executeCaptcha, isEnabled: captchaEnabled } = useCaptcha();
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
   const [phone, setPhone] = useState('');
   const [countryCode, setCountryCode] = useState('+228');
@@ -18,6 +36,8 @@ const PhoneAuthForm: React.FC<PhoneAuthFormProps> = ({ onSuccess, termsAccepted 
   const [error, setError] = useState('');
   const [resendCountdown, setResendCountdown] = useState(0);
   const [sentTo, setSentTo] = useState('');
+  const [userEmail, setUserEmail] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -28,6 +48,8 @@ const PhoneAuthForm: React.FC<PhoneAuthFormProps> = ({ onSuccess, termsAccepted 
     }
     return () => clearTimeout(timer);
   }, [resendCountdown]);
+
+  const getFullPhoneNumber = () => `${countryCode}${phone}`;
 
   const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,17 +63,35 @@ const PhoneAuthForm: React.FC<PhoneAuthFormProps> = ({ onSuccess, termsAccepted 
     setLoading(true);
 
     try {
-      // TODO: Implement phone OTP request when backend is ready
-      // For now, just simulate the flow
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const captchaToken = captchaEnabled
+        ? await executeCaptcha(CAPTCHA_ACTIONS.REQUEST_OTP)
+        : null;
 
-      const fullPhone = `${countryCode} ${phone}`;
-      setSentTo(fullPhone);
-      setStep('otp');
-      setResendCountdown(30);
-      setTimeout(() => {
-        inputRefs.current[0]?.focus();
-      }, 100);
+      if (captchaEnabled && !captchaToken) {
+        setError(t('captchaNotReady'));
+        setLoading(false);
+        return;
+      }
+
+      const fullPhone = getFullPhoneNumber();
+      const response = await authApi.requestOTP({ identifier: fullPhone, captchaToken });
+
+      if (response.error) {
+        const errorKey = response.error.errorKey;
+        setError(errorKey ? tErrors(errorKey.replace('errors.', '')) : response.error.message);
+      } else {
+        const displayPhone = `${countryCode} ${phone}`;
+        setSentTo(displayPhone);
+        // Store the email returned by the backend (needed for verifyOTP)
+        if (response.data?.email) {
+          setUserEmail(response.data.email);
+        }
+        setStep('otp');
+        setResendCountdown(30);
+        setTimeout(() => {
+          inputRefs.current[0]?.focus();
+        }, 100);
+      }
     } catch (err: any) {
       setError(err.message || t('requestOtpError'));
     } finally {
@@ -99,11 +139,44 @@ const PhoneAuthForm: React.FC<PhoneAuthFormProps> = ({ onSuccess, termsAccepted 
     setError('');
 
     try {
-      // TODO: Implement phone OTP verification when backend is ready
-      // TODO: Add referral code application after OTP success (see EmailAuthForm.tsx Story 89-4 pattern)
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // verifyOTP uses the user's email (returned from requestOTP)
+      const response = await authApi.verifyOTP({ email: userEmail, otp: otpCode });
 
-      setError(t('phoneAuthNotImplemented'));
+      if (response.error) {
+        const errorKey = response.error.errorKey;
+        setError(errorKey ? tErrors(errorKey.replace('errors.', '')) : response.error.message);
+        setOtp(['', '', '', '', '', '']);
+        inputRefs.current[0]?.focus();
+      } else {
+        // Record legal consent if terms were accepted during auth
+        if (termsAccepted) {
+          usersApi.acceptLegalTerms({
+            termsAccepted: true,
+            privacyAccepted: true,
+            cookieConsentAnalytics: getAnalyticsConsent(),
+          }).catch(() => {});
+        }
+
+        // Apply referral code if present (fire-and-forget)
+        const referralCode = localStorage.getItem('referral_code');
+        if (referralCode) {
+          const referrerName = localStorage.getItem('referral_referrer_name');
+          localStorage.removeItem('referral_code');
+          localStorage.removeItem('referral_referrer_name');
+          referralsApi.applyCode(referralCode)
+            .then((applyResponse) => {
+              if (!applyResponse.error && referrerName) {
+                toast.success(tReferrals('welcomeReferred', { name: referrerName }));
+              }
+            })
+            .catch(() => {});
+        }
+
+        // Soft navigation - no page reload needed
+        setIsLoggingIn(true);
+        onSuccess();
+        router.refresh();
+      }
     } catch (err: any) {
       setError(err.message || t('verifyOtpError'));
       setOtp(['', '', '', '', '', '']);
@@ -120,18 +193,31 @@ const PhoneAuthForm: React.FC<PhoneAuthFormProps> = ({ onSuccess, termsAccepted 
     setError('');
 
     try {
-      // TODO: Implement phone OTP resend when backend is ready
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const captchaToken = captchaEnabled
+        ? await executeCaptcha(CAPTCHA_ACTIONS.REQUEST_OTP)
+        : null;
 
-      setResendCountdown(30);
-      setOtp(['', '', '', '', '', '']);
-      inputRefs.current[0]?.focus();
+      const fullPhone = getFullPhoneNumber();
+      const response = await authApi.requestOTP({ identifier: fullPhone, captchaToken });
+
+      if (response.error) {
+        const errorKey = response.error.errorKey;
+        setError(errorKey ? tErrors(errorKey.replace('errors.', '')) : response.error.message);
+      } else {
+        setResendCountdown(30);
+        setOtp(['', '', '', '', '', '']);
+        inputRefs.current[0]?.focus();
+      }
     } catch (err: any) {
       setError(err.message || t('requestOtpError'));
     } finally {
       setLoading(false);
     }
   };
+
+  if (isLoggingIn) {
+    return <LoadingFullscreen />;
+  }
 
   if (step === 'phone') {
     return (
@@ -210,7 +296,7 @@ const PhoneAuthForm: React.FC<PhoneAuthFormProps> = ({ onSuccess, termsAccepted 
             {t('enterOtpTitle')}
           </h2>
           <p className="text-gray-400 dark:text-[oklch(0.60_0_0)] text-base mb-1">
-            {t('otpSentTo')} {sentTo}.
+            {t('otpSentToWhatsApp')} {sentTo}.
           </p>
           <p className="text-gray-400 dark:text-[oklch(0.60_0_0)] text-base">
             {resendCountdown > 0 ? (
@@ -226,6 +312,20 @@ const PhoneAuthForm: React.FC<PhoneAuthFormProps> = ({ onSuccess, termsAccepted 
               </button>
             )}
           </p>
+
+          {/* Email fallback link (AC5) */}
+          {onSwitchToEmail && (
+            <p className="text-gray-400 dark:text-[oklch(0.60_0_0)] text-sm mt-4">
+              <button
+                type="button"
+                onClick={onSwitchToEmail}
+                className="text-[#5E53E0] hover:underline font-medium"
+              >
+                {t('loginWithEmailInstead')}
+              </button>
+            </p>
+          )}
+
           {error && (
             <p className="text-red-500 dark:text-red-400 text-sm mt-4">{error}</p>
           )}

@@ -13,6 +13,7 @@ import {
   GitPullRequest,
   RefreshDouble,
   CreditCard,
+  SendDiagonal,
 } from "iconoir-react";
 import ReportIssueButton from "@/components/shared/ReportIssueButton";
 import { useTranslations, useLocale } from "next-intl";
@@ -116,6 +117,12 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
   const [deliveryProofInvoice, setDeliveryProofInvoice] = useState<InvoiceDto | null>(null);
   const [deliveryProofSummary, setDeliveryProofSummary] = useState<VerifyDeliveryProofResponse | null>(null);
   const [isLoadingProof, setIsLoadingProof] = useState(false);
+
+  // WhatsApp reminder state
+  const [isSendingReminder, setIsSendingReminder] = useState(false);
+  const [reminderCanSend, setReminderCanSend] = useState(false);
+  const [reminderNextAt, setReminderNextAt] = useState<string | null>(null);
+  const [hasEligibleWhatsAppContacts, setHasEligibleWhatsAppContacts] = useState(false);
 
   // Fetch user tier on mount (defaults to "free" = locked if fetch fails)
   useEffect(() => {
@@ -463,6 +470,78 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
       isUrgent: diffDays > 0 && diffDays <= 3,
     };
   }, [expiryDateStr]);
+
+  // Determine if WhatsApp reminder button should be shown
+  const showWhatsAppReminder =
+    role === "sender" &&
+    userTier !== "free" &&
+    !currentTransfer?.isPaid &&
+    currentTransfer?.status === "active" &&
+    currentTransfer?.price > 0 &&
+    !expiryStatus.isExpired;
+
+  // Fetch WhatsApp reminder status for eligible transfers
+  useEffect(() => {
+    if (!showWhatsAppReminder || !currentTransfer?.id) return;
+    transferApi.getWhatsAppReminderStatus(currentTransfer.id).then((res) => {
+      if (res.data) {
+        setReminderCanSend(res.data.canSend);
+        setReminderNextAt(res.data.nextReminderAt);
+        setHasEligibleWhatsAppContacts(res.data.hasEligibleContacts);
+      }
+    }).catch(() => {});
+  }, [showWhatsAppReminder, currentTransfer?.id]);
+
+  const handleSendWhatsAppReminder = useCallback(async () => {
+    if (!currentTransfer?.id || isSendingReminder) return;
+    setIsSendingReminder(true);
+    try {
+      const res = await transferApi.sendWhatsAppReminder(currentTransfer.id);
+      if (res.data?.success) {
+        toast.success(t("reminderSent"));
+        setReminderCanSend(false);
+        setReminderNextAt(res.data.nextReminderAt || null);
+      } else if (res.data && !res.data.success) {
+        setReminderCanSend(false);
+        setReminderNextAt(res.data.nextReminderAt || null);
+        if (res.data.nextReminderAt) {
+          const diff = new Date(res.data.nextReminderAt).getTime() - Date.now();
+          const hours = Math.floor(diff / (1000 * 60 * 60));
+          const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+          toast.info(t("reminderRateLimited", { hours: String(hours), minutes: String(minutes) }));
+        }
+      } else if (res.error) {
+        toast.error(res.error.message || t("reminderError"));
+      }
+    } catch {
+      toast.error(t("reminderError"));
+    } finally {
+      setIsSendingReminder(false);
+    }
+  }, [currentTransfer?.id, isSendingReminder, t]);
+
+  // Live countdown for rate-limited state — updates every 60s
+  const [reminderCountdown, setReminderCountdown] = useState<string | null>(null);
+  useEffect(() => {
+    if (!reminderNextAt) {
+      setReminderCountdown(null);
+      return;
+    }
+    const computeCountdown = () => {
+      const diff = new Date(reminderNextAt).getTime() - Date.now();
+      if (diff <= 0) {
+        setReminderCountdown(null);
+        setReminderCanSend(true);
+        return;
+      }
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      setReminderCountdown(t("reminderRateLimited", { hours: String(hours), minutes: String(minutes) }));
+    };
+    computeCountdown();
+    const interval = setInterval(computeCountdown, 60_000);
+    return () => clearInterval(interval);
+  }, [reminderNextAt, t]);
 
   // Get display title - memoized for use in callbacks
   const displayTitle = useMemo((): string => {
@@ -1195,6 +1274,22 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
               >
                 <GitPullRequest className="w-6 h-6" strokeWidth={1.5} />
                 <span className="text-xs">{t("uploadVersion")}</span>
+              </button>
+            )}
+
+            {/* WhatsApp Reminder - sender only, unpaid, Starter/Pro, not expired, has WhatsApp contacts */}
+            {showWhatsAppReminder && hasEligibleWhatsAppContacts && (
+              <button
+                onClick={handleSendWhatsAppReminder}
+                disabled={isSendingReminder || !reminderCanSend}
+                className="flex flex-col items-center gap-1 px-4 py-2 text-gray-600 dark:text-[oklch(0.65_0_0)] hover:text-gray-900 dark:hover:text-[oklch(0.91_0_0)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label={reminderCanSend ? t("whatsappReminder") : (reminderCountdown || t("reminderNotAvailable"))}
+                title={!reminderCanSend && reminderCountdown ? reminderCountdown : undefined}
+              >
+                <SendDiagonal className="w-6 h-6" strokeWidth={1.5} />
+                <span className="text-xs">
+                  {isSendingReminder ? t("sendingReminder") : t("whatsappReminder")}
+                </span>
               </button>
             )}
 

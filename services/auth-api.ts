@@ -10,7 +10,8 @@
 import { apiClient, ApiResponse } from './api-client';
 
 export interface RequestOtpDto {
-  email: string;
+  email?: string;
+  identifier?: string;
   captchaToken?: string | null;
 }
 

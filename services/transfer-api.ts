@@ -99,6 +99,15 @@ export interface TransferDto {
   customDomainUrl?: string;
   // Sender branding from BrandingProfile (STARTER+ only, story 57.3)
   senderBranding?: SenderBrandingDto | null;
+  // Sender's public creator profile (for creator strip on download page)
+  senderProfile?: {
+    handle: string;
+    name: string | null;
+    specialtyEn: string | null;
+    specialtyFr: string | null;
+    location: string | null;
+    profilePictureUrl: string | null;
+  } | null;
   // Public sales mode — transfer is available for purchase by anyone
   isPublicSales?: boolean;
   // Sales analytics (populated for public sales transfers viewed by sender)
@@ -814,6 +823,31 @@ export class TransferApi {
   ): Promise<ApiResponse<{ success: boolean }>> {
     return apiClient.delete<{ success: boolean }>(
       `/transfers/${transferId}/wallpaper`
+    );
+  }
+
+  /**
+   * Send a T5 WhatsApp manual payment reminder for a transfer.
+   * Rate-limited to 1 per transfer per 24 hours (configurable). Starter/Pro only.
+   * @param transferId The transfer ID
+   */
+  async sendWhatsAppReminder(
+    transferId: string
+  ): Promise<ApiResponse<{ success: boolean; message: string; nextReminderAt?: string }>> {
+    return apiClient.post<{ success: boolean; message: string; nextReminderAt?: string }>(
+      `/transfers/${transferId}/whatsapp-reminder`
+    );
+  }
+
+  /**
+   * Get WhatsApp reminder status (rate limit info) for a transfer.
+   * @param transferId The transfer ID
+   */
+  async getWhatsAppReminderStatus(
+    transferId: string
+  ): Promise<ApiResponse<{ lastSentAt: string | null; nextReminderAt: string | null; canSend: boolean; hasEligibleContacts: boolean }>> {
+    return apiClient.get<{ lastSentAt: string | null; nextReminderAt: string | null; canSend: boolean; hasEligibleContacts: boolean }>(
+      `/transfers/${transferId}/whatsapp-reminder/status`
     );
   }
 }

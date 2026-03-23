@@ -144,5 +144,29 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Graceful fallback — sitemap works without blog posts
   }
 
-  return [...staticUrls, ...blogUrls];
+  // Fetch indexable creator profile handles
+  let creatorUrls: MetadataRoute.Sitemap = [];
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    const response = await fetch(`${API_URL}/creators/sitemap`, {
+      next: { revalidate: 3600 },
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+    if (response.ok) {
+      const creators: Array<{ handle: string; updatedAt: string }> = await response.json();
+      creatorUrls = creators.map((creator) => ({
+        url: `${SITE_URL}/@${creator.handle}`,
+        lastModified: creator.updatedAt ? new Date(creator.updatedAt) : new Date(),
+        changeFrequency: 'weekly' as const,
+        priority: 0.6,
+        alternates: withAlternates(`${SITE_URL}/@${creator.handle}`),
+      }));
+    }
+  } catch {
+    // Graceful fallback — sitemap works without creator profiles
+  }
+
+  return [...staticUrls, ...blogUrls, ...creatorUrls];
 }

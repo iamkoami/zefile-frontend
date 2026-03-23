@@ -10,6 +10,7 @@ import { referralsApi, ReferralMyCode, RewardInfo } from "@/services/referrals-a
 import { copyToClipboard } from "@/utils/clipboard";
 import CelebrationModal from "@/features/home/components/CelebrationModal";
 import QuickShareButtons from "./QuickShareButtons";
+import WhatsAppPrompt from "./WhatsAppPrompt";
 import OnboardingTooltip, {
   type TooltipStep,
 } from "@/components/shared/OnboardingTooltip";
@@ -278,6 +279,11 @@ const TransferCompletePanel: React.FC<TransferCompletePanelProps> = ({
           message={transfer.message || undefined}
           className="mb-4"
         />
+
+        {/* WhatsApp Number Prompt for eligible contacts */}
+        {transfer.recipientEmails && transfer.recipientEmails.length > 0 && (
+          <WhatsAppPrompt recipientEmails={transfer.recipientEmails} />
+        )}
 
         {/* Send Another Button */}
         <button

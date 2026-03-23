@@ -28,6 +28,12 @@ export interface UpdateContactDto {
   organization?: string;
 }
 
+export interface PromptEligibleContact {
+  id: string;
+  email: string;
+  name?: string;
+}
+
 export class ContactsApi {
   /**
    * Get all contacts for a user
@@ -78,6 +84,32 @@ export class ContactsApi {
    */
   async deleteContact(id: string): Promise<ApiResponse<void>> {
     return apiClient.delete<void>(`/contacts/${id}`);
+  }
+
+  /**
+   * Get contacts eligible for WhatsApp number prompt
+   * Returns contacts where whatsappNumber is null and whatsappPromptShown is false
+   */
+  async getPromptEligibleContacts(
+    recipientEmails: string[]
+  ): Promise<ApiResponse<PromptEligibleContact[]>> {
+    return apiClient.post<PromptEligibleContact[]>('/contacts/prompt-eligible', {
+      recipientEmails,
+    });
+  }
+
+  /**
+   * Respond to WhatsApp number prompt (save number or skip)
+   * Sets whatsappPromptShown = true in both cases
+   */
+  async updateWhatsAppPrompt(
+    contactId: string,
+    whatsappNumber?: string
+  ): Promise<ApiResponse<{ success: boolean }>> {
+    return apiClient.patch<{ success: boolean }>(
+      `/contacts/${contactId}/whatsapp-prompt`,
+      whatsappNumber ? { whatsappNumber } : {}
+    );
   }
 }
 

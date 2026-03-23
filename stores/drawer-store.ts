@@ -28,6 +28,7 @@ export type AccountMenuItem =
   | 'verification'   // Identity verification
   | 'handle'         // ZeFile subdomain handle (e.g. amara.zefile.io)
   | 'custom-domain'  // Custom domain management (Epic 42)
+  | 'profile-settings' // Public creator profile (Epic 98)
   | 'help';          // Help center
 
 // Nested views within the drawer (stack-based navigation)

@@ -66,6 +66,7 @@ import TransferPreviewModal from "@/features/transfer/components/TransferPreview
 import { SaleCheckoutPanel } from "@/features/payment/components/SaleCheckoutPanel";
 import { useDrawerStore } from "@/stores/drawer-store";
 import FloatingPollWidget from "@/components/shared/FloatingPollWidget";
+import CreatorStrip from "@/features/transfer/components/CreatorStrip";
 import { usePollEligibility } from "@/hooks/usePollEligibility";
 import { useChatStore } from "@/stores/chat-store";
 import { useCaptcha, CAPTCHA_ACTIONS } from "@/hooks/useCaptcha";
@@ -2776,6 +2777,18 @@ export default function TransferLandingPage() {
                   <MessageAlert className="w-4 h-4" />
                   {t("reportTransfer")}
                 </button>
+
+                {/* Creator Strip -- shows when sender has a public profile */}
+                {transfer.senderProfile && (
+                  <CreatorStrip
+                    handle={transfer.senderProfile.handle}
+                    name={transfer.senderProfile.name}
+                    specialtyEn={transfer.senderProfile.specialtyEn}
+                    specialtyFr={transfer.senderProfile.specialtyFr}
+                    location={transfer.senderProfile.location}
+                    profilePictureUrl={transfer.senderProfile.profilePictureUrl}
+                  />
+                )}
               </div>
             </div>
           </div>
@@ -2938,6 +2951,18 @@ export default function TransferLandingPage() {
                     ? t("preparingDownload")
                     : t("downloadAllFiles")}
                 </button>
+
+                {/* Creator Strip -- shows when sender has a public profile */}
+                {transfer.senderProfile && (
+                  <CreatorStrip
+                    handle={transfer.senderProfile.handle}
+                    name={transfer.senderProfile.name}
+                    specialtyEn={transfer.senderProfile.specialtyEn}
+                    specialtyFr={transfer.senderProfile.specialtyFr}
+                    location={transfer.senderProfile.location}
+                    profilePictureUrl={transfer.senderProfile.profilePictureUrl}
+                  />
+                )}
               </div>
             </div>
           </div>
@@ -3214,6 +3239,18 @@ export default function TransferLandingPage() {
                     {t("preview")}
                   </button>
                 </div>
+
+                {/* Creator Strip -- shows when sender has a public profile */}
+                {transfer.senderProfile && (
+                  <CreatorStrip
+                    handle={transfer.senderProfile.handle}
+                    name={transfer.senderProfile.name}
+                    specialtyEn={transfer.senderProfile.specialtyEn}
+                    specialtyFr={transfer.senderProfile.specialtyFr}
+                    location={transfer.senderProfile.location}
+                    profilePictureUrl={transfer.senderProfile.profilePictureUrl}
+                  />
+                )}
               </div>
             </div>
           </div>
