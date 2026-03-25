@@ -126,12 +126,14 @@ type PageState =
 function ContentPanelBackground({
   wallpaperUrl,
   timeOfDay,
+  isHydrated,
   isAuthenticated,
   showUpgradeCta,
   onUpgradeClick,
 }: {
   wallpaperUrl?: string;
   timeOfDay: TimeOfDay;
+  isHydrated?: boolean;
   isAuthenticated?: boolean;
   showUpgradeCta?: boolean;
   onUpgradeClick?: () => void;
@@ -167,6 +169,7 @@ function ContentPanelBackground({
       <HeroText
         isVisible={true}
         timeOfDay={timeOfDay}
+        isHydrated={isHydrated}
         isAuthenticated={isAuthenticated}
         showUpgradeCta={showUpgradeCta}
         onUpgradeClick={onUpgradeClick}
@@ -187,7 +190,7 @@ export default function TransferLandingPage() {
   const tPayment = useTranslations("payment");
   const tNotFound = useTranslations("notFound");
   const tSale = useTranslations("publicSale");
-  const { timeOfDay } = useTimeOfDay();
+  const { timeOfDay, isHydrated } = useTimeOfDay();
 
   // Parse tracking params from URL query string (memoized to prevent useEffect re-runs)
   const trackingParams: TrackingParams = useMemo(
@@ -1428,6 +1431,7 @@ export default function TransferLandingPage() {
             <ContentPanelBackground
               wallpaperUrl={transfer?.wallpaperUrl}
               timeOfDay={timeOfDay}
+              isHydrated={isHydrated}
               isAuthenticated={isAuthenticated}
               showUpgradeCta={isAuthenticated && userTier === "free"}
               onUpgradeClick={() => openDrawer("subscriptions")}
@@ -1496,6 +1500,7 @@ export default function TransferLandingPage() {
             <ContentPanelBackground
               wallpaperUrl={transfer?.wallpaperUrl}
               timeOfDay={timeOfDay}
+              isHydrated={isHydrated}
               isAuthenticated={isAuthenticated}
               showUpgradeCta={isAuthenticated && userTier === "free"}
               onUpgradeClick={() => openDrawer("subscriptions")}
@@ -1593,6 +1598,7 @@ export default function TransferLandingPage() {
             <ContentPanelBackground
               wallpaperUrl={transfer?.wallpaperUrl}
               timeOfDay={timeOfDay}
+              isHydrated={isHydrated}
               isAuthenticated={isAuthenticated}
               showUpgradeCta={isAuthenticated && userTier === "free"}
               onUpgradeClick={() => openDrawer("subscriptions")}
@@ -1909,6 +1915,7 @@ export default function TransferLandingPage() {
             <ContentPanelBackground
               wallpaperUrl={transfer?.wallpaperUrl}
               timeOfDay={timeOfDay}
+              isHydrated={isHydrated}
               isAuthenticated={isAuthenticated}
               showUpgradeCta={isAuthenticated && userTier === "free"}
               onUpgradeClick={() => openDrawer("subscriptions")}
@@ -2145,6 +2152,7 @@ export default function TransferLandingPage() {
             <ContentPanelBackground
               wallpaperUrl={transfer?.wallpaperUrl}
               timeOfDay={timeOfDay}
+              isHydrated={isHydrated}
               isAuthenticated={isAuthenticated}
               showUpgradeCta={isAuthenticated && userTier === "free"}
               onUpgradeClick={() => openDrawer("subscriptions")}
@@ -2443,6 +2451,7 @@ export default function TransferLandingPage() {
             <ContentPanelBackground
               wallpaperUrl={transfer?.wallpaperUrl}
               timeOfDay={timeOfDay}
+              isHydrated={isHydrated}
               isAuthenticated={isAuthenticated}
               showUpgradeCta={isAuthenticated && userTier === "free"}
               onUpgradeClick={() => openDrawer("subscriptions")}
@@ -2562,6 +2571,7 @@ export default function TransferLandingPage() {
             <ContentPanelBackground
               wallpaperUrl={transfer?.wallpaperUrl}
               timeOfDay={timeOfDay}
+              isHydrated={isHydrated}
               isAuthenticated={isAuthenticated}
               showUpgradeCta={isAuthenticated && userTier === "free"}
               onUpgradeClick={() => openDrawer("subscriptions")}
@@ -2811,6 +2821,7 @@ export default function TransferLandingPage() {
             <ContentPanelBackground
               wallpaperUrl={transfer?.wallpaperUrl}
               timeOfDay={timeOfDay}
+              isHydrated={isHydrated}
               isAuthenticated={isAuthenticated}
               showUpgradeCta={false}
             />
@@ -2867,6 +2878,7 @@ export default function TransferLandingPage() {
             <ContentPanelBackground
               wallpaperUrl={transfer?.wallpaperUrl}
               timeOfDay={timeOfDay}
+              isHydrated={isHydrated}
             />
             <div
               className="ze-panels-container"
@@ -2908,6 +2920,7 @@ export default function TransferLandingPage() {
             <ContentPanelBackground
               wallpaperUrl={transfer?.wallpaperUrl}
               timeOfDay={timeOfDay}
+              isHydrated={isHydrated}
             />
             <div
               className="ze-panels-container"
@@ -2985,6 +2998,7 @@ export default function TransferLandingPage() {
             <ContentPanelBackground
               wallpaperUrl={transfer?.wallpaperUrl}
               timeOfDay={timeOfDay}
+              isHydrated={isHydrated}
             />
             <div
               className="ze-panels-container"
@@ -3057,6 +3071,7 @@ export default function TransferLandingPage() {
             <ContentPanelBackground
               wallpaperUrl={transfer?.wallpaperUrl}
               timeOfDay={timeOfDay}
+              isHydrated={isHydrated}
               isAuthenticated={isAuthenticated}
               showUpgradeCta={isAuthenticated && userTier === "free"}
               onUpgradeClick={() => openDrawer("subscriptions")}
@@ -3299,6 +3314,7 @@ export default function TransferLandingPage() {
             <ContentPanelBackground
               wallpaperUrl={transfer?.wallpaperUrl}
               timeOfDay={timeOfDay}
+              isHydrated={isHydrated}
             />
             <div
               className="ze-panels-container"

@@ -253,7 +253,11 @@ const SideDrawer: React.FC = () => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = '';
+      // Delay overflow reset to after slide-out animation completes
+      const timer = setTimeout(() => {
+        document.body.style.overflow = '';
+      }, 500);
+      return () => clearTimeout(timer);
     }
 
     return () => {
@@ -310,7 +314,7 @@ const SideDrawer: React.FC = () => {
         role="dialog"
         aria-modal="true"
         aria-label={view === 'transfers' ? 'Transfers' : view === 'contacts' ? 'Contacts' : view === 'payment' ? 'Payment' : view === 'account' ? 'Account' : view === 'poll' ? 'Poll' : 'Subscriptions'}
-        className={`ze-drawer-panel fixed top-0 right-0 h-full bg-white dark:bg-[oklch(0.24_0_0)] dark:text-[oklch(0.91_0_0)] z-[9999] shadow-2xl transition-[transform,width] duration-500 ease-in-out flex flex-col ${
+        className={`ze-drawer-panel fixed top-0 right-0 h-full bg-white dark:bg-[oklch(0.24_0_0)] dark:text-[oklch(0.91_0_0)] z-[9999] shadow-2xl transition-[transform,translate,width] duration-500 ease-in-out flex flex-col ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         } ${
           currentContentView === 'transfer-preview' || view === 'subscriptions' || view === 'payment' || view === 'account' ? 'w-[90vw]' : 'w-[70%]'

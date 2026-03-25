@@ -23,9 +23,11 @@ import ToastContainer from "@/components/shared/Toast";
 
 function ContentPanelBackground({
   timeOfDay,
+  isHydrated,
   isAuthenticated,
 }: {
   timeOfDay: TimeOfDay;
+  isHydrated?: boolean;
   isAuthenticated?: boolean;
 }) {
   return (
@@ -34,6 +36,7 @@ function ContentPanelBackground({
       <HeroText
         isVisible={true}
         timeOfDay={timeOfDay}
+        isHydrated={isHydrated}
         isAuthenticated={isAuthenticated}
       />
       <PaperPlaneAnimation isVisible={true} timeOfDay={timeOfDay} />
@@ -44,7 +47,7 @@ function ContentPanelBackground({
 export default function ReviewPage() {
   const { shortCode } = useParams<{ shortCode: string }>();
   const t = useTranslations("fileRequests");
-  const { timeOfDay } = useTimeOfDay();
+  const { timeOfDay, isHydrated } = useTimeOfDay();
   const [request, setRequest] = useState<FileRequestDto | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -152,6 +155,7 @@ export default function ReviewPage() {
           >
             <ContentPanelBackground
               timeOfDay={timeOfDay}
+              isHydrated={isHydrated}
               isAuthenticated={false}
             />
             <div
@@ -179,6 +183,7 @@ export default function ReviewPage() {
           >
             <ContentPanelBackground
               timeOfDay={timeOfDay}
+              isHydrated={isHydrated}
               isAuthenticated={false}
             />
             <div

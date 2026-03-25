@@ -28,7 +28,7 @@ function DownloadRedirect() {
   const router = useRouter();
   const t = useTranslations('transferLanding');
   const tNotFound = useTranslations('notFound');
-  const { timeOfDay } = useTimeOfDay();
+  const { timeOfDay, isHydrated } = useTimeOfDay();
   const [error, setError] = useState<string | null>(null);
 
   // Dynamic import for cat lottie animation
@@ -105,7 +105,7 @@ function DownloadRedirect() {
             style={{ position: 'relative', overflow: 'hidden' }}
           >
             <TimeOfDayBackground timeOfDay={timeOfDay} />
-            <HeroText isVisible={true} timeOfDay={timeOfDay} />
+            <HeroText isVisible={true} timeOfDay={timeOfDay} isHydrated={isHydrated} />
             <PaperPlaneAnimation isVisible={true} timeOfDay={timeOfDay} />
             <div
               className="ze-panels-container"

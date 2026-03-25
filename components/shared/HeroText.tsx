@@ -7,6 +7,7 @@ import CreatorsTrustStrip from "@/components/shared/CreatorsTrustStrip";
 interface HeroTextProps {
   isVisible: boolean;
   timeOfDay?: "day" | "evening" | "night";
+  isHydrated?: boolean;
   isAuthenticated?: boolean;
   showUpgradeCta?: boolean;
   onUpgradeClick?: () => void;
@@ -19,6 +20,7 @@ interface HeroTextProps {
 const HeroText: React.FC<HeroTextProps> = ({
   isVisible,
   timeOfDay = "evening",
+  isHydrated = true,
   isAuthenticated = false,
   showUpgradeCta = false,
   onUpgradeClick,
@@ -26,7 +28,9 @@ const HeroText: React.FC<HeroTextProps> = ({
   const t = useTranslations("hero");
   const tHeader = useTranslations("header");
 
-  if (!isVisible) return null;
+  // Don't render until hydrated to prevent color flash (SSR starts as "day",
+  // then switches to actual time — the 1.5s color transition makes this visible)
+  if (!isVisible || !isHydrated) return null;
 
   // Adjust text colors based on time of day
   const textColors = {

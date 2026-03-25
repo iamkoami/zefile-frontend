@@ -226,18 +226,23 @@ export const useDrawerStore = create<DrawerState>((set, get) => ({
       onBeforeBack: null,
     }),
 
-  closeDrawer: () =>
-    set({
-      isOpen: false,
-      payload: null,
-      navigationStack: [],
-      currentContentView: 'list',
-      selectedTransfer: null,
-      transferRole: null,
-      passwordSessionToken: null,
-      recipientEmail: null,
-      onBeforeBack: null,
-    }),
+  closeDrawer: () => {
+    // Set isOpen to false first to trigger slide-out animation
+    set({ isOpen: false });
+    // Reset state after slide-out animation completes (matches duration-500)
+    setTimeout(() => {
+      set({
+        payload: null,
+        navigationStack: [],
+        currentContentView: 'list',
+        selectedTransfer: null,
+        transferRole: null,
+        passwordSessionToken: null,
+        recipientEmail: null,
+        onBeforeBack: null,
+      });
+    }, 500);
+  },
 
   setView: (view) => set({ view }),
 

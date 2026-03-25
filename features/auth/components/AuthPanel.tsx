@@ -5,8 +5,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Xmark } from "iconoir-react";
 import EmailAuthForm from "./EmailAuthForm";
-// Phone tab hidden until SMS auth is implemented
-// import PhoneAuthForm from "./PhoneAuthForm";
+import PhoneAuthForm from "./PhoneAuthForm";
 
 interface AuthPanelProps {
   isOpen: boolean;
@@ -22,7 +21,7 @@ const AuthPanel: React.FC<AuthPanelProps> = ({
   mode = "signup",
 }) => {
   const t = useTranslations("auth");
-  // Phone tab hidden until SMS auth is implemented
+  const [activeTab, setActiveTab] = useState<"email" | "phone">(defaultTab);
   const [shouldRender, setShouldRender] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
@@ -96,11 +95,47 @@ const AuthPanel: React.FC<AuthPanelProps> = ({
 
           {/* Auth Form - full width with symmetric padding */}
           <div className="ze-auth-form-container flex-1 flex flex-col justify-center px-20 md:px-28 lg:px-36 mt-6">
-            <EmailAuthForm
-              onSuccess={onClose}
-              termsAccepted={mode === "signup" ? termsAccepted : undefined}
-              consentRequired={mode === "signup"}
-            />
+            {/* Tab Switcher */}
+            <div className="flex justify-center mb-16">
+              <div className="flex bg-[#FDF8F0] dark:bg-white/5 rounded-md p-1.5">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("email")}
+                  className={`px-14 py-2.5 text-sm rounded-md transition-colors ${
+                    activeTab === "email"
+                      ? "bg-white dark:bg-white/10 text-gray-900 dark:text-white font-bold shadow-sm"
+                      : "text-gray-500 dark:text-gray-400 font-medium hover:text-gray-700 dark:hover:text-gray-300"
+                  }`}
+                >
+                  {t("emailTab")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("phone")}
+                  className={`px-14 py-2.5 text-sm rounded-md transition-colors ${
+                    activeTab === "phone"
+                      ? "bg-white dark:bg-white/10 text-gray-900 dark:text-white font-bold shadow-sm"
+                      : "text-gray-500 dark:text-gray-400 font-medium hover:text-gray-700 dark:hover:text-gray-300"
+                  }`}
+                >
+                  {t("phoneTab")}
+                </button>
+              </div>
+            </div>
+
+            {activeTab === "email" ? (
+              <EmailAuthForm
+                onSuccess={onClose}
+                termsAccepted={mode === "signup" ? termsAccepted : undefined}
+                consentRequired={mode === "signup"}
+              />
+            ) : (
+              <PhoneAuthForm
+                onSuccess={onClose}
+                termsAccepted={mode === "signup" ? termsAccepted : undefined}
+                consentRequired={mode === "signup"}
+              />
+            )}
 
             {/* Terms & Privacy Checkbox (signup) / Passive notice (login) */}
             {mode === "signup" ? (

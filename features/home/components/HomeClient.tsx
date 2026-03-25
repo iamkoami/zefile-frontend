@@ -32,7 +32,7 @@ import FileRequestPanel from "@/features/file-request/components/FileRequestPane
 export default function HomeClient() {
   const router = useRouter();
   const { openDrawer, openAccountView } = useDrawerStore();
-  const { timeOfDay } = useTimeOfDay();
+  const { timeOfDay, isHydrated } = useTimeOfDay();
   const tTest = useTranslations("testResult");
   const tUpload = useTranslations("upload");
   const [activeTab, setActiveTab] = useState<"send" | "request">("send");
@@ -296,6 +296,7 @@ export default function HomeClient() {
             <HeroText
               isVisible={true}
               timeOfDay={timeOfDay}
+              isHydrated={isHydrated}
               isAuthenticated={isAuthenticated}
               showUpgradeCta={isAuthenticated && userTier === "free"}
               onUpgradeClick={() => openDrawer("subscriptions")}

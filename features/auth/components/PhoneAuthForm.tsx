@@ -243,11 +243,9 @@ const PhoneAuthForm: React.FC<PhoneAuthFormProps> = ({
                 <option value="+228">+228</option>
                 <option value="+229">+229</option>
                 <option value="+225">+225</option>
-                <option value="+226">+226</option>
-                <option value="+221">+221</option>
-                <option value="+223">+223</option>
-                <option value="+234">+234</option>
                 <option value="+233">+233</option>
+                <option value="+234">+234</option>
+                <option value="+254">+254</option>
               </select>
               <div className="h-0.5 bg-gray-200 dark:bg-border" />
             </div>
