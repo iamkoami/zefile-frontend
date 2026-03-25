@@ -5,6 +5,17 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.46.0] - 2026-03-25
+
+### Added
+
+- Phone/email tab switcher on AuthPanel with supported country codes (TG, BJ, CI, GH, NG, KE)
+
+### Fixed
+
+- SideDrawer slide-in/out animation not working (Tailwind v4 translate transition)
+- Drawer content disappearing before slide-out animation completes
+
 ## [1.45.0] - 2026-03-23
 
 ### Added
