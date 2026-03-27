@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import { apiClient } from "@/services/api-client";
 import { Check } from "iconoir-react";
 
 type Category =
@@ -83,14 +82,19 @@ export default function ContactForm({ strings }: ContactFormProps) {
     setError("");
 
     try {
-      const response = await apiClient.post("/contact", {
-        name: name.trim(),
-        email: email.trim(),
-        message: message.trim(),
-        categories: categories.map((c) => categoryLabelMap[c]),
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const res = await fetch(`${apiUrl}/contact`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: name.trim(),
+          email: email.trim(),
+          message: message.trim(),
+          categories: categories.map((c) => categoryLabelMap[c]),
+        }),
       });
 
-      if (response.error) {
+      if (!res.ok) {
         setError(strings.errorMessage);
       } else {
         setSubmitted(true);
