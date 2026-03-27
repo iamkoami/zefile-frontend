@@ -11,6 +11,7 @@
  */
 
 import { apiClient } from './api-client';
+import { storageApi } from './storage-api';
 import { trackFileUploaded, trackUploadFailed } from '@/lib/posthog';
 
 /**
@@ -126,11 +127,208 @@ async function decryptState(ciphertext: string): Promise<string | null> {
   }
 }
 
+/**
+ * PresignedUrlPool — fetches presigned URLs in batches of up to 10 and caches
+ * them for the sliding window workers. Falls back to the singular endpoint if
+ * the batch endpoint returns an error (e.g. 404 on older backend).
+ */
+export class PresignedUrlPool {
+  private urls = new Map<number, string>();
+  private pendingFetch: Promise<void> | null = null;
+  private pendingPrefetch: Promise<void> | null = null;
+  private useFallback = false;
+  private fallbackWarned = false;
+  private readonly batchSize = 10;
+  private readonly completedParts: ReadonlySet<number>;
+  /** Highest part number included in any batch fetch so far */
+  private highWaterMark = 0;
+
+  private static readonly PREFETCH_THRESHOLD = 6;
+
+  constructor(
+    private readonly uploadId: string,
+    private readonly objectKey: string,
+    private readonly totalParts: number,
+    completedParts?: ReadonlySet<number>,
+  ) {
+    this.completedParts = completedParts ?? new Set();
+  }
+
+  /**
+   * Get a presigned URL for the given part number.
+   * Returns from cache when available, otherwise triggers a batch fetch.
+   * Falls back to the singular endpoint on error.
+   * Deduplicates in-flight batch requests so concurrent workers don't
+   * trigger redundant API calls.
+   */
+  async getUrl(partNumber: number): Promise<string> {
+    // Return from cache if a previous batch already fetched this URL
+    const cached = this.urls.get(partNumber);
+    if (cached) {
+      this.urls.delete(partNumber); // consumed
+      return cached;
+    }
+
+    // If the batch endpoint failed previously, use the singular fallback
+    if (this.useFallback) {
+      return this.fetchSingular(partNumber);
+    }
+
+    // If another worker already triggered a batch, wait for it then check cache
+    if (this.pendingFetch) {
+      await this.pendingFetch;
+      const rechecked = this.urls.get(partNumber);
+      if (rechecked) {
+        this.urls.delete(partNumber);
+        return rechecked;
+      }
+    }
+
+    // Fetch a new batch starting from this part number
+    try {
+      await this.fetchBatch(partNumber);
+    } catch {
+      // Batch failed — switch to fallback permanently for this pool instance
+      this.useFallback = true;
+      if (!this.fallbackWarned) {
+        this.fallbackWarned = true;
+        console.warn(
+          '[PresignedUrlPool] Batch endpoint failed, falling back to singular presigned URL endpoint.',
+        );
+      }
+      return this.fetchSingular(partNumber);
+    }
+
+    const url = this.urls.get(partNumber);
+    if (url) {
+      this.urls.delete(partNumber);
+      return url;
+    }
+
+    // Batch returned but didn't include this part — singular fallback
+    return this.fetchSingular(partNumber);
+  }
+
+  /**
+   * Trigger a background prefetch if the URL pool is running low.
+   * Non-blocking — fires and forgets so the caller isn't delayed.
+   *
+   * AC1: triggers when fewer than PREFETCH_THRESHOLD unconsumed URLs remain.
+   * AC2: non-blocking — returns immediately.
+   * AC3: skips if all remaining parts already have URLs cached.
+   * AC4: skips when upload is paused.
+   * AC5: prefetches at most one batch (10 parts) ahead — well within URL expiry.
+   */
+  prefetchIfNeeded(isPaused: boolean): void {
+    if (isPaused) return;                    // AC4
+    if (this.useFallback) return;            // no batching in fallback mode
+    if (this.pendingPrefetch) return;        // already prefetching
+
+    // AC1: only prefetch when pool is running low
+    if (this.urls.size >= PresignedUrlPool.PREFETCH_THRESHOLD) return;
+
+    // Determine where the next prefetch batch should start
+    const startPart = this.highWaterMark + 1;
+    if (startPart > this.totalParts) return; // AC3: all parts already covered
+
+    // eslint-disable-next-line no-console -- intentional debug logging for prefetch observability
+    console.debug(
+      `[PresignedUrlPool] Prefetching parts ${startPart}-${Math.min(startPart + this.batchSize - 1, this.totalParts)} (pool: ${this.urls.size} URLs buffered)`,
+    );
+
+    // Use fetchBatchCore directly — avoids overwriting pendingFetch used
+    // by demand-driven getUrl() dedup, preventing workers from waiting on
+    // an irrelevant prefetch batch.
+    this.pendingPrefetch = this.fetchBatchCore(startPart)
+      .catch(() => { /* silently fail — will retry on next consumption */ })
+      .finally(() => { this.pendingPrefetch = null; });
+  }
+
+  /**
+   * Core batch fetch logic — fetches up to batchSize URLs and populates cache.
+   * Does NOT touch pendingFetch. Used by both demand-driven fetchBatch()
+   * and background prefetchIfNeeded() to avoid dedup interference.
+   */
+  private async fetchBatchCore(startPart: number): Promise<void> {
+    // Track high water mark for prefetch scheduling
+    const batchEnd = Math.min(startPart + this.batchSize - 1, this.totalParts);
+    if (batchEnd > this.highWaterMark) {
+      this.highWaterMark = batchEnd;
+    }
+
+    const partNumbers: number[] = [];
+    for (
+      let i = startPart;
+      i < startPart + this.batchSize && i <= this.totalParts;
+      i++
+    ) {
+      if (!this.urls.has(i) && !this.completedParts.has(i)) {
+        partNumbers.push(i);
+      }
+    }
+    if (partNumbers.length === 0) return;
+
+    const response = await storageApi.getBatchPresignedUrls(
+      this.uploadId,
+      this.objectKey,
+      partNumbers,
+    );
+
+    if (response.error || !response.data?.urls) {
+      throw new Error(
+        response.error?.message || 'Batch presigned URL fetch failed',
+      );
+    }
+
+    for (const item of response.data.urls) {
+      this.urls.set(item.partNumber, item.presignedUrl);
+    }
+  }
+
+  /**
+   * Demand-driven batch fetch with pendingFetch dedup.
+   * Wraps fetchBatchCore and sets pendingFetch so concurrent getUrl()
+   * callers can wait on the same in-flight request.
+   */
+  private async fetchBatch(startPart: number): Promise<void> {
+    const fetchPromise = this.fetchBatchCore(startPart);
+
+    this.pendingFetch = fetchPromise;
+    try {
+      await fetchPromise;
+    } finally {
+      this.pendingFetch = null;
+    }
+  }
+
+  /**
+   * Singular fallback — fetches one presigned URL at a time.
+   */
+  private async fetchSingular(partNumber: number): Promise<string> {
+    const response = await storageApi.getSinglePresignedUrl(
+      this.uploadId,
+      this.objectKey,
+      partNumber,
+    );
+
+    if (response.error || !response.data?.presignedUrl) {
+      throw new Error(
+        response.error?.message ||
+          `Failed to get presigned URL for part ${partNumber}`,
+      );
+    }
+
+    return response.data.presignedUrl;
+  }
+
+}
+
 class MultipartUploadService {
   private readonly STORAGE_KEY_PREFIX = 'zefile_upload_';
   private isPaused: boolean = false;
   private isCancelled: boolean = false;
   private pauseResolvers: Array<() => void> = [];
+  private saveQueue: Promise<void> = Promise.resolve();
 
   /**
    * Pause all ongoing uploads
@@ -219,18 +417,19 @@ class MultipartUploadService {
     const key = `${this.STORAGE_KEY_PREFIX}${state.uploadId}`;
     const json = JSON.stringify(state);
 
-    encryptState(json).then((encrypted) => {
+    // Chain saves sequentially so concurrent workers don't overwrite each other.
+    // Each save waits for the previous one to finish, ensuring the latest state wins.
+    this.saveQueue = this.saveQueue.then(async () => {
       try {
+        const encrypted = await encryptState(json);
         if (!encrypted) {
           console.warn('[MultipartUpload] Encryption returned empty, falling back to plaintext');
         }
         localStorage.setItem(key, encrypted || json);
       } catch {
-        // Silently fail - state save is best-effort for resume capability
+        // Encryption failed — fall back to plaintext
+        try { localStorage.setItem(key, json); } catch { /* best-effort */ }
       }
-    }).catch(() => {
-      console.warn('[MultipartUpload] Encryption failed, falling back to plaintext storage');
-      try { localStorage.setItem(key, json); } catch { /* best-effort */ }
     });
   }
 
@@ -384,51 +583,6 @@ class MultipartUploadService {
     }
 
     return response.data;
-  }
-
-  /**
-   * Get presigned URL for uploading a specific part
-   */
-  async getPresignedUrl(
-    uploadId: string,
-    objectKey: string,
-    partNumber: number
-  ): Promise<string> {
-    const response = await apiClient.post('/storage/multipart/presigned-url', {
-      uploadId,
-      objectKey,
-      partNumber,
-    });
-
-    if (response.error) {
-      throw new Error(response.error.message || 'Failed to get presigned URL');
-    }
-
-    return response.data.presignedUrl;
-  }
-
-  /**
-   * Get presigned URLs for multiple parts in a single request
-   */
-  async getBatchPresignedUrls(
-    uploadId: string,
-    objectKey: string,
-    partNumbers: number[]
-  ): Promise<Map<number, string>> {
-    const response = await apiClient.post<{ urls: Array<{ presignedUrl: string; partNumber: number }> }>(
-      '/storage/multipart/presigned-urls',
-      { uploadId, objectKey, partNumbers },
-    );
-
-    if (response.error) {
-      throw new Error(response.error.message || 'Failed to get batch presigned URLs');
-    }
-
-    const urlMap = new Map<number, string>();
-    for (const item of response.data!.urls) {
-      urlMap.set(item.partNumber, item.presignedUrl);
-    }
-    return urlMap;
   }
 
   /**
@@ -724,81 +878,87 @@ class MultipartUploadService {
       });
     };
 
-    // Step 2: Upload chunks in parallel (6 concurrent)
-    const uploadChunkTask = async (partNumber: number, presignedUrl: string): Promise<CompletedPart> => {
-      // Check if paused before starting this chunk
-      await this.waitIfPaused();
+    // Build list of parts that still need uploading (skip completed for resume)
+    const pendingParts: number[] = [];
+    for (let i = 1; i <= totalParts; i++) {
+      if (!completedPartNumbers.has(i)) {
+        pendingParts.push(i);
+      }
+    }
 
-      const start = (partNumber - 1) * chunkSize;
-      const end = Math.min(start + chunkSize, file.size);
-      const chunk = file.slice(start, end);
+    // Step 2: Upload chunks with sliding window (keeps all slots busy)
+    // Each worker independently grabs the next pending part, uploads it, and loops.
+    // This eliminates idle gaps between batches — a freed slot is filled immediately.
+    let nextPartIdx = 0;
+    let slidingWindowError: Error | null = null;
 
-      // Upload chunk with progress tracking and automatic retry
-      const etag = await this.uploadChunkWithRetry(presignedUrl, chunk, partNumber, (loaded) => {
-        // Update progress for this chunk
-        chunkProgress.set(partNumber, loaded);
-        calculateTotalProgress();
-      });
+    // PresignedUrlPool — fetches batch presigned URLs on-demand (up to 10 at a time)
+    // with automatic fallback to singular endpoint if batch fails (AC3).
+    const urlPool = new PresignedUrlPool(uploadId, objectKey, totalParts, completedPartNumbers);
 
-      // Mark this chunk as fully uploaded
-      chunkProgress.set(partNumber, chunk.size);
-      calculateTotalProgress();
+    const uploadWorker = async (): Promise<void> => {
+      while (true) {
+        // Wait if paused — blocks until resumed
+        await this.waitIfPaused();
+        if (this.isCancelled) return;
 
-      return {
-        partNumber,
-        etag,
-      };
-    };
+        // Safe: check-and-increment runs synchronously before any await
+        if (nextPartIdx >= pendingParts.length || slidingWindowError) return;
+        const partNumber = pendingParts[nextPartIdx++];
 
-    // Upload all chunks with concurrency control
-    for (let i = 0; i < totalParts; i += CONCURRENT_UPLOADS) {
-      // Check if paused before starting new batch
-      await this.waitIfPaused();
+        try {
+          const presignedUrl = await urlPool.getUrl(partNumber);
+          // Trigger background prefetch if pool is running low (non-blocking)
+          urlPool.prefetchIfNeeded(this.isPaused);
+          if (this.isCancelled) return;
 
-      // Collect part numbers for this batch (skip completed)
-      const batchPartNumbers: number[] = [];
-      for (let j = 0; j < CONCURRENT_UPLOADS && (i + j) < totalParts; j++) {
-        const partNumber = i + j + 1;
-        if (!completedPartNumbers.has(partNumber)) {
-          batchPartNumbers.push(partNumber);
+          const start = (partNumber - 1) * chunkSize;
+          const end = Math.min(start + chunkSize, file.size);
+          const chunk = file.slice(start, end);
+
+          const etag = await this.uploadChunkWithRetry(presignedUrl, chunk, partNumber, (loaded) => {
+            chunkProgress.set(partNumber, loaded);
+            calculateTotalProgress();
+          });
+
+          completedParts.push({ partNumber, etag });
+          completedPartNumbers.add(partNumber);
+          chunkProgress.set(partNumber, end - start);
+          calculateTotalProgress();
+
+          // Save state after each chunk for resume support
+          this.saveUploadState({
+            uploadId,
+            objectKey,
+            fileName: file.name,
+            fileSize: file.size,
+            mimeType: getFileMimeType(file),
+            transferShortCode,
+            uploadedBy,
+            transferId,
+            chunkSize,
+            totalParts,
+            completedParts: [...completedParts],
+            startTime,
+            versionId,
+          });
+        } catch (error) {
+          if (!slidingWindowError) slidingWindowError = error as Error;
+          return;
         }
       }
+    };
 
-      if (batchPartNumbers.length === 0) continue;
-
-      // Fetch all presigned URLs for this batch in one request
-      const presignedUrlMap = await this.getBatchPresignedUrls(uploadId, objectKey, batchPartNumbers);
-
-      // Start all chunk uploads in parallel
-      const batch = batchPartNumbers.map(partNumber =>
-        uploadChunkTask(partNumber, presignedUrlMap.get(partNumber)!)
+    // Launch worker pool — each worker keeps its slot busy until all parts are done
+    const workerCount = Math.min(CONCURRENT_UPLOADS, pendingParts.length);
+    if (workerCount > 0) {
+      await Promise.all(
+        Array.from({ length: workerCount }, () => uploadWorker())
       );
+    }
 
-      // Wait for all chunks in this batch to complete
-      if (batch.length > 0) {
-        const batchResults = await Promise.all(batch);
-        completedParts.push(...batchResults);
-
-        // Update completed part numbers set
-        batchResults.forEach(result => completedPartNumbers.add(result.partNumber));
-
-        // Save state after each batch completes (for resume capability)
-        this.saveUploadState({
-          uploadId,
-          objectKey,
-          fileName: file.name,
-          fileSize: file.size,
-          mimeType: getFileMimeType(file),
-          transferShortCode,
-          uploadedBy,
-          transferId,
-          chunkSize,
-          totalParts,
-          completedParts: [...completedParts],
-          startTime,
-          versionId,
-        });
-      }
+    if (slidingWindowError) {
+      throw slidingWindowError;
     }
 
     // Sort completed parts by part number (important for S3)

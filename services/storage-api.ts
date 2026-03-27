@@ -577,6 +577,37 @@ export class StorageApi {
       xhr.send(formData);
     });
   }
+
+  /**
+   * Get presigned URLs for multiple upload parts in a single request (batch).
+   * Returns up to 10 URLs per request.
+   * Used by PresignedUrlPool in multipart-upload.service.ts.
+   */
+  async getBatchPresignedUrls(
+    uploadId: string,
+    objectKey: string,
+    partNumbers: number[],
+  ): Promise<ApiResponse<{ urls: Array<{ presignedUrl: string; partNumber: number }> }>> {
+    return apiClient.post<{ urls: Array<{ presignedUrl: string; partNumber: number }> }>(
+      '/storage/multipart/presigned-urls',
+      { uploadId, objectKey, partNumbers },
+    );
+  }
+
+  /**
+   * Get presigned URL for a single upload part.
+   * Fallback for when the batch endpoint is unavailable.
+   */
+  async getSinglePresignedUrl(
+    uploadId: string,
+    objectKey: string,
+    partNumber: number,
+  ): Promise<ApiResponse<{ presignedUrl: string; partNumber: number }>> {
+    return apiClient.post<{ presignedUrl: string; partNumber: number }>(
+      '/storage/multipart/presigned-url',
+      { uploadId, objectKey, partNumber },
+    );
+  }
 }
 
 // Export singleton instance

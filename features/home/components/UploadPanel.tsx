@@ -44,6 +44,9 @@ import FirstFreeBanner from "@/components/shared/FirstFreeBanner";
 import Toggle from "@/components/shared/Toggle";
 import { trackFilesSelected, trackTransferStarted } from "@/lib/posthog";
 
+// Max number of files uploading concurrently within a single transfer
+const FILE_CONCURRENCY = 2;
+
 // Interface for files from an existing transfer (reuse flow)
 export interface ReuseFile {
   id: string;
@@ -792,11 +795,11 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
         checkForPoll("after_transfer", 3000);
       } else {
         setFormErrors({
-          email: response.data?.message || "Failed to create transfer",
+          email: response.data?.message || t("errors.transferCreateFailed"),
         });
       }
     } catch (error) {
-      setFormErrors({ email: "Failed to create transfer. Please try again." });
+      setFormErrors({ email: t("errors.transferCreateFailed") });
     }
   };
 
@@ -858,7 +861,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
 
       setPanelState("otp");
     } catch (error) {
-      setFormErrors({ email: "Failed to send OTP. Please try again." });
+      setFormErrors({ email: t("errors.otpSendFailed") });
     }
   };
 
@@ -989,94 +992,178 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
 
       const transfer = transferResponse.data!;
 
-      // Step 2: Upload each file using multipart upload (directly to Wasabi)
-      let totalBytesUploaded = 0;
+      // Step 2: Upload files using multipart upload (directly to Wasabi)
+      // Up to FILE_CONCURRENCY files upload concurrently for better throughput
 
+      // Track per-file progress for aggregate calculation
+      const fileBytesUploaded = new Map<number, number>();
+      const fileCompletedBytes = new Map<number, number>();
+      const fileSpeeds = new Map<number, number>();
+      const failedFiles: string[] = [];
+      const storageErrorRef: { current: { error: { code?: string; tier?: string; limitBytes?: number; message?: string }; file: File } | null } = { current: null };
+      let fileQueueIdx = 0;
+
+      // Initialize tracking for all files
       for (let i = 0; i < selectedFiles.length; i++) {
-        const file = selectedFiles[i];
-        const fileStartBytes = totalBytesUploaded;
-
-        try {
-          await multipartUploadService.uploadFile(
-            file,
-            transfer.shortCode,
-            userId,
-            transfer.id,
-            (fileProgress) => {
-              // Freeze progress display while paused (cancel confirmation showing)
-              if (multipartUploadService.isUploadPaused()) return;
-
-              // Calculate overall progress across all files
-              const currentFileBytes = fileProgress.bytesUploaded;
-              const overallBytesUploaded = fileStartBytes + currentFileBytes;
-              const overallProgress = (overallBytesUploaded / total) * 100;
-
-              // Update UI with REAL progress data (SINGLE SOURCE OF TRUTH)
-              setUploadProgress(overallProgress);
-              setUploadedSize(overallBytesUploaded);
-              setEstimatedTimeRemaining(fileProgress.estimatedTimeRemaining);
-
-              // Sync global state for upload protection
-              setGlobalProgress(overallProgress, overallBytesUploaded);
-            },
-            (uploadId, objectKey) => {
-              // Track upload for cancellation
-              currentUploadsRef.current.push({
-                uploadId,
-                objectKey,
-                transferId: transfer.id,
-              });
-            },
-          );
-
-          // Update total bytes uploaded after file completes
-          totalBytesUploaded += file.size;
-
-          // Between files: flush pending events, wait if paused, bail if cancelled
-          await new Promise((r) => setTimeout(r, 0));
-          if (multipartUploadService.isUploadPaused()) {
-            await multipartUploadService.waitIfPaused();
-          }
-          if (multipartUploadService.isUploadCancelled()) {
-            resetGlobalUpload();
-            resetForm();
-            return;
-          }
-        } catch (fileError: any) {
-          resetGlobalUpload();
-          setPanelState("form");
-
-          // Handle storage limit exceeded error with upgrade prompt
-          if (fileError.code === "STORAGE_LIMIT_EXCEEDED") {
-            const formatBytes = (bytes: number) => {
-              if (bytes === 0) return "0 B";
-              const k = 1024;
-              const sizes = ["B", "KB", "MB", "GB", "TB"];
-              const i = Math.floor(Math.log(bytes) / Math.log(k));
-              return `${Math.round((bytes / Math.pow(k, i)) * 100) / 100} ${sizes[i]}`;
-            };
-
-            const tierName = fileError.tier?.toUpperCase() || "FREE";
-            const limitFormatted = formatBytes(fileError.limitBytes || 0);
-            const fileSizeFormatted = formatBytes(file.size);
-
-            setFormErrors({
-              email: t("storageLimitExceeded", {
-                fileSize: fileSizeFormatted,
-                tier: tierName,
-                limit: limitFormatted,
-              }),
-            });
-          } else {
-            setFormErrors({
-              email: `Failed to upload ${file.name}: ${fileError.message}`,
-            });
-          }
-          return;
-        }
+        fileBytesUploaded.set(i, 0);
+        fileCompletedBytes.set(i, 0);
       }
 
-      // Clear tracked uploads (all completed successfully)
+      // Aggregate progress across all concurrent files
+      const updateAggregateProgress = () => {
+        if (multipartUploadService.isUploadPaused()) return;
+
+        let totalUploaded = 0;
+        fileBytesUploaded.forEach((bytes) => {
+          totalUploaded += bytes;
+        });
+        fileCompletedBytes.forEach((bytes) => {
+          totalUploaded += bytes;
+        });
+
+        const overallProgress = (totalUploaded / total) * 100;
+
+        // Estimate time from aggregate speed
+        let totalSpeed = 0;
+        fileSpeeds.forEach((speed) => {
+          totalSpeed += speed;
+        });
+        const remainingBytes = total - totalUploaded;
+        const estimatedTime =
+          totalSpeed > 0 ? remainingBytes / totalSpeed : 0;
+
+        setUploadProgress(overallProgress);
+        setUploadedSize(totalUploaded);
+        setEstimatedTimeRemaining(estimatedTime);
+        setGlobalProgress(overallProgress, totalUploaded);
+      };
+
+      // Upload a single file, filling its slot when done
+      const uploadOneFile = async (): Promise<void> => {
+        while (true) {
+          // Grab next file index (synchronous, no race)
+          if (
+            fileQueueIdx >= selectedFiles.length ||
+            storageErrorRef.current ||
+            multipartUploadService.isUploadCancelled()
+          ) {
+            return;
+          }
+          const idx = fileQueueIdx++;
+          const file = selectedFiles[idx];
+
+          try {
+            await multipartUploadService.uploadFile(
+              file,
+              transfer.shortCode,
+              userId,
+              transfer.id,
+              (fileProgress) => {
+                fileBytesUploaded.set(idx, fileProgress.bytesUploaded);
+                fileSpeeds.set(idx, fileProgress.uploadSpeed);
+                updateAggregateProgress();
+              },
+              (uploadId, objectKey) => {
+                currentUploadsRef.current.push({
+                  uploadId,
+                  objectKey,
+                  transferId: transfer.id,
+                });
+              },
+            );
+
+            // File completed: move its bytes to the completed map
+            fileBytesUploaded.set(idx, 0);
+            fileCompletedBytes.set(idx, file.size);
+            fileSpeeds.delete(idx);
+            updateAggregateProgress();
+
+            // Between files: flush events, check pause/cancel
+            await new Promise((r) => setTimeout(r, 0));
+            if (multipartUploadService.isUploadPaused()) {
+              await multipartUploadService.waitIfPaused();
+            }
+            if (multipartUploadService.isUploadCancelled()) {
+              return;
+            }
+          } catch (fileError: any) {
+            // Storage limit errors are fatal — stop everything
+            if (fileError.code === "STORAGE_LIMIT_EXCEEDED") {
+              storageErrorRef.current = { error: fileError, file };
+              return;
+            }
+            // Other errors: mark file as failed, continue remaining files (AC7)
+            failedFiles.push(file.name);
+            fileBytesUploaded.set(idx, 0);
+            fileCompletedBytes.set(idx, 0);
+            fileSpeeds.delete(idx);
+            updateAggregateProgress();
+          }
+        }
+      };
+
+      // Launch concurrent workers (max FILE_CONCURRENCY)
+      const workerCount = Math.min(FILE_CONCURRENCY, selectedFiles.length);
+      await Promise.all(
+        Array.from({ length: workerCount }, () => uploadOneFile()),
+      );
+
+      // Handle storage limit error (fatal)
+      if (storageErrorRef.current) {
+        resetGlobalUpload();
+        setPanelState("form");
+
+        const formatBytes = (bytes: number) => {
+          if (bytes === 0) return "0 B";
+          const k = 1024;
+          const sizes = ["B", "KB", "MB", "GB", "TB"];
+          const i = Math.floor(Math.log(bytes) / Math.log(k));
+          return `${Math.round((bytes / Math.pow(k, i)) * 100) / 100} ${sizes[i]}`;
+        };
+
+        const { error: storageErr, file: storageFile } = storageErrorRef.current;
+        const tierName = storageErr.tier?.toUpperCase() || "FREE";
+        const limitFormatted = formatBytes(storageErr.limitBytes || 0);
+        const fileSizeFormatted = formatBytes(storageFile.size);
+
+        setFormErrors({
+          email: t("storageLimitExceeded", {
+            fileSize: fileSizeFormatted,
+            tier: tierName,
+            limit: limitFormatted,
+          }),
+        });
+        return;
+      }
+
+      // Handle cancellation during concurrent upload
+      if (multipartUploadService.isUploadCancelled()) {
+        resetGlobalUpload();
+        resetForm();
+        return;
+      }
+
+      // Handle case where ALL files failed (no successful uploads)
+      if (
+        failedFiles.length > 0 &&
+        failedFiles.length === selectedFiles.length
+      ) {
+        resetGlobalUpload();
+        setPanelState("form");
+        setFormErrors({
+          email: t("errors.fileUploadFailed", { name: failedFiles[0] }),
+        });
+        return;
+      }
+
+      // Notify user about partial failure (some files failed, others succeeded)
+      if (failedFiles.length > 0) {
+        toast.warning(
+          t("errors.someFilesFailed", { count: failedFiles.length }),
+        );
+      }
+
+      // Clear tracked uploads (concurrent upload phase done)
       currentUploadsRef.current = [];
 
       // Yield to the macrotask queue so any pending Cancel click events
@@ -1161,7 +1248,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
     } catch (error) {
       resetGlobalUpload();
       setPanelState("form");
-      setFormErrors({ email: "Upload failed. Please try again." });
+      setFormErrors({ email: t("errors.uploadFailed") });
     }
   };
 
