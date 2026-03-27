@@ -502,9 +502,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, onUpdate }) => {
         if (response.status === 400) {
           toast.error(errorMessage); // Validation error from backend
         } else if (response.status === 401) {
-          toast.error(
-            t("sessionExpired") || "Session expired. Please log in again.",
-          );
+          toast.error(t("sessionExpired"));
         } else {
           toast.error(t("profileUpdateError"));
         }

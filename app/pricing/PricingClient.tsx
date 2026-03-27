@@ -334,14 +334,14 @@ export default function PricingClient() {
         try {
           safePaymentRedirect(response.data.authorizationUrl);
         } catch {
-          toast.error("Failed to redirect to payment provider.");
+          toast.error(tPage("redirectFailed"));
         }
       } else {
-        toast.error("No authorization URL returned from payment provider.");
+        toast.error(tPage("paymentInitError"));
       }
     } catch (error) {
       console.error("Failed to initialize subscription:", error);
-      toast.error("Failed to initialize subscription payment.");
+      toast.error(tPage("paymentInitError"));
     }
   };
 
