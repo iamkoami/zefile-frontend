@@ -102,9 +102,11 @@ function _hydrateThemeStore() {
     initial = stored;
   }
 
-  // Check cookie for dark mode kill switch (set by previous API call)
+  // Check cookie for dark mode kill switch (set by previous API call).
+  // No cookie (first visit / private browser) → default to disabled (light mode)
+  // to avoid a dark flash before the API confirms the setting.
   const cookieMatch = document.cookie.match(/ze-dm=(\d)/);
-  const darkModeDisabled = cookieMatch ? cookieMatch[1] === '0' : false;
+  const darkModeDisabled = cookieMatch ? cookieMatch[1] === '0' : true;
 
   const resolved = darkModeDisabled ? 'light' : resolveTheme(initial);
   applyThemeClass(resolved);
