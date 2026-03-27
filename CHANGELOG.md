@@ -5,6 +5,20 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.47.0] - 2026-03-27
+
+### Added
+
+- PresignedUrlPool class with batch fetching (10 URLs/batch) and automatic fallback
+- Sliding window upload concurrency (4 concurrent chunks) replacing batch-then-wait
+- Presigned URL prefetching when pool drops below threshold
+- Multi-file parallel upload support (2 files concurrently)
+
+### Fixed
+
+- Replace hardcoded payment error strings with i18n translation keys
+- Remove fallback string in ProfileSection sessionExpired toast
+
 ## [1.46.0] - 2026-03-25
 
 ### Added
