@@ -1,4 +1,3 @@
-export const runtime = "edge";
 
 import { getTranslations } from "next-intl/server";
 import AboutClient from "./AboutClient";

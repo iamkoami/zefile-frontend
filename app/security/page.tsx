@@ -1,4 +1,3 @@
-export const runtime = "edge";
 
 import LegalPageLayout from "@/components/shared/LegalPageLayout";
 import { getTranslations } from "next-intl/server";

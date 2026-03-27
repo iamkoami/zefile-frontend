@@ -1,4 +1,3 @@
-export const runtime = "edge";
 
 import { getLocale, getTranslations } from "next-intl/server";
 import { fetchPublicProfile } from "@/services/creators-public-api";

@@ -5,10 +5,11 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:cloudflare": "npx @cloudflare/next-on-pages",
+    "build:cloudflare": "opennextjs-cloudflare build",
+    "preview:cloudflare": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "start": "next start",
     "lint": "next lint",
-    "deploy:cloudflare": "wrangler pages deploy .vercel/output/static",
+    "deploy:cloudflare": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "preversion": "npm run build",
     "postversion": "echo \"Version bumped to v$(node -p \"require('./package.json').version\"). Run: git push && git push --tags\""
   },
@@ -27,7 +28,6 @@
     "libphonenumber-js": "^1.12.35",
     "lightningcss": "^1.28.3",
     "lottie-react": "^2.4.1",
-    "lucide-react": "^0.563.0",
     "next": "15.3.6",
     "next-intl": "^4.6.1",
     "posthog-js": "^1.335.5",
@@ -41,13 +41,13 @@
     "zustand": "^5.0.10"
   },
   "devDependencies": {
-    "@cloudflare/next-on-pages": "^1",
     "@eslint/eslintrc": "^3",
+    "@opennextjs/cloudflare": "^1.18.0",
     "@swc/helpers": "^0.5.18",
     "@types/dompurify": "^3.0.5",
     "eslint": "^9",
     "eslint-config-next": "15.3.6",
-    "vercel": "^39"
+    "wrangler": "^4.78.0"
   },
   "overrides": {
     "tar": ">=7.5.8"

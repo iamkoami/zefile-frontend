@@ -1,7 +1,6 @@
 import type { MetadataRoute } from 'next';
 import { cookies } from 'next/headers';
 
-export const runtime = 'edge';
 
 export default async function manifest(): Promise<MetadataRoute.Manifest> {
   const cookieStore = await cookies();
