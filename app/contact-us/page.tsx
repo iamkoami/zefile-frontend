@@ -1,3 +1,4 @@
+export const runtime = "edge";
 
 import React, { type ReactNode } from "react";
 import Header from "@/components/shared/Header";

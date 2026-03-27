@@ -1,11 +1,22 @@
-# Cloudflare Workers Configuration for ZeFile Frontend
-# Uses @opennextjs/cloudflare to deploy Next.js on Workers
+# Cloudflare Pages Configuration for ZeFile Frontend
+# This file configures deployment to Cloudflare Pages with @cloudflare/next-on-pages
 
 name = "zefile"
-main = ".open-next/worker.js"
 compatibility_date = "2025-12-25"
 compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = ".vercel/output/static"
 
-[assets]
-directory = ".open-next/assets"
-binding = "ASSETS"
+# Build command for Cloudflare Pages dashboard:
+# npm run build:cloudflare
+
+# Custom domains will be configured in Cloudflare Pages dashboard
+# Primary: zefile.io
+# Staging: demo.zefile.io (optional)
+
+[env.production]
+# Production environment
+vars = { }
+
+[env.preview]
+# Preview/staging environment
+vars = { }

@@ -1,3 +1,4 @@
+export const runtime = "edge";
 
 import { getLocale, getTranslations } from "next-intl/server";
 import Header from "@/components/shared/Header";

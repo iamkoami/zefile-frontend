@@ -1,3 +1,4 @@
+export const runtime = "edge";
 
 import { getTranslations } from "next-intl/server";
 import { FAQJsonLd } from "@/components/seo/JsonLd";
