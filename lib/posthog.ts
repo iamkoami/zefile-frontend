@@ -105,6 +105,7 @@ export function initPostHog(sessionReplayEnabled = false): void {
         autocapture: false, // We'll track events manually for more control
         disable_session_recording: !sessionReplayEnabled,
         disable_external_dependency_loading: true, // Prevent script injection that causes hydration mismatch
+        disable_surveys: true, // Surveys are custom-built; PostHog's survey module uses eval() which CSP blocks
         ...(sessionReplayEnabled && {
           session_recording: {
             maskAllInputs: true, // Mask all inputs for privacy (OTP, email, phone, etc.)

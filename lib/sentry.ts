@@ -19,12 +19,24 @@ export function initSentry(): void {
         // No performance monitoring (free tier)
         tracesSampleRate: 0,
 
-        // Filter browser noise
+        // Filter browser noise and extension interference
         ignoreErrors: [
           'ResizeObserver loop',
           'ResizeObserver loop limit exceeded',
           'AbortError',
           'cancelled',
+          // Browser extensions injecting scripts
+          /backpack/i,
+          /chrome-extension/i,
+          /moz-extension/i,
+        ],
+
+        denyUrls: [
+          // Browser extensions
+          /extensions\//i,
+          /^chrome:\/\//i,
+          /^chrome-extension:\/\//i,
+          /^moz-extension:\/\//i,
         ],
 
         // Only capture errors from our domains
