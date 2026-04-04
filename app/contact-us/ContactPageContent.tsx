@@ -161,9 +161,15 @@ export default function ContactPageContent({ strings }: ContactPageContentProps)
 
       {/* FAQ Section */}
       <div className="mt-16 lg:mt-24 max-w-3xl mx-auto">
-        <h2 className="text-3xl lg:text-4xl font-bold text-[#171717] text-center mb-10">
-          {strings.faqSectionTitle}
-        </h2>
+        <h2
+          className="text-3xl lg:text-4xl font-bold text-[#171717] text-center mb-10"
+          dangerouslySetInnerHTML={{
+            __html: strings.faqSectionTitle.replace(
+              /<highlight>(.*?)<\/highlight>/g,
+              '<span class="ze-highlight-green">$1</span>'
+            ),
+          }}
+        />
         <ContactFAQ faqs={strings.faqs} />
       </div>
     </div>

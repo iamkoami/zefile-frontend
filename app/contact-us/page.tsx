@@ -25,7 +25,7 @@ export default async function ContactPage() {
     socialTitle: t("socialTitle"),
     socialDesc: t("socialDesc"),
     socialValue: t("socialValue"),
-    faqSectionTitle: t("faqSectionTitle"),
+    faqSectionTitle: t.raw("faqSectionTitle"),
     faqs: [
       { question: t("faq1Question"), answer: t("faq1Answer") },
       { question: t("faq2Question"), answer: t("faq2Answer") },
