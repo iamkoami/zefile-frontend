@@ -2,6 +2,10 @@
   "name": "zefile-frontend",
   "version": "1.47.1",
   "private": true,
+  "engines": {
+    "node": ">=22.16.0 <23",
+    "npm": ">=11"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
