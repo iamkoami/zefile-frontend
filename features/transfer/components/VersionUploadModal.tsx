@@ -461,7 +461,7 @@ const VersionUploadModal: React.FC<VersionUploadModalProps> = ({
                     checked={notifyRecipients}
                     onChange={(e) => setNotifyRecipients(e.target.checked)}
                     disabled={isUploading}
-                    className="w-4 h-4 rounded border-gray-300 text-[#87E64B] focus:ring-[#87E64B]/50 disabled:opacity-50"
+                    className="w-4 h-4 rounded border-gray-300 accent-[#87E64B] focus:ring-[#87E64B]/50 disabled:opacity-50"
                   />
                   <span className="text-sm text-gray-700">
                     {t("notifyRecipients")}

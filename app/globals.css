@@ -290,7 +290,7 @@
   }
 
   .ze-content-panel.ze-time-night {
-    background-color: #13121d;
+    background-color: #050036;
   }
 
   .ze-content-panel.ze-wallpaper-mode {
@@ -1094,6 +1094,28 @@
 
 /* Custom Spacing Utilities - mt (margin-top) and mb (margin-bottom) 11-20 */
 @layer utilities {
+  /* Thin scrollbar for sidebar navigation */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 4px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.15);
+    border-radius: 2px;
+  }
+  .dark .scrollbar-thin {
+    scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+  }
+  .dark .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.15);
+  }
+
   /* Form view slide animations */
   .animate-slideInLeft {
     animation: formSlideInLeft 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);

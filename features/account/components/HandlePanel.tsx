@@ -10,8 +10,8 @@ import LoadingPanel from "@/components/LoadingPanel";
 import { toast } from "@/components/shared/Toast";
 import { useDrawerStore } from "@/stores/drawer-store";
 
-const SUBDOMAIN_BASE =
-  process.env.NEXT_PUBLIC_ZEFILE_SUBDOMAIN_BASE || "zefile.io";
+const PROFILE_DOMAIN =
+  process.env.NEXT_PUBLIC_ZEFILE_DOMAIN || "zefile.io";
 
 /** Slug validation: lowercase letters, numbers, hyphens, no leading/trailing hyphen, 3–30 chars */
 const HANDLE_RE = /^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$/;
@@ -49,7 +49,7 @@ const HandlePanel: React.FC = () => {
         return;
       }
 
-      const handle = (profileRes.data as UserProfile & { handle?: string })?.handle || null;
+      const handle = profileRes.data?.handle || null;
       setCurrentHandle(handle);
       if (handle) setInput(handle);
       setView("form");
@@ -141,7 +141,7 @@ const HandlePanel: React.FC = () => {
 
   const handleCopy = async () => {
     if (!currentHandle) return;
-    const url = `https://${currentHandle}.${SUBDOMAIN_BASE}`;
+    const url = `https://${PROFILE_DOMAIN}/@${currentHandle}`;
     const ok = await copyToClipboard(url, { showToast: false });
     if (ok) {
       setCopied(true);
@@ -175,7 +175,7 @@ const HandlePanel: React.FC = () => {
   }
 
   const previewUrl = input.trim()
-    ? `${input.toLowerCase().trim()}.${SUBDOMAIN_BASE}`
+    ? `${PROFILE_DOMAIN}/@${input.toLowerCase().trim()}`
     : null;
 
   const canSave =
@@ -195,7 +195,7 @@ const HandlePanel: React.FC = () => {
           <div className="flex items-center gap-3">
             <span className="w-2.5 h-2.5 rounded-full bg-[#87E64B]" />
             <span className="text-sm font-bold text-[#171717]">
-              {currentHandle}.{SUBDOMAIN_BASE}
+              {PROFILE_DOMAIN}/@{currentHandle}
             </span>
           </div>
           <button
@@ -219,8 +219,11 @@ const HandlePanel: React.FC = () => {
           {t("handleLabel")}
         </label>
 
-        {/* Input row: handle + .zefile.io */}
+        {/* Input row: zefile.io/@ + handle */}
         <div className="flex items-stretch border border-gray-200 rounded overflow-hidden focus-within:ring-2 focus-within:ring-[#171717] focus-within:border-transparent">
+          <span className="flex items-center px-4 bg-gray-50 border-r border-gray-200 text-sm text-gray-500 font-medium whitespace-nowrap select-none">
+            {PROFILE_DOMAIN}/@
+          </span>
           <input
             type="text"
             value={input}
@@ -232,9 +235,6 @@ const HandlePanel: React.FC = () => {
             autoCorrect="off"
             spellCheck={false}
           />
-          <span className="flex items-center px-4 bg-gray-50 border-l border-gray-200 text-sm text-gray-500 font-medium whitespace-nowrap select-none">
-            .{SUBDOMAIN_BASE}
-          </span>
         </div>
 
         {/* Availability feedback */}

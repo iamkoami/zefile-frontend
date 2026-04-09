@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useTranslations } from "next-intl";
+import { Star, StarSolid } from "iconoir-react";
 
 /** Must match backend PREDEFINED_SERVICES constant */
 const PREDEFINED_SERVICES = [
@@ -25,11 +26,15 @@ const PREDEFINED_SERVICES = [
 interface ServicesSelectorProps {
   selected: string[];
   onChange: (services: string[]) => void;
+  primaryService: string | null;
+  onPrimaryChange: (service: string | null) => void;
 }
 
 const ServicesSelector: React.FC<ServicesSelectorProps> = ({
   selected,
   onChange,
+  primaryService,
+  onPrimaryChange,
 }) => {
   const t = useTranslations("profileSettings");
   const [otherText, setOtherText] = useState(() => {
@@ -49,14 +54,30 @@ const ServicesSelector: React.FC<ServicesSelectorProps> = ({
     (s) => !PREDEFINED_SERVICES.includes(s as (typeof PREDEFINED_SERVICES)[number]),
   );
 
+  const handleStarClick = (e: React.MouseEvent, service: string) => {
+    e.stopPropagation();
+    onPrimaryChange(service);
+  };
+
   const toggleService = (service: string) => {
     const isSelected = predefinedSelected.includes(service);
     let next: string[];
     if (isSelected) {
       next = selected.filter((s) => s !== service);
+      // If removing the primary, promote the first remaining predefined service
+      if (service === primaryService) {
+        const nextPrimary = next.find((s) =>
+          PREDEFINED_SERVICES.includes(s as (typeof PREDEFINED_SERVICES)[number]),
+        );
+        onPrimaryChange(nextPrimary || null);
+      }
     } else {
       if (selected.length >= 16) return;
       next = [...selected, service];
+      // First service selected becomes primary automatically
+      if (selected.length === 0) {
+        onPrimaryChange(service);
+      }
     }
     onChange(next);
   };
@@ -95,17 +116,31 @@ const ServicesSelector: React.FC<ServicesSelectorProps> = ({
       <div className="flex flex-wrap gap-2">
         {PREDEFINED_SERVICES.map((service) => {
           const isSelected = predefinedSelected.includes(service);
+          const isPrimary = service === primaryService;
           return (
             <button
               key={service}
               type="button"
               onClick={() => toggleService(service)}
-              className={`px-3 py-1.5 text-sm rounded-full border transition-colors ${
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-full border transition-colors ${
                 isSelected
                   ? "bg-[#87E64B]/10 border-[#87E64B] text-[#171717] dark:text-[oklch(0.91_0_0)] font-medium"
                   : "bg-white dark:bg-[oklch(0.22_0_0)] border-gray-200 dark:border-[oklch(0.30_0_0)] text-gray-600 dark:text-[oklch(0.75_0_0)] hover:border-gray-400 dark:hover:border-[oklch(0.50_0_0)]"
               }`}
             >
+              {isSelected && (
+                isPrimary ? (
+                  <StarSolid
+                    className="w-3.5 h-3.5 text-[#87E64B] shrink-0 cursor-pointer"
+                    onClick={(e) => handleStarClick(e, service)}
+                  />
+                ) : (
+                  <Star
+                    className="w-3.5 h-3.5 text-gray-400 shrink-0 cursor-pointer hover:text-[#87E64B] transition-colors"
+                    onClick={(e) => handleStarClick(e, service)}
+                  />
+                )
+              )}
               {t(`service_${service.replace(/-/g, "_")}`)}
             </button>
           );

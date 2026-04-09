@@ -376,7 +376,7 @@ const BrandingPanel: React.FC = () => {
             checked={isStarter ? true : showPoweredByZefile}
             onChange={(e) => setShowPoweredByZefile(e.target.checked)}
             disabled={isStarter}
-            className="w-4 h-4 rounded border-gray-300 text-[#5E53E0] focus:ring-[#5E53E0]"
+            className="w-4 h-4 rounded border-gray-300 accent-[#87E64B] focus:ring-[#87E64B]"
           />
           <label htmlFor="showPoweredByZefile" className="text-sm text-[#171717]">
             {t("showPoweredByZefile")}

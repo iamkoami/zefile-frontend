@@ -17,6 +17,8 @@
     "postversion": "echo \"Version bumped to v$(node -p \"require('./package.json').version\"). Run: git push && git push --tags\""
   },
   "dependencies": {
+    "@fingerprintjs/fingerprintjs": "^5.2.0",
+    "@marsidev/react-turnstile": "^1.5.0",
     "@paystack/inline-js": "^2.22.7",
     "@radix-ui/react-slot": "^1.2.3",
     "@sentry/react": "^10.39.0",

@@ -33,6 +33,7 @@ export interface PublicProfileDto {
   location?: string | null;
   languagesSpoken?: string[] | null;
   servicesOffered?: string[] | null;
+  primaryService?: string | null;
   socialLinks?: SocialLink[] | null;
   kycVerified: boolean;
   isIndexable: boolean;
@@ -48,6 +49,7 @@ export interface PublicProfileDto {
   };
   tier: string;
   hasFileRequests: boolean;
+  isPublic?: boolean;
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -61,8 +63,34 @@ export async function fetchPublicProfile(
 ): Promise<PublicProfileDto | null> {
   try {
     const response = await fetch(`${API_URL}/creators/${encodeURIComponent(handle)}`, {
-      next: { revalidate: 300 },
+      cache: 'no-store',
     });
+
+    if (response.ok) {
+      return await response.json();
+    }
+  } catch {
+    // Network error — fall through
+  }
+  return null;
+}
+
+/**
+ * Fetch profile preview for the owner (server-side, forwards cookies for auth).
+ * Returns the profile even if private, but only if the requester is the owner.
+ */
+export async function fetchProfilePreview(
+  handle: string,
+  cookieHeader: string,
+): Promise<PublicProfileDto | null> {
+  try {
+    const response = await fetch(
+      `${API_URL}/creators/${encodeURIComponent(handle)}?preview=true`,
+      {
+        headers: { cookie: cookieHeader },
+        cache: 'no-store',
+      },
+    );
 
     if (response.ok) {
       return await response.json();

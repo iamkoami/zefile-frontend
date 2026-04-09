@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import Link from "next/link";
+import usePlatformStatus from "@/hooks/usePlatformStatus";
 
 interface ProfileCTAProps {
   handle: string;
@@ -15,6 +16,10 @@ export default function ProfileCTA({
   hasFileRequests,
 }: ProfileCTAProps) {
   const t = useTranslations("profile");
+  const { status } = usePlatformStatus();
+
+  // Hide CTA buttons during maintenance — profile stays visible but actions are disabled
+  if (status?.maintenance) return null;
 
   // Starter+ with file requests enabled: "Request a delivery" linking to file request flow
   // FREE tier: "Contact me" using handle-based internal routing (no email exposed)

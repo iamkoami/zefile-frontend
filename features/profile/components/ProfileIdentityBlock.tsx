@@ -41,7 +41,7 @@ export default function ProfileIdentityBlock({
         )}
       </div>
 
-      {/* Name + handle */}
+      {/* Name + handle + primary service */}
       <div>
         <h1 className="text-2xl md:text-3xl font-bold text-[#171717] dark:text-white">
           {name}
@@ -49,6 +49,11 @@ export default function ProfileIdentityBlock({
         <p className="text-gray-500 dark:text-gray-400 mt-1">
           @{profile.handle}
         </p>
+        {profile.primaryService && (
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            {t(`services.service_${profile.primaryService.replace(/-/g, "_")}`)}
+          </p>
+        )}
       </div>
 
       {/* Specialty */}

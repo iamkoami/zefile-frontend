@@ -3,7 +3,7 @@ import AccountPanel from "./AccountPanel";
 
 // Mock next-intl
 jest.mock("next-intl", () => ({
-  useTranslations: () => (key: string) => {
+  useTranslations: () => {
     const translations: Record<string, string> = {
       title: "Account",
       settings: "Account Settings",
@@ -14,12 +14,17 @@ jest.mock("next-intl", () => ({
       verification: "Identity Verification",
       customDomain: "Custom Domain",
       help: "Help Center",
-      analyticsUpgradeTitle: "See how your transfers perform",
-      analyticsUpgradeDescription:
-        "Download trends, revenue insights, and transfer performance — all in one place. Available on Starter and Pro plans.",
-      analyticsUpgradeCta: "View plans",
+      myPage: "My Page",
+      branding: "Branding",
+      referrals: "Referrals",
+      groupMyPage: "My Page",
+      groupMoney: "Money",
+      groupInsights: "Insights",
+      groupAccount: "Account",
     };
-    return translations[key] || key;
+    const t = (key: string) => translations[key] || key;
+    t.rich = (key: string) => translations[key] || key;
+    return t;
   },
 }));
 
@@ -67,9 +72,21 @@ jest.mock("./CustomDomainPanel", () => () => (
 jest.mock("@/features/analytics/components/AnalyticsPanel", () => () => (
   <div data-testid="analytics-panel">AnalyticsPanel</div>
 ));
+jest.mock("@/features/analytics/components/AnalyticsFreeView", () => () => (
+  <div data-testid="analytics-free-view">AnalyticsFreeView</div>
+));
 jest.mock("@/components/LoadingPanel", () => ({ className }: { className?: string }) => (
   <div data-testid="loading-panel" className={className}>Loading...</div>
 ));
+
+// Mock referrals API
+jest.mock("@/services/referrals-api", () => ({
+  referralsApi: {
+    getRewardInfo: jest.fn(() =>
+      Promise.resolve({ data: { enabled: true } })
+    ),
+  },
+}));
 
 // Mock iconoir-react
 jest.mock("iconoir-react", () => ({
@@ -81,6 +98,10 @@ jest.mock("iconoir-react", () => ({
   RefreshDouble: () => <span data-testid="icon-refresh" />,
   Globe: () => <span data-testid="icon-globe" />,
   GraphUp: () => <span data-testid="icon-graph-up" />,
+  Palette: () => <span data-testid="icon-palette" />,
+  Gift: () => <span data-testid="icon-gift" />,
+  AtSign: () => <span data-testid="icon-at-sign" />,
+  NavArrowRight: () => <span data-testid="icon-nav-arrow" />,
 }));
 
 describe("AccountPanel", () => {
@@ -109,7 +130,7 @@ describe("AccountPanel", () => {
       });
     });
 
-    it("positions analytics after payouts and before verification", async () => {
+    it("places analytics in the Insights group", async () => {
       mockTier = "starter";
       render(<AccountPanel />);
 
@@ -117,15 +138,8 @@ describe("AccountPanel", () => {
         expect(screen.getByText("Analytics")).toBeInTheDocument();
       });
 
-      const buttons = screen.getAllByRole("button");
-      const labels = buttons.map((btn) => btn.textContent);
-
-      const payoutsIndex = labels.indexOf("Payouts");
-      const analyticsIndex = labels.indexOf("Analytics");
-      const verificationIndex = labels.indexOf("Identity Verification");
-
-      expect(analyticsIndex).toBeGreaterThan(payoutsIndex);
-      expect(analyticsIndex).toBeLessThan(verificationIndex);
+      // Analytics should be within the Insights group section
+      expect(screen.getByText("Insights")).toBeInTheDocument();
     });
   });
 
@@ -153,48 +167,40 @@ describe("AccountPanel", () => {
     });
   });
 
-  describe("Menu item hidden for FREE users", () => {
-    it("hides analytics menu item for FREE users", async () => {
+  describe("Analytics visible for FREE users with limited view", () => {
+    it("shows analytics menu item for FREE users", async () => {
       mockTier = "free";
       render(<AccountPanel />);
 
       await waitFor(() => {
-        // Verify other menu items are present but analytics is not
         expect(screen.getByText("Transactions")).toBeInTheDocument();
       });
 
-      expect(screen.queryByText("Analytics")).not.toBeInTheDocument();
+      expect(screen.getByText("Analytics")).toBeInTheDocument();
     });
   });
 
-  describe("Upgrade prompt for FREE users on direct navigation", () => {
-    it("shows upgrade prompt when FREE user navigates to analytics", async () => {
+  describe("Free users see AnalyticsFreeView on direct navigation", () => {
+    it("renders AnalyticsFreeView when FREE user navigates to analytics", async () => {
       mockTier = "free";
       mockActiveAccountMenu = "analytics";
       render(<AccountPanel />);
 
       await waitFor(() => {
-        expect(
-          screen.getByText(
-            "Download trends, revenue insights, and transfer performance \u2014 all in one place. Available on Starter and Pro plans."
-          )
-        ).toBeInTheDocument();
+        expect(screen.getByTestId("analytics-free-view")).toBeInTheDocument();
       });
-
-      expect(screen.getByText("View plans")).toBeInTheDocument();
     });
 
-    it("upgrade CTA navigates to subscription panel", async () => {
-      mockTier = "free";
+    it("renders AnalyticsPanel for STARTER users (not AnalyticsFreeView)", async () => {
+      mockTier = "starter";
       mockActiveAccountMenu = "analytics";
       render(<AccountPanel />);
 
       await waitFor(() => {
-        expect(screen.getByText("View plans")).toBeInTheDocument();
+        expect(screen.getByTestId("analytics-panel")).toBeInTheDocument();
       });
 
-      fireEvent.click(screen.getByText("View plans"));
-      expect(mockSetActiveAccountMenu).toHaveBeenCalledWith("subscription");
+      expect(screen.queryByTestId("analytics-free-view")).not.toBeInTheDocument();
     });
   });
 

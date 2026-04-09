@@ -142,14 +142,15 @@ const CookieConsentBanner: React.FC<CookieConsentBannerProps> = ({
 
   return (
     <div
-      className={`fixed bottom-0 left-0 right-0 z-[9000] pointer-events-none p-4 md:p-6 transition-all duration-300 ease-out ${
+      className={`fixed bottom-4 md:bottom-6 left-4 md:left-6 right-4 md:right-6 z-[9000] flex justify-center transition-all duration-300 ease-out ${
         entered
           ? "translate-y-0 opacity-100"
           : "translate-y-8 opacity-0"
       }`}
+      style={{ pointerEvents: "none" }}
     >
       <div
-        className={`max-w-4xl mx-auto pointer-events-auto bg-white dark:bg-[#1c1c1e] shadow-[0_4px_24px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.3)] transition-[border-radius] duration-300 ease-in-out ${
+        className={`max-w-4xl w-full pointer-events-auto bg-white dark:bg-[#1c1c1e] shadow-[0_4px_24px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.3)] transition-[border-radius] duration-300 ease-in-out ${
           showCustomize
             ? "rounded-2xl"
             : "rounded-2xl md:rounded-[60px]"

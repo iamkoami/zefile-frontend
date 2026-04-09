@@ -5,6 +5,15 @@
 
 import { apiClient, ApiResponse } from './api-client';
 
+export type AnalyticsPeriod = '7d' | '30d' | '90d' | 'year' | 'all';
+
+export interface MetricWithDelta {
+  value: number;
+  previousValue: number;
+  percentChange: number | null;
+  trend: 'up' | 'down' | 'flat';
+}
+
 export interface AnalyticsOverview {
   totalTransfers: number;
   totalDownloads: number;
@@ -12,6 +21,14 @@ export interface AnalyticsOverview {
   currency: string;
   avgDownloadsPerTransfer: number;
   totalPageViews: number;
+  // Enhanced fields
+  totalViews: number;
+  conversionRate: number | null;
+  totalTransfersDelta: MetricWithDelta;
+  totalDownloadsDelta: MetricWithDelta;
+  totalViewsDelta: MetricWithDelta;
+  totalRevenueDelta: MetricWithDelta;
+  conversionRateDelta: MetricWithDelta | null;
 }
 
 export interface TransferAnalytics {
@@ -27,8 +44,21 @@ export interface TransferAnalytics {
   timeToFirstDownload?: number;
 }
 
+export interface TopTransfer {
+  transferId: string;
+  shortCode: string;
+  displayName: string;
+  recipientCount: number;
+  views: number;
+  downloads: number;
+  conversionRate: number | null;
+  revenue: number;
+  currency: string;
+  createdAt: string;
+}
+
 export interface TransferAnalyticsList {
-  transfers: TransferAnalytics[];
+  transfers: (TransferAnalytics | TopTransfer)[];
   total: number;
 }
 
@@ -48,7 +78,7 @@ export interface TrendTotals {
 }
 
 export interface AnalyticsTrends {
-  period: 'week' | 'month';
+  period: string;
   data: TrendDataPoint[];
   totals: TrendTotals;
 }
@@ -107,26 +137,27 @@ export const analyticsApi = {
   /**
    * Get analytics overview for the current user
    */
-  async getOverview(): Promise<ApiResponse<AnalyticsOverview>> {
-    return apiClient.get<AnalyticsOverview>('/analytics/overview');
+  async getOverview(period: AnalyticsPeriod = '7d'): Promise<ApiResponse<AnalyticsOverview>> {
+    return apiClient.get<AnalyticsOverview>(`/analytics/overview?period=${period}`);
   },
 
   /**
    * Get per-transfer analytics for the current user
    */
   async getTransferAnalytics(
-    limit = 20,
+    limit = 5,
     offset = 0,
+    period: AnalyticsPeriod = '7d',
   ): Promise<ApiResponse<TransferAnalyticsList>> {
     return apiClient.get<TransferAnalyticsList>(
-      `/analytics/transfers?limit=${limit}&offset=${offset}`,
+      `/analytics/transfers?limit=${limit}&offset=${offset}&period=${period}`,
     );
   },
 
   /**
    * Get analytics trends over time
    */
-  async getTrends(period: 'week' | 'month' = 'week'): Promise<ApiResponse<AnalyticsTrends>> {
+  async getTrends(period: AnalyticsPeriod = '7d'): Promise<ApiResponse<AnalyticsTrends>> {
     return apiClient.get<AnalyticsTrends>(`/analytics/trends?period=${period}`);
   },
 

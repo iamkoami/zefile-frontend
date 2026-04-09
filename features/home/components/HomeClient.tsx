@@ -20,7 +20,7 @@ import surveysApi from "@/services/surveys-api";
 import { authApi } from "@/services/auth-api";
 import ToastContainer from "@/components/shared/Toast";
 import { UploadProtectionProvider } from "@/components/providers/UploadProtectionProvider";
-import { useDrawerStore } from "@/stores/drawer-store";
+import { useDrawerStore, type AccountMenuItem } from "@/stores/drawer-store";
 import { useTranslations } from "next-intl";
 import { useTimeOfDay } from "@/hooks/useTimeOfDay";
 import { useTierLimits, SubscriptionTier } from "@/hooks/useTierLimits";
@@ -122,9 +122,9 @@ export default function HomeClient() {
     }
 
     if (accountParam) {
-      const validViews = ["settings", "help", "analytics"];
+      const validViews = ["settings", "help", "analytics", "profile-settings"];
       if (validViews.includes(accountParam)) {
-        openAccountView(accountParam as "settings" | "help" | "analytics");
+        openAccountView(accountParam as AccountMenuItem);
       }
       // Clean up URL
       router.replace("/", { scroll: false });

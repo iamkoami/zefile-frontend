@@ -37,7 +37,9 @@ import { storageApi } from "@/services/storage-api";
 import { getTierTranslationKey } from "@/hooks/useTierLimits";
 import TestResultPage, { TestSimulationData } from "./TestResultPage";
 import { usePollEligibility } from "@/hooks/usePollEligibility";
-import { useCaptcha, CAPTCHA_ACTIONS } from "@/hooks/useCaptcha";
+import { Turnstile } from '@marsidev/react-turnstile';
+import { useTurnstile } from "@/hooks/useTurnstile";
+import { setCaptchaToken } from "@/services/api-client";
 import { toast } from "@/components/shared/Toast";
 import Image from "next/image";
 import FirstFreeBanner from "@/components/shared/FirstFreeBanner";
@@ -134,8 +136,8 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
   // Poll eligibility - fire after_transfer trigger on completion
   const { checkForPoll } = usePollEligibility();
 
-  // CAPTCHA for bot protection on OTP requests
-  const { executeAsync: executeCaptcha, isEnabled: captchaEnabled } = useCaptcha();
+  // Turnstile for bot protection on OTP requests
+  const { getToken, isEnabled: turnstileEnabled, turnstileRef, siteKey, onSuccess, onError, onExpire } = useTurnstile();
 
   const [isDragging, setIsDragging] = useState(false);
   const [recipientEmails, setRecipientEmails] = useState<string[]>([]); // Changed from sendTo
@@ -744,6 +746,15 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
     }
 
     setFormErrors(errors);
+
+    // Scroll to first error so users see why the button "didn't work"
+    if (Object.keys(errors).length > 0) {
+      requestAnimationFrame(() => {
+        const firstError = document.querySelector(".text-red-600, .text-red-500, .border-red-500");
+        firstError?.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+    }
+
     return Object.keys(errors).length === 0;
   };
 
@@ -843,16 +854,11 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
       }
 
       // User not logged in, request OTP to authenticate
-      const captchaToken = captchaEnabled
-        ? await executeCaptcha(CAPTCHA_ACTIONS.REQUEST_OTP)
-        : null;
+      // Get Turnstile token and inject via header
+      const captchaToken = await getToken();
+      setCaptchaToken(captchaToken);
 
-      if (captchaEnabled && !captchaToken) {
-        setFormErrors({ email: t('captchaNotReady') });
-        return;
-      }
-
-      const response = await authApi.requestOTP({ email, captchaToken });
+      const response = await authApi.requestOTP({ email });
 
       if (response.error) {
         setFormErrors({ email: response.error.message });
@@ -2326,6 +2332,16 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
       id="ze-upload-panel"
       className={`ze-upload-panel${panelState === "test-result" ? " ze-test-result" : ""}`}
     >
+      {turnstileEnabled && (
+        <Turnstile
+          ref={turnstileRef}
+          siteKey={siteKey}
+          options={{ size: 'invisible' }}
+          onSuccess={onSuccess}
+          onError={onError}
+          onExpire={onExpire}
+        />
+      )}
       {renderPanel()}
       {panelState === "initial" && (
         <div className="flex items-center justify-center gap-3 text-[10px] text-gray-400 dark:text-[oklch(0.60_0_0)] mt-4 flex-wrap">

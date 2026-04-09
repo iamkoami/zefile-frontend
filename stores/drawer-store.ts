@@ -26,9 +26,8 @@ export type AccountMenuItem =
   | 'analytics'      // Analytics dashboard (Epic 62, STARTER+ only)
   | 'referrals'      // Referral program dashboard (Epic 89)
   | 'verification'   // Identity verification
-  | 'handle'         // ZeFile subdomain handle (e.g. amara.zefile.io)
   | 'custom-domain'  // Custom domain management (Epic 42)
-  | 'profile-settings' // Public creator profile (Epic 98)
+  | 'profile-settings' // My Page: handle claim + public profile settings
   | 'help';          // Help center
 
 // Nested views within the drawer (stack-based navigation)

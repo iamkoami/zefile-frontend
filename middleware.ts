@@ -44,7 +44,7 @@ function buildCsp(nonce: string): string {
     `media-src 'self' blob: ${apiUrl}${cdnUrl ? ` ${cdnUrl}` : ''}`,
     `connect-src 'self' ${apiUrl} ${wasabiEndpoint} ${posthogDomains} https://*.ingest.us.sentry.io https://*.ingest.de.sentry.io https://www.google.com`,
     `font-src 'self'`,
-    `frame-src ${apiUrl} https://checkout.paystack.com https://checkout.startbutton.africa https://app.startbutton.io https://www.google.com`,
+    `frame-src ${apiUrl} https://checkout.paystack.com https://checkout.startbutton.africa https://app.startbutton.io https://www.google.com https://challenges.cloudflare.com`,
     `worker-src 'self' blob:`,
     `object-src 'none'`,
     `base-uri 'self'`,
@@ -107,6 +107,12 @@ export function middleware(request: NextRequest) {
 
     const response = NextResponse.rewrite(url, { request: { headers: requestHeaders } });
 
+    // Profile pages (/@handle) need short cache since visibility can change anytime
+    const isProfileRoute = canonicalPath.startsWith('/@') || /^\/[a-zA-Z0-9_-]+$/.test(canonicalPath);
+    const cacheControl = isProfileRoute
+      ? 'public, s-maxage=30, stale-while-revalidate=60'
+      : 'public, s-maxage=3600, stale-while-revalidate=86400';
+
     response.cookies.set('NEXT_LOCALE', 'fr', { path: '/', maxAge: 365 * 24 * 60 * 60, sameSite: 'lax' });
     response.headers.set('Content-Security-Policy', csp);
     response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
@@ -116,7 +122,7 @@ export function middleware(request: NextRequest) {
     response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
     response.headers.set('Vary', 'Accept-Language, Cookie');
     response.headers.set('Content-Language', 'fr');
-    response.headers.set('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
+    response.headers.set('Cache-Control', cacheControl);
     response.headers.delete('X-Powered-By');
     return response;
   }
@@ -149,7 +155,7 @@ export function middleware(request: NextRequest) {
       response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
       response.headers.set('Vary', 'Accept-Language, Cookie');
       response.headers.set('Content-Language', detectedLocale);
-      response.headers.set('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
+      response.headers.set('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=60');
       response.headers.delete('X-Powered-By');
       return response;
     }

@@ -7,12 +7,11 @@
  * Only non-sensitive user profile data is stored in localStorage.
  */
 
-import { apiClient, ApiResponse } from './api-client';
+import { apiClient, ApiResponse, getStoredDeviceFingerprint } from './api-client';
 
 export interface RequestOtpDto {
   email?: string;
   identifier?: string;
-  captchaToken?: string | null;
 }
 
 export interface OtpResponseDto {
@@ -59,7 +58,14 @@ export class AuthApi {
    * Tokens are set as HttpOnly cookies by the backend
    */
   async verifyOTP(data: VerifyOtpDto): Promise<ApiResponse<AuthResponseDto>> {
-    const response = await apiClient.post<AuthResponseDto>('/auth/verify-otp', data);
+    // Include device fingerprint header only on verify-otp (scoped, not global)
+    const fingerprint = getStoredDeviceFingerprint();
+    const headers: Record<string, string> = {};
+    if (fingerprint) {
+      headers['X-Device-Fingerprint'] = fingerprint;
+    }
+
+    const response = await apiClient.post<AuthResponseDto>('/auth/verify-otp', data, { headers });
 
     if (response.data) {
       // Store CSRF token in memory for state-changing requests

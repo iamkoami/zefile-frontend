@@ -19,6 +19,9 @@ import type { MobileMoneyProvider } from "@/features/payment/components/PaymentM
 import type { CountryCode } from "libphonenumber-js";
 import { toast } from "@/components/shared/Toast";
 import { safePaymentRedirect } from "@/utils/security";
+import { Turnstile } from '@marsidev/react-turnstile';
+import { useTurnstile } from "@/hooks/useTurnstile";
+import { setCaptchaToken } from "@/services/api-client";
 
 // Supported countries for payment — matches download page DOWNLOAD_PAYMENT_COUNTRIES
 const PAYMENT_COUNTRIES = [
@@ -37,6 +40,8 @@ interface SaleCheckoutPanelProps {
   buyerEmail: string;
   onBack: () => void;
   onPaymentInitiated: (reference: string, isMobileMoney: boolean) => void;
+  /** Optional: parent's Turnstile getToken to avoid duplicate widgets on same page. */
+  getCaptchaToken?: () => Promise<string | null>;
 }
 
 /**
@@ -49,8 +54,13 @@ export function SaleCheckoutPanel({
   buyerEmail,
   onBack,
   onPaymentInitiated,
+  getCaptchaToken,
 }: SaleCheckoutPanelProps) {
   const t = useTranslations("payment");
+  // Use parent's token getter if provided (avoids duplicate Turnstile widgets on same page)
+  const ownTurnstile = useTurnstile();
+  const getTurnstileToken = getCaptchaToken || ownTurnstile.getToken;
+  const turnstileEnabled = !getCaptchaToken && ownTurnstile.isEnabled;
 
   const [isLoading, setIsLoading] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState(PAYMENT_COUNTRIES[0]);
@@ -131,6 +141,7 @@ export function SaleCheckoutPanel({
           return;
         }
 
+        setCaptchaToken(await getTurnstileToken());
         const response = await paymentApi.initializePaymentV2({
           transferId,
           customerEmail: buyerEmail,
@@ -150,6 +161,7 @@ export function SaleCheckoutPanel({
           onPaymentInitiated(response.data.reference, true);
         }
       } else if (selectedMethod.type === "card") {
+        setCaptchaToken(await getTurnstileToken());
         const response = await paymentApi.initializePaymentV2({
           transferId,
           customerEmail: buyerEmail,
@@ -177,6 +189,7 @@ export function SaleCheckoutPanel({
         const preferredChannel: PaystackChannel =
           channelMap[selectedMethod.type] || "bank_transfer";
 
+        setCaptchaToken(await getTurnstileToken());
         const response = await paymentApi.initializePaymentV2({
           transferId,
           customerEmail: buyerEmail,
@@ -211,6 +224,16 @@ export function SaleCheckoutPanel({
 
   return (
     <>
+      {turnstileEnabled && (
+        <Turnstile
+          ref={ownTurnstile.turnstileRef}
+          siteKey={ownTurnstile.siteKey}
+          options={{ size: 'invisible' }}
+          onSuccess={ownTurnstile.onSuccess}
+          onError={ownTurnstile.onError}
+          onExpire={ownTurnstile.onExpire}
+        />
+      )}
       <h1 className="text-xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-1">
         {t("securePayment")}
       </h1>

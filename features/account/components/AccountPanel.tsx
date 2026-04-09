@@ -14,7 +14,7 @@ import {
   Palette,
   Gift,
   AtSign,
-  ProfileCircle,
+  NavArrowRight,
 } from "iconoir-react";
 import AccordionItem from "@/components/shared/AccordionItem";
 import { useDrawerStore, AccountMenuItem } from "@/stores/drawer-store";
@@ -24,10 +24,10 @@ import SubscriptionSettingsPanel from "./SubscriptionSettingsPanel";
 import AccountSettingsContent from "./AccountSettingsContent";
 import { KYCFlowPanel } from "@/features/kyc/components/KYCFlowPanel";
 import CustomDomainPanel from "./CustomDomainPanel";
-import HandlePanel from "./HandlePanel";
 import BrandingPanel from "./BrandingPanel";
 import ProfileSettingsPanel from "./ProfileSettingsPanel";
 import AnalyticsPanel from "@/features/analytics/components/AnalyticsPanel";
+import AnalyticsFreeView from "@/features/analytics/components/AnalyticsFreeView";
 import LoadingPanel from "@/components/LoadingPanel";
 import ReferralsPanel from "./ReferralsPanel";
 import { subscriptionApi } from "@/services/subscription-api";
@@ -39,20 +39,49 @@ interface MenuItem {
   labelKey: string;
 }
 
-/** Menu item definitions — stable across renders (icons are stateless) */
-const MENU_ITEMS: MenuItem[] = [
-  { id: "settings", icon: <Settings className="w-5 h-5" />, labelKey: "settings" },
-  { id: "subscription", icon: <RefreshDouble className="w-5 h-5" />, labelKey: "subscription" },
-  { id: "transactions", icon: <Page className="w-5 h-5" />, labelKey: "transactions" },
-  { id: "payouts", icon: <Wallet className="w-5 h-5" />, labelKey: "payouts" },
-  { id: "handle", icon: <AtSign className="w-5 h-5" />, labelKey: "handle" },
-  { id: "profile-settings", icon: <ProfileCircle className="w-5 h-5" />, labelKey: "publicProfile" },
-  { id: "branding", icon: <Palette className="w-5 h-5" />, labelKey: "branding" },
-  { id: "analytics", icon: <GraphUp className="w-5 h-5" />, labelKey: "analytics" },
-  { id: "referrals", icon: <Gift className="w-5 h-5" />, labelKey: "referrals" },
-  { id: "verification", icon: <ShieldCheck className="w-5 h-5" />, labelKey: "verification" },
-  { id: "custom-domain", icon: <Globe className="w-5 h-5" />, labelKey: "customDomain" },
-  { id: "help", icon: <InfoCircle className="w-5 h-5" />, labelKey: "help" },
+interface MenuGroup {
+  id: string;
+  labelKey: string;
+  children: MenuItem[];
+}
+
+/** Menu groups — two-level sidebar navigation */
+const MENU_GROUPS: MenuGroup[] = [
+  {
+    id: "account",
+    labelKey: "groupAccount",
+    children: [
+      { id: "settings", icon: <Settings className="w-5 h-5" />, labelKey: "settings" },
+      { id: "verification", icon: <ShieldCheck className="w-5 h-5" />, labelKey: "verification" },
+      { id: "help", icon: <InfoCircle className="w-5 h-5" />, labelKey: "help" },
+    ],
+  },
+  {
+    id: "myPage",
+    labelKey: "groupMyPage",
+    children: [
+      { id: "profile-settings", icon: <AtSign className="w-5 h-5" />, labelKey: "myPage" },
+      { id: "branding", icon: <Palette className="w-5 h-5" />, labelKey: "branding" },
+      { id: "custom-domain", icon: <Globe className="w-5 h-5" />, labelKey: "customDomain" },
+    ],
+  },
+  {
+    id: "insights",
+    labelKey: "groupInsights",
+    children: [
+      { id: "analytics", icon: <GraphUp className="w-5 h-5" />, labelKey: "analytics" },
+      { id: "referrals", icon: <Gift className="w-5 h-5" />, labelKey: "referrals" },
+    ],
+  },
+  {
+    id: "money",
+    labelKey: "groupMoney",
+    children: [
+      { id: "subscription", icon: <RefreshDouble className="w-5 h-5" />, labelKey: "subscription" },
+      { id: "transactions", icon: <Page className="w-5 h-5" />, labelKey: "transactions" },
+      { id: "payouts", icon: <Wallet className="w-5 h-5" />, labelKey: "payouts" },
+    ],
+  },
 ];
 
 /**
@@ -91,16 +120,59 @@ const AccountPanel: React.FC = () => {
     loadConfig();
   }, [loadConfig]);
 
-  // Hide menu items based on tier and feature flags
-  const menuItems = useMemo(() => {
-    return MENU_ITEMS.filter((item) => {
-      if (item.id === "handle" && userTier === "free") return false;
-      if (item.id === "profile-settings" && userTier === "free") return false;
-      if (item.id === "branding" && userTier === "free") return false;
-      if (item.id === "analytics" && userTier === "free") return false;
-      return true;
-    });
+  // Filter menu groups based on tier and feature flags
+  // Note: custom-domain and referrals filters are intentional additions —
+  // custom-domain was previously unfiltered (bug), referrals flag was unused
+  const visibleGroups = useMemo(() => {
+    return MENU_GROUPS
+      .map((group) => ({
+        ...group,
+        children: group.children.filter((item) => {
+          if (item.id === "branding" && userTier === "free") return false;
+          if (item.id === "custom-domain" && userTier === "free") return false;
+          if (item.id === "referrals" && !referralsEnabled) return false;
+          return true;
+        }),
+      }))
+      .filter((group) => group.children.length > 0);
   }, [userTier, referralsEnabled]);
+
+  // Memoize which group contains the active menu item
+  const activeGroupId = useMemo(() => {
+    return MENU_GROUPS.find((g) =>
+      g.children.some((c) => c.id === activeAccountMenu)
+    )?.id;
+  }, [activeAccountMenu]);
+
+  // Expand/collapse state for menu groups
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() => {
+    const initialGroup = MENU_GROUPS.find((g) =>
+      g.children.some((c) => c.id === activeAccountMenu)
+    );
+    return new Set(initialGroup ? [initialGroup.id] : ["account"]);
+  });
+
+  const toggleGroup = (groupId: string) => {
+    setExpandedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(groupId) && groupId !== activeGroupId) {
+        next.delete(groupId);
+      } else {
+        next.add(groupId);
+      }
+      return next;
+    });
+  };
+
+  // When active menu changes, ensure its group is expanded
+  useEffect(() => {
+    if (activeGroupId) {
+      setExpandedGroups((prev) => {
+        if (prev.has(activeGroupId)) return prev;
+        return new Set(prev).add(activeGroupId);
+      });
+    }
+  }, [activeGroupId]);
 
   const renderContent = () => {
     switch (activeAccountMenu) {
@@ -115,17 +187,14 @@ const AccountPanel: React.FC = () => {
       case "branding":
         return <BrandingPanel />;
       case "analytics":
-        // Tier-gate: FREE users see upgrade prompt instead of AnalyticsPanel
         if (userTier === "free") {
-          return <AnalyticsUpgradePrompt />;
+          return <AnalyticsFreeView />;
         }
         return <AnalyticsPanel />;
       case "referrals":
         return <ReferralsPanel />;
       case "verification":
         return <VerificationContent />;
-      case "handle":
-        return <HandlePanel />;
       case "profile-settings":
         return <ProfileSettingsPanel />;
       case "custom-domain":
@@ -142,78 +211,89 @@ const AccountPanel: React.FC = () => {
   }
 
   return (
-    <div className="flex h-full -mx-16 -my-8">
-      {/* Left Sidebar */}
-      <aside className="w-72 flex-shrink-0 border-r border-gray-200 dark:border-[oklch(0.30_0_0)] py-8 px-6 sticky top-0 self-start">
-        {/* Section Title */}
-        <h2 className="text-3xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-8 px-4">
-          {t("title")}
-        </h2>
+    <div className="flex min-h-full -mx-16 -my-8">
+      {/* Left Sidebar - full-height border wrapper */}
+      <aside className="w-72 flex-shrink-0 border-r border-gray-200 dark:border-[oklch(0.30_0_0)]">
+        {/* Inner sticky scroll container */}
+        <div className="sticky top-0 max-h-[calc(100vh-56px)] overflow-y-auto scrollbar-thin py-8 px-6">
+          {/* Section Title */}
+          <h2 className="text-3xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-8 px-4">
+            {t("title")}
+          </h2>
 
-        {/* Navigation Menu */}
-        <nav className="space-y-1">
-          {menuItems.map((item) => {
-            const isActive = activeAccountMenu === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setActiveAccountMenu(item.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors relative ${
-                  isActive
-                    ? "text-sm bg-[#87E64B]/10 text-[#171717] dark:text-[oklch(0.91_0_0)] font-bold"
-                    : "text-sm text-gray-600 dark:text-[oklch(0.75_0_0)] hover:bg-gray-50 dark:hover:bg-[oklch(0.28_0_0)] font-medium hover:text-[#171717] dark:hover:text-[oklch(0.91_0_0)]"
-                }`}
-              >
-                {/* Active indicator bar */}
-                {isActive && (
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-[#87E64B] rounded-r" />
-                )}
-                <span className={isActive ? "text-[#87E64B]" : "text-gray-400 dark:text-[oklch(0.60_0_0)]"}>
-                  {item.icon}
-                </span>
-                <span>{t(item.labelKey)}</span>
-              </button>
-            );
-          })}
-        </nav>
+          {/* Navigation Menu */}
+          <nav>
+            {visibleGroups.map((group, groupIdx) => {
+              const isExpanded = expandedGroups.has(group.id);
+              const isActiveGroup = group.id === activeGroupId;
+              const panelId = `nav-group-${group.id}`;
+              return (
+                <div key={group.id} className={groupIdx > 0 ? "mt-3" : ""}>
+                  {/* Group header */}
+                  <button
+                    onClick={() => toggleGroup(group.id)}
+                    aria-expanded={isExpanded}
+                    aria-controls={panelId}
+                    className={`w-full flex items-center justify-between px-4 py-2 text-xs font-semibold uppercase tracking-wider transition-colors ${
+                      isActiveGroup
+                        ? "text-gray-600 dark:text-[oklch(0.70_0_0)]"
+                        : "text-gray-400 dark:text-[oklch(0.55_0_0)] hover:text-gray-600 dark:hover:text-[oklch(0.70_0_0)]"
+                    }`}
+                  >
+                    <span>{t(group.labelKey)}</span>
+                    <NavArrowRight
+                      className={`w-4 h-4 transition-transform duration-200 ${
+                        isExpanded ? "rotate-90" : ""
+                      }`}
+                    />
+                  </button>
+
+                  {/* Collapsible children */}
+                  <div
+                    id={panelId}
+                    role="region"
+                    aria-label={t(group.labelKey)}
+                    className={`overflow-hidden transition-[max-height] duration-200 ease-out ${
+                      isExpanded ? "max-h-[500px]" : "max-h-0"
+                    }`}
+                  >
+                    <div className="space-y-1 mt-1">
+                      {group.children.map((item) => {
+                        const isActive = activeAccountMenu === item.id;
+                        return (
+                          <button
+                            key={item.id}
+                            onClick={() => setActiveAccountMenu(item.id)}
+                            className={`w-full flex items-center gap-3 pl-7 pr-4 py-2.5 rounded-lg text-left transition-colors relative ${
+                              isActive
+                                ? "text-sm bg-[#87E64B]/10 text-[#171717] dark:text-[oklch(0.91_0_0)] font-bold"
+                                : "text-sm text-gray-600 dark:text-[oklch(0.75_0_0)] hover:bg-gray-50 dark:hover:bg-[oklch(0.28_0_0)] font-medium hover:text-[#171717] dark:hover:text-[oklch(0.91_0_0)]"
+                            }`}
+                          >
+                            {/* Active indicator bar */}
+                            {isActive && (
+                              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-[#87E64B] rounded-r" />
+                            )}
+                            <span className={isActive ? "text-[#171717] dark:text-white" : "text-gray-400 dark:text-[oklch(0.60_0_0)]"}>
+                              {item.icon}
+                            </span>
+                            <span>{t(item.labelKey)}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </nav>
+        </div>
       </aside>
 
       {/* Right Content Area */}
       <main className="flex-1 overflow-y-auto py-8 px-12">
-        {renderContent()}
+        <div key={activeAccountMenu}>{renderContent()}</div>
       </main>
-    </div>
-  );
-};
-
-/**
- * AnalyticsUpgradePrompt - Shown to FREE users who navigate to analytics
- * Follows the CustomDomainPanel tier-gate pattern
- */
-const AnalyticsUpgradePrompt: React.FC = () => {
-  const t = useTranslations("account");
-  const { setActiveAccountMenu } = useDrawerStore();
-
-  return (
-    <div className="mb-10">
-      <h3 className="text-2xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-6">
-        {t("analytics")}
-      </h3>
-      <div className="bg-gray-50 dark:bg-[oklch(0.22_0_0)] rounded-lg p-8 text-center">
-        <GraphUp className="w-12 h-12 text-gray-300 dark:text-[oklch(0.60_0_0)] mx-auto mb-4" />
-        <h4 className="text-lg font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-2">
-          {t("analyticsUpgradeTitle")}
-        </h4>
-        <p className="text-sm text-gray-500 dark:text-[oklch(0.75_0_0)] mb-6 max-w-md mx-auto">
-          {t("analyticsUpgradeDescription")}
-        </p>
-        <button
-          onClick={() => setActiveAccountMenu("subscription")}
-          className="px-6 py-3 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors"
-        >
-          {t("analyticsUpgradeCta")}
-        </button>
-      </div>
     </div>
   );
 };

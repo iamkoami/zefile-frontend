@@ -615,18 +615,11 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, onUpdate }) => {
           placeholder={t("professionPlaceholder")}
         />
 
-        {/* Date of Birth - Editable (locked after KYC) */}
+        {/* Date of Birth - Always Editable */}
         <EditableField
           label={t("dateOfBirthLabel")}
-          value={
-            isKycVerified && user.verifiedDob
-              ? formatDateDisplay(user.verifiedDob)
-              : user.dateOfBirth
-                ? formatDateDisplay(user.dateOfBirth)
-                : ""
-          }
+          value={user.dateOfBirth ? formatDateDisplay(user.dateOfBirth) : ""}
           isEditing={editingField === "dateOfBirth"}
-          isKycLocked={isKycVerified}
           onEdit={() => setEditingField("dateOfBirth")}
           onSave={(value) => handleSave("dateOfBirth", value)}
           onCancel={() => setEditingField(null)}
@@ -634,12 +627,11 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, onUpdate }) => {
           type="date"
         />
 
-        {/* Address - Editable (locked after KYC) */}
+        {/* Address - Always Editable */}
         <EditableField
           label={t("addressLabel")}
           value={user.address || ""}
           isEditing={editingField === "address"}
-          isKycLocked={isKycVerified}
           onEdit={() => setEditingField("address")}
           onSave={(value) => handleSave("address", value)}
           onCancel={() => setEditingField(null)}

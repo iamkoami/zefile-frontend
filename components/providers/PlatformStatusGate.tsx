@@ -24,12 +24,26 @@ export default function PlatformStatusGate({ children }: { children: React.React
   if (loading || !status) return <>{children}</>;
 
   const isDownloadPage = pathname?.startsWith("/downloads");
+  // Profile pages use the (profile)/[handle] route group — pathname is /{handle}
+  // Exclude known app routes to avoid false positives
+  const APP_ROUTES = [
+    "/downloads", "/deliver", "/about", "/pricing", "/contact-us", "/fr",
+    "/blog", "/help", "/how-it-works", "/jobs", "/payment", "/presentation",
+    "/press", "/privacy", "/r", "/review", "/security", "/terms", "/test-page",
+  ];
+  const isProfilePage =
+    pathname !== null &&
+    /^\/[a-zA-Z0-9_-]+$/.test(pathname) &&
+    !APP_ROUTES.some(
+      (route) => pathname === route || pathname.startsWith(route + "/"),
+    );
 
   // Maintenance takes priority over everything
   // Download pages are only exempt when maintenanceAllowDownloads is true
+  // Creator profile pages are always exempt (remain accessible during maintenance)
   if (status.maintenance) {
     const downloadExempt = isDownloadPage && status.maintenanceAllowDownloads;
-    if (!downloadExempt) {
+    if (!downloadExempt && !isProfilePage) {
       return (
         <MaintenancePage
           message={status.maintenanceMessage}

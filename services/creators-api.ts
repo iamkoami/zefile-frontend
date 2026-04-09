@@ -36,6 +36,7 @@ export interface PublicProfileDto {
   location?: string | null;
   languagesSpoken?: string[] | null;
   servicesOffered?: string[] | null;
+  primaryService?: string | null;
   socialLinks?: SocialLink[] | null;
   kycVerified: boolean;
   isIndexable: boolean;
@@ -92,6 +93,7 @@ export interface OwnProfileDto {
   location?: string | null;
   languagesSpoken?: string[] | null;
   servicesOffered?: string[] | null;
+  primaryService?: string | null;
   socialLinks?: SocialLink[] | null;
   visibility: ProfileVisibility;
   isIndexable: boolean;
@@ -108,6 +110,7 @@ export interface UpsertProfileDto {
   location?: string;
   languagesSpoken?: string[];
   servicesOffered?: string[];
+  primaryService?: string | null;
   primaryLanguage?: string;
   isIndexable?: boolean;
 }

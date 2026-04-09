@@ -33,7 +33,7 @@ export default function MaintenancePage({
       ? "#b5e8ff"
       : timeOfDay === "evening"
         ? "#f9f4f0"
-        : "#13121d";
+        : "#050036";
 
   const textColor = timeOfDay === "night" ? "#ffffff" : "#171717";
   const subtextColor = timeOfDay === "night" ? "#9ca3af" : "#6b7280";

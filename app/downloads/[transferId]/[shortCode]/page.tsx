@@ -69,7 +69,9 @@ import FloatingPollWidget from "@/components/shared/FloatingPollWidget";
 import CreatorStrip from "@/features/transfer/components/CreatorStrip";
 import { usePollEligibility } from "@/hooks/usePollEligibility";
 import { useChatStore } from "@/stores/chat-store";
-import { useCaptcha, CAPTCHA_ACTIONS } from "@/hooks/useCaptcha";
+import { Turnstile } from '@marsidev/react-turnstile';
+import { useTurnstile } from "@/hooks/useTurnstile";
+import { setCaptchaToken } from "@/services/api-client";
 import {
   trackPaymentPageViewed,
   trackPaymentPageAbandoned,
@@ -205,7 +207,7 @@ export default function TransferLandingPage() {
   );
 
   const { openDrawer, openDrawerToView, setRecipientEmail } = useDrawerStore();
-  const { executeAsync: executeCaptcha, isEnabled: captchaEnabled } = useCaptcha();
+  const { getToken, isEnabled: captchaEnabled, turnstileRef, siteKey, onSuccess, onError, onExpire } = useTurnstile();
 
   // Store original page title on mount
   const originalTitleRef = useRef<string>(
@@ -860,19 +862,12 @@ export default function TransferLandingPage() {
         return;
       }
 
-      // Get CAPTCHA token if enabled (invisible to user)
-      const captchaToken = captchaEnabled
-        ? await executeCaptcha(CAPTCHA_ACTIONS.REQUEST_OTP)
-        : null;
-
-      if (captchaEnabled && !captchaToken) {
-        toast.error(t("captchaNotReady"));
-        setIsLoading(false);
-        return;
-      }
+      // Get Turnstile token and inject via header
+      const captchaToken = await getToken();
+      setCaptchaToken(captchaToken);
 
       // Request OTP using standard flow
-      const response = await authApi.requestOTP({ email: customerEmail, captchaToken });
+      const response = await authApi.requestOTP({ email: customerEmail });
 
       if (response.error) {
         toast.error(response.error.message || t("error"));
@@ -969,19 +964,12 @@ export default function TransferLandingPage() {
     setIsLoading(true);
 
     try {
-      // Get CAPTCHA token if enabled (invisible to user)
-      const captchaToken = captchaEnabled
-        ? await executeCaptcha(CAPTCHA_ACTIONS.REQUEST_OTP)
-        : null;
-
-      if (captchaEnabled && !captchaToken) {
-        toast.error(t("captchaNotReady"));
-        setIsLoading(false);
-        return;
-      }
+      // Get Turnstile token and inject via header
+      const captchaToken = await getToken();
+      setCaptchaToken(captchaToken);
 
       // Resend OTP using standard flow
-      const response = await authApi.requestOTP({ email: customerEmail, captchaToken });
+      const response = await authApi.requestOTP({ email: customerEmail });
 
       if (response.error) {
         toast.error(response.error.message || t("error"));
@@ -1097,6 +1085,8 @@ export default function TransferLandingPage() {
 
       setIsLoading(true);
       try {
+        // Inject Turnstile token for payment initialization
+        setCaptchaToken(await getToken());
         const response = await paymentApi.initializePaymentV2({
           transferId: transfer.id,
           customerEmail: customerEmail,
@@ -1140,6 +1130,8 @@ export default function TransferLandingPage() {
       // Card — redirect to Paystack checkout
       setIsLoading(true);
       try {
+        // Inject Turnstile token for payment initialization
+        setCaptchaToken(await getToken());
         const response = await paymentApi.initializePaymentV2({
           transferId: transfer.id,
           customerEmail: customerEmail,
@@ -1198,6 +1190,8 @@ export default function TransferLandingPage() {
         const preferredChannel: PaystackChannel =
           channelMap[selectedMethod.type] || "bank_transfer";
 
+        // Inject Turnstile token for payment initialization
+        setCaptchaToken(await getToken());
         const response = await paymentApi.initializePaymentV2({
           transferId: transfer.id,
           customerEmail: customerEmail,
@@ -1422,6 +1416,16 @@ export default function TransferLandingPage() {
 
     return (
       <div className="min-h-screen bg-white dark:bg-[oklch(0.19_0_0)]">
+        {captchaEnabled && (
+          <Turnstile
+            ref={turnstileRef}
+            siteKey={siteKey}
+            options={{ size: 'invisible' }}
+            onSuccess={onSuccess}
+            onError={onError}
+            onExpire={onExpire}
+          />
+        )}
         {pageHeader}
         <main style={{ minHeight: "calc(100vh - 64px)", position: "relative" }}>
           <div
@@ -2788,8 +2792,8 @@ export default function TransferLandingPage() {
                   {t("reportTransfer")}
                 </button>
 
-                {/* Creator Strip -- shows when sender has a public profile */}
-                {transfer.senderProfile && (
+                {/* Creator Strip -- shows when sender has a public profile (hidden on public sales) */}
+                {transfer.senderProfile && !transfer.isPublicSales && (
                   <CreatorStrip
                     handle={transfer.senderProfile.handle}
                     name={transfer.senderProfile.name}
@@ -2841,6 +2845,7 @@ export default function TransferLandingPage() {
                   buyerEmail={saleBuyerEmail}
                   onBack={() => setPageState("sale-preview")}
                   onPaymentInitiated={handleSalePaymentInitiated}
+                  getCaptchaToken={getToken}
                 />
               </div>
 
@@ -2965,8 +2970,8 @@ export default function TransferLandingPage() {
                     : t("downloadAllFiles")}
                 </button>
 
-                {/* Creator Strip -- shows when sender has a public profile */}
-                {transfer.senderProfile && (
+                {/* Creator Strip -- shows when sender has a public profile (hidden on public sales) */}
+                {transfer.senderProfile && !transfer.isPublicSales && (
                   <CreatorStrip
                     handle={transfer.senderProfile.handle}
                     name={transfer.senderProfile.name}
@@ -3255,8 +3260,8 @@ export default function TransferLandingPage() {
                   </button>
                 </div>
 
-                {/* Creator Strip -- shows when sender has a public profile */}
-                {transfer.senderProfile && (
+                {/* Creator Strip -- shows when sender has a public profile (hidden on public sales) */}
+                {transfer.senderProfile && !transfer.isPublicSales && (
                   <CreatorStrip
                     handle={transfer.senderProfile.handle}
                     name={transfer.senderProfile.name}

@@ -176,19 +176,19 @@ const ReferralsPanel: React.FC = () => {
             <div className="flex items-center gap-3">
               <button
                 onClick={() => handleShare("whatsapp")}
-                className="flex items-center gap-2 px-4 py-2 bg-[#25D366] text-white text-sm font-medium rounded hover:bg-[#20bd5a] transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-[#171717] text-white text-sm font-medium rounded hover:bg-[#2a2a2a] transition-colors"
               >
                 WhatsApp
               </button>
               <button
                 onClick={() => handleShare("twitter")}
-                className="flex items-center gap-2 px-4 py-2 bg-[#1DA1F2] text-white text-sm font-medium rounded hover:bg-[#1a91da] transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-[#171717] text-white text-sm font-medium rounded hover:bg-[#2a2a2a] transition-colors"
               >
                 Twitter
               </button>
               <button
                 onClick={() => handleShare("email")}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-700 text-white text-sm font-medium rounded hover:bg-gray-600 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-[#171717] text-white text-sm font-medium rounded hover:bg-[#2a2a2a] transition-colors"
               >
                 {t("email")}
               </button>

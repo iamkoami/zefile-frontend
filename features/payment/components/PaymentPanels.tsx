@@ -31,6 +31,9 @@ import { getCurrentUserEmail, getCurrentUserName } from "@/utils/auth";
 import { safePaymentRedirect } from "@/utils/security";
 import { usePollEligibility } from "@/hooks/usePollEligibility";
 import { trackPaymentMethodSelected, trackPaymentSubmitted } from "@/lib/posthog";
+import { Turnstile } from '@marsidev/react-turnstile';
+import { useTurnstile } from "@/hooks/useTurnstile";
+import { setCaptchaToken } from "@/services/api-client";
 
 // Supported countries for payment — methods are fetched from API per country
 const PAYMENT_COUNTRIES = [
@@ -65,6 +68,7 @@ const getProviderIcon = (provider: string): string => {
 
 export function PaymentMethodPanel() {
   const t = useTranslations("payment");
+  const { getToken: getTurnstileToken, isEnabled: turnstileEnabled, turnstileRef, siteKey, onSuccess: onTurnstileSuccess, onError: onTurnstileError, onExpire: onTurnstileExpire } = useTurnstile();
   const {
     selectedTransfer,
     payload,
@@ -249,6 +253,7 @@ export function PaymentMethodPanel() {
       try {
         setPaymentMethod({ type: "mobile_money", provider: selectedMethod.provider as MobileMoneyProvider });
 
+        setCaptchaToken(await getTurnstileToken());
         const response = await paymentApi.initializePaymentV2({
           transferId: transfer.id,
           customerEmail: customerEmail,
@@ -301,6 +306,7 @@ export function PaymentMethodPanel() {
         const preferredChannel: PaystackChannel =
           channelMap[selectedMethod.type] || "bank_transfer";
 
+        setCaptchaToken(await getTurnstileToken());
         const response = await paymentApi.initializePaymentV2({
           transferId: transfer.id,
           customerEmail: customerEmail,
@@ -365,6 +371,16 @@ export function PaymentMethodPanel() {
 
   return (
     <div className="flex flex-col lg:flex-row gap-6 max-w-6xl mx-auto">
+      {turnstileEnabled && (
+        <Turnstile
+          ref={turnstileRef}
+          siteKey={siteKey}
+          options={{ size: 'invisible' }}
+          onSuccess={onTurnstileSuccess}
+          onError={onTurnstileError}
+          onExpire={onTurnstileExpire}
+        />
+      )}
       {/* Left Column - Payment Form */}
       <div className="flex-1 min-w-0">
         {/* Header */}
@@ -632,6 +648,7 @@ export function PaymentMethodPanel() {
 
 export function PaymentPhonePanel() {
   const t = useTranslations("payment");
+  const { getToken: getTurnstileToken, isEnabled: turnstileEnabled, turnstileRef: phoneTurnstileRef, siteKey, onSuccess: onTurnstileSuccess, onError: onTurnstileError, onExpire: onTurnstileExpire } = useTurnstile();
   const {
     selectedTransfer,
     payload,
@@ -726,6 +743,7 @@ export function PaymentPhonePanel() {
       // Update payment method with selected provider
       setPaymentMethod({ type: "mobile_money", provider: selectedProvider });
 
+      setCaptchaToken(await getTurnstileToken());
       const response = await paymentApi.initializePaymentV2({
         transferId: transfer.id,
         customerEmail: senderEmail,
@@ -777,6 +795,16 @@ export function PaymentPhonePanel() {
 
   return (
     <div className="flex gap-8 max-w-5xl mx-auto">
+      {turnstileEnabled && (
+        <Turnstile
+          ref={phoneTurnstileRef}
+          siteKey={siteKey}
+          options={{ size: 'invisible' }}
+          onSuccess={onTurnstileSuccess}
+          onError={onTurnstileError}
+          onExpire={onTurnstileExpire}
+        />
+      )}
       {/* Left Column - Phone Input Form */}
       <div className="flex-1 min-w-0">
         {/* Header */}
@@ -1178,6 +1206,7 @@ export function PaymentPromptPanel() {
 
 export function CardPaymentPanel() {
   const t = useTranslations("payment");
+  const { getToken: getTurnstileToken, isEnabled: turnstileEnabled, turnstileRef: cardTurnstileRef, siteKey, onSuccess: onTurnstileSuccess, onError: onTurnstileError, onExpire: onTurnstileExpire } = useTurnstile();
   const {
     selectedTransfer,
     payload,
@@ -1206,6 +1235,7 @@ export function CardPaymentPanel() {
     const initializePayment = async () => {
       try {
         // Initialize payment on backend
+        setCaptchaToken(await getTurnstileToken());
         const response = await paymentApi.initializePaymentV2({
           transferId: transfer.id,
           customerEmail: customerEmail,
@@ -1357,6 +1387,16 @@ export function CardPaymentPanel() {
 
   return (
     <div className="flex flex-col lg:flex-row gap-8 py-4">
+      {turnstileEnabled && (
+        <Turnstile
+          ref={cardTurnstileRef}
+          siteKey={siteKey}
+          options={{ size: 'invisible' }}
+          onSuccess={onTurnstileSuccess}
+          onError={onTurnstileError}
+          onExpire={onTurnstileExpire}
+        />
+      )}
       {/* Left Column - Loading Content */}
       <div className="flex-1 flex flex-col items-center justify-center py-12">
         {/* Card icons */}

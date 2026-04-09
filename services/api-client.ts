@@ -8,6 +8,7 @@
  * No tokens are stored in localStorage to prevent XSS-based token theft.
  */
 import { captureException as sentryCaptureException } from '@/lib/sentry';
+import type { DeviceFingerprintPayload } from '@/utils/fingerprint';
 
 export interface ApiResponse<T = any> {
   data?: T;
@@ -248,6 +249,12 @@ export class ApiClient {
       headers['X-CSRF-Token'] = this.csrfToken;
     }
 
+    // Add captcha token if set (single-use, consumed immediately)
+    const captchaToken = consumeCaptchaToken();
+    if (captchaToken) {
+      headers['X-Captcha-Token'] = captchaToken;
+    }
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
@@ -275,10 +282,14 @@ export class ApiClient {
         if (response.status === 401 && !isRetry && !isAuthEndpoint) {
           const refreshed = await this.attemptTokenRefresh();
           if (refreshed) {
-            // Retry the original request with refreshed cookies
+            // Retry with refreshed cookies — preserve captcha token for retry
             return this.request<T>(method, endpoint, data, {
               ...options,
-              headers: { ...(headersObj || {}), 'X-No-Retry': 'true' },
+              headers: {
+                ...(headersObj || {}),
+                'X-No-Retry': 'true',
+                ...(captchaToken ? { 'X-Captcha-Token': captchaToken } : {}),
+              },
             });
           }
         }
@@ -287,11 +298,15 @@ export class ApiClient {
         if (response.status === 403 && responseData?.message?.includes('CSRF')) {
           // Try to get a new CSRF token
           await this.refreshCsrfToken();
-          // Retry the request once
+          // Retry the request once — preserve captcha token for retry
           if (!isRetry) {
             return this.request<T>(method, endpoint, data, {
               ...options,
-              headers: { ...(headersObj || {}), 'X-No-Retry': 'true' },
+              headers: {
+                ...(headersObj || {}),
+                'X-No-Retry': 'true',
+                ...(captchaToken ? { 'X-Captcha-Token': captchaToken } : {}),
+              },
             });
           }
         }
@@ -502,6 +517,12 @@ export class ApiClient {
         xhr.setRequestHeader('X-CSRF-Token', this.csrfToken);
       }
 
+      // Add captcha token if set (single-use, consumed immediately)
+      const uploadCaptchaToken = consumeCaptchaToken();
+      if (uploadCaptchaToken) {
+        xhr.setRequestHeader('X-Captcha-Token', uploadCaptchaToken);
+      }
+
       xhr.send(formData);
     });
   }
@@ -509,3 +530,39 @@ export class ApiClient {
 
 // Export singleton instance
 export const apiClient = new ApiClient();
+
+/**
+ * Module-level device fingerprint for persistent header injection.
+ * Unlike captcha tokens, fingerprints are NOT consumed after use --
+ * they persist for the entire page session.
+ */
+let deviceFingerprint: string | null = null;
+
+export function setDeviceFingerprint(payload: DeviceFingerprintPayload): void {
+  deviceFingerprint = JSON.stringify(payload);
+}
+
+export function getStoredDeviceFingerprint(): string | null {
+  return deviceFingerprint;
+}
+
+/**
+ * Module-level captcha token for single-use header injection.
+ * Set before a protected API call; the interceptor adds X-Captcha-Token
+ * and clears it immediately (one-shot).
+ */
+let pendingCaptchaToken: string | null = null;
+
+export function setCaptchaToken(token: string | null): void {
+  pendingCaptchaToken = token;
+}
+
+/**
+ * Consume the pending captcha token (returns it and clears).
+ * Used internally by the request method.
+ */
+export function consumeCaptchaToken(): string | null {
+  const token = pendingCaptchaToken;
+  pendingCaptchaToken = null;
+  return token;
+}

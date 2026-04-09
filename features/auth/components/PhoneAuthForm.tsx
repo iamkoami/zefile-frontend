@@ -5,7 +5,10 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { authApi } from '@/services/auth-api';
 import { referralsApi } from '@/services/referrals-api';
-import { useCaptcha, CAPTCHA_ACTIONS } from '@/hooks/useCaptcha';
+import { Turnstile } from '@marsidev/react-turnstile';
+import { useTurnstile } from '@/hooks/useTurnstile';
+import { setCaptchaToken, setDeviceFingerprint } from '@/services/api-client';
+import { getDeviceFingerprint } from '@/utils/fingerprint';
 import { usersApi } from '@/services/users-api';
 import { getAnalyticsConsent } from '@/components/shared/CookieConsentBanner';
 import { toast } from '@/components/shared/Toast';
@@ -27,7 +30,7 @@ const PhoneAuthForm: React.FC<PhoneAuthFormProps> = ({
   const t = useTranslations('auth');
   const tErrors = useTranslations('errors');
   const tReferrals = useTranslations('referrals');
-  const { executeAsync: executeCaptcha, isEnabled: captchaEnabled } = useCaptcha();
+  const { getToken, isEnabled: captchaEnabled, turnstileRef, siteKey, onSuccess: onTurnstileSuccess, onError: onTurnstileError, onExpire: onTurnstileExpire } = useTurnstile();
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
   const [phone, setPhone] = useState('');
   const [countryCode, setCountryCode] = useState('+228');
@@ -49,6 +52,13 @@ const PhoneAuthForm: React.FC<PhoneAuthFormProps> = ({
     return () => clearTimeout(timer);
   }, [resendCountdown]);
 
+  // Pre-load device fingerprint on mount (fire-and-forget, never blocks UI)
+  useEffect(() => {
+    getDeviceFingerprint().then((fp) => {
+      if (fp) setDeviceFingerprint(fp);
+    });
+  }, []);
+
   const getFullPhoneNumber = () => `${countryCode}${phone}`;
 
   const handlePhoneSubmit = async (e: React.FormEvent) => {
@@ -63,22 +73,20 @@ const PhoneAuthForm: React.FC<PhoneAuthFormProps> = ({
     setLoading(true);
 
     try {
-      const captchaToken = captchaEnabled
-        ? await executeCaptcha(CAPTCHA_ACTIONS.REQUEST_OTP)
-        : null;
-
-      if (captchaEnabled && !captchaToken) {
-        setError(t('captchaNotReady'));
-        setLoading(false);
-        return;
-      }
+      // Get Turnstile token and inject via header
+      const token = await getToken();
+      setCaptchaToken(token);
 
       const fullPhone = getFullPhoneNumber();
-      const response = await authApi.requestOTP({ identifier: fullPhone, captchaToken });
+      const response = await authApi.requestOTP({ identifier: fullPhone });
 
       if (response.error) {
-        const errorKey = response.error.errorKey;
-        setError(errorKey ? tErrors(errorKey.replace('errors.', '')) : response.error.message);
+        if (response.error.code === 'CAPTCHA_FAILED') {
+          setError(t('captchaFailed'));
+        } else {
+          const errorKey = response.error.errorKey;
+          setError(errorKey ? tErrors(errorKey.replace('errors.', '')) : response.error.message);
+        }
       } else {
         const displayPhone = `${countryCode} ${phone}`;
         setSentTo(displayPhone);
@@ -193,12 +201,12 @@ const PhoneAuthForm: React.FC<PhoneAuthFormProps> = ({
     setError('');
 
     try {
-      const captchaToken = captchaEnabled
-        ? await executeCaptcha(CAPTCHA_ACTIONS.REQUEST_OTP)
-        : null;
+      // Get Turnstile token and inject via header
+      const token = await getToken();
+      setCaptchaToken(token);
 
       const fullPhone = getFullPhoneNumber();
-      const response = await authApi.requestOTP({ identifier: fullPhone, captchaToken });
+      const response = await authApi.requestOTP({ identifier: fullPhone });
 
       if (response.error) {
         const errorKey = response.error.errorKey;
@@ -280,6 +288,17 @@ const PhoneAuthForm: React.FC<PhoneAuthFormProps> = ({
           >
             {loading ? t('loading') : t('continue')}
           </button>
+
+          {captchaEnabled && (
+            <Turnstile
+              ref={turnstileRef}
+              siteKey={siteKey}
+              options={{ size: 'invisible' }}
+              onSuccess={onTurnstileSuccess}
+              onError={onTurnstileError}
+              onExpire={onTurnstileExpire}
+            />
+          )}
         </form>
       </div>
     );

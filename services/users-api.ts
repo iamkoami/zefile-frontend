@@ -13,6 +13,7 @@ export interface UserProfile {
   name?: string;
   phoneNumber?: string;
   profilePictureUrl?: string;
+  handle?: string;
   profession?: string;
   dateOfBirth?: Date | string;
   address?: string;

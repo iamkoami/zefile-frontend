@@ -5,7 +5,10 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { authApi } from '@/services/auth-api';
 import { referralsApi } from '@/services/referrals-api';
-import { useCaptcha, CAPTCHA_ACTIONS } from '@/hooks/useCaptcha';
+import { Turnstile } from '@marsidev/react-turnstile';
+import { useTurnstile } from '@/hooks/useTurnstile';
+import { setCaptchaToken, setDeviceFingerprint } from '@/services/api-client';
+import { getDeviceFingerprint } from '@/utils/fingerprint';
 import { usersApi } from '@/services/users-api';
 import { getAnalyticsConsent } from '@/components/shared/CookieConsentBanner';
 import { toast } from '@/components/shared/Toast';
@@ -22,7 +25,7 @@ const EmailAuthForm: React.FC<EmailAuthFormProps> = ({ onSuccess, termsAccepted,
   const t = useTranslations('auth');
   const tErrors = useTranslations('errors');
   const tReferrals = useTranslations('referrals');
-  const { executeAsync: executeCaptcha, isEnabled: captchaEnabled } = useCaptcha();
+  const { getToken, isEnabled: captchaEnabled, turnstileRef, siteKey, onSuccess: onTurnstileSuccess, onError: onTurnstileError, onExpire: onTurnstileExpire } = useTurnstile();
   const [step, setStep] = useState<'email' | 'otp'>('email');
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
@@ -48,6 +51,13 @@ const EmailAuthForm: React.FC<EmailAuthFormProps> = ({ onSuccess, termsAccepted,
     return () => clearTimeout(timer);
   }, [resendCountdown]);
 
+  // Pre-load device fingerprint on mount (fire-and-forget, never blocks UI)
+  useEffect(() => {
+    getDeviceFingerprint().then((fp) => {
+      if (fp) setDeviceFingerprint(fp);
+    });
+  }, []);
+
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -60,21 +70,13 @@ const EmailAuthForm: React.FC<EmailAuthFormProps> = ({ onSuccess, termsAccepted,
     setLoading(true);
 
     try {
-      // Get CAPTCHA token if enabled (invisible to user)
-      const captchaToken = captchaEnabled
-        ? await executeCaptcha(CAPTCHA_ACTIONS.REQUEST_OTP)
-        : null;
+      // Get Turnstile token and inject via header (invisible to user)
+      const token = await getToken();
+      setCaptchaToken(token);
 
-      if (captchaEnabled && !captchaToken) {
-        setError(t('captchaNotReady'));
-        setLoading(false);
-        return;
-      }
-
-      const response = await authApi.requestOTP({ email, captchaToken });
+      const response = await authApi.requestOTP({ email });
 
       if (response.error) {
-        // Handle CAPTCHA-specific errors
         if (response.error.code === 'CAPTCHA_FAILED') {
           setError(t('captchaFailed'));
         } else {
@@ -192,18 +194,11 @@ const EmailAuthForm: React.FC<EmailAuthFormProps> = ({ onSuccess, termsAccepted,
     setError('');
 
     try {
-      // Get CAPTCHA token if enabled (invisible to user)
-      const captchaToken = captchaEnabled
-        ? await executeCaptcha(CAPTCHA_ACTIONS.REQUEST_OTP)
-        : null;
+      // Get Turnstile token and inject via header
+      const token = await getToken();
+      setCaptchaToken(token);
 
-      if (captchaEnabled && !captchaToken) {
-        setError(t('captchaNotReady'));
-        setLoading(false);
-        return;
-      }
-
-      const response = await authApi.requestOTP({ email, captchaToken });
+      const response = await authApi.requestOTP({ email });
 
       if (response.error) {
         if (response.error.code === 'CAPTCHA_FAILED') {
@@ -272,6 +267,17 @@ const EmailAuthForm: React.FC<EmailAuthFormProps> = ({ onSuccess, termsAccepted,
           >
             {loading ? t('loading') : t('continue')}
           </button>
+
+          {captchaEnabled && (
+            <Turnstile
+              ref={turnstileRef}
+              siteKey={siteKey}
+              options={{ size: 'invisible' }}
+              onSuccess={onTurnstileSuccess}
+              onError={onTurnstileError}
+              onExpire={onTurnstileExpire}
+            />
+          )}
         </form>
       </div>
     );

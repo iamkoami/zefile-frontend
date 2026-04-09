@@ -1403,6 +1403,18 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
               </p>
             </div>
 
+            {/* Price - show when transfer has a price > 0 */}
+            {requiresPayment && (currentTransfer?.price ?? 0) > 0 && (
+              <div>
+                <h3 className="text-sm font-bold text-gray-900 dark:text-[oklch(0.91_0_0)] mb-1">
+                  {t("price")}
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-[oklch(0.65_0_0)]">
+                  {formatCurrencyAmount(currentTransfer.price, currentTransfer.currency || "XOF", locale)}
+                </p>
+              </div>
+            )}
+
             {/* Password - sender when unpaid, receiver when paid */}
             {actionPermissions.canEditPassword && (
               <div>
@@ -1510,7 +1522,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
                                 type="checkbox"
                                 checked={addToContactsOnEdit}
                                 onChange={(e) => setAddToContactsOnEdit(e.target.checked)}
-                                className="w-3.5 h-3.5 rounded border-gray-300 text-[#87E64B] focus:ring-[#171717]"
+                                className="w-3.5 h-3.5 rounded border-gray-300 accent-[#87E64B] focus:ring-[#87E64B]"
                               />
                               {t("addToContacts")}
                             </label>

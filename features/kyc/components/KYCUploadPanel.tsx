@@ -504,7 +504,7 @@ export function KYCUploadPanel({
           id="kyc-confirmation"
           checked={isConfirmed}
           onChange={e => setIsConfirmed(e.target.checked)}
-          className="mt-1 w-4 h-4 rounded border-gray-300 text-[#87E64B] focus:ring-[#171717]"
+          className="mt-1 w-4 h-4 rounded border-gray-300 accent-[#87E64B] focus:ring-[#87E64B]"
         />
         <label htmlFor="kyc-confirmation" className="text-sm text-gray-600">
           {t('confirmationText')}
