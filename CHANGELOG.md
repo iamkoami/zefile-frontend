@@ -5,6 +5,28 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.48.0] - 2026-04-09
+
+### Added
+
+- Cloudflare Turnstile invisible CAPTCHA on OTP and payment forms
+- Device fingerprint collection on authentication (FingerprintJS)
+- Analytics free-tier limited view with upgrade prompts
+- Analytics contextual tip banners
+- Creator profile primary service selector
+- Public profile services section
+
+### Changed
+
+- CSP: added challenges.cloudflare.com to frame-src for Turnstile
+- API client sends X-Captcha-Token and X-Device-Fingerprint headers
+- Auth forms integrated with Turnstile widget
+- Analytics panel enhanced with tips and free-tier view
+
+### Removed
+
+- Legacy useCaptcha hook (replaced by useTurnstile)
+
 ## [1.47.3] - 2026-04-04
 
 ### Fixed
