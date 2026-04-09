@@ -258,6 +258,10 @@ export class ApiClient {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
+    // Destructure headers out — they're already merged above (line 242-244).
+    // Spreading the full options would overwrite the merged headers object.
+    const { headers: _optHeaders, ...restOptions } = options;
+
     try {
       const response = await fetch(url, {
         method,
@@ -265,7 +269,7 @@ export class ApiClient {
         body: data ? JSON.stringify(data) : undefined,
         signal: controller.signal,
         credentials: 'include', // Always include HttpOnly cookies
-        ...options,
+        ...restOptions,
       });
 
       clearTimeout(timeoutId);
@@ -321,11 +325,13 @@ export class ApiClient {
 
         return {
           error: {
-            message: responseData?.message || 'An error occurred',
+            message: Array.isArray(responseData?.message)
+              ? responseData.message.join('. ')
+              : responseData?.message || 'An error occurred',
             statusCode: response.status,
             error: responseData?.error,
             code: responseData?.code,
-            errorKey: getErrorKey(response.status, responseData?.message),
+            errorKey: getErrorKey(response.status, Array.isArray(responseData?.message) ? responseData.message[0] : responseData?.message),
           },
           status: response.status,
         };
@@ -459,10 +465,12 @@ export class ApiClient {
 
             resolve({
               error: {
-                message: responseData?.message || 'Upload failed',
+                message: Array.isArray(responseData?.message)
+                  ? responseData.message.join('. ')
+                  : responseData?.message || 'Upload failed',
                 statusCode: xhr.status,
                 error: responseData?.error,
-                errorKey: getErrorKey(xhr.status, responseData?.message),
+                errorKey: getErrorKey(xhr.status, Array.isArray(responseData?.message) ? responseData.message[0] : responseData?.message),
               },
               status: xhr.status,
             });
