@@ -1410,7 +1410,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
                   {t("price")}
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-[oklch(0.65_0_0)]">
-                  {formatCurrencyAmount(currentTransfer.price, currentTransfer.currency || "XOF", locale)}
+                  {formatCurrencyAmount(currentTransfer.price ?? 0, currentTransfer.currency || "XOF", locale)}
                 </p>
               </div>
             )}
