@@ -234,12 +234,6 @@
     "publicSalesToggle": "Put it on sale",
     "publicSalesDescription": "Share one link — anyone can preview, pay, and download.",
     "publicSalesHint": "Set your price below. Drop the link wherever your audience is.",
-    "whatsappPromptTitle": "Add {name}'s WhatsApp number to notify them instantly on future transfers.",
-    "whatsappPromptSave": "Save",
-    "whatsappPromptSkip": "Skip",
-    "whatsappPromptSaving": "Saving...",
-    "whatsappPromptSaved": "Number saved",
-    "whatsappPromptSkipped": "Skipped",
     "errors": {
       "transferCreateFailed": "Couldn't create the transfer. Let's try again.",
       "otpSendFailed": "Couldn't send the code. Let's try again.",
