@@ -5,6 +5,12 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.49.1] - 2026-04-13
+
+### Removed
+
+- WhatsApp number prompt from Transfer Complete screen -- redundant now that recipients can enter phone numbers during transfer creation
+
 ## [1.49.0] - 2026-04-13
 
 ### Added
