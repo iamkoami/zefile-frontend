@@ -405,6 +405,14 @@
     "recipientsCount": "{count}/{max} destinataires",
     "helperText": "Appuyez sur Entrée, virgule ou espace pour ajouter"
   },
+  "multiRecipient": {
+    "placeholder": "Saisissez les adresses e-mail ou numéros de téléphone",
+    "invalidEmailFormat": "Cet e-mail ne semble pas valide",
+    "invalidPhoneFormat": "Utilisez le format international (ex : +22507000000)",
+    "maxRecipientsReached": "Vous avez atteint la limite de {max} destinataires",
+    "recipientsCount": "{count}/{max} destinataires",
+    "helperText": "Appuyez sur Entrée, virgule ou espace pour ajouter — adresses e-mail ou numéros"
+  },
   "filePreview": {
     "element": "élément",
     "elements": "éléments",
@@ -557,7 +565,17 @@
     "downloadedTitle": "Vos fichiers sont en cours de téléchargement",
     "downloadedSubtitle": "Vous voulez envoyer des fichiers comme ça ?",
     "downloadedCtaButton": "Commencer gratuitement sur ZeFile",
-    "backToTransfer": "Retour au transfert"
+    "backToTransfer": "Retour au transfert",
+    "enterPhoneNumber": "Entrez votre numero de telephone",
+    "verifyWithWhatsApp": "Nous vous enverrons un code sur WhatsApp.",
+    "otpSentToWhatsApp": "Nous avons envoye un code par WhatsApp au",
+    "whatsappUnavailable": "Impossible de joindre ce numero sur WhatsApp. Demandez au destinataire un autre moyen.",
+    "changeNumber": "Changer de numero",
+    "emailTab": "E-mail",
+    "whatsappTab": "WhatsApp",
+    "stepPhone": "Telephone",
+    "tabListLabel": "Choisissez une méthode de vérification",
+    "verifyCode": "Entrez votre code"
   },
   "creatorStrip": {
     "viewProfile": "Voir le profil"

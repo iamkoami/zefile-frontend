@@ -424,6 +424,63 @@ export default function TransferLandingPage() {
   // Inline email + OTP flow: tracks whether email was submitted (OTP section visible)
   const [emailSubmitted, setEmailSubmitted] = useState(false);
 
+  // Phone (WhatsApp) OTP flow: alternative to email when transfer has WhatsApp recipients.
+  // `authMode` tracks the user's manual toggle choice and is only consulted in mixed mode.
+  // For single-type transfers, `effectiveAuthMode` (below) derives from `recipientTypes`
+  // synchronously, so the page never renders the wrong input — or a blank state — during
+  // the first render after `transfer` resolves.
+  const [authMode, setAuthMode] = useState<"email" | "phone">("email");
+  const [recipientPhone, setRecipientPhone] = useState("");
+  const [isRecipientPhoneValid, setIsRecipientPhoneValid] = useState(false);
+  const [phoneSubmitted, setPhoneSubmitted] = useState(false);
+  // Defensive fallback for legacy transfers pre-Epic 123: treat a missing or
+  // empty recipientTypes array as email-only so the page never renders a
+  // dead tab or the wrong input.
+  const resolvedRecipientTypes = useMemo<Array<"email" | "whatsapp">>(() => {
+    const types = transfer?.recipientTypes;
+    return Array.isArray(types) && types.length > 0 ? types : ["email"];
+  }, [transfer?.recipientTypes]);
+  const hasEmailRecipients = resolvedRecipientTypes.includes("email");
+  const hasWhatsAppRecipients = resolvedRecipientTypes.includes("whatsapp");
+  const isMixedMode = hasEmailRecipients && hasWhatsAppRecipients;
+  // Single source of truth for which auth surface to render. Mixed mode defers
+  // to the user's manual toggle (`authMode`); single-type transfers are pinned
+  // synchronously to their only option. This eliminates any race between the
+  // initial render and a deferred init effect.
+  const effectiveAuthMode: "email" | "phone" = isMixedMode
+    ? authMode
+    : hasWhatsAppRecipients
+      ? "phone"
+      : "email";
+  // Roving-tabindex + keyboard handling for the segmented control (tabs).
+  const emailTabRef = useRef<HTMLButtonElement>(null);
+  const whatsappTabRef = useRef<HTMLButtonElement>(null);
+  const handleAuthTabKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      const { key } = event;
+      if (
+        key !== "ArrowLeft" &&
+        key !== "ArrowRight" &&
+        key !== "Home" &&
+        key !== "End"
+      ) {
+        return;
+      }
+      event.preventDefault();
+      let nextMode: "email" | "phone" = authMode;
+      if (key === "ArrowLeft" || key === "Home") nextMode = "email";
+      if (key === "ArrowRight" || key === "End") nextMode = "phone";
+      if (nextMode !== authMode) {
+        setAuthMode(nextMode);
+        setError("");
+      }
+      const target =
+        nextMode === "email" ? emailTabRef.current : whatsappTabRef.current;
+      target?.focus();
+    },
+    [authMode],
+  );
+
   // OTP verification
   const [otpValue, setOtpValue] = useState("");
   const [isNewUser, setIsNewUser] = useState(false);
@@ -441,37 +498,40 @@ export default function TransferLandingPage() {
     };
   }, []);
 
-  // Focus OTP input when email is submitted and section slides in
+  // Focus OTP input when email/phone is submitted and section slides in
   useEffect(() => {
-    if (emailSubmitted) {
+    if (emailSubmitted || phoneSubmitted) {
       const timer = setTimeout(() => otpInputRef.current?.focus(), 350);
       return () => clearTimeout(timer);
     }
-  }, [emailSubmitted]);
+  }, [emailSubmitted, phoneSubmitted]);
 
   // Step indicator for multi-gate download flow
   const gateSteps = useMemo((): string[] => {
     if (!transfer) return [];
     const steps: string[] = [];
     if (transfer.accessControl !== "public") {
-      steps.push(t("stepEmail"));
+      steps.push(effectiveAuthMode === "phone" ? t("stepPhone") : t("stepEmail"));
       steps.push(t("stepCode"));
     }
     if (transfer.accessControl === "password") {
       steps.push(t("stepPassword"));
     }
     return steps;
-  }, [transfer, t]);
+  }, [transfer, t, effectiveAuthMode]);
+
+  const identifierSubmitted =
+    effectiveAuthMode === "phone" ? phoneSubmitted : emailSubmitted;
 
   const gateCurrentStep = useMemo((): number => {
     if (!transfer || gateSteps.length <= 1) return 0;
-    if (pageState === "email" && !emailSubmitted) return 0;
-    if (pageState === "email" && emailSubmitted) return 1;
+    if (pageState === "email" && !identifierSubmitted) return 0;
+    if (pageState === "email" && identifierSubmitted) return 1;
     if (pageState === "password") {
       return gateSteps.indexOf(t("stepPassword"));
     }
     return gateSteps.length;
-  }, [transfer, pageState, emailSubmitted, gateSteps, t]);
+  }, [transfer, pageState, identifierSubmitted, gateSteps, t]);
 
   // OTP resend countdown timer
   useEffect(() => {
@@ -481,7 +541,7 @@ export default function TransferLandingPage() {
         () => setOtpResendCountdown(otpResendCountdown - 1),
         1000,
       );
-    } else if (otpResendCountdown === 0 && emailSubmitted) {
+    } else if (otpResendCountdown === 0 && (emailSubmitted || phoneSubmitted)) {
       setCanResendOtp(true);
     }
     return () => clearTimeout(timer);
@@ -972,6 +1032,140 @@ export default function TransferLandingPage() {
       const response = await authApi.requestOTP({ email: customerEmail });
 
       if (response.error) {
+        toast.error(response.error.message || t("error"));
+      } else {
+        toast.success(t("otpResent"));
+        setCanResendOtp(false);
+        setOtpResendCountdown(30);
+      }
+    } catch {
+      toast.error(t("error"));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle phone number submission — sends OTP via WhatsApp
+  const handlePhoneConfirm = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!recipientPhone || !transfer || !isRecipientPhoneValid) return;
+
+    setIsLoading(true);
+    setError("");
+
+    try {
+      // Check if phone is authorized to access this transfer (server-side)
+      const accessResponse = await storageApi.verifyRecipientAccess(
+        transfer.shortCode,
+        undefined,
+        recipientPhone,
+      );
+      if (!accessResponse.data?.authorized) {
+        setError(t("unauthorized"));
+        setIsLoading(false);
+        return;
+      }
+
+      // Request OTP via WhatsApp using recipient-specific endpoint
+      const response = await authApi.requestRecipientOtp({
+        shortCode: transfer.shortCode,
+        phone: recipientPhone,
+      });
+
+      if (response.error) {
+        // Backend returns 502 + { error: 'WHATSAPP_UNAVAILABLE' } when delivery fails
+        if (
+          response.error.error === "WHATSAPP_UNAVAILABLE" ||
+          response.error.statusCode === 502
+        ) {
+          setError(t("whatsappUnavailable"));
+        } else {
+          toast.error(response.error.message || t("error"));
+        }
+        setIsLoading(false);
+        return;
+      }
+
+      if (response.data) {
+        setOtpExpiresIn(response.data.expiresIn || 600);
+        setCanResendOtp(false);
+        setOtpResendCountdown(30);
+        setPhoneSubmitted(true);
+      }
+    } catch {
+      toast.error(t("error"));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle OTP verification for phone (WhatsApp) path
+  const handlePhoneOtpVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!otpValue || !recipientPhone) return;
+
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const response = await authApi.verifyRecipientOtp({
+        identifier: recipientPhone,
+        otp: otpValue,
+        shortCode: shortCode,
+      });
+
+      if (response.error) {
+        setError(response.error.message || t("invalidOtp"));
+        setIsLoading(false);
+        return;
+      }
+
+      // NOTE: logRecipientAccess is skipped for WhatsApp recipients because the
+      // backend endpoint only accepts email format. Phone-recipient preview
+      // analytics are a known limitation tracked for a future story.
+
+      // For password-protected transfers, go to password state
+      if (transfer?.accessControl === "password") {
+        setPageState("password");
+      } else {
+        setPageState("ready");
+        if (transfer) {
+          // Do NOT set recipientEmail to the phone number — the drawer store's
+          // recipientEmail is passed to preview/notification backends that expect
+          // an email. Leaving it null anonymizes the phone path for now.
+          setRecipientEmail(null);
+          openDrawerToView(
+            "transfers",
+            "transfer-preview",
+            transfer,
+            "receiver",
+          );
+        }
+      }
+    } catch {
+      setError(t("invalidOtp"));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle resend OTP for phone path
+  const handlePhoneResendOtp = async () => {
+    if (!canResendOtp || !recipientPhone || !transfer) return;
+
+    setIsLoading(true);
+    try {
+      const response = await authApi.requestRecipientOtp({
+        shortCode: transfer.shortCode,
+        phone: recipientPhone,
+      });
+
+      if (
+        response.error?.error === "WHATSAPP_UNAVAILABLE" ||
+        response.error?.statusCode === 502
+      ) {
+        toast.error(t("whatsappUnavailable"));
+      } else if (response.error) {
         toast.error(response.error.message || t("error"));
       } else {
         toast.success(t("otpResent"));
@@ -2177,46 +2371,53 @@ export default function TransferLandingPage() {
                     currentStep={gateCurrentStep}
                   />
                 )}
-                {/* Icon — transitions from envelope to lock */}
+                {/* Icon — transitions from input to lock on OTP submit */}
                 <div className="flex flex-col items-center mb-6 relative h-16 w-16">
                   <div
-                    key="envelope"
+                    key="input-icon"
                     className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ${
-                      emailSubmitted
+                      identifierSubmitted
                         ? "opacity-0 scale-75"
                         : "opacity-100 scale-100"
                     }`}
                   >
-                    <svg
-                      width="64"
-                      height="64"
-                      viewBox="0 0 64 64"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="text-gray-300 dark:text-[oklch(0.40_0_0)]"
-                    >
-                      <rect
-                        x="8"
-                        y="16"
-                        width="48"
-                        height="32"
-                        rx="4"
-                        stroke="currentColor"
-                        strokeWidth="3"
+                    {effectiveAuthMode === "phone" ? (
+                      <SmartphoneDevice
+                        className="w-12 h-12 text-gray-300 dark:text-[oklch(0.40_0_0)]"
+                        strokeWidth={1.5}
                       />
-                      <path
-                        d="M8 20L32 36L56 20"
-                        stroke="currentColor"
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
+                    ) : (
+                      <svg
+                        width="64"
+                        height="64"
+                        viewBox="0 0 64 64"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="text-gray-300 dark:text-[oklch(0.40_0_0)]"
+                      >
+                        <rect
+                          x="8"
+                          y="16"
+                          width="48"
+                          height="32"
+                          rx="4"
+                          stroke="currentColor"
+                          strokeWidth="3"
+                        />
+                        <path
+                          d="M8 20L32 36L56 20"
+                          stroke="currentColor"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    )}
                   </div>
                   <div
                     key="lock"
                     className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ${
-                      emailSubmitted
+                      identifierSubmitted
                         ? "opacity-100 scale-100"
                         : "opacity-0 scale-75"
                     }`}
@@ -2228,177 +2429,309 @@ export default function TransferLandingPage() {
                   </div>
                 </div>
 
-                {/* Title — transitions on email submit */}
+                {/* Title — transitions based on auth mode and submit state */}
                 <h1 className="text-xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] text-center mb-2 transition-all duration-300">
-                  {emailSubmitted ? t("verifyEmail") : t("enterEmailToAccess")}
+                  {identifierSubmitted
+                    ? t("verifyCode")
+                    : effectiveAuthMode === "phone"
+                      ? t("enterPhoneNumber")
+                      : t("enterEmailToAccess")}
                 </h1>
                 <p className="text-sm text-gray-500 dark:text-[oklch(0.65_0_0)] text-center mb-1 transition-all duration-300">
-                  {emailSubmitted ? (
+                  {identifierSubmitted ? (
                     <>
-                      {t("otpSentTo")}{" "}
+                      {effectiveAuthMode === "phone" ? t("otpSentToWhatsApp") : t("otpSentTo")}{" "}
                       <span className="font-medium text-[#171717] dark:text-[oklch(0.91_0_0)]">
-                        {customerEmail}
+                        {effectiveAuthMode === "phone" ? recipientPhone : customerEmail}
                       </span>
                     </>
+                  ) : effectiveAuthMode === "phone" ? (
+                    t("verifyWithWhatsApp")
                   ) : (
                     t("emailRequiredForAccess")
                   )}
                 </p>
-                {emailSubmitted && (
+                {identifierSubmitted && effectiveAuthMode === "email" && (
                   <p className="text-xs text-gray-400 dark:text-[oklch(0.50_0_0)] text-center mb-1">
                     {t("checkSpamFolder")}
                   </p>
                 )}
 
                 {/* Spacer */}
-                <div className={emailSubmitted ? "mb-4" : "mb-5"} />
+                <div className={identifierSubmitted ? "mb-4" : "mb-5"} />
 
-                {/* Email field — read-only after submit */}
-                <div className="mb-4">
-                  <div className="relative">
-                    <input
-                      type="email"
-                      value={customerEmail}
-                      onChange={(e) =>
-                        !emailSubmitted && setCustomerEmail(e.target.value)
-                      }
-                      placeholder={t("yourEmail")}
-                      className={`w-full px-4 py-3 border rounded text-sm focus:outline-none transition-all duration-300 ${
-                        emailSubmitted
-                          ? "border-[#87E64B] bg-[#87E64B]/5 text-[#171717] dark:text-[oklch(0.91_0_0)] cursor-default"
-                          : "border-gray-200 dark:border-[oklch(0.30_0_0)] text-[#171717] dark:text-[oklch(0.91_0_0)] dark:bg-[oklch(0.22_0_0)] placeholder:text-gray-400 dark:placeholder:text-[oklch(0.45_0_0)] focus:ring-2 focus:ring-[#171717] dark:focus:ring-[#5E53E0] focus:border-transparent"
+                {/* Auth mode toggle — only when transfer has both email and WhatsApp recipients */}
+                {isMixedMode && !identifierSubmitted && (
+                  <div
+                    role="tablist"
+                    aria-label={t("tabListLabel")}
+                    aria-orientation="horizontal"
+                    onKeyDown={handleAuthTabKeyDown}
+                    className="flex justify-center gap-1 mb-5 p-1 bg-gray-100 dark:bg-[oklch(0.22_0_0)] rounded"
+                  >
+                    <button
+                      ref={emailTabRef}
+                      type="button"
+                      role="tab"
+                      aria-selected={authMode === "email"}
+                      tabIndex={authMode === "email" ? 0 : -1}
+                      onClick={() => { setAuthMode("email"); setError(""); }}
+                      className={`flex-1 py-2 text-sm font-medium rounded transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#171717] dark:focus-visible:ring-[#5E53E0] ${
+                        authMode === "email"
+                          ? "bg-white dark:bg-[oklch(0.28_0_0)] text-[#171717] dark:text-[oklch(0.91_0_0)] shadow-sm"
+                          : "text-gray-500 dark:text-[oklch(0.55_0_0)]"
                       }`}
-                      readOnly={emailSubmitted}
-                      required
-                      autoFocus={!emailSubmitted}
-                    />
-                    {emailSubmitted && (
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                        <svg
-                          width="20"
-                          height="20"
-                          viewBox="0 0 20 20"
-                          fill="none"
-                        >
-                          <path
-                            d="M4 10.5L8 14.5L16 6.5"
-                            stroke="#87E64B"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                      </div>
-                    )}
+                    >
+                      {t("emailTab")}
+                    </button>
+                    <button
+                      ref={whatsappTabRef}
+                      type="button"
+                      role="tab"
+                      aria-selected={authMode === "phone"}
+                      tabIndex={authMode === "phone" ? 0 : -1}
+                      onClick={() => { setAuthMode("phone"); setError(""); }}
+                      className={`flex-1 py-2 text-sm font-medium rounded transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#171717] dark:focus-visible:ring-[#5E53E0] ${
+                        authMode === "phone"
+                          ? "bg-white dark:bg-[oklch(0.28_0_0)] text-[#171717] dark:text-[oklch(0.91_0_0)] shadow-sm"
+                          : "text-gray-500 dark:text-[oklch(0.55_0_0)]"
+                      }`}
+                    >
+                      {t("whatsappTab")}
+                    </button>
                   </div>
-                  {emailSubmitted && (
-                    <button
-                      onClick={() => {
-                        setEmailSubmitted(false);
-                        setOtpValue("");
-                        setError("");
-                      }}
-                      className="text-xs text-[#171717] dark:text-[oklch(0.91_0_0)] underline font-medium mt-1.5"
-                    >
-                      {t("changeEmail")}
-                    </button>
-                  )}
-                  {!emailSubmitted && error && (
-                    <p className="text-sm text-red-500 dark:text-red-400 mt-2">{error}</p>
-                  )}
-                </div>
-
-                {/* Continue button — hidden after email submitted */}
-                {!emailSubmitted && (
-                  <form onSubmit={handleEmailConfirm}>
-                    <button
-                      type="submit"
-                      disabled={isLoading || !customerEmail.trim()}
-                      className="w-full px-6 py-3.5 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isLoading ? t("loading") : t("continue")}
-                    </button>
-                  </form>
                 )}
 
-                {/* OTP section — slides in after email confirmed */}
-                <div
-                  aria-live="polite"
-                  className={`transition-all duration-300 ease-out overflow-hidden ${
-                    emailSubmitted
-                      ? "max-h-[400px] opacity-100"
-                      : "max-h-0 opacity-0"
-                  }`}
-                >
-                  <form onSubmit={handleOtpVerify}>
+                {/* ========== EMAIL MODE ========== */}
+                {hasEmailRecipients && effectiveAuthMode === "email" && (
+                  <>
+                    {/* Email field — read-only after submit */}
                     <div className="mb-4">
-                      <input
-                        ref={otpInputRef}
-                        type="text"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        value={otpValue.length <= 3 ? otpValue : `${otpValue.slice(0, 3)} ${otpValue.slice(3)}`}
-                        onChange={(e) => {
-                          const value = e.target.value.replace(/\D/g, "").replace(/\s/g, "");
-                          if (value.length <= 6) setOtpValue(value);
-                        }}
-                        placeholder="000 000"
-                        className={`w-full text-center font-bold bg-transparent outline-none ${otpValue ? "text-[#171717] dark:text-[oklch(0.91_0_0)]" : "text-[#D1D5DB] dark:text-[oklch(0.45_0_0)]"}`}
-                        style={{
-                          fontSize: "32px",
-                          letterSpacing: "0.3em",
-                          border: "none",
-                          padding: "16px 0",
-                        }}
-                        maxLength={7}
-                        required
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" && otpValue.length === 6 && !isLoading) {
-                            e.preventDefault();
-                            handleOtpVerify(e as unknown as React.FormEvent);
+                      <div className="relative">
+                        <input
+                          type="email"
+                          value={customerEmail}
+                          onChange={(e) =>
+                            !emailSubmitted && setCustomerEmail(e.target.value)
                           }
-                        }}
-                      />
-                      {emailSubmitted && error && (
-                        <p className="text-sm text-red-500 dark:text-red-400 mt-2 text-center">
-                          {error}
-                        </p>
+                          placeholder={t("yourEmail")}
+                          className={`w-full px-4 py-3 border rounded text-sm focus:outline-none transition-all duration-300 ${
+                            emailSubmitted
+                              ? "border-[#87E64B] bg-[#87E64B]/5 text-[#171717] dark:text-[oklch(0.91_0_0)] cursor-default"
+                              : "border-gray-200 dark:border-[oklch(0.30_0_0)] text-[#171717] dark:text-[oklch(0.91_0_0)] dark:bg-[oklch(0.22_0_0)] placeholder:text-gray-400 dark:placeholder:text-[oklch(0.45_0_0)] focus:ring-2 focus:ring-[#171717] dark:focus:ring-[#5E53E0] focus:border-transparent"
+                          }`}
+                          readOnly={emailSubmitted}
+                          required
+                          autoFocus={!emailSubmitted}
+                        />
+                        {emailSubmitted && (
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                              <path d="M4 10.5L8 14.5L16 6.5" stroke="#87E64B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          </div>
+                        )}
+                      </div>
+                      {emailSubmitted && (
+                        <button
+                          onClick={() => { setEmailSubmitted(false); setOtpValue(""); setError(""); }}
+                          className="text-xs text-[#171717] dark:text-[oklch(0.91_0_0)] underline font-medium mt-1.5"
+                        >
+                          {t("changeEmail")}
+                        </button>
+                      )}
+                      {!emailSubmitted && error && (
+                        <p className="text-sm text-red-500 dark:text-red-400 mt-2">{error}</p>
                       )}
                     </div>
 
-                    <button
-                      type="submit"
-                      disabled={isLoading || otpValue.length !== 6}
-                      className="w-full px-6 py-3.5 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isLoading ? t("loading") : t("verifyAndContinue")}
-                    </button>
-                  </form>
-
-                  {/* Resend OTP */}
-                  <div className="text-center mt-4">
-                    {canResendOtp ? (
-                      <button
-                        onClick={handleResendOtp}
-                        disabled={isLoading}
-                        className="text-sm text-[#171717] dark:text-[oklch(0.91_0_0)] underline font-medium disabled:opacity-50"
-                      >
-                        {t("resendOtp")}
-                      </button>
-                    ) : (
-                      <p className="text-sm text-gray-400 dark:text-[oklch(0.50_0_0)]">
-                        {t("resendOtpCountdown", {
-                          seconds: otpResendCountdown,
-                        })}
-                      </p>
+                    {/* Continue button — hidden after email submitted */}
+                    {!emailSubmitted && (
+                      <form onSubmit={handleEmailConfirm}>
+                        <button
+                          type="submit"
+                          disabled={isLoading || !customerEmail.trim()}
+                          className="w-full px-6 py-3.5 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {isLoading ? t("loading") : t("continue")}
+                        </button>
+                      </form>
                     )}
-                  </div>
-                </div>
+
+                    {/* OTP section — slides in after email confirmed */}
+                    <div
+                      aria-live="polite"
+                      className={`transition-all duration-300 ease-out overflow-hidden ${
+                        emailSubmitted ? "max-h-[400px] opacity-100" : "max-h-0 opacity-0"
+                      }`}
+                    >
+                      <form onSubmit={handleOtpVerify}>
+                        <div className="mb-4">
+                          <input
+                            ref={otpInputRef}
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            value={otpValue.length <= 3 ? otpValue : `${otpValue.slice(0, 3)} ${otpValue.slice(3)}`}
+                            onChange={(e) => {
+                              const value = e.target.value.replace(/\D/g, "").replace(/\s/g, "");
+                              if (value.length <= 6) setOtpValue(value);
+                            }}
+                            placeholder="000 000"
+                            className={`w-full text-center font-bold bg-transparent outline-none ${otpValue ? "text-[#171717] dark:text-[oklch(0.91_0_0)]" : "text-[#D1D5DB] dark:text-[oklch(0.45_0_0)]"}`}
+                            style={{ fontSize: "32px", letterSpacing: "0.3em", border: "none", padding: "16px 0" }}
+                            maxLength={7}
+                            required
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && otpValue.length === 6 && !isLoading) {
+                                e.preventDefault();
+                                handleOtpVerify(e as unknown as React.FormEvent);
+                              }
+                            }}
+                          />
+                          {emailSubmitted && error && (
+                            <p className="text-sm text-red-500 dark:text-red-400 mt-2 text-center">{error}</p>
+                          )}
+                        </div>
+                        <button
+                          type="submit"
+                          disabled={isLoading || otpValue.length !== 6}
+                          className="w-full px-6 py-3.5 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {isLoading ? t("loading") : t("verifyAndContinue")}
+                        </button>
+                      </form>
+                      <div className="text-center mt-4">
+                        {canResendOtp ? (
+                          <button onClick={handleResendOtp} disabled={isLoading} className="text-sm text-[#171717] dark:text-[oklch(0.91_0_0)] underline font-medium disabled:opacity-50">
+                            {t("resendOtp")}
+                          </button>
+                        ) : (
+                          <p className="text-sm text-gray-400 dark:text-[oklch(0.50_0_0)]">
+                            {t("resendOtpCountdown", { seconds: otpResendCountdown })}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* ========== PHONE (WHATSAPP) MODE ========== */}
+                {hasWhatsAppRecipients && effectiveAuthMode === "phone" && (
+                  <>
+                    {/* Phone input — read-only after submit */}
+                    <div className="mb-4">
+                      {!phoneSubmitted ? (
+                        <PhoneNumberInput
+                          value={recipientPhone}
+                          onChange={(phone, valid) => {
+                            setRecipientPhone(phone);
+                            setIsRecipientPhoneValid(valid);
+                          }}
+                          defaultCountry="CI"
+                          error={error || undefined}
+                        />
+                      ) : (
+                        <div className="relative">
+                          <input
+                            type="text"
+                            value={recipientPhone}
+                            readOnly
+                            className="w-full px-4 py-3 border border-[#87E64B] bg-[#87E64B]/5 rounded text-sm text-[#171717] dark:text-[oklch(0.91_0_0)] cursor-default"
+                          />
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                              <path d="M4 10.5L8 14.5L16 6.5" stroke="#87E64B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          </div>
+                        </div>
+                      )}
+                      {phoneSubmitted && (
+                        <button
+                          onClick={() => { setPhoneSubmitted(false); setOtpValue(""); setError(""); }}
+                          className="text-xs text-[#171717] dark:text-[oklch(0.91_0_0)] underline font-medium mt-1.5"
+                        >
+                          {t("changeNumber")}
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Continue button — hidden after phone submitted */}
+                    {!phoneSubmitted && (
+                      <form onSubmit={handlePhoneConfirm}>
+                        <button
+                          type="submit"
+                          disabled={isLoading || !isRecipientPhoneValid}
+                          className="w-full px-6 py-3.5 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {isLoading ? t("loading") : t("continue")}
+                        </button>
+                      </form>
+                    )}
+
+                    {/* OTP section — slides in after phone confirmed */}
+                    <div
+                      aria-live="polite"
+                      className={`transition-all duration-300 ease-out overflow-hidden ${
+                        phoneSubmitted ? "max-h-[400px] opacity-100" : "max-h-0 opacity-0"
+                      }`}
+                    >
+                      <form onSubmit={handlePhoneOtpVerify}>
+                        <div className="mb-4">
+                          <input
+                            ref={otpInputRef}
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            value={otpValue.length <= 3 ? otpValue : `${otpValue.slice(0, 3)} ${otpValue.slice(3)}`}
+                            onChange={(e) => {
+                              const value = e.target.value.replace(/\D/g, "").replace(/\s/g, "");
+                              if (value.length <= 6) setOtpValue(value);
+                            }}
+                            placeholder="000 000"
+                            className={`w-full text-center font-bold bg-transparent outline-none ${otpValue ? "text-[#171717] dark:text-[oklch(0.91_0_0)]" : "text-[#D1D5DB] dark:text-[oklch(0.45_0_0)]"}`}
+                            style={{ fontSize: "32px", letterSpacing: "0.3em", border: "none", padding: "16px 0" }}
+                            maxLength={7}
+                            required
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && otpValue.length === 6 && !isLoading) {
+                                e.preventDefault();
+                                handlePhoneOtpVerify(e as unknown as React.FormEvent);
+                              }
+                            }}
+                          />
+                          {phoneSubmitted && error && (
+                            <p className="text-sm text-red-500 dark:text-red-400 mt-2 text-center">{error}</p>
+                          )}
+                        </div>
+                        <button
+                          type="submit"
+                          disabled={isLoading || otpValue.length !== 6}
+                          className="w-full px-6 py-3.5 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {isLoading ? t("loading") : t("verifyAndContinue")}
+                        </button>
+                      </form>
+                      <div className="text-center mt-4">
+                        {canResendOtp ? (
+                          <button onClick={handlePhoneResendOtp} disabled={isLoading} className="text-sm text-[#171717] dark:text-[oklch(0.91_0_0)] underline font-medium disabled:opacity-50">
+                            {t("resendOtp")}
+                          </button>
+                        ) : (
+                          <p className="text-sm text-gray-400 dark:text-[oklch(0.50_0_0)]">
+                            {t("resendOtpCountdown", { seconds: otpResendCountdown })}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
 
                 {/* Back Link */}
                 <button
                   onClick={() => {
                     setEmailSubmitted(false);
+                    setPhoneSubmitted(false);
                     setOtpValue("");
                     setError("");
                     setPageState("ready");

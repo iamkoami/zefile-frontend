@@ -404,6 +404,14 @@
     "recipientsCount": "{count}/{max} recipients",
     "helperText": "Press Enter, comma, or space to add"
   },
+  "multiRecipient": {
+    "placeholder": "Enter email addresses or phone numbers",
+    "invalidEmailFormat": "That doesn't look like a valid email",
+    "invalidPhoneFormat": "Use international format (e.g. +22507000000)",
+    "maxRecipientsReached": "Maximum of {max} recipients reached",
+    "recipientsCount": "{count}/{max} recipients",
+    "helperText": "Press Enter, comma, or space to add — emails or phone numbers"
+  },
   "filePreview": {
     "element": "item",
     "elements": "items",
@@ -557,7 +565,17 @@
     "downloadedTitle": "Your files are downloading",
     "downloadedSubtitle": "Want to send files like this?",
     "downloadedCtaButton": "Start free on ZeFile",
-    "backToTransfer": "Back to transfer"
+    "backToTransfer": "Back to transfer",
+    "enterPhoneNumber": "Enter your phone number",
+    "verifyWithWhatsApp": "We'll send a code to your WhatsApp.",
+    "otpSentToWhatsApp": "We sent a code via WhatsApp to",
+    "whatsappUnavailable": "We couldn't reach this number on WhatsApp. Ask the sender for an alternative.",
+    "changeNumber": "Change number",
+    "emailTab": "Email",
+    "whatsappTab": "WhatsApp",
+    "stepPhone": "Phone",
+    "tabListLabel": "Choose verification method",
+    "verifyCode": "Enter your code"
   },
   "creatorStrip": {
     "viewProfile": "View profile"

@@ -10,6 +10,7 @@ export { default as UploadProgressPanel } from './UploadProgressPanel';
 export { default as OTPVerification } from './OTPVerification';
 export { default as CancelConfirmationPanel } from './CancelConfirmationPanel';
 export { default as MultiEmailInput } from './MultiEmailInput';
+export { default as MultiRecipientInput } from './MultiRecipientInput';
 export { default as GlobalDragDropOverlay } from './GlobalDragDropOverlay';
 export { default as CelebrationModal } from './CelebrationModal';
 export { default as PaperPlaneAnimation } from '@/components/shared/PaperPlaneAnimation';

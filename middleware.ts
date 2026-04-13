@@ -1,6 +1,57 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+// --- Platform status gate (server-side, zero-flash) ---
+
+interface PlatformStatusData {
+  maintenance: boolean;
+  maintenanceMessage?: string;
+  maintenanceEstimate?: string;
+  maintenanceAllowDownloads?: boolean;
+  waitlist: boolean;
+  darkModeEnabled: boolean;
+}
+
+let statusCache: { data: PlatformStatusData; timestamp: number } | null = null;
+const STATUS_CACHE_TTL = 30_000; // 30 seconds
+
+/**
+ * Fetch platform status from backend API with in-memory edge cache.
+ * Fails open (returns null) if API is unreachable — normal page is served.
+ */
+async function fetchPlatformStatus(): Promise<PlatformStatusData | null> {
+  if (statusCache && Date.now() - statusCache.timestamp < STATUS_CACHE_TTL) {
+    return statusCache.data;
+  }
+
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  if (!apiUrl) return null;
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+    const res = await fetch(`${apiUrl}/platform-settings/status`, {
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+
+    if (!res.ok) return statusCache?.data ?? null;
+    const data: PlatformStatusData = await res.json();
+    statusCache = { data, timestamp: Date.now() };
+    return data;
+  } catch {
+    return statusCache?.data ?? null;
+  }
+}
+
+/** Paths that are real app routes (not creator profile handles) */
+const KNOWN_APP_ROUTES = [
+  '/downloads', '/deliver', '/about', '/pricing', '/contact-us', '/fr',
+  '/blog', '/help', '/how-it-works', '/jobs', '/payment', '/presentation',
+  '/press', '/privacy', '/r', '/review', '/security', '/terms', '/test-page',
+  '/maintenance', '/waitlist',
+];
+
 /**
  * Generate a random nonce for CSP using Web Crypto API (edge-compatible).
  */
@@ -80,8 +131,85 @@ function parseAcceptLanguage(header: string | null): 'en' | 'fr' {
  * 2. Content-Security-Policy with per-request nonce
  * 3. SEO headers (Vary, Content-Language) for i18n content negotiation
  */
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // --- Platform status gate (server-side, prevents home page flash) ---
+  // Normalize pathname: strip /fr/ prefix for route matching
+  const normalizedPath = pathname.startsWith('/fr/')
+    ? pathname.slice(3)
+    : pathname === '/fr' ? '/' : pathname;
+
+  const isGateRoute = normalizedPath === '/maintenance' || normalizedPath === '/waitlist';
+
+  // Skip status check for static files (have extension like .ico, .png, .js)
+  const isStaticFile = pathname.includes('.') && !pathname.startsWith('/fr/');
+
+  if (!isStaticFile) {
+    const status = await fetchPlatformStatus();
+
+    if (status) {
+      const isDownloadPage = normalizedPath.startsWith('/downloads');
+      const isProfilePage =
+        normalizedPath.startsWith('/@') ||
+        (/^\/[a-zA-Z0-9_-]+$/.test(normalizedPath) &&
+          !KNOWN_APP_ROUTES.some(r => normalizedPath === r || normalizedPath.startsWith(r + '/')));
+
+      // Determine gate target: maintenance takes priority over waitlist
+      let gateTarget: string | null = null;
+
+      if (status.maintenance && !isGateRoute) {
+        const downloadExempt = isDownloadPage && status.maintenanceAllowDownloads;
+        if (!downloadExempt && !isProfilePage) {
+          gateTarget = '/maintenance';
+        }
+      }
+
+      if (!gateTarget && status.waitlist && !isGateRoute) {
+        gateTarget = '/waitlist';
+      }
+
+      if (gateTarget) {
+        const nonce = generateNonce();
+        const csp = buildCsp(nonce);
+        const url = request.nextUrl.clone();
+        url.pathname = gateTarget;
+
+        const requestHeaders = new Headers(request.headers);
+        requestHeaders.set('x-nonce', nonce);
+
+        if (gateTarget === '/maintenance') {
+          if (status.maintenanceMessage) requestHeaders.set('x-maintenance-message', status.maintenanceMessage);
+          if (status.maintenanceEstimate) requestHeaders.set('x-maintenance-estimate', status.maintenanceEstimate);
+        }
+
+        const response = NextResponse.rewrite(url, { request: { headers: requestHeaders } });
+        response.headers.set('Content-Security-Policy', csp);
+        response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+        response.headers.set('X-Content-Type-Options', 'nosniff');
+        response.headers.set('X-Frame-Options', 'DENY');
+        response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+        response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+        response.headers.set('Cache-Control', 'no-store');
+        response.headers.delete('X-Powered-By');
+
+        // Preserve French locale for /fr paths
+        if (pathname.startsWith('/fr')) {
+          response.cookies.set('NEXT_LOCALE', 'fr', { path: '/', maxAge: 365 * 24 * 60 * 60, sameSite: 'lax' });
+        }
+
+        return response;
+      }
+
+      // Redirect away from gate pages when not active
+      if (normalizedPath === '/maintenance' && !status.maintenance) {
+        return NextResponse.redirect(new URL('/', request.url));
+      }
+      if (normalizedPath === '/waitlist' && !status.waitlist) {
+        return NextResponse.redirect(new URL('/', request.url));
+      }
+    }
+  }
 
   // Handle /fr prefix — French locale URLs for SEO indexability.
   // Rewrites /fr/* to /* but injects NEXT_LOCALE=fr into the request

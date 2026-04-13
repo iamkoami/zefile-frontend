@@ -4,10 +4,12 @@
  */
 
 import { apiClient, ApiResponse } from './api-client';
+import type { TransferRecipient } from '@/types/recipient';
 
 export interface CreateTransferDto {
   senderId: string;
   recipientEmails: string[]; // Always passed; empty array when isPublicSales is true
+  recipients?: TransferRecipient[]; // Unified recipients (email + whatsapp) — Epic 124
   title: string; // Required by backend
   price?: number;
   currency?: string;
@@ -108,6 +110,8 @@ export interface TransferDto {
     location: string | null;
     profilePictureUrl: string | null;
   } | null;
+  // Unique recipient channel types (e.g., ['email'], ['whatsapp'], or ['email', 'whatsapp'])
+  recipientTypes?: ('email' | 'whatsapp')[];
   // Public sales mode — transfer is available for purchase by anyone
   isPublicSales?: boolean;
   // Sales analytics (populated for public sales transfers viewed by sender)
@@ -163,6 +167,7 @@ export interface ReuseTransferDto {
   senderId?: string; // For sender (unpaid transfers)
   receiverEmail?: string; // For receiver (paid transfers)
   recipientEmails: string[];
+  recipients?: TransferRecipient[]; // Unified recipients — Epic 124
   title?: string;
   message?: string;
   isPublicSales?: boolean;
@@ -428,6 +433,10 @@ export class TransferApi {
     formData.append('senderId', data.senderId);
     // Send recipientEmails as JSON string for FormData
     formData.append('recipientEmails', JSON.stringify(data.recipientEmails));
+    // Epic 124 dual-write: send unified recipients alongside legacy recipientEmails
+    if (data.recipients) {
+      formData.append('recipients', JSON.stringify(data.recipients));
+    }
     // Title is required by backend - ensure it's always present
     formData.append('title', data.title || 'Untitled Transfer');
     if (data.price) formData.append('price', data.price.toString());

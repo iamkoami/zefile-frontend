@@ -17,10 +17,9 @@ export default function PlatformStatusGate({ children }: { children: React.React
   const pathname = usePathname();
   const { status, loading } = usePlatformStatus();
 
-  // While fetching status, render children so normal mode has zero delay.
-  // The lazy initializer in usePlatformStatus reads sessionStorage synchronously,
-  // so if maintenance/waitlist was cached, `status` is already set on first frame
-  // and we skip straight to the maintenance/waitlist page below — no flash.
+  // Server-side middleware now handles the initial gate (no flash on first load).
+  // This client-side gate is a secondary defense for SPA navigation
+  // and handles auto-recovery polling during maintenance.
   if (loading || !status) return <>{children}</>;
 
   const isDownloadPage = pathname?.startsWith("/downloads");
@@ -30,6 +29,7 @@ export default function PlatformStatusGate({ children }: { children: React.React
     "/downloads", "/deliver", "/about", "/pricing", "/contact-us", "/fr",
     "/blog", "/help", "/how-it-works", "/jobs", "/payment", "/presentation",
     "/press", "/privacy", "/r", "/review", "/security", "/terms", "/test-page",
+    "/maintenance", "/waitlist",
   ];
   const isProfilePage =
     pathname !== null &&

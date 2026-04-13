@@ -21,7 +21,8 @@ import OTPVerification from "./OTPVerification";
 import UploadProgressPanel from "./UploadProgressPanel";
 import CancelConfirmationPanel from "./CancelConfirmationPanel";
 import TransferCompletePanel from "@/features/transfer/components/TransferCompletePanel";
-import MultiEmailInput from "./MultiEmailInput";
+import MultiRecipientInput from "./MultiRecipientInput";
+import type { TransferRecipient } from "@/types/recipient";
 import { transferApi, TransferDto } from "@/services/transfer-api";
 import { authApi } from "@/services/auth-api";
 import { apiClient } from "@/services/api-client";
@@ -140,7 +141,12 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
   const { getToken, isEnabled: turnstileEnabled, turnstileRef, siteKey, onSuccess, onError, onExpire } = useTurnstile();
 
   const [isDragging, setIsDragging] = useState(false);
-  const [recipientEmails, setRecipientEmails] = useState<string[]>([]); // Changed from sendTo
+  const [recipients, setRecipients] = useState<TransferRecipient[]>([]);
+  // Derived email-only list for backend backward-compat and legacy UI checks
+  const recipientEmails = useMemo(
+    () => recipients.filter((r) => r.type === "email").map((r) => r.value),
+    [recipients],
+  );
   const [email, setEmail] = useState("");
   const [title, setTitle] = useState("");
   const [currency, setCurrency] = useState("XOF"); // Local currency for this transfer
@@ -471,7 +477,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
     } else if (
       selectedFiles.length === 0 &&
       panelState === "form" &&
-      recipientEmails.length === 0 &&
+      recipients.length === 0 &&
       !reuseTransferData &&
       !isPublicSales
     ) {
@@ -481,7 +487,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
   }, [
     selectedFiles.length,
     panelState,
-    recipientEmails.length,
+    recipients.length,
     reuseTransferData,
     isPublicSales,
   ]);
@@ -505,8 +511,12 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
       ) {
         return;
       }
-      if (!recipientEmails.includes(recipientEmail)) {
-        setRecipientEmails((prev) => [...prev, recipientEmail]);
+      const normalized = recipientEmail.toLowerCase();
+      const alreadyPresent = recipients.some(
+        (r) => r.type === "email" && r.value.toLowerCase() === normalized,
+      );
+      if (!alreadyPresent) {
+        setRecipients((prev) => [...prev, { type: "email", value: normalized }]);
       }
       // Show the form when adding a recipient
       if (panelState === "initial" || panelState === "complete") {
@@ -525,7 +535,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
         handleAddRecipient as EventListener,
       );
     };
-  }, [recipientEmails, panelState]);
+  }, [recipients, panelState]);
 
   // Transition to form when reuseTransferData is set from parent
   useEffect(() => {
@@ -718,7 +728,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
   const validateForm = (): boolean => {
     const errors: { [key: string]: string } = {};
 
-    if (!isPublicSales && recipientEmails.length === 0) {
+    if (!isPublicSales && recipients.length === 0) {
       errors.recipientEmails = t("sendToRequired");
     }
 
@@ -771,6 +781,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
         {
           senderId: userId,
           recipientEmails: isPublicSales ? [] : recipientEmails,
+          recipients: isPublicSales ? [] : recipients,
           title: transferTitle,
           message: message || undefined,
           isPublicSales: isPublicSales ? true : undefined,
@@ -969,6 +980,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
       const transferResponse = await transferApi.createTransfer({
         senderId: userId,
         recipientEmails: isPublicSales ? [] : recipientEmails,
+        recipients: isPublicSales ? [] : recipients,
         title: transferTitle,
         price: isFreeTransfer ? 0 : parsePriceToNumber(price),
         currency: currency,
@@ -1427,7 +1439,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
 
   const resetForm = () => {
     setPanelState("initial");
-    setRecipientEmails([]);
+    setRecipients([]);
     setEmail("");
     setTitle("");
     setPrice("");
@@ -1747,11 +1759,11 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
               {/* Recipient Emails — hidden when public sales is on */}
               {!isPublicSales && (
                 <div>
-                  <MultiEmailInput
-                    emails={recipientEmails}
-                    onEmailsChange={setRecipientEmails}
+                  <MultiRecipientInput
+                    recipients={recipients}
+                    onRecipientsChange={setRecipients}
                     placeholder={t("sendTo")}
-                    maxEmails={10}
+                    maxRecipients={10}
                     error={formErrors.recipientEmails}
                   />
                 </div>

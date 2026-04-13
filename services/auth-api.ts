@@ -176,6 +176,41 @@ export class AuthApi {
       return null;
     }
   }
+
+  // ========================================================================
+  // Recipient OTP (download page — no user account needed)
+  // ========================================================================
+
+  /**
+   * Request OTP for recipient to access a transfer.
+   * Sends OTP via email or WhatsApp depending on which field is provided.
+   */
+  async requestRecipientOtp(data: {
+    shortCode: string;
+    email?: string;
+    phone?: string;
+  }): Promise<
+    ApiResponse<{
+      success: boolean;
+      expiresIn?: number;
+      cooldown?: number;
+      error?: string;
+    }>
+  > {
+    return apiClient.post('/transfers/recipient/request-otp', data);
+  }
+
+  /**
+   * Verify OTP for recipient to access a transfer.
+   * identifier can be an email address or E.164 phone number.
+   */
+  async verifyRecipientOtp(data: {
+    identifier: string;
+    otp: string;
+    shortCode: string;
+  }): Promise<ApiResponse<{ verified: boolean; expiresIn: number }>> {
+    return apiClient.post('/transfers/recipient/verify-otp', data);
+  }
 }
 
 // Export singleton instance

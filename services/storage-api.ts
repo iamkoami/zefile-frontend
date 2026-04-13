@@ -508,11 +508,13 @@ export class StorageApi {
    */
   async verifyRecipientAccess(
     shortCode: string,
-    email: string
+    email?: string,
+    phone?: string,
   ): Promise<ApiResponse<{ authorized: boolean }>> {
     return apiClient.post<{ authorized: boolean }>('/storage/verify-recipient-access', {
       shortCode,
-      email,
+      ...(email ? { email } : {}),
+      ...(phone ? { phone } : {}),
     });
   }
   /**

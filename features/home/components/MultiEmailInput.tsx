@@ -1,5 +1,14 @@
 'use client';
 
+/**
+ * @deprecated Use `MultiRecipientInput` instead. Kept for backward compatibility
+ * during the Epic 124 unified-recipients migration. Will be removed once all
+ * callers are migrated.
+ *
+ * Migration: `<MultiEmailInput emails={x} onEmailsChange={setX} />` →
+ * `<MultiRecipientInput recipients={y} onRecipientsChange={setY} />` where
+ * `y: TransferRecipient[]`.
+ */
 import React, { useState, useRef, useEffect, useCallback, KeyboardEvent } from 'react';
 import { Xmark, Plus } from 'iconoir-react';
 import { useTranslations } from 'next-intl';
