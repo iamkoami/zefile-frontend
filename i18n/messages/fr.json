@@ -235,12 +235,6 @@
     "publicSalesToggle": "Mettre en vente",
     "publicSalesDescription": "Un seul lien — n'importe qui peut voir, payer et télécharger.",
     "publicSalesHint": "Fixez votre prix ci-dessous. Partagez le lien où se trouve votre audience.",
-    "whatsappPromptTitle": "Ajoutez le WhatsApp de {name} pour le notifier directement lors de vos prochains envois.",
-    "whatsappPromptSave": "Enregistrer",
-    "whatsappPromptSkip": "Passer",
-    "whatsappPromptSaving": "En cours...",
-    "whatsappPromptSaved": "Numéro enregistré",
-    "whatsappPromptSkipped": "Ignoré",
     "errors": {
       "transferCreateFailed": "On n'a pas pu créer le transfert. Réessayons.",
       "otpSendFailed": "On n'a pas pu envoyer le code. Réessayons.",
