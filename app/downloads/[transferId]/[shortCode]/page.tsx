@@ -726,10 +726,21 @@ export default function TransferLandingPage() {
     };
   }, [transfer, t]);
 
-  // Log link access when page loads successfully
+  // Log link access when page loads successfully (skip if sender is viewing their own transfer)
   useEffect(() => {
     const logAccess = async () => {
       if (!shortCode || !transfer || accessLogged) return;
+
+      // Don't count the sender's own views
+      const user = authApi.getStoredUser();
+      if (
+        user?.id &&
+        typeof transfer.senderId === "object" &&
+        transfer.senderId?.id === user.id
+      ) {
+        setAccessLogged(true);
+        return;
+      }
 
       // Generate session ID if not provided
       const sessionId =
