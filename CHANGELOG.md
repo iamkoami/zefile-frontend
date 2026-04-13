@@ -5,6 +5,22 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.49.0] - 2026-04-13
+
+### Added
+
+- Multi-recipient download page with WhatsApp + email auth routing (Epic 124)
+- MultiRecipientInput component for mixed email/phone recipient entry
+- Waitlist page for pre-launch signups
+- Maintenance page for scheduled downtime
+- Recipient OTP and WhatsApp verify methods in auth-api
+- Public transfer info endpoint for recipient type detection
+
+### Changed
+
+- Middleware extended with new route matchers for waitlist/maintenance
+- PlatformStatusGate supports waitlist and maintenance modes
+
 ## [1.48.1] - 2026-04-09
 
 ### Fixed
