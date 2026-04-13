@@ -147,6 +147,10 @@ const PhoneAuthForm: React.FC<PhoneAuthFormProps> = ({
     setError('');
 
     try {
+      // Get Turnstile token and inject via header
+      const token = await getToken();
+      setCaptchaToken(token);
+
       // verifyOTP uses the user's email (returned from requestOTP)
       const response = await authApi.verifyOTP({ email: userEmail, otp: otpCode });
 

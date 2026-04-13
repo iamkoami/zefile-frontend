@@ -138,6 +138,10 @@ const EmailAuthForm: React.FC<EmailAuthFormProps> = ({ onSuccess, termsAccepted,
     setError('');
 
     try {
+      // Get Turnstile token and inject via header
+      const token = await getToken();
+      setCaptchaToken(token);
+
       const response = await authApi.verifyOTP({ email, otp: otpCode });
 
       if (response.error) {
