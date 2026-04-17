@@ -23,9 +23,12 @@ export interface ReferralHistoryItem {
 
 export interface ReferralHistoryResponse {
   data: ReferralHistoryItem[];
-  total: number;
-  page: number;
-  limit: number;
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
 }
 
 export interface ReferralMyCode {

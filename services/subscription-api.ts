@@ -127,11 +127,13 @@ export interface RenewalAttemptDto {
 }
 
 export interface PaginatedRenewalHistory {
-  items: RenewalAttemptDto[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
+  data: RenewalAttemptDto[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
 }
 
 // ============================================

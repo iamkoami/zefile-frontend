@@ -101,10 +101,12 @@ export interface SenderPayoutsResponse {
  */
 interface BackendWithdrawalResponse {
   withdrawals: PayoutDto[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
 }
 
 /**
@@ -142,10 +144,10 @@ class PayoutsApi {
         ...response,
         data: {
           payouts: response.data.withdrawals,
-          total: response.data.total,
-          page: response.data.page,
-          limit: response.data.limit,
-          totalPages: response.data.totalPages,
+          total: response.data.meta.total,
+          page: response.data.meta.page,
+          limit: response.data.meta.limit,
+          totalPages: response.data.meta.totalPages,
         },
       };
     }
