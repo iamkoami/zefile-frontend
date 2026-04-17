@@ -5,6 +5,21 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.51.0] - 2026-04-17
+
+### Changed
+
+- **BREAKING: Consume `{ data, meta }` pagination shape from backend `zefile-backend@1.52.0` (Epic 131 Story 131.8).** All paginated API reads now access `response.data.meta.{total, page, limit, totalPages}` instead of the flat `response.data.{total, page, limit, totalPages}`. Consumers of `items:` arrays migrated to `data:` where the backend renamed the field.
+  - `services/blog-api.ts` — `BlogListResponseDto` now `{ data, meta }` with `items:` renamed to `data:`.
+  - `services/payouts-api.ts` — internal `BackendWithdrawalResponse` type aligned; legacy `SenderPayoutsResponse` shape preserved for UI compatibility.
+  - `services/referrals-api.ts` — `ReferralHistoryResponse` aligned.
+  - `services/subscription-api.ts` — `PaginatedRenewalHistory` `items:` renamed to `data:`.
+  - UI consumers: `app/blog/page.tsx`, `components/blog/BlogListClient.tsx`, `components/blog/BlogPostClient.tsx`, `features/account/components/ReferralsPanel.tsx`, `features/account/components/SubscriptionSettingsPanel.tsx`.
+
+### Migration notes
+
+- Must be deployed alongside `zefile-backend@1.52.0` and `zefile-admin@1.23.0`. Backward-incompatible with backend <1.52.0 — the new read paths produce `undefined` against the old response shape.
+
 ## [1.50.0] - 2026-04-17
 
 ### Added
