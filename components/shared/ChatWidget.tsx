@@ -19,7 +19,8 @@ import {
 } from "iconoir-react";
 import { useChatStore, ChatContext } from "@/stores/chat-store";
 import { authApi } from "@/services/auth-api";
-import { ConversationCategory, SupportMessage } from "@/services/support-api";
+import { supportApi, ConversationCategory, SupportMessage } from "@/services/support-api";
+import { toast } from "@/components/shared/Toast";
 
 // ─── Types ─────────────────────────────────────────────────────
 
@@ -449,48 +450,57 @@ function LeaveConversationPrompt({
 
 function SatisfactionRating({
   onRate,
+  onNotYet,
   onNewConversation,
+  feedbackSubmitted,
+  feedbackLoading,
 }: {
   onRate: (rating: "up" | "down") => void;
+  onNotYet: () => void;
   onNewConversation: () => void;
+  feedbackSubmitted: boolean;
+  feedbackLoading: boolean;
 }) {
   const t = useTranslations("support");
-  const [rated, setRated] = useState(false);
-
-  const handleRate = (rating: "up" | "down") => {
-    setRated(true);
-    onRate(rating);
-  };
 
   return (
     <div className="text-center py-4 space-y-3">
-      <p className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500">{t("resolved")}</p>
+      <p className="text-xs text-gray-500 dark:text-gray-400">{t("resolved")}</p>
 
-      {!rated ? (
+      {!feedbackSubmitted ? (
         <div className="space-y-2">
           <p className="text-sm font-medium text-[#171717] dark:text-gray-200">
-            {t("rateExperience")}
+            {t("feedbackPrompt")}
           </p>
           <div className="flex items-center justify-center gap-4">
             <button
-              onClick={() => handleRate("up")}
-              className="p-2.5 rounded-full border border-gray-200 dark:border-gray-600 hover:border-[#87E64B] hover:bg-[#87E64B]/10 transition-all"
+              onClick={() => onRate("up")}
+              disabled={feedbackLoading}
+              className="p-2.5 rounded-full border border-gray-200 dark:border-gray-600 hover:border-[#87E64B] hover:bg-[#87E64B]/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               title="Good"
             >
-              <ThumbsUp className="w-5 h-5 text-gray-500 dark:text-gray-400 dark:text-gray-500 hover:text-[#87E64B]" />
+              <ThumbsUp className="w-5 h-5 text-gray-500 dark:text-gray-400 hover:text-[#87E64B]" />
             </button>
             <button
-              onClick={() => handleRate("down")}
-              className="p-2.5 rounded-full border border-gray-200 dark:border-gray-600 hover:border-red-400 hover:bg-red-50 transition-all"
+              onClick={() => onRate("down")}
+              disabled={feedbackLoading}
+              className="p-2.5 rounded-full border border-gray-200 dark:border-gray-600 hover:border-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               title="Could be better"
             >
-              <ThumbsDown className="w-5 h-5 text-gray-500 dark:text-gray-400 dark:text-gray-500 hover:text-red-400" />
+              <ThumbsDown className="w-5 h-5 text-gray-500 dark:text-gray-400 hover:text-red-400" />
             </button>
           </div>
+          <button
+            onClick={onNotYet}
+            disabled={feedbackLoading}
+            className="text-xs text-[#5E53E0] font-medium hover:underline transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {t("feedbackNotYet")}
+          </button>
         </div>
       ) : (
         <p className="text-sm text-[#87E64B] font-medium">
-          {t("ratedThanks")}
+          {t("feedbackThanks")}
         </p>
       )}
 
@@ -575,6 +585,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ context: contextProp }) => {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [needsEmail, setNeedsEmail] = useState(false);
   const [showLeavePrompt, setShowLeavePrompt] = useState(false);
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
   const [messageFeedback, setMessageFeedback] = useState<
     Record<string, "up" | "down">
   >({});
@@ -589,6 +600,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ context: contextProp }) => {
     isEscalated,
     isAiHandled,
     isResolved,
+    feedbackSubmitted,
     visitorEmail,
     context,
     toggleChat,
@@ -601,6 +613,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ context: contextProp }) => {
     escalateConversation,
     setVisitorEmail,
     setContext,
+    setFeedbackSubmitted,
     initFromStorage,
   } = useChatStore();
 
@@ -715,12 +728,45 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ context: contextProp }) => {
   );
 
   const handleSatisfactionRate = useCallback(
-    (_rating: "up" | "down") => {
-      // Future: send to backend analytics
-      // For now, just visual feedback
+    async (rating: "up" | "down") => {
+      if (!conversationId) return;
+      setFeedbackLoading(true);
+      const verdict = rating === "up" ? "helpful" : "not_helpful";
+      const token = useChatStore.getState().accessToken;
+      const response = await supportApi.submitFeedback(conversationId, verdict, token);
+      setFeedbackLoading(false);
+      if (response.error) {
+        if (response.status === 409) {
+          setFeedbackSubmitted(true);
+          return;
+        }
+        toast.error(t("feedbackError"));
+        return;
+      }
+      setFeedbackSubmitted(true);
     },
-    [],
+    [conversationId, t, setFeedbackSubmitted],
   );
+
+  const handleNotYet = useCallback(async () => {
+    if (!conversationId) return;
+    setFeedbackLoading(true);
+    const token = useChatStore.getState().accessToken;
+    const response = await supportApi.submitFeedback(conversationId, "reopen", token);
+    setFeedbackLoading(false);
+    if (response.error) {
+      if (response.status === 409) {
+        // Feedback already recorded -- still reopen the conversation locally
+        useChatStore.getState().setIsResolved(false);
+        useChatStore.getState().loadConversation();
+        return;
+      }
+      toast.error(t("feedbackError"));
+      return;
+    }
+    useChatStore.getState().setIsResolved(false);
+    useChatStore.getState().loadConversation();
+  }, [conversationId, t]);
 
   // Get the email to show in the escalation notice
   const userEmail = visitorEmail || authApi.getStoredUser()?.email;
@@ -797,7 +843,10 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ context: contextProp }) => {
                 {isResolved && (
                   <SatisfactionRating
                     onRate={handleSatisfactionRate}
+                    onNotYet={handleNotYet}
                     onNewConversation={handleNewConversation}
+                    feedbackSubmitted={feedbackSubmitted}
+                    feedbackLoading={feedbackLoading}
                   />
                 )}
                 <div ref={messagesEndRef} />

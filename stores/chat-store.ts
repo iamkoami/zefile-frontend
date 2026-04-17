@@ -27,6 +27,7 @@ export interface ChatContext {
 interface ChatState {
   isOpen: boolean;
   conversationId: string | null;
+  accessToken: string | null;
   messages: SupportMessage[];
   isLoading: boolean;
   unreadCount: number;
@@ -34,6 +35,7 @@ interface ChatState {
   isEscalated: boolean;
   isAiHandled: boolean;
   isResolved: boolean;
+  feedbackSubmitted: boolean;
   conversationStatus: ConversationStatus | null;
   visitorEmail: string | null;
   context: ChatContext | undefined;
@@ -54,12 +56,15 @@ interface ChatState {
   escalateConversation: () => Promise<void>;
   setVisitorEmail: (email: string) => void;
   setContext: (ctx: ChatContext | undefined) => void;
+  setIsResolved: (value: boolean) => void;
+  setFeedbackSubmitted: (value: boolean) => void;
   initFromStorage: () => void;
 }
 
 export const useChatStore = create<ChatState>((set, get) => ({
   isOpen: false,
   conversationId: null,
+  accessToken: null,
   messages: [],
   isLoading: false,
   unreadCount: 0,
@@ -67,6 +72,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   isEscalated: false,
   isAiHandled: true,
   isResolved: false,
+  feedbackSubmitted: false,
   conversationStatus: null,
   visitorEmail: null,
   context: undefined,
@@ -183,12 +189,16 @@ export const useChatStore = create<ChatState>((set, get) => ({
         } catch {
           // localStorage full or unavailable
         }
+        const isResolvedOrClosed = active.status === 'resolved' || active.status === 'closed';
+        const hasFeedback = !!(active.metadata as Record<string, unknown>)?.feedbackVerdict;
         set({
           conversationId: active.id,
+          accessToken: active.accessToken || null,
           messages: active.messages || [],
           isEscalated: active.status === 'waiting_on_agent',
           isAiHandled: active.isAiHandled,
-          isResolved: active.status === 'resolved' || active.status === 'closed',
+          isResolved: isResolvedOrClosed,
+          feedbackSubmitted: isResolvedOrClosed && hasFeedback,
           conversationStatus: active.status,
           isLoading: false,
         });
@@ -221,7 +231,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       }
 
       if (response.data) {
-        const { id, messages } = response.data;
+        const { id, messages, accessToken: token } = response.data;
         try {
           localStorage.setItem(CONVERSATION_ID_KEY, id);
         } catch {
@@ -229,6 +239,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         }
         set({
           conversationId: id,
+          accessToken: token || null,
           messages,
           isLoading: false,
         });
@@ -285,12 +296,16 @@ export const useChatStore = create<ChatState>((set, get) => ({
             ? get().unreadCount + (newMessageCount - prevMessageCount)
             : get().unreadCount;
 
+        const isResolvedOrClosed = status === 'resolved' || status === 'closed';
+        const hasFeedback = !!(response.data.metadata as Record<string, unknown>)?.feedbackVerdict;
         set({
           messages: response.data.messages,
+          accessToken: response.data.accessToken || get().accessToken,
           conversationStatus: status,
           isEscalated: status === 'waiting_on_agent',
           isAiHandled: response.data.isAiHandled,
-          isResolved: status === 'resolved' || status === 'closed',
+          isResolved: isResolvedOrClosed,
+          feedbackSubmitted: isResolvedOrClosed && hasFeedback,
           isLoading: false,
           unreadCount: newUnread,
         });
@@ -335,12 +350,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
     set({
       conversationId: null,
+      accessToken: null,
       messages: [],
       unreadCount: 0,
       error: null,
       isEscalated: false,
       isAiHandled: true,
       isResolved: false,
+      feedbackSubmitted: false,
       conversationStatus: null,
     });
   },
@@ -369,5 +386,16 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   setContext: (ctx: ChatContext | undefined) => {
     set({ context: ctx });
+  },
+
+  setIsResolved: (value: boolean) => {
+    set({
+      isResolved: value,
+      ...(value ? {} : { feedbackSubmitted: false }),
+    });
+  },
+
+  setFeedbackSubmitted: (value: boolean) => {
+    set({ feedbackSubmitted: value });
   },
 }));
