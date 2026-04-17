@@ -5,6 +5,22 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.50.0] - 2026-04-17
+
+### Added
+
+- **Story 130.3 — End-of-conversation feedback prompt (Chat Widget)**
+  - When a support conversation transitions to `resolved` or `closed`, the widget now asks "Did we solve your issue?" with thumbs-up / thumbs-down / "Not yet" actions.
+  - Feedback posts to the backend `POST /support/conversations/:id/feedback` endpoint, forwarding the visitor's `accessToken` for unauthenticated sessions.
+  - Result persists: on next conversation load, if the backend has recorded a `feedbackVerdict` on the conversation metadata, the widget shows "Thanks. We'll keep getting smarter." instead of re-prompting.
+  - "Not yet" re-opens the conversation (reopen verdict) and clears the resolved state so the visitor can keep chatting.
+- `supportApi.submitFeedback(conversationId, verdict, accessToken?)` service helper.
+- `chatStore` now tracks `accessToken` and `feedbackSubmitted`, plus `setIsResolved` / `setFeedbackSubmitted` actions.
+
+### Fixed
+
+- File remove (X) button in `FilePreviewPanel` now has a visible icon color in dark mode (previously rendered as a near-invisible `currentColor` on a dim background).
+
 ## [1.49.2] - 2026-04-13
 
 ### Fixed
