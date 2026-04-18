@@ -5,6 +5,12 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.52.2] - 2026-04-18
+
+### Fixed
+
+- **Upload-flow OTP verify now sends a fresh Turnstile token.** `UploadPanel.handleOTPVerify` was calling `authApi.verifyOTP` without requesting a new captcha token first. Since Turnstile tokens are single-use, the one issued for `requestOTP` had already been consumed, and on environments with `CAPTCHA_REQUIRED=true` (staging/production) the backend rejected `/auth/verify-otp` with `400 "CAPTCHA verification required"`. Matches the existing pattern in `EmailAuthForm.tsx:142` and `PhoneAuthForm.tsx:151`.
+
 ## [1.52.1] - 2026-04-18
 
 ### Fixed
