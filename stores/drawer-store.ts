@@ -197,6 +197,137 @@ interface DrawerState {
   openPollView: (pollId: string) => void;
 }
 
+/**
+ * Serialized drawer shape stashed before a Paystack redirect (Story 132-4b, AC 5).
+ * Keeps only JSON-safe primitives — drops File/Blob, tokens, handlers, and full
+ * transfer objects (we store the id only; the drawer refetches on hydrate).
+ */
+export interface SerializedDrawerState {
+  version: 1;
+  isOpen: boolean;
+  view: DrawerView;
+  currentContentView: DrawerContentView;
+  activeAccountMenu: AccountMenuItem;
+  navigationStack: Array<{
+    view?: DrawerView;
+    contentView: DrawerContentView;
+    transferId?: string;
+    role?: TransferRole;
+    previousTab?: 'sent' | 'received' | 'paid';
+    fileRequestId?: string;
+    fileRequestRole?: 'client' | 'creative';
+  }>;
+  selectedTransferId: string | null;
+  selectedFileRequestId: string | null;
+  selectedFileRequestRole: 'client' | 'creative' | null;
+  transferRole: TransferRole | null;
+  payload: {
+    transferId?: string;
+    contactId?: string;
+    preSelectedTab?: 'sent' | 'received' | 'paid';
+    subscriptionCheckout?: SubscriptionCheckoutData;
+    pollId?: string;
+  } | null;
+}
+
+const SERIALIZED_DRAWER_VERSION = 1 as const;
+
+/**
+ * sessionStorage key used to stash/restore serialized drawer state across a
+ * Paystack checkout redirect (Story 132-4b, AC 5). Exported so consumers
+ * (PaymentIssueBar, /payment/processing) share one literal string — keeping the
+ * handshake from silently breaking if one site changes the key.
+ */
+export const DRAWER_REDIRECT_STATE_KEY = 'paystack-redirect-drawer-state';
+
+function isSerializedDrawerState(value: unknown): value is SerializedDrawerState {
+  if (!value || typeof value !== 'object') return false;
+  const candidate = value as Partial<SerializedDrawerState>;
+  return (
+    candidate.version === SERIALIZED_DRAWER_VERSION &&
+    typeof candidate.isOpen === 'boolean' &&
+    typeof candidate.view === 'string' &&
+    typeof candidate.currentContentView === 'string' &&
+    Array.isArray(candidate.navigationStack)
+  );
+}
+
+/**
+ * Snapshot the current drawer state into a JSON-safe payload. Only primitive
+ * identifiers are kept — consumers refetch the full transfer/file request data
+ * after hydration.
+ */
+export function serializeDrawerForRedirect(): SerializedDrawerState {
+  const state = useDrawerStore.getState();
+
+  // Strip sensitive payload fields (tokens, OTP codes, file objects, handlers).
+  const safePayload: SerializedDrawerState['payload'] = state.payload
+    ? {
+        transferId: state.payload.transferId,
+        contactId: state.payload.contactId,
+        preSelectedTab: state.payload.preSelectedTab,
+        subscriptionCheckout: state.payload.subscriptionCheckout,
+        pollId: state.payload.pollId,
+      }
+    : null;
+
+  return {
+    version: SERIALIZED_DRAWER_VERSION,
+    isOpen: state.isOpen,
+    view: state.view,
+    currentContentView: state.currentContentView,
+    activeAccountMenu: state.activeAccountMenu,
+    navigationStack: state.navigationStack.map((entry) => ({
+      view: entry.view,
+      contentView: entry.contentView,
+      transferId: entry.transfer?.id,
+      role: entry.role,
+      previousTab: entry.previousTab,
+      fileRequestId: entry.fileRequest?.id,
+      fileRequestRole: entry.fileRequest?._role,
+    })),
+    selectedTransferId: state.selectedTransfer?.id ?? null,
+    selectedFileRequestId: state.selectedFileRequest?.id ?? null,
+    selectedFileRequestRole: state.selectedFileRequest?._role ?? null,
+    transferRole: state.transferRole,
+    payload: safePayload,
+  };
+}
+
+/**
+ * Restore a serialized drawer state. Selected transfer/file-request are set to
+ * null — panels that need them will refetch using the ids preserved in the
+ * navigation stack / payload. Malformed payloads are ignored.
+ */
+export function hydrateDrawerFromRedirect(serialized: unknown): boolean {
+  if (!isSerializedDrawerState(serialized)) return false;
+
+  useDrawerStore.setState({
+    isOpen: serialized.isOpen,
+    view: serialized.view,
+    currentContentView: serialized.currentContentView,
+    activeAccountMenu: serialized.activeAccountMenu,
+    navigationStack: serialized.navigationStack.map((entry) => ({
+      view: entry.view,
+      contentView: entry.contentView,
+      role: entry.role,
+      previousTab: entry.previousTab,
+      // transfer/fileRequest objects are reconstructed lazily by the receiving panels.
+      transfer: undefined,
+      fileRequest: undefined,
+    })),
+    selectedTransfer: null,
+    selectedFileRequest: null,
+    transferRole: serialized.transferRole,
+    payload: serialized.payload,
+    passwordSessionToken: null,
+    recipientEmail: null,
+    onBeforeBack: null,
+  });
+
+  return true;
+}
+
 export const useDrawerStore = create<DrawerState>((set, get) => ({
   isOpen: false,
   view: 'transfers',

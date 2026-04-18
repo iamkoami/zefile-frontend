@@ -7,6 +7,24 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import Lottie from 'lottie-react';
 import { useTranslations } from 'next-intl';
 import paymentAnimation from '@/public/lotties/payment_zefile.json';
+import {
+  hydrateDrawerFromRedirect,
+  DRAWER_REDIRECT_STATE_KEY,
+} from '@/stores';
+
+function hydrateStashedDrawerIfAny(): void {
+  if (typeof window === 'undefined') return;
+  const raw = window.sessionStorage.getItem(DRAWER_REDIRECT_STATE_KEY);
+  if (!raw) return;
+  // Idempotent: clear immediately so a back-button re-hit doesn't replay.
+  window.sessionStorage.removeItem(DRAWER_REDIRECT_STATE_KEY);
+  try {
+    const parsed = JSON.parse(raw);
+    hydrateDrawerFromRedirect(parsed);
+  } catch {
+    // Malformed payload — key already cleared above; nothing else to do.
+  }
+}
 
 export default function PaymentProcessingPage() {
   const searchParams = useSearchParams();
@@ -30,6 +48,10 @@ export default function PaymentProcessingPage() {
 
         const data = await response.json();
 
+        // Restore any drawer state stashed before the Paystack redirect
+        // (Story 132-4b, AC 5) once the payment reaches a terminal state.
+        hydrateStashedDrawerIfAny();
+
         if (data.success && data.data.status === 'success') {
           // Payment successful, redirect to success page
           router.push(`/payment/success?reference=${reference}`);
@@ -39,6 +61,8 @@ export default function PaymentProcessingPage() {
         }
       } catch (error) {
         console.error('Payment verification failed:', error);
+        // Even on verification error, restore drawer state so the user isn't lost.
+        hydrateStashedDrawerIfAny();
         // On error, redirect to failure page
         router.push(`/payment/failed?reference=${reference}`);
       }

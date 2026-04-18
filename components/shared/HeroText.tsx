@@ -84,14 +84,14 @@ const HeroText: React.FC<HeroTextProps> = ({
 
       {/* Subtitle */}
       <div
-        className={`text-lg xl:text-lg font-bold leading-relaxed ${colors.subtitle}`}
+        className={`text-lg xl:text-lg font-bold leading-relaxed max-w-2xl ${colors.subtitle}`}
         style={{
           animation: "fadeIn 0.8s ease-out 0.8s both",
           transition: "color 1.5s ease-in-out",
         }}
       >
         <p>{t("subtitle")}</p>
-        <p>{t("subtitle2")}</p>
+        {t("subtitle2") && <p>{t("subtitle2")}</p>}
       </div>
 
       {/* Get Started CTA - for unauthenticated users (matches header CTA) */}

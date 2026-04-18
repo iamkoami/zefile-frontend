@@ -36,6 +36,9 @@ import FilePreviewView from "./FilePreviewView";
 import LoadingPanel from "@/components/LoadingPanel";
 import VerifiedBadge from "@/components/shared/VerifiedBadge";
 import ReportIssueButton from "@/components/shared/ReportIssueButton";
+import PreviewPlaceholder, {
+  type PreviewPlaceholderStatus,
+} from "@/components/shared/PreviewPlaceholder";
 import { useCurrencyStore } from "@/stores/currency-store";
 import {
   convertCurrency,
@@ -73,12 +76,15 @@ const ThumbnailCell = ({
   icon,
   alt,
   generating,
+  previewStatus,
 }: {
   url: string | null;
   icon: React.ReactNode;
   alt: string;
   /** Show shimmer even when url is null (preview is being generated) */
   generating?: boolean;
+  /** Preview generation status from backend. Drives placeholder state when no url yet. */
+  previewStatus?: PreviewPlaceholderStatus | "ready";
 }) => {
   const [imgStatus, setImgStatus] = useState<"loading" | "loaded" | "error">(
     url ? "loading" : "error",
@@ -88,6 +94,12 @@ const ThumbnailCell = ({
   useEffect(() => {
     setImgStatus(url ? "loading" : "error");
   }, [url]);
+
+  // If we have no URL and the backend says preview is still being generated / failed / skipped,
+  // render the unified placeholder so the user gets clear copy instead of a silent icon.
+  if (!url && previewStatus && previewStatus !== "ready") {
+    return <PreviewPlaceholder status={previewStatus} aspect="square" />;
+  }
 
   // Shimmer when: image is loading OR preview is being generated (no url yet)
   const showShimmer = imgStatus === "loading" || (generating && !url);
@@ -225,36 +237,89 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
     return transfer?.isPaid === true;
   }, [requiresPayment, transfer?.isPaid]);
 
-  // Auto-refresh transfer data when any previewable file is missing its thumbnail
-  // This handles the case where the user opens preview immediately after upload
+  // Auto-refresh transfer data when any previewable file is still generating.
+  // Visibility-aware polling (Story 132.2) — matches usePreviewStatus cadence
+  // so grid and lightbox converge on the same state. Polls once per interval
+  // to refresh every file in a single request (cheaper than per-file polls).
   useEffect(() => {
     if (!transfer?.id || !transfer?.files?.length) return;
-    if (refreshAttempts.current >= 5) return;
 
-    // Check if any previewable file is still missing its thumbnail
-    const anyMissingThumbnail = transfer.files.some((f) => {
-      const mime = (f.mimeType || f.fileType || "").toLowerCase();
-      const isPreviewable =
-        mime.startsWith("image/") || mime.startsWith("video/");
-      return isPreviewable && !f.thumbnailUrl;
-    });
+    const POLL_INTERVAL_MS = 8_000;
+    const MAX_ATTEMPTS = 22; // ≈ 3 min
 
-    if (!anyMissingThumbnail) return;
+    const hasPending = () =>
+      (transfer.files || []).some((f) => {
+        const mime = (f.mimeType || f.fileType || "").toLowerCase();
+        const isPreviewable =
+          mime.startsWith("image/") || mime.startsWith("video/");
+        // Pending by status OR legacy rows without status but missing a thumbnail
+        const status = (f as { previewStatus?: string }).previewStatus;
+        if (status) return isPreviewable && status === "pending";
+        return isPreviewable && !f.thumbnailUrl;
+      });
 
-    const timer = setTimeout(async () => {
+    if (!hasPending()) return;
+
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    const tick = async () => {
+      if (cancelled) return;
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") {
+        timer = setTimeout(tick, POLL_INTERVAL_MS);
+        return;
+      }
+      if (refreshAttempts.current >= MAX_ATTEMPTS) return;
+
+      refreshAttempts.current += 1;
       try {
         const response = await transferApi.getTransferById(transfer.id);
+        if (cancelled) return;
         if (response.data) {
-          refreshAttempts.current += 1;
-          fetchedFileIdsRef.current.clear(); // Allow re-fetch with updated file data
+          fetchedFileIdsRef.current.clear();
           setLiveTransfer(response.data);
+          // Stop as soon as everything resolves (next render's hasPending() will be false)
+          const stillPending = (response.data.files || []).some((f) => {
+            const mime = (f.mimeType || f.fileType || "").toLowerCase();
+            const isPreviewable =
+              mime.startsWith("image/") || mime.startsWith("video/");
+            const status = (f as { previewStatus?: string }).previewStatus;
+            if (status) return isPreviewable && status === "pending";
+            return isPreviewable && !f.thumbnailUrl;
+          });
+          if (!stillPending) return;
         }
       } catch {
-        // Silently fail — placeholders shown while waiting for preview generation
+        // Silently fail — placeholder keeps showing while we retry
       }
-    }, 5000); // 5s delay to allow preview generation
+      if (!cancelled && refreshAttempts.current < MAX_ATTEMPTS) {
+        timer = setTimeout(tick, POLL_INTERVAL_MS);
+      }
+    };
 
-    return () => clearTimeout(timer);
+    timer = setTimeout(tick, POLL_INTERVAL_MS);
+
+    const onVisibility = () => {
+      if (typeof document === "undefined") return;
+      if (document.visibilityState === "visible" && !cancelled) {
+        if (timer) {
+          clearTimeout(timer);
+          timer = null;
+        }
+        void tick();
+      }
+    };
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", onVisibility);
+    }
+
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", onVisibility);
+      }
+    };
   }, [transfer?.id, transfer?.files]);
 
   // Show loading panel if transfer data is not available
@@ -1112,6 +1177,12 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
                 generating={
                   file.fileType === "image" || file.fileType === "video"
                 }
+                previewStatus={
+                  (file as Record<string, unknown>).previewStatus as
+                    | PreviewPlaceholderStatus
+                    | "ready"
+                    | undefined
+                }
               />
 
               {/* Video play indicator */}
@@ -1189,19 +1260,26 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
             {(() => {
               const previewUrl = getLightboxUrl(currentLightboxFile);
 
-              // No watermarked preview available - show placeholder
+              // No watermarked preview available - show placeholder with live-updating status
               if (!previewUrl) {
+                const rawStatus = (
+                  currentLightboxFile as Record<string, unknown>
+                ).previewStatus as
+                  | PreviewPlaceholderStatus
+                  | "ready"
+                  | undefined;
+                const placeholderStatus: PreviewPlaceholderStatus =
+                  rawStatus && rawStatus !== "ready" ? rawStatus : "pending";
                 return (
-                  <div className="flex flex-col items-center justify-center text-white/70">
-                    {currentLightboxFile.fileType === "video" ? (
-                      <VideoCamera className="w-24 h-24 mb-4" />
-                    ) : (
-                      <MediaImage className="w-24 h-24 mb-4" />
-                    )}
-                    <p className="text-lg">{t("previewNotReady")}</p>
-                    <p className="text-sm mt-2 text-white/50">
-                      {t("previewGenerating")}
-                    </p>
+                  <div className="w-[min(90vw,960px)] max-w-full">
+                    <PreviewPlaceholder
+                      status={placeholderStatus}
+                      aspect={
+                        currentLightboxFile.fileType === "video"
+                          ? "video"
+                          : "square"
+                      }
+                    />
                   </div>
                 );
               }

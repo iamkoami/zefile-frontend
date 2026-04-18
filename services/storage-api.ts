@@ -436,6 +436,22 @@ export class StorageApi {
    * Falls back to original file URL for PDFs or files without previews
    * When requestOriginal is true and transfer is paid/free, returns original file URL
    */
+  /**
+   * Poll async preview generation status. Lightweight — no side effects.
+   * Used by usePreviewStatus hook; cheap enough to hit every 8 s.
+   * Story 132.2.
+   */
+  async getFilePreviewStatus(
+    shortCode: string,
+    fileId: string,
+    options?: { password?: string; sessionToken?: string }
+  ): Promise<ApiResponse<{ previewStatus: 'pending' | 'ready' | 'failed' | 'skipped' }>> {
+    return apiClient.post<{ previewStatus: 'pending' | 'ready' | 'failed' | 'skipped' }>(
+      '/storage/preview/status',
+      { shortCode, fileId, password: options?.password, sessionToken: options?.sessionToken }
+    );
+  }
+
   async getFilePreviewUrl(
     shortCode: string,
     fileId: string,
@@ -448,6 +464,7 @@ export class StorageApi {
     expiresAt: string;
     isWatermarked?: boolean;
     previewType?: 'thumbnail' | 'previewClip' | 'waveform' | 'original';
+    previewStatus?: 'pending' | 'ready' | 'failed' | 'skipped';
   }>> {
     return apiClient.post<{
       url: string;
@@ -457,6 +474,7 @@ export class StorageApi {
       expiresAt: string;
       isWatermarked?: boolean;
       previewType?: 'thumbnail' | 'previewClip' | 'waveform' | 'original';
+      previewStatus?: 'pending' | 'ready' | 'failed' | 'skipped';
     }>(
       '/storage/preview/url',
       { shortCode, fileId, password: options?.password, sessionToken: options?.sessionToken, requestOriginal: options?.requestOriginal, email: options?.email }
