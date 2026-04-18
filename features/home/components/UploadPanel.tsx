@@ -884,6 +884,12 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
 
   const handleOTPVerify = async (code: string) => {
     try {
+      // Fresh Turnstile token for verify-otp — tokens are single-use, so the one
+      // from requestOTP was already consumed. Backend @RequireCaptcha() on
+      // /auth/verify-otp rejects with 400 "CAPTCHA verification required" otherwise.
+      const captchaToken = await getToken();
+      setCaptchaToken(captchaToken);
+
       // Verify OTP to authenticate user and get senderId
       const authResponse = await authApi.verifyOTP({
         email: email,

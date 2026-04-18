@@ -67,6 +67,13 @@ import { SaleCheckoutPanel } from "@/features/payment/components/SaleCheckoutPan
 import { useDrawerStore } from "@/stores/drawer-store";
 import FloatingPollWidget from "@/components/shared/FloatingPollWidget";
 import CreatorStrip from "@/features/transfer/components/CreatorStrip";
+import PasswordHelpPanel from "@/features/transfer/components/PasswordHelpPanel";
+import DownloadRecoveryCard, {
+  classifyDownloadFailure,
+  type DownloadFailureScenario,
+  type DownloadRecoveryErrorContext,
+} from "@/features/transfer/components/DownloadRecoveryCard";
+import PerFileDownloadList from "@/features/transfer/components/PerFileDownloadList";
 import { usePollEligibility } from "@/hooks/usePollEligibility";
 import { useChatStore } from "@/stores/chat-store";
 import { Turnstile } from '@marsidev/react-turnstile';
@@ -75,6 +82,8 @@ import { setCaptchaToken } from "@/services/api-client";
 import {
   trackPaymentPageViewed,
   trackPaymentPageAbandoned,
+  trackEvent,
+  AnalyticsEventType,
 } from "@/lib/posthog";
 
 // Helper to extract sender email from senderId
@@ -242,6 +251,17 @@ export default function TransferLandingPage() {
   const [passwordSessionToken, setPasswordSessionToken] = useState<
     string | null
   >(null);
+  // Story 132.1 — "Forgot the password?" inline help panel
+  const [passwordFailedAttempts, setPasswordFailedAttempts] = useState(0);
+  const [isPasswordHelpOpen, setIsPasswordHelpOpen] = useState(false);
+
+  // Story 132.3 — Download failed recovery card
+  const [downloadRecovery, setDownloadRecovery] = useState<{
+    scenario: DownloadFailureScenario;
+    attempts: number; // consecutive failures (1 = first failure)
+    errorContext: DownloadRecoveryErrorContext;
+  } | null>(null);
+  const [isFallbackMode, setIsFallbackMode] = useState(false);
 
   // Payment form
   const isLoggedIn = !!getCurrentUserEmail();
@@ -878,6 +898,8 @@ export default function TransferLandingPage() {
         setPasswordSessionToken(token);
         setRecipientEmail(customerEmail || null);
         setPassword(""); // Clear plaintext password from memory
+        setPasswordFailedAttempts(0);
+        setIsPasswordHelpOpen(false);
         setPageState("ready");
         openDrawerToView(
           "transfers",
@@ -889,10 +911,12 @@ export default function TransferLandingPage() {
       } else {
         setError(t("incorrectPassword"));
         setPassword(""); // Clear password on error per AC3
+        setPasswordFailedAttempts((n) => n + 1);
       }
     } catch {
       setError(t("incorrectPassword"));
       setPassword(""); // Clear password on error per AC3
+      setPasswordFailedAttempts((n) => n + 1);
     } finally {
       setIsLoading(false);
     }
@@ -1446,18 +1470,93 @@ export default function TransferLandingPage() {
 
       if (response.error) {
         toast.error(response.error.message || t("downloadFailed"));
+        handleDownloadFailure(null, response.error, response.status);
       } else {
+        // Clear any lingering recovery state — retry succeeded or first
+        // download was clean.
+        setDownloadRecovery(null);
+        setIsFallbackMode(false);
         checkForPoll("after_download", 3000);
         // Show conversion CTA for non-authenticated, non-custom-domain recipients
         if (!isBranded && !isAuthenticated) {
           setPageState("downloaded");
         }
       }
-    } catch {
+    } catch (err) {
       toast.error(t("downloadFailed"));
+      handleDownloadFailure(err, null, undefined);
     } finally {
       setIsDownloading(false);
     }
+  };
+
+  /**
+   * Classify a failure, record it as the latest recovery context, and fire
+   * DOWNLOAD_FAILED. Increments `attempts` on consecutive failures. The
+   * recovery card auto-escalates once attempts >= 4 (initial + 3 retries,
+   * per AC #7).
+   */
+  const handleDownloadFailure = (
+    err: unknown,
+    errorPayload: { message?: string } | null,
+    httpStatus: number | undefined,
+  ) => {
+    const scenario = classifyDownloadFailure(err, httpStatus ? { status: httpStatus } : null);
+    const prevAttempts = downloadRecovery?.attempts ?? 0;
+    const nextAttempts = prevAttempts + 1;
+
+    const rawMsg =
+      (err instanceof Error && err.message) || errorPayload?.message || "";
+    // Anti-pattern #4 (Dev Notes): strip any URL substrings so we never
+    // leak signed CDN/backend URLs (HMAC tokens in query strings) to
+    // backend logs or PostHog.
+    const sanitizedMsg = rawMsg.replace(/https?:\/\/\S+/gi, "[url]");
+    const errorContext: DownloadRecoveryErrorContext = {
+      httpStatus,
+      // Cap at 500 chars on the wire too, per backend DTO bounds.
+      jsErrorMessage: sanitizedMsg ? sanitizedMsg.slice(0, 500) : undefined,
+      fileCount: transfer?.files?.length,
+      transferSizeBytes: transfer?.files?.reduce((acc, f) => {
+        const size = Number(f.fileSize) || Number(f.size) || 0;
+        return acc + size;
+      }, 0),
+    };
+
+    setDownloadRecovery({ scenario, attempts: nextAttempts, errorContext });
+
+    if (transfer) {
+      trackEvent(AnalyticsEventType.DOWNLOAD_FAILED, {
+        short_code: transfer.shortCode,
+        error_code: scenario,
+        attempt_number: nextAttempts,
+        http_status: httpStatus,
+        file_count: errorContext.fileCount,
+        // AC #8 literal — also emit the nested errorContext shape
+        error_context: {
+          http_status: errorContext.httpStatus,
+          js_error_message: errorContext.jsErrorMessage,
+          file_count: errorContext.fileCount,
+          transfer_size_bytes: errorContext.transferSizeBytes,
+        },
+      });
+    }
+  };
+
+  const handleRecoveryRetry = () => {
+    void handleDownload();
+  };
+
+  const handleEnterFallbackMode = () => {
+    setIsFallbackMode(true);
+    setDownloadRecovery(null);
+  };
+
+  const handleDismissRecoveryCard = () => {
+    setDownloadRecovery(null);
+  };
+
+  const handleBackToBundle = () => {
+    setIsFallbackMode(false);
   };
 
   // Handle email check for public sale gateway
@@ -1533,9 +1632,14 @@ export default function TransferLandingPage() {
 
       if (response.error) {
         toast.error(response.error.message || t("downloadFailed"));
+        handleDownloadFailure(null, response.error, response.status);
+      } else {
+        setDownloadRecovery(null);
+        setIsFallbackMode(false);
       }
-    } catch {
+    } catch (err) {
       toast.error(t("downloadFailed"));
+      handleDownloadFailure(err, null, undefined);
     } finally {
       setIsDownloading(false);
     }
@@ -1785,6 +1889,31 @@ export default function TransferLandingPage() {
                     {t("unlockTransfer")}
                   </button>
                 </form>
+
+                {/* Story 132.1 — progressive "Forgot the password?" recovery path.
+                    Hidden on first load; revealed only after the first failed attempt. */}
+                {passwordFailedAttempts > 0 && transfer && (
+                  <div className="mt-3 text-center">
+                    {!isPasswordHelpOpen ? (
+                      <button
+                        type="button"
+                        onClick={() => setIsPasswordHelpOpen(true)}
+                        className="text-sm text-[#5E53E0] dark:text-[#8E84FF] underline underline-offset-4 hover:text-[#4A40C4] dark:hover:text-[#A59BFF] transition-colors"
+                      >
+                        {t("cantRememberPassword")}
+                      </button>
+                    ) : (
+                      <PasswordHelpPanel
+                        shortCode={shortCode}
+                        recipientEmail={customerEmail}
+                        senderName={transfer.senderProfile?.name ?? null}
+                        senderEmail={getSenderEmail(transfer) ?? null}
+                        failedAttemptsCount={passwordFailedAttempts}
+                        onDismiss={() => setIsPasswordHelpOpen(false)}
+                      />
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -2274,14 +2403,39 @@ export default function TransferLandingPage() {
                 {/* Actions */}
                 <div className="space-y-2">
                   {isSuccess && (
-                    <button
-                      onClick={handleDownload}
-                      disabled={isDownloading}
-                      className="w-full px-6 py-3.5 bg-[#87E64B] text-[#171717] font-medium rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                    >
-                      <Download className="w-5 h-5" />
-                      {t("downloadFiles")}
-                    </button>
+                    <>
+                      <button
+                        onClick={handleDownload}
+                        disabled={isDownloading}
+                        className="w-full px-6 py-3.5 bg-[#87E64B] text-[#171717] font-medium rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                      >
+                        <Download className="w-5 h-5" />
+                        {t("downloadFiles")}
+                      </button>
+
+                      {/* Story 132.3 — Download recovery card / per-file fallback */}
+                      {transfer && isFallbackMode && transfer.files ? (
+                        <PerFileDownloadList
+                          shortCode={transfer.shortCode}
+                          files={transfer.files}
+                          sessionToken={passwordSessionToken || undefined}
+                          onBackToBundle={handleBackToBundle}
+                        />
+                      ) : transfer && downloadRecovery ? (
+                        <DownloadRecoveryCard
+                          shortCode={transfer.shortCode}
+                          recipientEmail={customerEmail}
+                          senderName={transfer.senderProfile?.name ?? null}
+                          scenario={downloadRecovery.scenario}
+                          errorContext={downloadRecovery.errorContext}
+                          attemptNumber={downloadRecovery.attempts}
+                          isRetrying={isDownloading}
+                          onRetry={handleRecoveryRetry}
+                          onEnterFallback={handleEnterFallbackMode}
+                          onDismiss={handleDismissRecoveryCard}
+                        />
+                      ) : null}
+                    </>
                   )}
 
                   {(isFailed || isTimeout) && (
@@ -2783,12 +2937,14 @@ export default function TransferLandingPage() {
               size: Number(f.size || f.fileSize || 0),
               mimeType: f.mimeType || f.fileType || "application/octet-stream",
               thumbnailUrl: f.thumbnailUrl,
+              previewStatus: f.previewStatus,
             })) || []
           }
           isOpen={showPreviewModal}
           onClose={() => setShowPreviewModal(false)}
           isPaid={false}
           shortCode={transfer.shortCode}
+          sessionToken={passwordSessionToken || undefined}
         />
 
         <main style={{ minHeight: "calc(100vh - 64px)", position: "relative" }}>
@@ -2873,6 +3029,29 @@ export default function TransferLandingPage() {
                       : t("downloadFiles")}
                   </button>
                 )}
+
+                {/* Story 132.3 — Download recovery card / per-file fallback */}
+                {isFallbackMode && transfer.files ? (
+                  <PerFileDownloadList
+                    shortCode={transfer.shortCode}
+                    files={transfer.files}
+                    sessionToken={passwordSessionToken || undefined}
+                    onBackToBundle={handleBackToBundle}
+                  />
+                ) : downloadRecovery ? (
+                  <DownloadRecoveryCard
+                    shortCode={transfer.shortCode}
+                    recipientEmail={customerEmail}
+                    senderName={transfer.senderProfile?.name ?? null}
+                    scenario={downloadRecovery.scenario}
+                    errorContext={downloadRecovery.errorContext}
+                    attemptNumber={downloadRecovery.attempts}
+                    isRetrying={isDownloading}
+                    onRetry={handleRecoveryRetry}
+                    onEnterFallback={handleEnterFallbackMode}
+                    onDismiss={handleDismissRecoveryCard}
+                  />
+                ) : null}
 
                 {/* Back Link */}
                 <button
@@ -3594,6 +3773,29 @@ export default function TransferLandingPage() {
                       </>
                     )}
                   </button>
+
+                  {/* Story 132.3 — Download recovery card / per-file fallback */}
+                  {isFallbackMode && transfer.files ? (
+                    <PerFileDownloadList
+                      shortCode={transfer.shortCode}
+                      files={transfer.files}
+                      sessionToken={passwordSessionToken || undefined}
+                      onBackToBundle={handleBackToBundle}
+                    />
+                  ) : downloadRecovery ? (
+                    <DownloadRecoveryCard
+                      shortCode={transfer.shortCode}
+                      recipientEmail={customerEmail}
+                      senderName={transfer.senderProfile?.name ?? null}
+                      scenario={downloadRecovery.scenario}
+                      errorContext={downloadRecovery.errorContext}
+                      attemptNumber={downloadRecovery.attempts}
+                      isRetrying={isDownloading}
+                      onRetry={handleRecoveryRetry}
+                      onEnterFallback={handleEnterFallbackMode}
+                      onDismiss={handleDismissRecoveryCard}
+                    />
+                  ) : null}
 
                   <button
                     onClick={handlePreviewClick}

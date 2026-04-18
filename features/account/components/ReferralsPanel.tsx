@@ -58,7 +58,7 @@ const ReferralsPanel: React.FC = () => {
 
     if (historyRes.status === "fulfilled" && historyRes.value.data) {
       setHistory(historyRes.value.data.data);
-      setHistoryTotal(historyRes.value.data.total);
+      setHistoryTotal(historyRes.value.data.meta.total);
     }
 
     if (rewardRes.status === "fulfilled" && rewardRes.value.data) {
@@ -93,7 +93,7 @@ const ReferralsPanel: React.FC = () => {
       const res = await referralsApi.getHistory(page, HISTORY_PAGE_SIZE);
       if (res.data) {
         setHistory(res.data.data);
-        setHistoryTotal(res.data.total);
+        setHistoryTotal(res.data.meta.total);
         setHistoryPage(page);
       }
     } catch {

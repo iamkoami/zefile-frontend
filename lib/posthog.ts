@@ -24,6 +24,11 @@ export enum AnalyticsEventType {
   // Download events
   DOWNLOAD_STARTED = 'zefile_download_started',
   DOWNLOAD_COMPLETED = 'zefile_download_completed',
+  DOWNLOAD_FAILED = 'zefile_download_failed',
+  DOWNLOAD_FAILED_REPORTED = 'zefile_download_failed_reported',
+  DOWNLOAD_RETRY_CLICKED = 'zefile_download_retry_clicked',
+  DOWNLOAD_FALLBACK_MODE_ENTERED = 'zefile_download_fallback_mode_entered',
+  DOWNLOAD_FALLBACK_FILE_DOWNLOADED = 'zefile_download_fallback_file_downloaded',
 
   // Payment events
   PRICING_VIEWED = 'zefile_pricing_viewed',
@@ -36,6 +41,11 @@ export enum AnalyticsEventType {
   // Subscription events
   PLAN_SELECTED = 'zefile_plan_selected',
   SUBSCRIPTION_STARTED = 'zefile_subscription_started',
+
+  // Payment issue bar (Story 132-4b — grace-period recovery UX)
+  PAYMENT_ISSUE_BAR_SHOWN = 'zefile_payment_issue_bar_shown',
+  PAYMENT_ISSUE_BAR_DISMISSED = 'zefile_payment_issue_bar_dismissed',
+  PAYMENT_ISSUE_BAR_CTA_CLICKED = 'zefile_payment_issue_bar_cta_clicked',
 
   // Survey events
   NPS_SURVEY_SHOWN = 'zefile_nps_survey_shown',

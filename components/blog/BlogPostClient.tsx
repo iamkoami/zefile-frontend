@@ -161,9 +161,9 @@ export default function BlogPostFooter({ post }: BlogPostClientProps) {
           4,
           post.tags[0],
         );
-        if (response.data?.items) {
+        if (response.data?.data) {
           setRelatedPosts(
-            response.data.items
+            response.data.data
               .filter((p) => p.slug !== post.slug)
               .slice(0, 3),
           );

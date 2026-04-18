@@ -60,8 +60,23 @@ export interface UserSubscription {
   currentPeriodStart: string;
   currentPeriodEnd: string;
   cancelAtPeriodEnd: boolean;
+  /** ISO string; set when status === 'past_due' after a failed auto-renewal (Story 132-4a). */
+  gracePeriodEnd?: string | null;
+  /** Consecutive renewal failure count in the current billing cycle. Resets to 0 on success. */
+  renewalFailureCount?: number;
+  /** Tier the user was on before the grace-period revert — drives the "Reactivate {tier}" CTA. */
+  downgradedFrom?: SubscriptionTier | null;
+  /** Billing cadence the user had before the revert — preserved so reactivation preselects the same cadence. */
+  downgradedFromBillingPeriod?: BillingPeriod | null;
+  /** ISO string — when the grace-period revert took effect. */
+  downgradedAt?: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface UpdatePaymentMethodResponse {
+  authorizationUrl: string;
+  reference: string;
 }
 
 export interface InitializeSubscriptionRequest {
@@ -127,11 +142,13 @@ export interface RenewalAttemptDto {
 }
 
 export interface PaginatedRenewalHistory {
-  items: RenewalAttemptDto[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
+  data: RenewalAttemptDto[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
 }
 
 // ============================================
@@ -658,6 +675,14 @@ export const subscriptionApi = {
       limit: query.limit.toString(),
     });
     return apiClient.get<PaginatedRenewalHistory>(`/subscriptions/renewal-history?${params.toString()}`);
+  },
+
+  /**
+   * Initialize a Paystack authorization flow so the user can update their card
+   * after a failed auto-renewal (Story 132-4b). Backend throttles to 5/min.
+   */
+  async initializeUpdatePaymentMethod(): Promise<ApiResponse<UpdatePaymentMethodResponse>> {
+    return apiClient.post<UpdatePaymentMethodResponse>('/subscriptions/update-payment-method');
   },
 };
 

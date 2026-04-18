@@ -41,6 +41,7 @@ export interface SupportConversation {
   visitorEmail?: string;
   visitorName?: string;
   shortCode?: string;
+  accessToken?: string;
   subject: string;
   status: ConversationStatus;
   priority: string;
@@ -119,6 +120,17 @@ class SupportApiService {
   ): Promise<ApiResponse<SupportConversation>> {
     return apiClient.post(`/support/conversations/${id}/escalate`, {
       visitorEmail,
+    });
+  }
+
+  async submitFeedback(
+    conversationId: string,
+    verdict: 'helpful' | 'not_helpful' | 'reopen',
+    accessToken?: string | null,
+  ): Promise<ApiResponse<{ success: boolean; verdict: string }>> {
+    return apiClient.post(`/support/conversations/${conversationId}/feedback`, {
+      verdict,
+      ...(accessToken ? { accessToken } : {}),
     });
   }
 }

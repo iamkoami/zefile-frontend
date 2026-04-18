@@ -26,12 +26,16 @@ export interface BlogPostDto {
   updatedAt?: string | null;
 }
 
-export interface BlogListResponseDto {
-  items: BlogPostDto[];
+export interface PaginationMeta {
   total: number;
   page: number;
   limit: number;
   totalPages: number;
+}
+
+export interface BlogListResponseDto {
+  data: BlogPostDto[];
+  meta: PaginationMeta;
 }
 
 export interface SitemapSlugDto {

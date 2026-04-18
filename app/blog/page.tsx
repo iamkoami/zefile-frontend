@@ -12,11 +12,13 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 const POSTS_PER_PAGE = 5;
 
 interface BlogListResponse {
-  items: BlogPostDto[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
+  data: BlogPostDto[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
 }
 
 async function fetchInitialPosts(locale: string): Promise<{ posts: BlogPostDto[]; totalPages: number }> {
@@ -32,7 +34,7 @@ async function fetchInitialPosts(locale: string): Promise<{ posts: BlogPostDto[]
 
     if (response.ok) {
       const data: BlogListResponse = await response.json();
-      return { posts: data.items, totalPages: data.totalPages };
+      return { posts: data.data, totalPages: data.meta.totalPages };
     }
   } catch {
     // Graceful fallback — page still renders, client will retry

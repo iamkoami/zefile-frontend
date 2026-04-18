@@ -5,6 +5,76 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.52.2] - 2026-04-18
+
+### Fixed
+
+- **Upload-flow OTP verify now sends a fresh Turnstile token.** `UploadPanel.handleOTPVerify` was calling `authApi.verifyOTP` without requesting a new captcha token first. Since Turnstile tokens are single-use, the one issued for `requestOTP` had already been consumed, and on environments with `CAPTCHA_REQUIRED=true` (staging/production) the backend rejected `/auth/verify-otp` with `400 "CAPTCHA verification required"`. Matches the existing pattern in `EmailAuthForm.tsx:142` and `PhoneAuthForm.tsx:151`.
+
+## [1.52.1] - 2026-04-18
+
+### Fixed
+
+- `components/shared/HeroText.tsx`: tightened hero title from `text-5xl` to `text-4xl` so the call-to-action button sits higher on first paint.
+
+## [1.52.0] - 2026-04-18
+
+### Added
+
+- **Epic 132 — Hurt moments & trust recovery (frontend).** Paired with `zefile-backend@1.53.0`. Four recipient- and subscriber-facing recovery flows from the 2026-04-17 UX audit.
+  - **Story 132.1 — Forgot password on protected transfers.** New `features/transfer/components/PasswordHelpPanel.tsx` lets a stuck recipient ping the sender without leaving the download page. Calls `POST /transfers/:shortCode/password-help-request`.
+  - **Story 132.2 — Preview-generating state on receiver side.** New `hooks/usePreviewStatus.ts` polls preview status; `components/shared/PreviewPlaceholder.tsx` renders an honest "we're getting this ready" state. Wired into `TransferPreviewPanel`, `TransferPreviewModal`, and `FilePreviewView` so receivers see status instead of a dead placeholder.
+  - **Story 132.3 — Download-failed recovery card.** New `features/transfer/components/DownloadRecoveryCard.tsx` surfaces after a failed download; one click reports to the sender via `POST /transfers/:shortCode/download-failed-report`. New `PerFileDownloadList.tsx` gives each file its own retry/report affordance.
+  - **Story 132.4b — Subscription billing grace period (frontend).** Legacy `features/subscription/components/PaymentIssueBar.tsx` replaced by `components/shared/PaymentIssueBar.tsx` with widened DTO coverage for grace fields. New `stores/subscription-store.ts` polls subscription state. `stores/drawer-store.ts` gains serialize/hydrate so drawer state survives the Paystack redirect during "update payment method". `app/payment/processing/page.tsx` wired to the new update-payment-method endpoint.
+- **PostHog event helpers** in `lib/posthog.ts`: `password_help_requested`, `download_failed_reported`, `preview_pending_shown`, `billing_grace_*` — matches backend event names.
+- **Typed API clients** for the new backend endpoints: `services/storage-api.ts` (preview status), `services/transfer-api.ts` (password-help-request, download-failed-report), `services/subscription-api.ts` (update-payment-method).
+- **i18n:** new keys in `i18n/messages/{en,fr}.json` for all four stories. Brand-voice reviewed (contractions, "Heads up" not "WARNING", `vous` in French, no emojis).
+
+### Migration notes
+
+- Must be deployed alongside `zefile-backend@1.53.0`. Frontend is forward-compatible with older backends (new panels gracefully hide when the corresponding endpoints 404), but the grace-period bar and preview-pending state are inert without backend 1.53.0.
+- Story 132.4b still has two human gates: Sally voice review + Paystack dogfood. Feature flag not required — empty-state fallbacks are safe.
+
+## [1.51.1] - 2026-04-17
+
+### Fixed
+
+- **Epic 131.8 code review follow-ups** (paired with `zefile-backend@1.52.1`):
+  - `services/payouts-api.ts`: `SenderPayoutsResponse` migrated to `{ payouts, meta }` — the legacy flat shape compatibility shim that preserved `{ total, page, limit, totalPages }` as siblings of `payouts` has been removed. Platform-wide "no flat pagination siblings" contract now holds at every mapping boundary.
+  - `features/account/components/PayoutsPanel.tsx`: reads `payoutsData.meta.totalPages` instead of `payoutsData.totalPages`.
+  - `services/file-request-api.ts`: `getMyRequests()` and `getMyDeliveries()` return types migrated to `{ data, meta }` matching the backend file-requests shape migration (missed in original 131.8 survey because that backend DTO lacked `totalPages`).
+
+## [1.51.0] - 2026-04-17
+
+### Changed
+
+- **BREAKING: Consume `{ data, meta }` pagination shape from backend `zefile-backend@1.52.0` (Epic 131 Story 131.8).** All paginated API reads now access `response.data.meta.{total, page, limit, totalPages}` instead of the flat `response.data.{total, page, limit, totalPages}`. Consumers of `items:` arrays migrated to `data:` where the backend renamed the field.
+  - `services/blog-api.ts` — `BlogListResponseDto` now `{ data, meta }` with `items:` renamed to `data:`.
+  - `services/payouts-api.ts` — internal `BackendWithdrawalResponse` type aligned; legacy `SenderPayoutsResponse` shape preserved for UI compatibility.
+  - `services/referrals-api.ts` — `ReferralHistoryResponse` aligned.
+  - `services/subscription-api.ts` — `PaginatedRenewalHistory` `items:` renamed to `data:`.
+  - UI consumers: `app/blog/page.tsx`, `components/blog/BlogListClient.tsx`, `components/blog/BlogPostClient.tsx`, `features/account/components/ReferralsPanel.tsx`, `features/account/components/SubscriptionSettingsPanel.tsx`.
+
+### Migration notes
+
+- Must be deployed alongside `zefile-backend@1.52.0` and `zefile-admin@1.23.0`. Backward-incompatible with backend <1.52.0 — the new read paths produce `undefined` against the old response shape.
+
+## [1.50.0] - 2026-04-17
+
+### Added
+
+- **Story 130.3 — End-of-conversation feedback prompt (Chat Widget)**
+  - When a support conversation transitions to `resolved` or `closed`, the widget now asks "Did we solve your issue?" with thumbs-up / thumbs-down / "Not yet" actions.
+  - Feedback posts to the backend `POST /support/conversations/:id/feedback` endpoint, forwarding the visitor's `accessToken` for unauthenticated sessions.
+  - Result persists: on next conversation load, if the backend has recorded a `feedbackVerdict` on the conversation metadata, the widget shows "Thanks. We'll keep getting smarter." instead of re-prompting.
+  - "Not yet" re-opens the conversation (reopen verdict) and clears the resolved state so the visitor can keep chatting.
+- `supportApi.submitFeedback(conversationId, verdict, accessToken?)` service helper.
+- `chatStore` now tracks `accessToken` and `feedbackSubmitted`, plus `setIsResolved` / `setFeedbackSubmitted` actions.
+
+### Fixed
+
+- File remove (X) button in `FilePreviewPanel` now has a visible icon color in dark mode (previously rendered as a near-invisible `currentColor` on a dim background).
+
 ## [1.49.2] - 2026-04-13
 
 ### Fixed
