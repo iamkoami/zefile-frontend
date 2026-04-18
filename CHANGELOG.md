@@ -5,6 +5,24 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.52.0] - 2026-04-18
+
+### Added
+
+- **Epic 132 — Hurt moments & trust recovery (frontend).** Paired with `zefile-backend@1.53.0`. Four recipient- and subscriber-facing recovery flows from the 2026-04-17 UX audit.
+  - **Story 132.1 — Forgot password on protected transfers.** New `features/transfer/components/PasswordHelpPanel.tsx` lets a stuck recipient ping the sender without leaving the download page. Calls `POST /transfers/:shortCode/password-help-request`.
+  - **Story 132.2 — Preview-generating state on receiver side.** New `hooks/usePreviewStatus.ts` polls preview status; `components/shared/PreviewPlaceholder.tsx` renders an honest "we're getting this ready" state. Wired into `TransferPreviewPanel`, `TransferPreviewModal`, and `FilePreviewView` so receivers see status instead of a dead placeholder.
+  - **Story 132.3 — Download-failed recovery card.** New `features/transfer/components/DownloadRecoveryCard.tsx` surfaces after a failed download; one click reports to the sender via `POST /transfers/:shortCode/download-failed-report`. New `PerFileDownloadList.tsx` gives each file its own retry/report affordance.
+  - **Story 132.4b — Subscription billing grace period (frontend).** Legacy `features/subscription/components/PaymentIssueBar.tsx` replaced by `components/shared/PaymentIssueBar.tsx` with widened DTO coverage for grace fields. New `stores/subscription-store.ts` polls subscription state. `stores/drawer-store.ts` gains serialize/hydrate so drawer state survives the Paystack redirect during "update payment method". `app/payment/processing/page.tsx` wired to the new update-payment-method endpoint.
+- **PostHog event helpers** in `lib/posthog.ts`: `password_help_requested`, `download_failed_reported`, `preview_pending_shown`, `billing_grace_*` — matches backend event names.
+- **Typed API clients** for the new backend endpoints: `services/storage-api.ts` (preview status), `services/transfer-api.ts` (password-help-request, download-failed-report), `services/subscription-api.ts` (update-payment-method).
+- **i18n:** new keys in `i18n/messages/{en,fr}.json` for all four stories. Brand-voice reviewed (contractions, "Heads up" not "WARNING", `vous` in French, no emojis).
+
+### Migration notes
+
+- Must be deployed alongside `zefile-backend@1.53.0`. Frontend is forward-compatible with older backends (new panels gracefully hide when the corresponding endpoints 404), but the grace-period bar and preview-pending state are inert without backend 1.53.0.
+- Story 132.4b still has two human gates: Sally voice review + Paystack dogfood. Feature flag not required — empty-state fallbacks are safe.
+
 ## [1.51.1] - 2026-04-17
 
 ### Fixed
