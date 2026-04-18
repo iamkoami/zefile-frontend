@@ -72,7 +72,7 @@ const HeroText: React.FC<HeroTextProps> = ({
       {/* Title — visual duplicate; the semantic <h1> is server-rendered in app/page.tsx */}
       <div
         aria-hidden="true"
-        className={`text-5xl font-black leading-tight mb-3 ${colors.title}`}
+        className={`text-4xl font-black leading-tight mb-3 ${colors.title}`}
         style={{
           animation: "slideUp 0.6s ease-out 0.5s both",
           transition: "color 1.5s ease-in-out",
@@ -103,7 +103,8 @@ const HeroText: React.FC<HeroTextProps> = ({
             }}
             className="pointer-events-auto ze-button-primary"
           >
-            <span className="font-bold">{tHeader("signupBold")}</span>&nbsp;-&nbsp;{tHeader("signupSuffix")}
+            <span className="font-bold">{tHeader("signupBold")}</span>
+            &nbsp;-&nbsp;{tHeader("signupSuffix")}
           </button>
         </div>
       )}
