@@ -16,6 +16,7 @@ import ToastContainer from "@/components/shared/Toast";
 import ChatWidget from "@/components/shared/ChatWidget";
 import WebVitals from "@/components/shared/WebVitals";
 import CookieConsentBanner from "@/components/shared/CookieConsentBanner";
+import { PaymentIssueBar } from "@/components/shared/PaymentIssueBar";
 import PlatformStatusGate from "@/components/providers/PlatformStatusGate";
 import "react-flagpack/dist/style.css";
 import "./globals.css";
@@ -215,6 +216,7 @@ export default async function RootLayout({
                 <WebVitals />
                 <ToastContainer />
                 <PlatformStatusGate>
+                  <PaymentIssueBar />
                   {children}
                 </PlatformStatusGate>
                 <GlobalSideDrawer />

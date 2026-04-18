@@ -181,7 +181,7 @@ const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({
                 </div>
                 <button
                   onClick={() => onClearReuseData?.()}
-                  className="ml-3 flex-shrink-0 p-1 hover:bg-gray-200 dark:hover:bg-[oklch(0.28_0_0)] rounded transition-colors"
+                  className="ml-3 flex-shrink-0 p-1 text-gray-500 hover:text-gray-700 dark:text-[oklch(0.55_0_0)] dark:hover:text-[oklch(0.75_0_0)] hover:bg-gray-200 dark:hover:bg-[oklch(0.28_0_0)] rounded transition-colors"
                   aria-label={t('removeFile')}
                 >
                   <Xmark width={20} height={20} color="currentColor" strokeWidth={2} />
@@ -206,7 +206,7 @@ const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({
               </div>
               <button
                 onClick={() => onRemoveFile(index)}
-                className="ml-3 flex-shrink-0 p-1 hover:bg-gray-200 dark:hover:bg-[oklch(0.28_0_0)] rounded transition-colors"
+                className="ml-3 flex-shrink-0 p-1 text-gray-500 hover:text-gray-700 dark:text-[oklch(0.55_0_0)] dark:hover:text-[oklch(0.75_0_0)] hover:bg-gray-200 dark:hover:bg-[oklch(0.28_0_0)] rounded transition-colors"
                 aria-label={t('removeFile')}
               >
                 <Xmark width={20} height={20} color="currentColor" strokeWidth={2} />

@@ -82,6 +82,7 @@ export interface TransferDto {
     thumbnailUrl?: string;
     previewClipUrl?: string; // Video preview clip
     waveformUrl?: string; // Audio waveform
+    previewStatus?: 'pending' | 'ready' | 'failed' | 'skipped'; // Story 132.2
     // Version info for filtering by default version
     version?: {
       id: string;
@@ -845,6 +846,49 @@ export class TransferApi {
   ): Promise<ApiResponse<{ success: boolean; message: string; nextReminderAt?: string }>> {
     return apiClient.post<{ success: boolean; message: string; nextReminderAt?: string }>(
       `/transfers/${transferId}/whatsapp-reminder`
+    );
+  }
+
+  /**
+   * Ask the sender to resend the password for a protected transfer.
+   *
+   * Public endpoint — no auth. Returns 429 with `code: PASSWORD_HELP_RATE_LIMITED`
+   * when the same recipient already requested help within 30 minutes.
+   */
+  async requestPasswordHelp(
+    shortCode: string,
+    recipientEmail: string,
+    failedAttemptsCount?: number
+  ): Promise<ApiResponse<{ success: boolean; sentAt: string }>> {
+    return apiClient.post<{ success: boolean; sentAt: string }>(
+      `/transfers/code/${shortCode}/password-help-request`,
+      { recipientEmail, failedAttemptsCount }
+    );
+  }
+
+  /**
+   * Report a failed download to the sender (story 132.3).
+   *
+   * Public endpoint — no auth. Returns 429 with `code: DOWNLOAD_FAILED_REPORT_RATE_LIMITED`
+   * when the same recipient already reported within the last 60 minutes.
+   * errorContext carries diagnostic-only fields (never raw paths or s3 keys).
+   */
+  async reportDownloadFailure(
+    shortCode: string,
+    payload: {
+      recipientEmail: string;
+      errorCode: "network" | "server" | "zip" | "generic";
+      errorContext?: {
+        httpStatus?: number;
+        jsErrorMessage?: string;
+        fileCount?: number;
+        transferSizeBytes?: number;
+      };
+    }
+  ): Promise<ApiResponse<{ success: boolean; sentAt: string }>> {
+    return apiClient.post<{ success: boolean; sentAt: string }>(
+      `/transfers/code/${shortCode}/download-failed-report`,
+      payload
     );
   }
 

@@ -303,7 +303,7 @@ const RenewalHistorySection: React.FC = () => {
       limit: 10,
     });
     if (response.data) {
-      setHistory(response.data.items);
+      setHistory(response.data.data);
     }
     setIsLoading(false);
   };

@@ -767,7 +767,7 @@ const PayoutsPanel: React.FC = () => {
           )}
 
           {/* Pagination */}
-          {payoutsData && payoutsData.totalPages > 1 && (
+          {payoutsData && payoutsData.meta.totalPages > 1 && (
             <div className="flex items-center justify-center gap-2 mt-6">
               <button
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
@@ -777,13 +777,13 @@ const PayoutsPanel: React.FC = () => {
                 {t("previous")}
               </button>
               <span className="text-sm text-gray-600 dark:text-[oklch(0.75_0_0)]">
-                {currentPage} / {payoutsData.totalPages}
+                {currentPage} / {payoutsData.meta.totalPages}
               </span>
               <button
                 onClick={() =>
-                  setCurrentPage((p) => Math.min(payoutsData.totalPages, p + 1))
+                  setCurrentPage((p) => Math.min(payoutsData.meta.totalPages, p + 1))
                 }
-                disabled={currentPage === payoutsData.totalPages}
+                disabled={currentPage === payoutsData.meta.totalPages}
                 className="px-3 py-1 border border-gray-300 dark:border-[oklch(0.30_0_0)] rounded text-sm dark:text-[oklch(0.91_0_0)] hover:bg-gray-50 dark:hover:bg-[oklch(0.28_0_0)] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {t("next")}

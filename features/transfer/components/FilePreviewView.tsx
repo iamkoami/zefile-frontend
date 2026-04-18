@@ -17,6 +17,10 @@ import { storageApi } from "@/services/storage-api";
 import { toast } from "@/components/shared/Toast";
 import LoadingPanel from "@/components/LoadingPanel";
 import ReportIssueButton from "@/components/shared/ReportIssueButton";
+import PreviewPlaceholder, {
+  type PreviewPlaceholderStatus,
+} from "@/components/shared/PreviewPlaceholder";
+import { usePreviewStatus } from "@/hooks/usePreviewStatus";
 
 // API URL for thumbnail proxy
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
@@ -38,6 +42,8 @@ interface FileData {
   thumbnailUrl?: string | null;
   previewClipUrl?: string | null;
   waveformUrl?: string | null;
+  /** Async preview generation state (Story 132.2). */
+  previewStatus?: "pending" | "ready" | "failed" | "skipped" | null;
 }
 
 interface FilePreviewViewProps {
@@ -84,6 +90,11 @@ const FilePreviewView: React.FC<FilePreviewViewProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [isDownloading, setIsDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Track status separately from url so we can render the right placeholder
+  // for pending/failed/skipped even before the fetchPreviewUrl effect finishes.
+  const [fetchedStatus, setFetchedStatus] = useState<
+    "pending" | "ready" | "failed" | "skipped" | null
+  >(file.previewStatus ?? null);
 
   // Navigation helpers
   const canNavigate =
@@ -233,6 +244,53 @@ const FilePreviewView: React.FC<FilePreviewViewProps> = ({
   const fileType = getFileType(file.mimeType, extension);
   const canPreview = isPreviewable(fileType);
 
+  // Poll preview status when it starts PENDING so the placeholder auto-updates
+  // without requiring the user to refresh. The hook hits the lightweight
+  // /storage/preview/status endpoint (no analytics side effects) and respects
+  // document visibility.
+  const pollableStatus =
+    fetchedStatus && ["pending", "ready", "failed", "skipped"].includes(fetchedStatus)
+      ? (fetchedStatus as "pending" | "ready" | "failed" | "skipped")
+      : "pending";
+  const {
+    status: livePreviewStatus,
+    exhausted: pollExhausted,
+    retry: retryPoll,
+  } = usePreviewStatus({
+    shortCode,
+    fileId: file.id,
+    initialStatus: pollableStatus,
+    enabled: canPreview && !canViewOriginal && pollableStatus === "pending",
+    sessionToken,
+  });
+
+  useEffect(() => {
+    if (livePreviewStatus && livePreviewStatus !== fetchedStatus) {
+      setFetchedStatus(livePreviewStatus);
+    }
+  }, [livePreviewStatus, fetchedStatus]);
+
+  // When polling transitions to READY, re-fetch the actual preview URL once.
+  // The status endpoint is intentionally lightweight and does NOT return a URL.
+  useEffect(() => {
+    if (livePreviewStatus !== "ready" || previewUrl) return;
+    let cancelled = false;
+    (async () => {
+      const response = await storageApi.getFilePreviewUrl(shortCode, file.id, {
+        sessionToken,
+        requestOriginal: canViewOriginal,
+        email: userEmail,
+      });
+      if (cancelled || !response.data) return;
+      setPreviewUrl(response.data.url);
+      setPreviewMimeType(response.data.mimeType);
+      setError(null);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [livePreviewStatus, previewUrl, shortCode, file.id, sessionToken, canViewOriginal, userEmail]);
+
   // Check if we have a pre-generated preview (watermarked)
   // For video/audio: use previewClipUrl (20-sec clip with watermark)
   // For images: use thumbnailUrl (watermarked thumbnail)
@@ -291,6 +349,7 @@ const FilePreviewView: React.FC<FilePreviewViewProps> = ({
         if (response.error) {
           setError(response.error.message || t("previewError"));
         } else if (response.data) {
+          setFetchedStatus(response.data.previewStatus ?? null);
           if (canViewOriginal) {
             // Payment complete or free transfer - show original
             setPreviewUrl(response.data.url);
@@ -308,7 +367,13 @@ const FilePreviewView: React.FC<FilePreviewViewProps> = ({
               // SECURITY: Images/videos require watermarked preview - never show original
               setPreviewUrl(null);
               setPreviewMimeType(null);
-              setError(t("previewNotAvailable"));
+              // Use the placeholder render path instead of a string error when
+              // the backend tells us the preview is still being generated.
+              if (response.data.previewStatus === "pending") {
+                setError(null);
+              } else {
+                setError(t("previewNotAvailable"));
+              }
             } else {
               setPreviewUrl(response.data.url);
               setPreviewMimeType(response.data.mimeType);
@@ -376,6 +441,39 @@ const FilePreviewView: React.FC<FilePreviewViewProps> = ({
       return (
         <div className="flex items-center justify-center h-full">
           <LoadingPanel />
+        </div>
+      );
+    }
+
+    // Only images / videos / audio are protected behind watermarked previews.
+    // For those, if status is not ready and we have no URL, show the placeholder
+    // so recipients see "Preview's still cooking" instead of a generic error.
+    const needsWatermarkProtection =
+      fileType === "image" || fileType === "video" || fileType === "audio";
+    if (
+      needsWatermarkProtection &&
+      !previewUrl &&
+      fetchedStatus &&
+      fetchedStatus !== "ready"
+    ) {
+      const placeholderStatus = fetchedStatus as PreviewPlaceholderStatus;
+      return (
+        <div className="flex flex-col items-center justify-center h-full w-full px-4 gap-4">
+          <div className="w-full max-w-3xl">
+            <PreviewPlaceholder
+              status={placeholderStatus}
+              aspect={fileType === "video" ? "video" : "image"}
+            />
+          </div>
+          {pollExhausted && (
+            <button
+              type="button"
+              onClick={retryPoll}
+              className="text-sm text-[#5E53E0] hover:underline focus:outline-none focus:ring-2 focus:ring-[#5E53E0] rounded px-2 py-1"
+            >
+              {t("retryPreview")}
+            </button>
+          )}
         </div>
       );
     }

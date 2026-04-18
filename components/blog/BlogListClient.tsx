@@ -35,8 +35,8 @@ export default function BlogListClient({
         POSTS_PER_PAGE,
       );
       if (response.data) {
-        setPosts((prev) => [...prev, ...response.data!.items]);
-        setHasMore(pageNum < response.data.totalPages);
+        setPosts((prev) => [...prev, ...response.data!.data]);
+        setHasMore(pageNum < response.data.meta.totalPages);
       }
       setIsLoadingMore(false);
     },

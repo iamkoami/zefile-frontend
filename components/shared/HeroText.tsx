@@ -72,7 +72,7 @@ const HeroText: React.FC<HeroTextProps> = ({
       {/* Title — visual duplicate; the semantic <h1> is server-rendered in app/page.tsx */}
       <div
         aria-hidden="true"
-        className={`text-5xl font-black leading-tight mb-3 ${colors.title}`}
+        className={`text-4xl font-black leading-tight mb-3 ${colors.title}`}
         style={{
           animation: "slideUp 0.6s ease-out 0.5s both",
           transition: "color 1.5s ease-in-out",
@@ -84,14 +84,14 @@ const HeroText: React.FC<HeroTextProps> = ({
 
       {/* Subtitle */}
       <div
-        className={`text-lg xl:text-lg font-bold leading-relaxed ${colors.subtitle}`}
+        className={`text-lg xl:text-lg font-bold leading-relaxed max-w-2xl ${colors.subtitle}`}
         style={{
           animation: "fadeIn 0.8s ease-out 0.8s both",
           transition: "color 1.5s ease-in-out",
         }}
       >
         <p>{t("subtitle")}</p>
-        <p>{t("subtitle2")}</p>
+        {t("subtitle2") && <p>{t("subtitle2")}</p>}
       </div>
 
       {/* Get Started CTA - for unauthenticated users (matches header CTA) */}
@@ -103,7 +103,8 @@ const HeroText: React.FC<HeroTextProps> = ({
             }}
             className="pointer-events-auto ze-button-primary"
           >
-            <span className="font-bold">{tHeader("signupBold")}</span>&nbsp;-&nbsp;{tHeader("signupSuffix")}
+            <span className="font-bold">{tHeader("signupBold")}</span>
+            &nbsp;-&nbsp;{tHeader("signupSuffix")}
           </button>
         </div>
       )}

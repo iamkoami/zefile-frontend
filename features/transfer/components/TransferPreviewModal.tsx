@@ -1,9 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Xmark, NavArrowLeft, NavArrowRight } from 'iconoir-react';
 import Image from 'next/image';
+import PreviewPlaceholder, {
+  type PreviewPlaceholderStatus,
+} from '@/components/shared/PreviewPlaceholder';
+import { usePreviewStatus } from '@/hooks/usePreviewStatus';
+import { storageApi } from '@/services/storage-api';
 
 // API URL for thumbnail proxy
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -14,6 +19,8 @@ interface FilePreview {
   size: number;
   mimeType: string;
   thumbnailUrl?: string;
+  /** Async preview generation state (Story 132.2) */
+  previewStatus?: 'pending' | 'ready' | 'failed' | 'skipped';
 }
 
 interface TransferPreviewModalProps {
@@ -22,6 +29,8 @@ interface TransferPreviewModalProps {
   onClose: () => void;
   isPaid: boolean; // Show watermarked or unwatermarked
   shortCode?: string;
+  /** Pass-through session token for password-protected transfers. */
+  sessionToken?: string;
 }
 
 const TransferPreviewModal: React.FC<TransferPreviewModalProps> = ({
@@ -30,22 +39,75 @@ const TransferPreviewModal: React.FC<TransferPreviewModalProps> = ({
   onClose,
   isPaid,
   shortCode,
+  sessionToken,
 }) => {
-  const t = useTranslations('transferLanding');
+  const previewT = useTranslations('filePreview');
   const [currentIndex, setCurrentIndex] = useState(0);
-
-  if (!isOpen || files.length === 0) return null;
+  // URLs fetched post-ready keyed by fileId — lets us render a preview when the
+  // initial file payload didn't include thumbnailUrl but polling reports ready.
+  const [resolvedUrls, setResolvedUrls] = useState<Record<string, string>>({});
 
   const currentFile = files[currentIndex];
-  // Use proxy endpoint for thumbnails (thumbnailUrl is now an S3 key, not a direct URL)
-  const getThumbnailProxyUrl = (file: FilePreview) => {
-    if (file.thumbnailUrl) {
+  const hasPrecomputedThumbnail = Boolean(currentFile?.thumbnailUrl);
+
+  // Only poll when this file isn't already renderable.
+  const pollEnabled =
+    isOpen &&
+    Boolean(shortCode) &&
+    Boolean(currentFile) &&
+    !hasPrecomputedThumbnail &&
+    !resolvedUrls[currentFile?.id ?? ''] &&
+    (currentFile?.previewStatus ?? 'pending') === 'pending';
+
+  const {
+    status: livePreviewStatus,
+    exhausted: pollExhausted,
+    retry: retryPoll,
+  } = usePreviewStatus({
+    shortCode: shortCode ?? '',
+    fileId: currentFile?.id ?? '',
+    initialStatus: currentFile?.previewStatus ?? 'pending',
+    enabled: pollEnabled,
+    sessionToken,
+  });
+
+  // When polling flips to READY, fetch the actual preview URL once. The status
+  // endpoint intentionally doesn't return URLs.
+  useEffect(() => {
+    if (livePreviewStatus !== 'ready' || !shortCode || !currentFile) return;
+    if (currentFile.thumbnailUrl || resolvedUrls[currentFile.id]) return;
+    let cancelled = false;
+    (async () => {
+      const response = await storageApi.getFilePreviewUrl(shortCode, currentFile.id, {
+        sessionToken,
+      });
+      if (cancelled || !response.data?.url) return;
+      setResolvedUrls((prev) => ({ ...prev, [currentFile.id]: response.data!.url }));
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [livePreviewStatus, shortCode, currentFile, sessionToken, resolvedUrls]);
+
+  const previewUrl = useMemo(() => {
+    if (!currentFile) return null;
+    if (currentFile.thumbnailUrl) {
       const sc = shortCode ? `&shortCode=${encodeURIComponent(shortCode)}` : '';
-      return `${API_URL}/storage/thumbnail/${file.id}?type=thumbnail${sc}`;
+      return `${API_URL}/storage/thumbnail/${currentFile.id}?type=thumbnail${sc}`;
     }
-    return null;
-  };
-  const previewUrl = getThumbnailProxyUrl(currentFile);
+    return resolvedUrls[currentFile.id] ?? null;
+  }, [currentFile, shortCode, resolvedUrls]);
+
+  // Hooks above — early return safe from here.
+  if (!isOpen || files.length === 0 || !currentFile) return null;
+
+  const effectiveStatus: 'pending' | 'ready' | 'failed' | 'skipped' =
+    livePreviewStatus ?? currentFile.previewStatus ?? 'pending';
+  const placeholderStatus: PreviewPlaceholderStatus | null = !previewUrl
+    ? effectiveStatus !== 'ready'
+      ? (effectiveStatus as PreviewPlaceholderStatus)
+      : 'pending'
+    : null;
 
   const handlePrevious = () => {
     setCurrentIndex((prev) => (prev === 0 ? files.length - 1 : prev - 1));
@@ -146,6 +208,24 @@ const TransferPreviewModal: React.FC<TransferPreviewModalProps> = ({
             <div className="text-white text-center">
               <p className="text-lg mb-2">{currentFile.filename}</p>
               <p className="text-sm opacity-75">Preview not available for this file type</p>
+            </div>
+          )}
+
+          {(isImage || isVideo || isPdf) && !previewUrl && placeholderStatus && (
+            <div className="w-full max-w-2xl flex flex-col items-center gap-4">
+              <PreviewPlaceholder
+                status={placeholderStatus}
+                aspect={isVideo ? 'video' : isPdf ? 'pdf' : 'image'}
+              />
+              {pollExhausted && (
+                <button
+                  type="button"
+                  onClick={retryPoll}
+                  className="text-sm text-white/80 hover:text-white hover:underline focus:outline-none focus:ring-2 focus:ring-white/60 rounded px-2 py-1"
+                >
+                  {previewT('retryPreview')}
+                </button>
+              )}
             </div>
           )}
         </div>

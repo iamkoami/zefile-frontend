@@ -90,10 +90,12 @@ export interface PayoutDto {
  */
 export interface SenderPayoutsResponse {
   payouts: PayoutDto[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
 }
 
 /**
@@ -101,10 +103,12 @@ export interface SenderPayoutsResponse {
  */
 interface BackendWithdrawalResponse {
   withdrawals: PayoutDto[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
 }
 
 /**
@@ -136,16 +140,13 @@ class PayoutsApi {
 
     const response = await apiClient.get<BackendWithdrawalResponse>(url);
 
-    // Map backend response to legacy format
+    // Rename backend `withdrawals` → `payouts` (domain rename); meta is passed through.
     if (response.data) {
       return {
         ...response,
         data: {
           payouts: response.data.withdrawals,
-          total: response.data.total,
-          page: response.data.page,
-          limit: response.data.limit,
-          totalPages: response.data.totalPages,
+          meta: response.data.meta,
         },
       };
     }

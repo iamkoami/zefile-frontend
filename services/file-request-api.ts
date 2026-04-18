@@ -108,9 +108,12 @@ class FileRequestApi {
   ): Promise<
     ApiResponse<{
       data: FileRequestDto[];
-      total: number;
-      page: number;
-      limit: number;
+      meta: {
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+      };
     }>
   > {
     return apiClient.get(
