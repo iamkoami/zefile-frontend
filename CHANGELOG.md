@@ -5,6 +5,12 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.52.3] - 2026-04-23
+
+### Changed
+
+- **Rewrote home hero copy for first-time visitor clarity.** Old headline ("Send files. Get paid before they download.") + subtitle (channels/tiers list) only landed for readers who already knew ZeFile — first-timers couldn't tell what the product actually did. New hero walks a stranger through the full loop in two beats: headline "Send your work. Get paid the moment they download." (the outcome) + split subtitle "Drop in your files, set a price, share the link. / Your client previews, pays, then downloads — money straight to your account." (the flow). EN + FR updated together; FR follows the brand voice guide (vous, no literal idiom translations).
+
 ## [1.52.2] - 2026-04-18
 
 ### Fixed
