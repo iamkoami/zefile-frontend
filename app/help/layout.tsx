@@ -35,10 +35,10 @@ export async function generateMetadata(): Promise<Metadata> {
       description: content.description,
     },
     alternates: {
-      canonical: `${SITE_URL}/help`,
+      canonical: locale === 'fr' ? `${SITE_URL}/fr/help` : `${SITE_URL}/help`,
       languages: {
         'en': `${SITE_URL}/help`,
-        'fr': `${SITE_URL}/help`,
+        'fr': `${SITE_URL}/fr/help`,
         'x-default': `${SITE_URL}/help`,
       },
     },
