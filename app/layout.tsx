@@ -100,8 +100,11 @@ export async function generateMetadata(): Promise<Metadata> {
   const headersList = await headers();
   const canonicalPath = headersList.get('x-canonical-path') || '/';
   const pagePath = canonicalPath === '/' ? '' : canonicalPath;
-  const canonicalUrl = `${SITE_URL}${pagePath}`;
+  const enUrl = `${SITE_URL}${pagePath}`;
   const frUrl = `${SITE_URL}/fr${pagePath}`;
+  // Self-referencing canonical: when the page is served at /fr/*, point canonical
+  // at /fr/* (not the EN variant), otherwise Google consolidates FR into EN.
+  const canonicalUrl = locale === 'fr' ? frUrl : enUrl;
 
   return {
     metadataBase: new URL(SITE_URL),
@@ -150,9 +153,9 @@ export async function generateMetadata(): Promise<Metadata> {
     alternates: {
       canonical: canonicalUrl,
       languages: {
-        'en': canonicalUrl,
+        'en': enUrl,
         'fr': frUrl,
-        'x-default': canonicalUrl,
+        'x-default': enUrl,
       },
     },
     icons: {
