@@ -48,10 +48,10 @@ export async function generateMetadata(): Promise<Metadata> {
       description: content.description,
     },
     alternates: {
-      canonical: `${SITE_URL}/contact-us`,
+      canonical: locale === 'fr' ? `${SITE_URL}/fr/contact-us` : `${SITE_URL}/contact-us`,
       languages: {
         'en': `${SITE_URL}/contact-us`,
-        'fr': `${SITE_URL}/contact-us`,
+        'fr': `${SITE_URL}/fr/contact-us`,
         'x-default': `${SITE_URL}/contact-us`,
       },
     },

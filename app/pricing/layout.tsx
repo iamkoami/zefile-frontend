@@ -140,10 +140,10 @@ export async function generateMetadata(): Promise<Metadata> {
       description: content.description,
     },
     alternates: {
-      canonical: `${SITE_URL}/pricing`,
+      canonical: locale === 'fr' ? `${SITE_URL}/fr/pricing` : `${SITE_URL}/pricing`,
       languages: {
         'en': `${SITE_URL}/pricing`,
-        'fr': `${SITE_URL}/pricing`,
+        'fr': `${SITE_URL}/fr/pricing`,
         'x-default': `${SITE_URL}/pricing`,
       },
     },

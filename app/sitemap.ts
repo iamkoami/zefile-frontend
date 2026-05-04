@@ -10,14 +10,18 @@ const ogImage: MetadataRoute.Sitemap[number]['images'] = [
 
 /**
  * Helper to add hreflang alternates for EN/FR.
- * Since ZeFile uses cookie-based locale (same URL serves both languages),
- * alternates point to the same URL but signal language support to crawlers.
+ * Middleware rewrites /fr/<path> → /<path> with NEXT_LOCALE=fr, so /fr/<path>
+ * is a real, distinct URL serving the French translation. The alternates point
+ * to those distinct URLs so search engines can index each language variant.
  */
-function withAlternates(url: string) {
+function withAlternates(path: string) {
+  const enUrl = `${SITE_URL}${path}`;
+  const frUrl = `${SITE_URL}/fr${path === '/' ? '' : path}`;
   return {
     languages: {
-      en: url,
-      fr: url,
+      en: enUrl,
+      fr: frUrl,
+      'x-default': enUrl,
     } as Record<string, string>,
   };
 }
@@ -32,7 +36,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'weekly',
       priority: 1.0,
       images: ogImage,
-      alternates: withAlternates(`${SITE_URL}/`),
+      alternates: withAlternates(`/`),
     },
     {
       url: `${SITE_URL}/pricing`,
@@ -40,7 +44,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'monthly',
       priority: 0.8,
       images: ogImage,
-      alternates: withAlternates(`${SITE_URL}/pricing`),
+      alternates: withAlternates(`/pricing`),
     },
     {
       url: `${SITE_URL}/blog`,
@@ -48,7 +52,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'weekly',
       priority: 0.8,
       images: ogImage,
-      alternates: withAlternates(`${SITE_URL}/blog`),
+      alternates: withAlternates(`/blog`),
     },
     {
       url: `${SITE_URL}/about`,
@@ -56,7 +60,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'monthly',
       priority: 0.7,
       images: ogImage,
-      alternates: withAlternates(`${SITE_URL}/about`),
+      alternates: withAlternates(`/about`),
     },
     {
       url: `${SITE_URL}/how-it-works`,
@@ -64,7 +68,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'monthly',
       priority: 0.7,
       images: ogImage,
-      alternates: withAlternates(`${SITE_URL}/how-it-works`),
+      alternates: withAlternates(`/how-it-works`),
     },
     {
       url: `${SITE_URL}/help`,
@@ -72,21 +76,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'monthly',
       priority: 0.6,
       images: ogImage,
-      alternates: withAlternates(`${SITE_URL}/help`),
+      alternates: withAlternates(`/help`),
     },
     {
       url: `${SITE_URL}/terms`,
       lastModified: new Date('2026-01-15'),
       changeFrequency: 'yearly',
       priority: 0.3,
-      alternates: withAlternates(`${SITE_URL}/terms`),
+      alternates: withAlternates(`/terms`),
     },
     {
       url: `${SITE_URL}/privacy`,
       lastModified: new Date('2026-01-15'),
       changeFrequency: 'yearly',
       priority: 0.3,
-      alternates: withAlternates(`${SITE_URL}/privacy`),
+      alternates: withAlternates(`/privacy`),
     },
     {
       url: `${SITE_URL}/contact-us`,
@@ -94,28 +98,28 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'monthly',
       priority: 0.5,
       images: ogImage,
-      alternates: withAlternates(`${SITE_URL}/contact-us`),
+      alternates: withAlternates(`/contact-us`),
     },
     {
       url: `${SITE_URL}/security`,
       lastModified: new Date('2026-01-15'),
       changeFrequency: 'yearly',
       priority: 0.4,
-      alternates: withAlternates(`${SITE_URL}/security`),
+      alternates: withAlternates(`/security`),
     },
     {
       url: `${SITE_URL}/press`,
       lastModified: now,
       changeFrequency: 'monthly',
       priority: 0.4,
-      alternates: withAlternates(`${SITE_URL}/press`),
+      alternates: withAlternates(`/press`),
     },
     {
       url: `${SITE_URL}/jobs`,
       lastModified: now,
       changeFrequency: 'monthly',
       priority: 0.4,
-      alternates: withAlternates(`${SITE_URL}/jobs`),
+      alternates: withAlternates(`/jobs`),
     },
   ];
 
@@ -137,7 +141,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         lastModified: post.updatedAt ? new Date(post.updatedAt) : new Date(),
         changeFrequency: 'weekly' as const,
         priority: 0.7,
-        alternates: withAlternates(`${SITE_URL}/blog/${post.slug}`),
+        alternates: withAlternates(`/blog/${post.slug}`),
       }));
     }
   } catch {
@@ -161,7 +165,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         lastModified: creator.updatedAt ? new Date(creator.updatedAt) : new Date(),
         changeFrequency: 'weekly' as const,
         priority: 0.6,
-        alternates: withAlternates(`${SITE_URL}/@${creator.handle}`),
+        alternates: withAlternates(`/@${creator.handle}`),
       }));
     }
   } catch {
