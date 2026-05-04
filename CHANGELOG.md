@@ -5,6 +5,15 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.53.1] - 2026-05-04
+
+### Fixed
+
+- **Hreflang and canonical URLs now point to the real `/fr/*` routes.** Sitemap and all page metadata previously declared `en` and `fr` alternates as the same URL (the EN one), and FR pages set their canonical to the EN URL. The middleware actually serves `/fr/*` as a distinct path (rewriting to `/*` with `NEXT_LOCALE=fr` cookie), so the metadata was contradicting the routing — Google was likely consolidating FR variants into their EN counterparts and not indexing the French pages independently.
+  - `app/sitemap.ts`: `withAlternates` rewritten to take a path and emit `{ en: /path, fr: /fr/path, x-default: /path }` for the 12 static URLs plus blog posts and creator profiles.
+  - `app/layout.tsx`: canonical is now self-referencing — `/fr/*` pages canonicalize to themselves instead of the EN page.
+  - 11 per-page layouts updated to the same pattern: `about`, `pricing`, `how-it-works`, `help`, `privacy`, `terms`, `contact-us`, `security`, `press`, `jobs`, `blog`.
+
 ## [1.53.0] - 2026-05-04
 
 ### Added
