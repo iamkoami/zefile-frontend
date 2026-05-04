@@ -3,13 +3,52 @@ import type { MetadataRoute } from 'next';
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://zefile.io';
 const isProduction = SITE_URL === 'https://zefile.io';
 
-// NOTE: Cloudflare Pages prepends a managed robots.txt section with Content-Signal
-// directives and AI bot blocks. That section already handles GPTBot, CCBot, ClaudeBot,
-// Amazonbot, Google-Extended, Bytespider, and meta-externalagent.
-// To avoid duplicate User-agent: * blocks (undefined per RFC 9309), either:
-//   1. Disable Cloudflare managed robots.txt in Pages dashboard (Settings > Scrape Shield)
-//   2. Or keep both sections as-is (Cloudflare's block uses Allow: /, ours is more specific)
-// We omit AI bot rules here to avoid duplication with the Cloudflare managed section.
+// Cloudflare Pages prepends a managed robots.txt section (Scrape Shield) that blocks
+// GPTBot, ClaudeBot, Google-Extended, CCBot, Bytespider, etc. with `Disallow: /`.
+// Per RFC 9309, the most-specific User-agent section wins, so the explicit blocks below
+// for GPTBot / ClaudeBot / OAI-SearchBot override the Cloudflare wildcard for those UAs.
+// To eliminate the duplicate `User-agent: *` block entirely, disable the Cloudflare
+// managed robots.txt under: Pages → Settings → Scrape Shield → AI Scrape Block.
+
+const PUBLIC_PATHS = [
+  '/',
+  '/about',
+  '/pricing',
+  '/blog',
+  '/help',
+  '/how-it-works',
+  '/privacy',
+  '/terms',
+  '/contact-us',
+  '/security',
+  '/press',
+];
+
+const PRIVATE_PATHS = [
+  '/z-',
+  '/download/',
+  '/download/*',
+  '/transfer/',
+  '/transfer/*',
+  '/t/',
+  '/t/*',
+  '/*?code=',
+  '/*?transfer=',
+  '/*?shortCode=',
+  '/*?download=',
+  '/dashboard',
+  '/dashboard/',
+  '/account',
+  '/account/',
+  '/profile',
+  '/profile/',
+  '/settings',
+  '/settings/',
+  '/admin',
+  '/admin/',
+  '/api/',
+  '/api/*',
+];
 
 export default function robots(): MetadataRoute.Robots {
   // Block all crawlers on staging/dev environments
@@ -26,42 +65,8 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: '*',
-        allow: [
-          '/',
-          '/about',
-          '/pricing',
-          '/blog',
-          '/help',
-          '/how-it-works',
-          '/privacy',
-          '/terms',
-          '/contact-us',
-        ],
-        disallow: [
-          '/z-',
-          '/download/',
-          '/download/*',
-          '/transfer/',
-          '/transfer/*',
-          '/t/',
-          '/t/*',
-          '/*?code=',
-          '/*?transfer=',
-          '/*?shortCode=',
-          '/*?download=',
-          '/dashboard',
-          '/dashboard/',
-          '/account',
-          '/account/',
-          '/profile',
-          '/profile/',
-          '/settings',
-          '/settings/',
-          '/admin',
-          '/admin/',
-          '/api/',
-          '/api/*',
-        ],
+        allow: PUBLIC_PATHS,
+        disallow: PRIVATE_PATHS,
       },
       {
         userAgent: 'Googlebot',
@@ -71,15 +76,21 @@ export default function robots(): MetadataRoute.Robots {
         userAgent: 'Bingbot',
         disallow: ['/download/', '/transfer/', '/dashboard/', '/z-'],
       },
-      // AI crawler policy:
-      // - Allow ChatGPT-User for search/citation (drives referral traffic)
-      // - Allow PerplexityBot for AI-powered search visibility
-      // - Training crawlers (GPTBot, CCBot, ClaudeBot, etc.) remain blocked by Cloudflare's
-      //   managed robots.txt section + Content-Signal: ai-train=no
-      { userAgent: 'ChatGPT-User', allow: ['/', '/about', '/pricing', '/how-it-works', '/help', '/blog'], disallow: ['/z-', '/download/', '/transfer/', '/dashboard/', '/account/'] },
-      { userAgent: 'PerplexityBot', allow: ['/', '/about', '/pricing', '/how-it-works', '/help', '/blog'], disallow: ['/z-', '/download/', '/transfer/', '/dashboard/', '/account/'] },
-      // anthropic-ai is for training only, keep blocked
+      // AI search/grounding crawlers — allow on public surface, block private routes.
+      // These crawlers fetch live for search citations (ChatGPT, Claude, Perplexity AI Overviews).
+      // Without these explicit blocks the Cloudflare managed Disallow: / takes effect.
+      { userAgent: 'GPTBot', allow: PUBLIC_PATHS, disallow: PRIVATE_PATHS },
+      { userAgent: 'OAI-SearchBot', allow: PUBLIC_PATHS, disallow: PRIVATE_PATHS },
+      { userAgent: 'ChatGPT-User', allow: PUBLIC_PATHS, disallow: PRIVATE_PATHS },
+      { userAgent: 'ClaudeBot', allow: PUBLIC_PATHS, disallow: PRIVATE_PATHS },
+      { userAgent: 'Claude-Web', allow: PUBLIC_PATHS, disallow: PRIVATE_PATHS },
+      { userAgent: 'PerplexityBot', allow: PUBLIC_PATHS, disallow: PRIVATE_PATHS },
+      { userAgent: 'Google-Extended', allow: PUBLIC_PATHS, disallow: PRIVATE_PATHS },
+      // Training-only crawlers — keep fully blocked (Content-Signal: ai-train=no).
       { userAgent: 'anthropic-ai', disallow: '/' },
+      { userAgent: 'CCBot', disallow: '/' },
+      { userAgent: 'Bytespider', disallow: '/' },
+      { userAgent: 'cohere-ai', disallow: '/' },
     ],
     sitemap: `${SITE_URL}/sitemap.xml`,
   };

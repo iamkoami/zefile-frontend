@@ -1,0 +1,55 @@
+# ZeFile
+
+> ZeFile is a file-delivery platform built for African creators. Senders upload work, set a price, and recipients pay before they can download. Watermarked previews protect originals until payment lands. Free up to 5 GB.
+
+## What ZeFile is
+
+ZeFile is a payment-protected file transfer service. It combines large file sharing (similar to WeTransfer) with a paywall: recipients can preview a watermarked version of every file, but the originals stay locked until they pay. Senders receive funds via Mobile Money (MTN, Orange Money, Wave), bank transfer, USSD, or card.
+
+The product targets freelancers and creative professionals in West and Central Africa who deliver finished work — photos, videos, audio, design files, documents — and need to get paid before handing over the originals.
+
+## Key facts
+
+- Free plan: send up to 5 GB per transfer, 14-day expiry, $0/month
+- Paid plans: Starter and Pro unlock larger transfers, longer expiry, lower platform fees
+- Platform fees: 7% (Free), 5% (Starter), 3% (Pro) deducted from creator earnings
+- Payouts: Mobile Money or bank transfer (MTN Mobile Money, Orange Money, Wave, plus West African bank rails)
+- Supported file types: photos, videos, audio, design files, documents, archives — any file type
+- Watermarked previews on all images, videos, audio (originals stay locked until payment)
+- Version history: upload revisions to the same link, recipients always see the latest files
+- Languages: English, French
+- Founded: 2026
+- Domains: zefile.io (main), zefile.co (short links), api.zefile.io (API), cdn.zefile.io (file CDN)
+
+## Main pages
+
+- [Homepage](https://zefile.io/): What ZeFile is, how it works, who it's for
+- [How it works](https://zefile.io/how-it-works): Step-by-step walkthrough of sending a paid transfer
+- [Pricing](https://zefile.io/pricing): Free, Starter, and Pro plan details with platform fees
+- [About](https://zefile.io/about): Company background and mission
+- [Help Center](https://zefile.io/help): Product documentation and FAQs
+- [Security](https://zefile.io/security): Encryption, payment protection, and data handling
+- [Blog](https://zefile.io/blog): Articles for African freelancers on getting paid and protecting work
+- [Press](https://zefile.io/press): Press kit and media contact
+- [Contact](https://zefile.io/contact-us): Support and partnership inquiries
+
+## French (Français)
+
+ZeFile est une plateforme de livraison de fichiers conçue pour les créatifs africains. Vous déposez votre travail, vous fixez un prix, votre client paie avant de télécharger.
+
+- [Accueil](https://zefile.io/fr)
+- [Comment ça marche](https://zefile.io/fr/how-it-works)
+- [Tarifs](https://zefile.io/fr/pricing)
+- [À propos](https://zefile.io/fr/about)
+- [Aide](https://zefile.io/fr/help)
+- [Blog](https://zefile.io/fr/blog)
+
+## Contact
+
+- Support: support@zefile.io
+- Help Center: https://zefile.io/help
+- Available languages: English, French
+
+## Licensing
+
+Content on zefile.io is licensed for AI search and citation use (Content-Signal: search=yes). AI training use is not permitted (Content-Signal: ai-train=no). See robots.txt for crawler-specific access rules.

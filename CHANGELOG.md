@@ -5,6 +5,20 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.53.0] - 2026-05-04
+
+### Added
+
+- **`public/llms.txt`** — Structured site description for AI search crawlers (ChatGPT, Claude, Perplexity). Includes product summary, key facts (plans, fees, file types, payout methods), top-level page map, FR mirror, and licensing posture (`search=yes, ai-train=no`). Addresses the previous 404 where `https://zefile.io/llms.txt` returned the Next.js HTML shell.
+
+### Changed
+
+- **`app/robots.ts` — explicit allow rules for AI search crawlers.** Previously relied on Cloudflare Pages' managed Scrape Shield, which blocked `GPTBot`, `ClaudeBot`, `Google-Extended` site-wide with `Disallow: /`. New explicit `User-agent` blocks for `GPTBot`, `OAI-SearchBot`, `ChatGPT-User`, `ClaudeBot`, `Claude-Web`, `PerplexityBot`, and `Google-Extended` allow them on the public surface (`/`, `/about`, `/pricing`, `/blog`, `/help`, `/how-it-works`, `/privacy`, `/terms`, `/contact-us`, `/security`, `/press`) while still blocking download/transfer/dashboard/account/admin paths. Per RFC 9309 most-specific-UA-wins, these override Cloudflare's wildcard. Training-only crawlers (`anthropic-ai`, `CCBot`, `Bytespider`, `cohere-ai`) remain fully disallowed. `PUBLIC_PATHS` and `PRIVATE_PATHS` extracted as constants.
+
+### Operational
+
+- **Cloudflare Pages dashboard step required** to fully deploy the change: disable **Bots → Block AI bots** (currently "Block on all pages") and disable **Bots → Instruct AI bot traffic with robots.txt**. With those on, Cloudflare returns 403 to GPTBot/ClaudeBot at the edge before the request reaches the page, neutralising the `robots.txt` allow rules.
+
 ## [1.52.3] - 2026-04-23
 
 ### Changed
