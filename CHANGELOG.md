@@ -5,6 +5,18 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.53.3] - 2026-05-05
+
+### Fixed
+
+- **Homepage and `/about` meta descriptions trimmed to fit the ~155-char SERP cutoff.** Homepage went from 191 → 145 chars and the copy switched to the African-creators positioning (matches the homepage body). `/about` went 137 → 152 chars. Also fixed a `2 GB` vs `5 GB` discrepancy between the homepage description and the visible body copy / `llms.txt`.
+- **FR homepage description rewritten idiomatically** per the ZeFile FR messaging guide ("plateforme de livraison de fichiers pour créatifs africains" — never "transfert" or "vente" framings).
+- **Sitemap now emits 12 standalone `/fr/*` `<url>` entries** (one per static EN page). Previously the FR variants only appeared as `xhtml:link` children of the EN URLs, which several crawlers treat as weaker than independent `<url>` entries. Each FR entry preserves the full EN/FR/x-default `xhtml:link` set so the pair cross-references itself.
+
+### Added
+
+- **`theme-color: #5E53E0`** via Next.js `Viewport` export in `app/layout.tsx`. Matches the existing manifest `theme_color` so installable PWA and Android browser address bar share the same brand accent.
+
 ## [1.53.2] - 2026-05-05
 
 ### Fixed
