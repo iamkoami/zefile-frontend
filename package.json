@@ -1,6 +1,6 @@
 {
   "name": "zefile-frontend",
-  "version": "1.53.5",
+  "version": "1.54.0",
   "private": true,
   "engines": {
     "node": ">=22.22.0 <23",

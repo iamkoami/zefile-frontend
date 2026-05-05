@@ -26,6 +26,7 @@ import {
   UpgradeModal,
   TransactionFeesSection,
 } from "@/features/subscription/components";
+import PaymentProcessorStrip from "@/components/pricing/PaymentProcessorStrip";
 import {
   type SubscriptionTier,
   type BillingPeriod,
@@ -708,6 +709,9 @@ export default function PricingClient() {
 
           {/* Transaction Fees Section */}
           <TransactionFeesSection />
+
+          {/* Payment processors trust strip */}
+          <PaymentProcessorStrip />
 
           {/* FAQ Section - matching how-it-works style */}
           <div className="mt-32 max-w-[55rem] mx-auto relative">
