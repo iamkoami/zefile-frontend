@@ -5,6 +5,24 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.54.0] - 2026-05-05
+
+### Added
+
+- **Help center routes (H2 scaffolding).** Public `/help/<category>` and `/help/<category>/<slug>` routes consume the new backend `/help/*` endpoints (built on the existing `SupportArticle` data). Both EN and FR variants — the route file pattern mirrors the locale-bound blog post architecture from v1.53.2 (locale-mismatch redirects to canonical, self-only hreflang on individual articles, cross-locale alternates in sitemap because each row has both `slug_en` and `slug_fr`).
+  - `app/help/[category]/page.tsx` — category index with article cards (title + tags). Empty state if no published articles yet.
+  - `app/help/[category]/[slug]/page.tsx` — single article view with `Article` + `BreadcrumbList` JSON-LD. 308-redirects to canonical locale URL when accessed via the wrong slug or category.
+  - `services/help-articles-types.ts` — types + `HELP_CATEGORIES` + `localizeArticle()` utility, separated from the API client wrapper so edge route files can import without pulling Sentry/Node-only deps.
+  - `services/help-articles-api.ts` — `apiClient`-backed methods for non-edge contexts.
+  - `app/sitemap.ts` — emits one `<url>` per article per locale plus a category index URL for each category that has at least one published article.
+- **Pricing payment-processor trust strip.** New `PaymentProcessorStrip` component listing supported processors (Paystack, Wave, MTN MoMo, Orange Money, Moov Money, Visa, Mastercard) with a brief PCI-DSS reassurance line. Wired into `PricingClient` between the existing `TransactionFeesSection` and FAQ. Dropped a planned `ProcessingFeeExplainer` since `TransactionFeesSection` already does that better.
+- `i18n/messages/en.json` + `fr.json` — new `pricing.processors` namespace.
+
+### Notes
+
+- Existing `/help` static FAQ page stays as the landing for now — articles are additive, not replacing it.
+- Backend half ships in `zefile-backend` v1.54.0.
+
 ## [1.53.5] - 2026-05-05
 
 ### Fixed
