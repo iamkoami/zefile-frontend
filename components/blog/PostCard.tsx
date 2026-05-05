@@ -33,7 +33,8 @@ export function PostCard({
   locale: string;
   t: (key: string, values?: Record<string, string | number>) => string;
 }) {
-  const getPostUrl = () => `${window.location.origin}/blog/${post.slug}`;
+  const postPath = `${post.locale === "fr" ? "/fr" : ""}/blog/${post.slug}`;
+  const getPostUrl = () => `${window.location.origin}${postPath}`;
 
   const handleShare = (e: React.MouseEvent, buildUrl: (encodedUrl: string, encodedTitle: string) => string) => {
     e.preventDefault();
@@ -54,7 +55,7 @@ export function PostCard({
 
   return (
     <Link
-      href={`/blog/${post.slug}`}
+      href={postPath}
       className="group flex flex-col md:flex-row bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow"
     >
       {/* Image — left side */}

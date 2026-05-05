@@ -8,6 +8,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 interface BlogPostMeta {
   title: string;
   slug: string;
+  locale: string;
   metaTitle?: string | null;
   metaDescription?: string | null;
   excerpt?: string | null;
@@ -53,7 +54,9 @@ export async function generateMetadata({
 
   const title = post.metaTitle || post.title;
   const description = post.metaDescription || post.excerpt || "";
-  const url = `${SITE_URL}/blog/${post.slug}`;
+  // Canonical URL must reflect the post's actual locale, not the URL locale —
+  // a FR post requested under /blog/<slug> still canonicalises to /fr/blog/<slug>.
+  const url = `${SITE_URL}${post.locale === "fr" ? "/fr" : ""}/blog/${post.slug}`;
 
   return {
     title: `${title} - ZeFile Blog`,
@@ -63,6 +66,7 @@ export async function generateMetadata({
       description,
       url,
       type: "article",
+      locale: post.locale === "fr" ? "fr_FR" : "en_US",
       ...(post.publishedAt && { publishedTime: post.publishedAt }),
       ...(post.coverImageUrl && {
         images: [{ url: post.coverImageUrl, width: 1200, height: 630, alt: title }],
@@ -75,6 +79,12 @@ export async function generateMetadata({
     },
     alternates: {
       canonical: url,
+      // Self-referencing hreflang only — translation pairing isn't tracked in
+      // the data model, so we cannot honestly claim a counterpart at the other
+      // locale's URL. Once BlogPost gets a translationOfId FK, emit the pair.
+      languages: {
+        [post.locale]: url,
+      },
     },
   };
 }
@@ -90,15 +100,16 @@ export default async function BlogPostLayout({
   const locale = await getLocale();
   const post = await fetchPostMeta(slug, locale);
 
+  const localePrefix = post?.locale === "fr" ? "/fr" : "";
   const breadcrumbItems = [
-    { name: 'Home', url: SITE_URL },
-    { name: 'Blog', url: `${SITE_URL}/blog` },
+    { name: 'Home', url: `${SITE_URL}${localePrefix || "/"}` },
+    { name: 'Blog', url: `${SITE_URL}${localePrefix}/blog` },
   ];
 
   if (post) {
     breadcrumbItems.push({
       name: post.title,
-      url: `${SITE_URL}/blog/${post.slug}`,
+      url: `${SITE_URL}${localePrefix}/blog/${post.slug}`,
     });
   }
 
