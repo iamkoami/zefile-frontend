@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { getLocale } from "next-intl/server";
-import { BreadcrumbJsonLd } from "@/components/seo/JsonLd";
+import { AboutPageJsonLd, BreadcrumbJsonLd } from "@/components/seo/JsonLd";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://zefile.io';
 
@@ -50,6 +50,7 @@ export default function AboutLayout({
 }) {
   return (
     <>
+      <AboutPageJsonLd />
       <BreadcrumbJsonLd items={[
         { name: 'Home', url: SITE_URL },
         { name: 'About', url: `${SITE_URL}/about` },

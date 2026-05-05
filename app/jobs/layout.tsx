@@ -22,6 +22,8 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: content.title,
     description: content.description,
+    // Placeholder content — keep out of the index until real openings are listed.
+    robots: { index: false, follow: true },
     openGraph: {
       title: content.title,
       description: content.description,
