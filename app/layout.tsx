@@ -1,7 +1,7 @@
 // Polyfill localStorage for SSR (must be first import)
 import "@/lib/localStorage-polyfill";
 
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import { Suspense } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
@@ -78,16 +78,22 @@ const metropolis = localFont({
 // Base URL for metadata
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://zefile.io';
 
+// Browser chrome color — matches the manifest theme_color so installable PWA
+// and Android browser address bar share the same brand accent.
+export const viewport: Viewport = {
+  themeColor: '#5E53E0',
+};
+
 // SEO metadata by locale
 const seoContent = {
   en: {
     title: 'ZeFile — Send Files & Get Paid Before Download',
-    description: 'The file transfer platform where freelancers get paid before download. Send large files with payment protection, watermarked previews, and automatic expiry. Free up to 2 GB.',
+    description: 'The file delivery platform for African creators. Get paid before download via Mobile Money, card, or bank. Watermarked previews. Free up to 5 GB.',
     keywords: 'secure file transfer, send large files, payment protection, get paid before download, file sharing, sell files online, freelancer file delivery, file transfer for creatives, WeTransfer alternative, WeTransfer alternative for freelancers',
   },
   fr: {
     title: 'ZeFile — Envoyez vos fichiers, soyez payé avant le téléchargement',
-    description: 'La plateforme de transfert de fichiers où les freelances sont payés avant le téléchargement. Envoyez de gros fichiers avec protection de paiement, aperçus en filigrane et expiration automatique. Gratuit jusqu\'à 2 Go.',
+    description: 'Plateforme de livraison de fichiers pour créatifs africains. Soyez payé avant téléchargement (Mobile Money, carte, banque). Gratuit jusqu\'à 5 Go.',
     keywords: 'transfert de fichiers sécurisé, envoyer gros fichiers, protection de paiement, payé avant téléchargement, partage de fichiers, vendre fichiers en ligne, livraison fichiers freelance, alternative WeTransfer',
   },
 };
@@ -104,6 +110,9 @@ export async function generateMetadata(): Promise<Metadata> {
   const frUrl = `${SITE_URL}/fr${pagePath}`;
   // Self-referencing canonical: when the page is served at /fr/*, point canonical
   // at /fr/* (not the EN variant), otherwise Google consolidates FR into EN.
+  // Note: Next.js metadata auto-strips trailing slashes from canonicals, so the
+  // homepage canonical resolves to `https://zefile.io` (no slash). Google treats
+  // that as equivalent to `https://zefile.io/`, so it's not a ranking issue.
   const canonicalUrl = locale === 'fr' ? frUrl : enUrl;
 
   return {
