@@ -1,6 +1,6 @@
 export const runtime = "edge";
 
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -70,6 +70,16 @@ export default async function BlogPostPage({
     notFound();
   }
 
+  // If the URL locale doesn't match the post's actual locale, 308-redirect to
+  // the correct locale-prefixed URL. Prevents duplicate URLs (/blog/<fr-slug>
+  // and /fr/blog/<en-slug>) and ensures <html lang> matches rendered content.
+  if (post.locale !== locale) {
+    const target = post.locale === "fr"
+      ? `/fr/blog/${post.slug}`
+      : `/blog/${post.slug}`;
+    permanentRedirect(target);
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-[#F5F5F0]">
       <Header />
@@ -81,7 +91,7 @@ export default async function BlogPostPage({
         author={post.authorName || "ZeFile"}
         image={post.coverImageUrl || undefined}
         description={post.metaDescription || post.excerpt || post.title}
-        url={`${SITE_URL}/blog/${post.slug}`}
+        url={`${SITE_URL}${post.locale === "fr" ? "/fr" : ""}/blog/${post.slug}`}
         locale={post.locale}
       />
 

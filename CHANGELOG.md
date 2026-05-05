@@ -5,6 +5,16 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.53.2] - 2026-05-05
+
+### Fixed
+
+- **Blog post URLs now bind to the post's actual locale, not the URL prefix.** EN and FR translations live at different slugs, so the previous logic produced duplicate URLs (`/blog/<fr-slug>` rendered FR content with `<html lang="en">`, `/fr/blog/<en-slug>` rendered EN content with `<html lang="fr">`), false sitemap hreflang claims, and missing on-page hreflang for blog posts. Closes audit findings C1–C4.
+  - `app/blog/[slug]/page.tsx`: 308-redirect when URL locale doesn't match `post.locale`; `ArticleJsonLd` URL uses the locale-correct path.
+  - `app/blog/[slug]/layout.tsx`: canonical and self-referencing hreflang built from `post.locale`; breadcrumb URLs and OG `locale` follow the post's actual language.
+  - `app/sitemap.ts`: blog entries listed once at their locale-correct URL with self-only `xhtml:link`. The data model has no translation FK yet, so we cannot honestly claim cross-locale alternates for blog posts. Static pages keep their EN/FR/x-default pairing unchanged.
+  - `components/blog/PostCard.tsx`, `components/blog/BlogPostClient.tsx`, `app/blog/page.tsx`: internal links, share URLs, and breadcrumbs use the locale-correct path so users skip the redirect hop.
+
 ## [1.53.1] - 2026-05-04
 
 ### Fixed
