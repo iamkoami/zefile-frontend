@@ -26,6 +26,24 @@ function withAlternates(path: string) {
   };
 }
 
+/**
+ * Build the FR mirror entry for a static URL — same metadata, /fr-prefixed URL,
+ * with the same EN/FR/x-default alternates so the pair cross-references itself.
+ * Each locale variant must appear as its own <url> entry per Google's guidance,
+ * not just as an xhtml:link child of the EN URL.
+ */
+function frMirror(
+  enEntry: MetadataRoute.Sitemap[number],
+): MetadataRoute.Sitemap[number] {
+  const enUrl = String(enEntry.url);
+  const enPath = enUrl.replace(SITE_URL, '');
+  const frUrl = `${SITE_URL}/fr${enPath === '/' ? '' : enPath}`;
+  return {
+    ...enEntry,
+    url: frUrl,
+  };
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
 
@@ -123,6 +141,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
+  // FR mirror entries — every static EN URL has a /fr/* counterpart served by
+  // the middleware rewrite. Each must appear as its own <url> entry so search
+  // engines can index both locale variants independently.
+  const frStaticUrls: MetadataRoute.Sitemap = staticUrls.map(frMirror);
+
   // Fetch published blog post slugs.
   // Blog posts use locale-specific slugs (EN and FR translations live at
   // different paths) and the data model does not yet link translation pairs,
@@ -183,5 +206,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Graceful fallback — sitemap works without creator profiles
   }
 
-  return [...staticUrls, ...blogUrls, ...creatorUrls];
+  return [...staticUrls, ...frStaticUrls, ...blogUrls, ...creatorUrls];
 }
