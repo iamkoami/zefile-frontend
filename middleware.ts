@@ -208,8 +208,10 @@ export async function middleware(request: NextRequest) {
         response.headers.set('Cache-Control', 'no-store');
         response.headers.delete('X-Powered-By');
 
-        // Preserve French locale for /fr paths
-        if (pathname.startsWith('/fr')) {
+        // Preserve French locale for /fr paths. Only Set-Cookie when the
+        // existing value differs — avoids tagging every response with
+        // Set-Cookie, which would prevent Cloudflare from edge-caching.
+        if (pathname.startsWith('/fr') && request.cookies.get('NEXT_LOCALE')?.value !== 'fr') {
           response.cookies.set('NEXT_LOCALE', 'fr', { path: '/', maxAge: 365 * 24 * 60 * 60, sameSite: 'lax' });
         }
 
@@ -256,7 +258,14 @@ export async function middleware(request: NextRequest) {
       ? 'public, s-maxage=30, stale-while-revalidate=60'
       : 'public, s-maxage=3600, stale-while-revalidate=86400';
 
-    response.cookies.set('NEXT_LOCALE', 'fr', { path: '/', maxAge: 365 * 24 * 60 * 60, sameSite: 'lax' });
+    // Only Set-Cookie when the existing value differs — avoids tagging every
+    // /fr/* response with Set-Cookie, which would prevent Cloudflare from
+    // edge-caching the response. Crawlers without cookies get a clean
+    // cacheable response; users transitioning EN → FR still get the cookie
+    // set on their first /fr visit so subsequent / navigation stays in FR.
+    if (request.cookies.get('NEXT_LOCALE')?.value !== 'fr') {
+      response.cookies.set('NEXT_LOCALE', 'fr', { path: '/', maxAge: 365 * 24 * 60 * 60, sameSite: 'lax' });
+    }
     response.headers.set('Content-Security-Policy', csp);
     response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
     response.headers.set('X-Content-Type-Options', 'nosniff');

@@ -5,6 +5,12 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.53.5] - 2026-05-05
+
+### Fixed
+
+- **`/fr/*` responses are now edge-cacheable for returning FR visitors.** The middleware was emitting `Set-Cookie: NEXT_LOCALE=fr` on every `/fr/*` response, which caused Cloudflare to bypass the new HTML cache rule (Set-Cookie defaults to user-specific content). The cookie is now only set when the existing request cookie value isn't already `fr`. Returning FR visitors with the cookie already present get cached responses; first-time visitors and crawlers still get the cookie set on first hit and bypass cache for that one request. Pairs with the Cloudflare Cache Rule on the `zefile.io` zone deployed on the same day.
+
 ## [1.53.4] - 2026-05-05
 
 ### Fixed
