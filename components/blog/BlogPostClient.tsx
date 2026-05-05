@@ -25,7 +25,7 @@ interface BlogPostClientProps {
 export function ShareButtons({ post }: BlogPostClientProps) {
   const locale = useLocale();
 
-  const postUrl = `${SITE_URL}/blog/${post.slug}`;
+  const postUrl = `${SITE_URL}${post.locale === "fr" ? "/fr" : ""}/blog/${post.slug}`;
   const encodedUrl = encodeURIComponent(postUrl);
   const encodedTitle = encodeURIComponent(post.title);
 

@@ -52,12 +52,13 @@ export default async function BlogListPage() {
   );
 
   const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://zefile.io";
+  const localePrefix = locale === "fr" ? "/fr" : "";
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F5F5F0]">
       <BreadcrumbJsonLd items={[
-        { name: 'Home', url: SITE_URL },
-        { name: 'Blog', url: `${SITE_URL}/blog` },
+        { name: 'Home', url: `${SITE_URL}${localePrefix || "/"}` },
+        { name: 'Blog', url: `${SITE_URL}${localePrefix}/blog` },
       ]} />
       <Header />
 

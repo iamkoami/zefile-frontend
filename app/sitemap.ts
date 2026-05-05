@@ -123,7 +123,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
-  // Fetch published blog post slugs
+  // Fetch published blog post slugs.
+  // Blog posts use locale-specific slugs (EN and FR translations live at
+  // different paths) and the data model does not yet link translation pairs,
+  // so we cannot honestly emit cross-locale alternates here. Each post is
+  // listed once at its locale-correct URL with self-only hreflang.
   let blogUrls: MetadataRoute.Sitemap = [];
   try {
     const controller = new AbortController();
@@ -136,13 +140,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     if (response.ok) {
       const posts: Array<{ slug: string; locale: string; updatedAt: string | null }> =
         await response.json();
-      blogUrls = posts.map((post) => ({
-        url: `${SITE_URL}/blog/${post.slug}`,
-        lastModified: post.updatedAt ? new Date(post.updatedAt) : new Date(),
-        changeFrequency: 'weekly' as const,
-        priority: 0.7,
-        alternates: withAlternates(`/blog/${post.slug}`),
-      }));
+      blogUrls = posts.map((post) => {
+        const postUrl = `${SITE_URL}${post.locale === 'fr' ? '/fr' : ''}/blog/${post.slug}`;
+        return {
+          url: postUrl,
+          lastModified: post.updatedAt ? new Date(post.updatedAt) : new Date(),
+          changeFrequency: 'weekly' as const,
+          priority: 0.7,
+          alternates: {
+            languages: {
+              [post.locale]: postUrl,
+            } as Record<string, string>,
+          },
+        };
+      });
     }
   } catch {
     // Graceful fallback — sitemap works without blog posts
