@@ -125,20 +125,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.4,
       alternates: withAlternates(`/security`),
     },
-    {
-      url: `${SITE_URL}/press`,
-      lastModified: now,
-      changeFrequency: 'monthly',
-      priority: 0.4,
-      alternates: withAlternates(`/press`),
-    },
-    {
-      url: `${SITE_URL}/jobs`,
-      lastModified: now,
-      changeFrequency: 'monthly',
-      priority: 0.4,
-      alternates: withAlternates(`/jobs`),
-    },
+    // /press and /jobs intentionally excluded — placeholder content, noindexed.
   ];
 
   // FR mirror entries — every static EN URL has a /fr/* counterpart served by

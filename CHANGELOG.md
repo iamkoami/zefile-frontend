@@ -5,6 +5,22 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.53.4] - 2026-05-05
+
+### Fixed
+
+- **Case-insensitive URLs now 308-redirect to lowercase.** `/About`, `/Pricing`, etc. previously returned 200 with the page rendering, creating a duplicate-URL surface for every static route. The middleware now redirects any pathname containing uppercase characters to its lowercase equivalent. Skips `/@handle` (creator profiles legitimately mixed-case), `/z-AbC` (short links), and paths with file extensions (a typo on a real asset still 404s).
+- **`/security` FR description trimmed to 134 chars** (was 170+, exceeded the SERP cutoff). Also fixed the typo "protegeon" → "protégeons" and added missing accents throughout. Title also got proper accents.
+
+### Added
+
+- **`AboutPage` JSON-LD on `/about`** — references the existing `Organization` `@id` and declares `inLanguage: ["en", "fr"]`. Helps AI engines and Google Knowledge Graph link the page to the entity.
+- **`/security` OG and Twitter `images`** — social previews now show the brand image instead of a bare card.
+
+### Changed
+
+- **`/press` and `/jobs` are now `noindex`** and removed from `sitemap.xml` (along with their `/fr/` mirrors). Both pages still render publicly but won't accumulate in Google's index until real content ships. Frees crawl budget for valuable pages.
+
 ## [1.53.3] - 2026-05-05
 
 ### Fixed

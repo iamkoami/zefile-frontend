@@ -10,8 +10,8 @@ const seoContent = {
     description: 'ZeFile takes security seriously. Learn how we protect your files, our responsible disclosure policy, and how to report vulnerabilities.',
   },
   fr: {
-    title: 'Securite chez ZeFile - Comment nous protegeons vos fichiers',
-    description: 'ZeFile prend la securite au serieux. Decouvrez comment nous protegeon vos fichiers, notre politique de divulgation responsable et comment signaler des vulnerabilites.',
+    title: 'Sécurité chez ZeFile — Comment nous protégeons vos fichiers',
+    description: 'Comment ZeFile protège vos fichiers et vos paiements : chiffrement, filigrane, divulgation responsable. Signalez une vulnérabilité.',
   },
 };
 
@@ -27,10 +27,20 @@ export async function generateMetadata(): Promise<Metadata> {
       description: content.description,
       url: `${SITE_URL}/security`,
       type: 'website',
+      images: [
+        {
+          url: `${SITE_URL}/og-image.png`,
+          width: 1200,
+          height: 630,
+          alt: 'Security at ZeFile',
+        },
+      ],
     },
     twitter: {
+      card: 'summary_large_image',
       title: content.title,
       description: content.description,
+      images: [`${SITE_URL}/og-image.png`],
     },
     alternates: {
       canonical: locale === 'fr' ? `${SITE_URL}/fr/security` : `${SITE_URL}/security`,
