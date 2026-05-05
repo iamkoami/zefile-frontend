@@ -264,6 +264,30 @@ export function ContactPageJsonLd() {
   );
 }
 
+// AboutPage Schema - for /about
+export function AboutPageJsonLd() {
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "AboutPage",
+    "@id": `${SITE_URL}/about`,
+    name: "About ZeFile",
+    url: `${SITE_URL}/about`,
+    description:
+      "ZeFile is a file delivery platform built in Africa for creators worldwide. Get paid before download via Mobile Money, card, or bank.",
+    inLanguage: ["en", "fr"],
+    mainEntity: { "@id": `${SITE_URL}/#org` },
+    isPartOf: { "@id": `${SITE_URL}/#website` },
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      suppressHydrationWarning
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+    />
+  );
+}
+
 // Article Schema - for blog posts
 interface ArticleJsonLdProps {
   headline: string;

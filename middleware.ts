@@ -134,6 +134,21 @@ function parseAcceptLanguage(header: string | null): 'en' | 'fr' {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Case-insensitive redirect for app routes. /@handle (creator profiles) and
+  // /z-AbC (short links) legitimately use mixed case. Files with extensions
+  // (favicon, og-image) keep their case so a typo 404s normally.
+  const hasExtension = pathname.includes('.') && !pathname.startsWith('/fr/');
+  if (
+    !hasExtension &&
+    !pathname.startsWith('/@') &&
+    !/^\/z-/.test(pathname) &&
+    pathname !== pathname.toLowerCase()
+  ) {
+    const url = request.nextUrl.clone();
+    url.pathname = pathname.toLowerCase();
+    return NextResponse.redirect(url, 308);
+  }
+
   // --- Platform status gate (server-side, prevents home page flash) ---
   // Normalize pathname: strip /fr/ prefix for route matching
   const normalizedPath = pathname.startsWith('/fr/')
