@@ -193,5 +193,93 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Graceful fallback — sitemap works without creator profiles
   }
 
-  return [...staticUrls, ...frStaticUrls, ...blogUrls, ...creatorUrls];
+  // Help articles — same locale-bound slug pattern as blog posts. Each row in
+  // SupportArticles has slug_en + slug_fr; we emit two URLs per article so EN
+  // and FR variants are independently indexable. Cross-locale alternates are
+  // safe to emit here because both locale slugs come from the same row.
+  const helpArticleUrls: MetadataRoute.Sitemap = [];
+  const helpCategoryUrls: MetadataRoute.Sitemap = [];
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    const response = await fetch(`${API_URL}/help/sitemap`, {
+      next: { revalidate: 3600 },
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+    if (response.ok) {
+      const articles: Array<{
+        slugEn: string;
+        slugFr: string;
+        category: string;
+        updatedAt: string;
+      }> = await response.json();
+
+      // One <url> entry per locale per article so each indexable surface is its
+      // own row; cross-locale alternates link the pair via xhtml:link.
+      for (const a of articles) {
+        const enPath = `/help/${a.category}/${a.slugEn}`;
+        const frPath = `/fr/help/${a.category}/${a.slugFr}`;
+        const lastMod = a.updatedAt ? new Date(a.updatedAt) : new Date();
+
+        helpArticleUrls.push({
+          url: `${SITE_URL}${enPath}`,
+          lastModified: lastMod,
+          changeFrequency: 'monthly' as const,
+          priority: 0.6,
+          alternates: {
+            languages: {
+              en: `${SITE_URL}${enPath}`,
+              fr: `${SITE_URL}${frPath}`,
+              'x-default': `${SITE_URL}${enPath}`,
+            } as Record<string, string>,
+          },
+        });
+        helpArticleUrls.push({
+          url: `${SITE_URL}${frPath}`,
+          lastModified: lastMod,
+          changeFrequency: 'monthly' as const,
+          priority: 0.6,
+          alternates: {
+            languages: {
+              en: `${SITE_URL}${enPath}`,
+              fr: `${SITE_URL}${frPath}`,
+              'x-default': `${SITE_URL}${enPath}`,
+            } as Record<string, string>,
+          },
+        });
+      }
+
+      // Category index pages — one <url> per locale per category that has any
+      // published articles. Drives crawl discovery of the category-grouped UX.
+      const categoriesWithArticles = Array.from(new Set(articles.map((a) => a.category)));
+      for (const category of categoriesWithArticles) {
+        helpCategoryUrls.push({
+          url: `${SITE_URL}/help/${category}`,
+          lastModified: now,
+          changeFrequency: 'weekly' as const,
+          priority: 0.5,
+          alternates: withAlternates(`/help/${category}`),
+        });
+        helpCategoryUrls.push({
+          url: `${SITE_URL}/fr/help/${category}`,
+          lastModified: now,
+          changeFrequency: 'weekly' as const,
+          priority: 0.5,
+          alternates: withAlternates(`/help/${category}`),
+        });
+      }
+    }
+  } catch {
+    // Graceful fallback — sitemap works without help articles
+  }
+
+  return [
+    ...staticUrls,
+    ...frStaticUrls,
+    ...blogUrls,
+    ...helpCategoryUrls,
+    ...helpArticleUrls,
+    ...creatorUrls,
+  ];
 }

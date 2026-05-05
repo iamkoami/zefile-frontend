@@ -3227,7 +3227,7 @@
     "profilePublished": "Your profile is now public.",
     "profileUnpublished": "Your profile is now private.",
     "verifyToPublish": "Make your profile public",
-    "verifyToPublishBody": "One quick step \u2014 verify your identity to go live. It takes a few minutes.",
+    "verifyToPublishBody": "One quick step — verify your identity to go live. It takes a few minutes.",
     "verifyNow": "Verify now",
     "visibilityError": "Could not update visibility. Try again.",
     "needHandleTitle": "You need a handle first",
@@ -3444,6 +3444,12 @@
       "paymentsPaused": "Payments are temporarily paused. Try again later.",
       "inProgress": "A payment update is already in progress. Try again in a moment.",
       "network": "Couldn't reach our servers. Try again."
+    }
+  },
+  "pricing": {
+    "processors": {
+      "label": "Payments processed by",
+      "disclaimer": "Your payment details never touch our servers. All transactions are handled by certified PCI-DSS providers (Paystack, Wave, MTN, Orange, Moov)."
     }
   }
 }
