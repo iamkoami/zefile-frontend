@@ -33,6 +33,18 @@ const Header = () => {
   const { canInterrupt, reset: resetUpload } = useUploadStore();
   const [showAuthPanel, setShowAuthPanel] = useState(false);
   const [authMode, setAuthMode] = useState<"login" | "signup">("signup");
+
+  // Listen for cross-component auth-open events
+  // (UploadPanel anonymous-upload guidance dispatches "open-auth-signup")
+  useEffect(() => {
+    const handleOpenAuthSignup = () => {
+      setAuthMode("signup");
+      setShowAuthPanel(true);
+    };
+    window.addEventListener("open-auth-signup", handleOpenAuthSignup);
+    return () =>
+      window.removeEventListener("open-auth-signup", handleOpenAuthSignup);
+  }, []);
   const [showResourcesDropdown, setShowResourcesDropdown] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);

@@ -259,8 +259,8 @@ const EmailAuthForm: React.FC<EmailAuthFormProps> = ({ onSuccess, termsAccepted,
                   setIsValidEmail(validateEmail(newEmail));
                   setError('');
                 }}
-                className="ze-email-input w-full font-bold border-none outline-none focus:outline-none bg-transparent text-gray-900 dark:text-[oklch(0.91_0_0)] pb-4"
-                placeholder="cemail@gmail.com"
+                className="ze-email-input w-full font-bold border-none outline-none focus:outline-none bg-transparent text-gray-900 dark:text-[oklch(0.91_0_0)] pb-4 placeholder:text-2xl placeholder:opacity-40 placeholder:font-normal"
+                placeholder="yourname@gmail.com"
                 style={{
                   caretColor: 'currentColor',
                   fontFamily: 'inherit',
