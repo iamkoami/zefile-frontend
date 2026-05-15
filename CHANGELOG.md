@@ -5,6 +5,24 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.54.1] - 2026-05-15
+
+### Fixed
+
+- **Homepage upload widget no longer contradicts the "5 GB free" marketing claim.** The anonymous upload widget previously displayed only `"Up to 2 GB"`, which clashed with the hero copy and FAQ promising "Send files up to 5 GB free." It now shows a two-line hint: `"Up to 2 GB"` + `"5 GB with a free account"` — communicating the anonymous-vs-Basic-tier gating without changing the underlying 2 GB anonymous cap. (`features/home/components/UploadPanel.tsx`)
+- **Signup placeholder typo fixed.** Email field placeholder changed from `"cemail@gmail.com"` (read as a typo of "email" and could be mistaken for pre-filled content) to `"yourname@gmail.com"`. (`features/auth/components/EmailAuthForm.tsx`)
+- **Signup placeholder visual hierarchy.** Email + Phone form placeholders previously inherited the input's full bold weight at the same large size, making the placeholder hint visually competitive with real typed content. Added `placeholder:opacity-25` so the placeholder reads as a clearly ghosted hint while preserving the input's bold + large clamp(2.5rem, 6vw, 5rem) font for typed text — same height, same weight, ghosted via opacity alone. (`features/auth/components/EmailAuthForm.tsx`, `features/auth/components/PhoneAuthForm.tsx`)
+
+### Added
+
+- **Wedge-aligned signup guidance under the anonymous upload widget.** New copy line `"Want to set a price and get paid? Sign up free."` (FR: `"Envie de fixer un prix et d'être payé ? Inscrivez-vous, c'est gratuit."`) appears above the existing `"Just exploring?"` text, only in real-send mode (not test mode). The `"Sign up free."` button dispatches a `CustomEvent("open-auth-signup")` which `Header.tsx` listens for via a new `useEffect`, opening the AuthPanel in signup mode. Uses the established cross-component CustomEvent pattern documented in CLAUDE.md (no new global store needed). (`features/home/components/UploadPanel.tsx`, `components/shared/Header.tsx`)
+- `i18n/messages/en.json` + `fr.json` — new `upload.upToWithSignup`, `upload.toSetPriceTitle`, `upload.toSetPriceCta` keys (FR is idiomatic, not literal translation).
+
+### Notes
+
+- These three P0 fixes resolve the friction points identified in the Day-Zero onboarding walkthrough (`zefile-backend/_bmad-output/planning-artifacts/zefile-day-zero-walkthrough-findings.md`). Total effort to clear the P0 list was ~1.5 hours per the walkthrough estimate.
+- Verified end-to-end on `localhost:3000`: clicking the new "Sign up free." button correctly opens the signup modal, and the modal's email field shows the new `"yourname@gmail.com"` placeholder at the proper ghosted-hint visual treatment.
+
 ## [1.54.0] - 2026-05-05
 
 ### Added
