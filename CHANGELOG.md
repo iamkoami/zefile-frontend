@@ -5,6 +5,25 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.54.2] - 2026-05-15
+
+### Fixed
+
+- **SideDrawer no longer leaks into the accessibility tree when closed.** The "Transfers" SideDrawer panel was always rendered in the DOM (slid off via `translate-x-full`), which meant screen readers and keyboard users saw a phantom modal on every initial page load. Added `inert={!isOpen}` (React 19 boolean attribute) to the panel — removes it from the focus + a11y tree when closed while preserving the existing slide animation. Also made `aria-modal` conditional on `isOpen` and added `aria-hidden={!isOpen}` for older AT compatibility. Verified: `dialog "Transfers" modal` no longer appears in the accessibility-tree snapshot when the drawer is closed. (`features/drawer/components/SideDrawer.tsx`)
+- **Earnings calculator now reflects the pass-through PSP fee model.** The Pricing-page calculator previously framed all fees as deducted from the creator's earnings (creator absorbs everything), which contradicted the BP claim of pass-through processing fees (Stripe-style buyer surcharge). Added `processingFeePercent` per country (4% for NGN/GHS/KES, 3.5% for XOF, per the BP processing-fee rates of 2.95-4.6%) and a new "Buyer pays" line at the top of the breakdown showing `price / (1 - processing_rate)` with subtitle `"includes ~{amount} processing fee (~{percent}%, passed through)"`. Worked example: NGN 10,000 on Basic 7% now reads "Buyer pays 10,417 ₦ (incl. ~417 ₦ processing) → Your price 10,000 → -700 platform fee → -50 payout fee → You earn 9,250 ₦". Story now matches the BP. (`features/subscription/components/TransactionFeesSection.tsx`)
+
+### Changed
+
+- **"Request files" tab renamed to "Receive files".** The previous "Send files" / "Request files" tab labels created cognitive overlap with the "Add files" action button inside the active Send tab — three similar verbs in close proximity. "Receive files" is now parallel to "Send files" and reads as the inverse flow (clients send to me) rather than an active request action. EN: "Request files" → "Receive files". FR (idiomatic): "Demander des fichiers" → "Recevoir des fichiers". (`i18n/messages/en.json`, `i18n/messages/fr.json`)
+
+### Added
+
+- `i18n/messages/en.json` + `fr.json` — new `subscriptions.calcBuyerPays` and `subscriptions.calcIncludesProcessing` keys (with `{amount}` + `{percent}` interpolation).
+
+### Notes
+
+- These three fixes resolve P1 #4, P1 #5, and P2 #7 from the Day-Zero onboarding walkthrough findings (`zefile-backend/_bmad-output/planning-artifacts/zefile-day-zero-walkthrough-findings.md`). Total effort ~2 hours per the walkthrough estimate. The remaining items in the walkthrough findings are either out-of-scope by founder decision (P1 #6 dedupe language switcher, P2 #8 surface tier limit on homepage) or require a real human / Android phone (the end-to-end paid-transfer flow walkthrough).
+
 ## [1.54.1] - 2026-05-15
 
 ### Fixed
