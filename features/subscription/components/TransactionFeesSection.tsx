@@ -18,6 +18,11 @@ interface CountryCalcData {
   currencySymbol: string;
   payoutFee: PayoutFee | null;
   noDecimals: boolean;
+  // Average PSP processing fee surcharge passed through to the buyer
+  // (so ZeFile receives the full agreed `price`). Approximate blended rate
+  // across the country's most common payment methods (mobile money + card).
+  // Per BP processing-fee rates (~2.95-4.6% range).
+  processingFeePercent: number;
 }
 
 const COUNTRY_CALC_DATA: CountryCalcData[] = [
@@ -28,6 +33,7 @@ const COUNTRY_CALC_DATA: CountryCalcData[] = [
     currencySymbol: "CFA",
     payoutFee: { type: "percent", value: 2.5 },
     noDecimals: true,
+    processingFeePercent: 3.5,
   },
   {
     countryCode: "NG",
@@ -36,6 +42,7 @@ const COUNTRY_CALC_DATA: CountryCalcData[] = [
     currencySymbol: "\u20A6",
     payoutFee: { type: "fixed", value: 50 },
     noDecimals: true,
+    processingFeePercent: 4,
   },
   {
     countryCode: "GH",
@@ -44,6 +51,7 @@ const COUNTRY_CALC_DATA: CountryCalcData[] = [
     currencySymbol: "GH\u20B5",
     payoutFee: { type: "fixed", value: 2 },
     noDecimals: false,
+    processingFeePercent: 4,
   },
   {
     countryCode: "KE",
@@ -52,6 +60,7 @@ const COUNTRY_CALC_DATA: CountryCalcData[] = [
     currencySymbol: "KSh",
     payoutFee: { type: "fixed", value: 50 },
     noDecimals: true,
+    processingFeePercent: 4,
   },
   {
     countryCode: "BJ",
@@ -60,6 +69,7 @@ const COUNTRY_CALC_DATA: CountryCalcData[] = [
     currencySymbol: "CFA",
     payoutFee: { type: "percent", value: 2.5 },
     noDecimals: true,
+    processingFeePercent: 3.5,
   },
   {
     countryCode: "TG",
@@ -68,6 +78,7 @@ const COUNTRY_CALC_DATA: CountryCalcData[] = [
     currencySymbol: "CFA",
     payoutFee: { type: "percent", value: 2.5 },
     noDecimals: true,
+    processingFeePercent: 3.5,
   },
 ];
 
@@ -212,6 +223,13 @@ export function TransactionFeesSection({
   const breakdown = useMemo(() => {
     if (!selectedData || price <= 0) return null;
 
+    // Pass-through PSP fee — buyer pays this on top of the agreed price
+    // so ZeFile receives the full `price`. Formula: total = price / (1 - rate)
+    // (matches the backend processing-fee surcharge calculation per BP).
+    const processingRate = selectedData.processingFeePercent / 100;
+    const buyerPays = processingRate > 0 ? price / (1 - processingRate) : price;
+    const processingFee = buyerPays - price;
+
     const platformFee = price * (platformFeePercent / 100);
 
     let payoutFee = 0;
@@ -229,6 +247,9 @@ export function TransactionFeesSection({
     const youEarn = Math.max(0, price - platformFee - payoutFee);
 
     return {
+      buyerPays,
+      processingFee,
+      processingFeePercent: selectedData.processingFeePercent,
       platformFee,
       payoutFee,
       payoutFeeLabel,
@@ -386,6 +407,25 @@ export function TransactionFeesSection({
           {/* Breakdown */}
           {breakdown && price > 0 ? (
             <div className="border-t border-gray-100 dark:border-border pt-5 space-y-3">
+              {/* Buyer pays — the actual checkout amount, includes
+                  pass-through PSP processing fee surcharge so creator receives
+                  the full `price`. Same model as Stripe surcharge billing. */}
+              <div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-500 dark:text-gray-400">
+                    {t("calcBuyerPays")}
+                  </span>
+                  <span className="font-medium text-[#171717] dark:text-white">
+                    {fmt(breakdown.buyerPays)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-end text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
+                  {t("calcIncludesProcessing", {
+                    amount: fmt(breakdown.processingFee),
+                    percent: breakdown.processingFeePercent,
+                  })}
+                </div>
+              </div>
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-500 dark:text-gray-400">{t("calcYourPrice")}</span>
                 <span className="font-medium text-[#171717] dark:text-white">{fmt(price)}</span>

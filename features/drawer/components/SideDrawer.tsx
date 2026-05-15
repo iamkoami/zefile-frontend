@@ -307,12 +307,18 @@ const SideDrawer: React.FC = () => {
         aria-hidden={!isOpen}
       />
 
-      {/* Panel - same style as AuthPanel, wider for preview mode */}
+      {/* Panel - same style as AuthPanel, wider for preview mode
+          When closed, `inert` removes the panel from the focus + accessibility
+          tree (so screen readers and keyboard users do not see a phantom
+          modal on initial page load), while preserving the slide-out
+          animation via the existing translate-x-full class. */}
       <div
         ref={drawerRef}
         id="ze-drawer-panel"
         role="dialog"
-        aria-modal="true"
+        aria-modal={isOpen ? 'true' : undefined}
+        aria-hidden={!isOpen}
+        inert={!isOpen}
         aria-label={view === 'transfers' ? 'Transfers' : view === 'contacts' ? 'Contacts' : view === 'payment' ? 'Payment' : view === 'account' ? 'Account' : view === 'poll' ? 'Poll' : 'Subscriptions'}
         className={`ze-drawer-panel fixed top-0 right-0 h-full bg-white dark:bg-[oklch(0.24_0_0)] dark:text-[oklch(0.91_0_0)] z-[9999] shadow-2xl transition-[transform,translate,width] duration-500 ease-in-out flex flex-col ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
