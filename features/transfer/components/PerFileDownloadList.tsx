@@ -28,6 +28,8 @@ interface PerFileDownloadListProps {
   sessionToken?: string;
   /** Optional version ID if viewing a specific version */
   versionId?: string;
+  /** Buyer email — required to unlock per-file downloads on paid transfers when not logged in */
+  email?: string;
   /** Return to the normal bundle-download flow */
   onBackToBundle: () => void;
 }
@@ -54,6 +56,7 @@ export default function PerFileDownloadList({
   password,
   sessionToken,
   versionId,
+  email,
   onBackToBundle,
 }: PerFileDownloadListProps) {
   const t = useTranslations("transferLanding");
@@ -73,6 +76,7 @@ export default function PerFileDownloadList({
         password,
         sessionToken,
         versionId,
+        email,
       });
 
       const signed = response.data?.urls?.[0];

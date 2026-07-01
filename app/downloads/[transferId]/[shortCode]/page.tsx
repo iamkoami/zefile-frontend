@@ -2419,6 +2419,7 @@ export default function TransferLandingPage() {
                           shortCode={transfer.shortCode}
                           files={transfer.files}
                           sessionToken={passwordSessionToken || undefined}
+                          email={customerEmail || undefined}
                           onBackToBundle={handleBackToBundle}
                         />
                       ) : transfer && downloadRecovery ? (
@@ -3036,6 +3037,7 @@ export default function TransferLandingPage() {
                     shortCode={transfer.shortCode}
                     files={transfer.files}
                     sessionToken={passwordSessionToken || undefined}
+                    email={customerEmail || undefined}
                     onBackToBundle={handleBackToBundle}
                   />
                 ) : downloadRecovery ? (
@@ -3780,6 +3782,7 @@ export default function TransferLandingPage() {
                       shortCode={transfer.shortCode}
                       files={transfer.files}
                       sessionToken={passwordSessionToken || undefined}
+                      email={customerEmail || undefined}
                       onBackToBundle={handleBackToBundle}
                     />
                   ) : downloadRecovery ? (

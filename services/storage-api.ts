@@ -42,6 +42,8 @@ export interface PresignedUrlRequestDto {
   sessionToken?: string;
   expiresIn?: number;
   versionId?: string;
+  /** Buyer email — unlocks per-file downloads on paid transfers when not logged in */
+  email?: string;
 }
 
 export interface PresignedUrlResponseDto {
