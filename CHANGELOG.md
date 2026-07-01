@@ -5,6 +5,16 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.55.0] - 2026-07-01
+
+### Added
+
+- **Reserved (on-hold) funds surfaced to sellers (Story 133-2, AC3).** Pairs with the backend payout-reserve policy: earnings still inside the buyer refund window are held out of the withdrawable balance. `BalanceResponse` now carries `reservedMinorUnits` / `reservedFormatted`, and `PayoutsPanel` shows a reassuring, on-brand banner whenever funds are on hold — explaining why and that they release automatically — with idiomatic EN + FR copy ("vous"). (`services/withdrawals-api.ts`, `features/account/components/PayoutsPanel.tsx`, `i18n/messages/en.json`, `i18n/messages/fr.json`)
+
+### Fixed
+
+- **"Total earned" no longer undercounts held funds.** The payouts summary now adds the reserved amount alongside available and pending; once the reserve shipped, reserved earnings were excluded from the displayed total. (`features/account/components/PayoutsPanel.tsx`)
+
 ## [1.54.4] - 2026-07-01
 
 ### Added
