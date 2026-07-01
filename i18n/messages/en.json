@@ -547,6 +547,7 @@
     "passwordHelpNoEmail": "Enter your email above first, then try again.",
     "passwordHelpDismiss": "Never mind",
     "downloadFailed": "Download failed. Let's try again.",
+    "verifyEmailToDownload": "Quick check: confirm your email to unlock the download.",
     "recoveryCardTitle": "That didn't go through",
     "recoveryCardBodyNetwork": "Looks like the connection dropped. Give it another go.",
     "recoveryCardBodyServer": "Something tripped on our end. Try again — and if it keeps happening, let {senderName} know.",

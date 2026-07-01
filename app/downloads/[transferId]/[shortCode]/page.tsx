@@ -417,6 +417,9 @@ export default function TransferLandingPage() {
 
   // Download state
   const [isDownloading, setIsDownloading] = useState(false);
+  // Story 133-1 (HIGH-2): set when a strict-mode download bounced us to the email OTP step, so
+  // that after re-verification we return the buyer to the paid download screen (not the preview).
+  const [returnToPaymentAfterVerify, setReturnToPaymentAfterVerify] = useState(false);
 
   // Public sales state
   const [saleDownloadToken, setSaleDownloadToken] = useState<string | null>(null);
@@ -1028,6 +1031,16 @@ export default function TransferLandingPage() {
         );
       }
 
+      // Story 133-1 (HIGH-2): if a strict-mode paid download bounced us here to re-prove the
+      // email, the OTP just re-issued the JWT — return the buyer to the paid download screen
+      // (payment-prompt, still showing success) instead of the preview.
+      if (returnToPaymentAfterVerify) {
+        setReturnToPaymentAfterVerify(false);
+        setRecipientEmail(customerEmail || null);
+        setPageState("payment-prompt");
+        return;
+      }
+
       // For password-protected transfers, go to password state
       // Otherwise, go directly to ready state and open preview
       if (transfer?.accessControl === "password") {
@@ -1457,6 +1470,31 @@ export default function TransferLandingPage() {
     }
   };
 
+  /**
+   * Story 133-1 (HIGH-2): when the backend runs in strict mode it refuses a self-asserted
+   * email for paid downloads and returns { code: 'EMAIL_VERIFICATION_REQUIRED' } (e.g. the
+   * buyer's OTP-login JWT expired). Route them back through the email OTP step — which logs
+   * them in again — rather than showing a generic download error. Returns true when handled.
+   */
+  const routeToEmailVerification = () => {
+    toast.error(t("verifyEmailToDownload"));
+    // Remember to return to the paid download screen after the OTP login re-issues the JWT.
+    setReturnToPaymentAfterVerify(true);
+    setEmailSubmitted(false);
+    setOtpValue("");
+    setError("");
+    setPageState("email");
+  };
+
+  const maybeHandleEmailVerificationRequired = (error: {
+    code?: string;
+    message?: string;
+  } | null): boolean => {
+    if (error?.code !== "EMAIL_VERIFICATION_REQUIRED") return false;
+    routeToEmailVerification();
+    return true;
+  };
+
   const handleDownload = async () => {
     if (!transfer) return;
 
@@ -1469,6 +1507,7 @@ export default function TransferLandingPage() {
       });
 
       if (response.error) {
+        if (maybeHandleEmailVerificationRequired(response.error)) return;
         toast.error(response.error.message || t("downloadFailed"));
         handleDownloadFailure(null, response.error, response.status);
       } else {
@@ -2421,6 +2460,7 @@ export default function TransferLandingPage() {
                           sessionToken={passwordSessionToken || undefined}
                           email={customerEmail || undefined}
                           onBackToBundle={handleBackToBundle}
+                          onEmailVerificationRequired={routeToEmailVerification}
                         />
                       ) : transfer && downloadRecovery ? (
                         <DownloadRecoveryCard
