@@ -2136,6 +2136,8 @@
     "availableBalance": "Solde disponible",
     "pendingPayouts": "Retraits en attente",
     "totalEarned": "Total gagné",
+    "reservedTitle": "Vous avez {amount} en attente pour l'instant",
+    "reservedHint": "Ce sont vos ventes récentes, encore dans le délai de remboursement acheteur. Dès la fin de ce délai, ce montant rejoint votre solde disponible — rien à faire de votre côté.",
     "withdrawalInfo": "Informations de retrait",
     "withdrawalDescription": "Les retraits prennent 1 à 3 jours ouvrables pour arriver.",
     "minimumWithdrawal": "Retrait minimum",

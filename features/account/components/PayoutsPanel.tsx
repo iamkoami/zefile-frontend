@@ -459,12 +459,34 @@ const PayoutsPanel: React.FC = () => {
           <p className="text-2xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)]">
             {formatAmount(
               (balance?.availableMinorUnits || 0) +
-                (balance?.pendingMinorUnits || 0),
+                (balance?.pendingMinorUnits || 0) +
+                (balance?.reservedMinorUnits || 0),
               balance?.currency || "XOF",
             )}
           </p>
         </div>
       </div>
+
+      {/* Held / reserved funds notice — earnings still inside the buyer refund
+          window (Story 133-2, AC3). Shown only when something is on hold. */}
+      {(balance?.reservedMinorUnits || 0) > 0 && (
+        <div className="flex items-start gap-3 bg-amber-50 dark:bg-amber-900/15 border border-amber-200 dark:border-amber-900/30 rounded px-4 py-3 mb-6">
+          <Clock className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm font-medium text-[#171717] dark:text-[oklch(0.91_0_0)]">
+              {t("reservedTitle", {
+                amount: formatAmount(
+                  balance?.reservedMinorUnits || 0,
+                  balance?.currency || "XOF",
+                ),
+              })}
+            </p>
+            <p className="text-xs text-gray-500 dark:text-[oklch(0.70_0_0)] mt-1">
+              {t("reservedHint")}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Referral Earn Prompt — subtle nudge below earnings (AC: 3, Story 89.5) */}
       {myCode && (
