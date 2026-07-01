@@ -5,6 +5,12 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.54.3] - 2026-07-01
+
+### Fixed
+
+- **Paid per-file downloads for non-logged-in buyers.** The backend download endpoint now enforces the payment gate, so a buyer on the public download page must supply their payer email (as the ZIP download already does). Threaded `customerEmail` through `PerFileDownloadList` into the download request and added the optional `email` field to `PresignedUrlRequestDto`. Without this, per-file downloads of paid transfers would fail for recipients who are not signed in. (`features/transfer/components/PerFileDownloadList.tsx`, `services/storage-api.ts`, `app/downloads/[transferId]/[shortCode]/page.tsx`)
+
 ## [1.54.2] - 2026-05-15
 
 ### Fixed
