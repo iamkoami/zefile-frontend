@@ -5,6 +5,12 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.54.4] - 2026-07-01
+
+### Added
+
+- **Graceful handling of strict paid-download email verification (HIGH-2).** Pairs with the backend `PAID_DOWNLOAD_STRICT_EMAIL_OTP` gate. When a paid download is refused for lack of a proven email (`401 { code: 'EMAIL_VERIFICATION_REQUIRED' }`, e.g. an expired session), the download page now routes the buyer back through the email OTP step and returns them to the paid download screen once re-verified — instead of showing a dead-end download error. Applies to both the ZIP (`handleDownload`) and per-file (`PerFileDownloadList`) paths via a shared `routeToEmailVerification()` helper, and adds `transferLanding.verifyEmailToDownload` copy (EN/FR). (`app/downloads/[transferId]/[shortCode]/page.tsx`, `features/transfer/components/PerFileDownloadList.tsx`, `i18n/messages/en.json`, `i18n/messages/fr.json`)
+
 ## [1.54.3] - 2026-07-01
 
 ### Fixed
