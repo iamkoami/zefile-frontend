@@ -484,11 +484,39 @@ const CURRENT_SUB_TTL_MS = 15_000;
 let currentSubCache: ApiResponse<UserSubscription | null> | null = null;
 let currentSubCachedAt = 0;
 let currentSubInFlight: Promise<ApiResponse<UserSubscription | null>> | null = null;
+/** Payment references already announced, so an interval poll announces once. */
+const announcedPayments = new Set<string>();
 
 /** Drop the cached subscription so the next read hits the network. */
 export function invalidateCurrentSubscription(): void {
   currentSubCache = null;
   currentSubCachedAt = 0;
+}
+
+/**
+ * Announce that the subscription changed: bust the cache, then tell the UI.
+ *
+ * `Header` has always listened for `subscription-changed` to refresh the tier
+ * badge, but nothing ever dispatched it — so an in-session upgrade or cancel
+ * left the header showing the old plan until a reload. This is the missing
+ * dispatch.
+ *
+ * Invalidation happens BEFORE the dispatch on purpose: listeners refetch
+ * synchronously, so clearing the cache afterwards would let them read the
+ * stale record they were being told to replace.
+ */
+export function notifySubscriptionChanged(): void {
+  invalidateCurrentSubscription();
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('subscription-changed'));
+  }
+}
+
+/** Run a subscription mutation and announce it if it succeeded. */
+async function mutate<T>(call: Promise<ApiResponse<T>>): Promise<ApiResponse<T>> {
+  const res = await call;
+  if (!res.error) notifySubscriptionChanged();
+  return res;
 }
 
 if (typeof window !== 'undefined') {
@@ -563,23 +591,34 @@ export const subscriptionApi = {
   async getSubscriptionPaymentStatus(
     reference: string
   ): Promise<ApiResponse<SubscriptionStatusResponse>> {
-    return apiClient.get<SubscriptionStatusResponse>(
+    const res = await apiClient.get<SubscriptionStatusResponse>(
       `/subscriptions/status/${reference}`
     );
+
+    // A checkout only truly changes the plan once its payment clears, and this
+    // poll is where the app learns that. Announce it once per reference —
+    // callers poll on an interval, and re-announcing would make every listener
+    // refetch on each tick.
+    if (res.data?.status === 'SUCCESS' && !announcedPayments.has(reference)) {
+      announcedPayments.add(reference);
+      notifySubscriptionChanged();
+    }
+
+    return res;
   },
 
   /**
    * Cancel subscription (at period end)
    */
   async cancelSubscription(): Promise<ApiResponse<UserSubscription>> {
-    return apiClient.post<UserSubscription>('/subscriptions/cancel');
+    return mutate(apiClient.post<UserSubscription>('/subscriptions/cancel'));
   },
 
   /**
    * Resume cancelled subscription
    */
   async resumeSubscription(): Promise<ApiResponse<UserSubscription>> {
-    return apiClient.post<UserSubscription>('/subscriptions/resume');
+    return mutate(apiClient.post<UserSubscription>('/subscriptions/resume'));
   },
 
   /**
@@ -589,7 +628,7 @@ export const subscriptionApi = {
     tier: SubscriptionTier,
     billingPeriod: BillingPeriod
   ): Promise<ApiResponse<{ requiresPayment: boolean; subscription?: UserSubscription }>> {
-    return apiClient.post('/subscriptions/change-tier', { tier, billingPeriod });
+    return mutate(apiClient.post('/subscriptions/change-tier', { tier, billingPeriod }));
   },
 
   /**
@@ -637,7 +676,7 @@ export const subscriptionApi = {
    * Cancel a scheduled downgrade
    */
   async cancelScheduledDowngrade(): Promise<ApiResponse<{ success: boolean; message: string }>> {
-    return apiClient.post('/subscriptions/downgrade/cancel');
+    return mutate(apiClient.post('/subscriptions/downgrade/cancel'));
   },
 
   /**
@@ -680,7 +719,7 @@ export const subscriptionApi = {
     trialActive: boolean;
     daysRemaining?: number;
   }>> {
-    return apiClient.post('/subscriptions/trial/start');
+    return mutate(apiClient.post('/subscriptions/trial/start'));
   },
 
   // ============================================
@@ -727,7 +766,7 @@ export const subscriptionApi = {
    * Update auto-renewal setting
    */
   async updateAutoRenew(dto: { enabled: boolean }): Promise<ApiResponse<AutoRenewStatusDto>> {
-    return apiClient.patch<AutoRenewStatusDto>('/subscriptions/auto-renew', dto);
+    return mutate(apiClient.patch<AutoRenewStatusDto>('/subscriptions/auto-renew', dto));
   },
 
   /**

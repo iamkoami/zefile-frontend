@@ -5,6 +5,12 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.56.3] - 2026-07-29
+
+### Fixed
+
+- **The header tier now refreshes after an in-session plan change.** `Header` has always listened for a `subscription-changed` event to refetch the tier badge, but **nothing in the codebase ever dispatched it** — so upgrading, cancelling, resuming, starting a trial or toggling auto-renew left the header (and the cached subscription) showing the old plan until a full reload. Added `notifySubscriptionChanged()`, wired into every point where the plan actually changes: the direct mutations (`cancel`, `resume`, `change-tier`, `downgrade/cancel`, `trial/start`, `auto-renew`) on success, and the checkout payment poll the moment it reports `SUCCESS` — which is when a paid upgrade truly lands. The poll announces once per payment reference, since callers poll on an interval and re-announcing would make every listener refetch on each tick. Invalidation runs before the dispatch, because listeners refetch synchronously and would otherwise read the stale record they were being told to replace. (`services/subscription-api.ts`)
+
 ## [1.56.2] - 2026-07-29
 
 ### Fixed
