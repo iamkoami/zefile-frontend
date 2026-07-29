@@ -5,6 +5,17 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.56.2] - 2026-07-29
+
+### Fixed
+
+- **`GET /subscriptions/current` no longer fans out into 429s.** Nine components fetch the endpoint independently on mount — `Header`, `RenewalNotificationBanner`, and seven account/subscription panels — with no shared cache, so opening the drawer or moving between panels fired the same request several times over. Its budget is 60/min, which was being exhausted in normal use. The failure was silent but wrong: on a 429 `Header` falls back to the `free` tier, so a paying user is shown a free-tier UI. `getCurrentSubscription()` now shares one in-flight request between concurrent callers and reuses the result for 15s — comfortably under `subscription-store`'s 60s poll interval, so polling still refreshes. Failures are never cached (caching a 429 would pin every consumer to the free fallback for the whole TTL), and login/logout plus the global store reset invalidate it. Fixed at the service layer so all callers benefit without touching nine components; `{ force: true }` is available for read-your-own-write. (`services/subscription-api.ts`)
+
+### Notes
+
+- `subscription-store` already owns a single shared subscription state, but those nine call sites bypass it. Routing them through the store is the better long-term fix; the service-layer de-duplication is the low-risk version.
+- Nothing in the codebase dispatches the `subscription-changed` event, so `Header`'s listener for it is currently dead code — meaning the header tier is not refreshed after an in-session plan change. Left as-is here, but worth wiring up.
+
 ## [1.56.1] - 2026-07-29
 
 ### Fixed

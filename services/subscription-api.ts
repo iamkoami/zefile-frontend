@@ -466,6 +466,39 @@ export function getNextBillingDate(billingPeriod: BillingPeriod): Date {
 /**
  * Subscription API client
  */
+/* ── /subscriptions/current de-duplication ────────────────────────────────
+   Nine components fetch this independently on mount — Header, the renewal
+   banner, and seven account/subscription panels — with no shared cache. Open
+   the drawer or move between panels and the same request goes out several
+   times over. The endpoint's budget is 60/min, which is easy to exhaust, and
+   the failure is silent-but-wrong: a 429 makes Header fall back to the "free"
+   tier, so a paying user sees a free-tier UI.
+
+   `subscription-store` already owns a single shared subscription state, but
+   those nine call sites bypass it. Fixing this at the service layer means
+   every caller is covered without touching nine components.
+
+   TTL is well under the store's 60s poll interval, so polling still refreshes.
+   Anything that can invalidate the subscription clears the cache below. */
+const CURRENT_SUB_TTL_MS = 15_000;
+let currentSubCache: ApiResponse<UserSubscription | null> | null = null;
+let currentSubCachedAt = 0;
+let currentSubInFlight: Promise<ApiResponse<UserSubscription | null>> | null = null;
+
+/** Drop the cached subscription so the next read hits the network. */
+export function invalidateCurrentSubscription(): void {
+  currentSubCache = null;
+  currentSubCachedAt = 0;
+}
+
+if (typeof window !== 'undefined') {
+  // Login/logout, an explicit plan change, and the global store reset all mean
+  // the cached record may no longer describe the current user.
+  window.addEventListener('auth-state-change', invalidateCurrentSubscription);
+  window.addEventListener('subscription-changed', invalidateCurrentSubscription);
+  window.addEventListener('clear-all-stores', invalidateCurrentSubscription);
+}
+
 export const subscriptionApi = {
   /**
    * Get available subscription plans
@@ -475,10 +508,41 @@ export const subscriptionApi = {
   },
 
   /**
-   * Get current user's subscription
+   * Get current user's subscription.
+   *
+   * De-duplicated — see the notes above `CURRENT_SUB_TTL_MS`. Concurrent
+   * callers share one in-flight request, and the result is reused for a few
+   * seconds. Pass `{ force: true }` when you have just changed the
+   * subscription and need to read your own write.
    */
-  async getCurrentSubscription(): Promise<ApiResponse<UserSubscription | null>> {
-    return apiClient.get<UserSubscription | null>('/subscriptions/current');
+  async getCurrentSubscription(options?: {
+    force?: boolean;
+  }): Promise<ApiResponse<UserSubscription | null>> {
+    if (!options?.force) {
+      if (currentSubCache && Date.now() - currentSubCachedAt < CURRENT_SUB_TTL_MS) {
+        return currentSubCache;
+      }
+      // Someone else is already asking — ride along rather than pile on.
+      if (currentSubInFlight) return currentSubInFlight;
+    }
+
+    currentSubInFlight = apiClient
+      .get<UserSubscription | null>('/subscriptions/current')
+      .then((res) => {
+        // Never cache a failure. Caching a 429 or 5xx would pin every consumer
+        // to its "free" fallback for the whole TTL, silently downgrading the
+        // UI for a user who actually has a paid plan.
+        if (!res.error) {
+          currentSubCache = res;
+          currentSubCachedAt = Date.now();
+        }
+        return res;
+      })
+      .finally(() => {
+        currentSubInFlight = null;
+      });
+
+    return currentSubInFlight;
   },
 
   /**
