@@ -466,6 +466,67 @@ export function getNextBillingDate(billingPeriod: BillingPeriod): Date {
 /**
  * Subscription API client
  */
+/* ── /subscriptions/current de-duplication ────────────────────────────────
+   Nine components fetch this independently on mount — Header, the renewal
+   banner, and seven account/subscription panels — with no shared cache. Open
+   the drawer or move between panels and the same request goes out several
+   times over. The endpoint's budget is 60/min, which is easy to exhaust, and
+   the failure is silent-but-wrong: a 429 makes Header fall back to the "free"
+   tier, so a paying user sees a free-tier UI.
+
+   `subscription-store` already owns a single shared subscription state, but
+   those nine call sites bypass it. Fixing this at the service layer means
+   every caller is covered without touching nine components.
+
+   TTL is well under the store's 60s poll interval, so polling still refreshes.
+   Anything that can invalidate the subscription clears the cache below. */
+const CURRENT_SUB_TTL_MS = 15_000;
+let currentSubCache: ApiResponse<UserSubscription | null> | null = null;
+let currentSubCachedAt = 0;
+let currentSubInFlight: Promise<ApiResponse<UserSubscription | null>> | null = null;
+/** Payment references already announced, so an interval poll announces once. */
+const announcedPayments = new Set<string>();
+
+/** Drop the cached subscription so the next read hits the network. */
+export function invalidateCurrentSubscription(): void {
+  currentSubCache = null;
+  currentSubCachedAt = 0;
+}
+
+/**
+ * Announce that the subscription changed: bust the cache, then tell the UI.
+ *
+ * `Header` has always listened for `subscription-changed` to refresh the tier
+ * badge, but nothing ever dispatched it — so an in-session upgrade or cancel
+ * left the header showing the old plan until a reload. This is the missing
+ * dispatch.
+ *
+ * Invalidation happens BEFORE the dispatch on purpose: listeners refetch
+ * synchronously, so clearing the cache afterwards would let them read the
+ * stale record they were being told to replace.
+ */
+export function notifySubscriptionChanged(): void {
+  invalidateCurrentSubscription();
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('subscription-changed'));
+  }
+}
+
+/** Run a subscription mutation and announce it if it succeeded. */
+async function mutate<T>(call: Promise<ApiResponse<T>>): Promise<ApiResponse<T>> {
+  const res = await call;
+  if (!res.error) notifySubscriptionChanged();
+  return res;
+}
+
+if (typeof window !== 'undefined') {
+  // Login/logout, an explicit plan change, and the global store reset all mean
+  // the cached record may no longer describe the current user.
+  window.addEventListener('auth-state-change', invalidateCurrentSubscription);
+  window.addEventListener('subscription-changed', invalidateCurrentSubscription);
+  window.addEventListener('clear-all-stores', invalidateCurrentSubscription);
+}
+
 export const subscriptionApi = {
   /**
    * Get available subscription plans
@@ -475,10 +536,41 @@ export const subscriptionApi = {
   },
 
   /**
-   * Get current user's subscription
+   * Get current user's subscription.
+   *
+   * De-duplicated — see the notes above `CURRENT_SUB_TTL_MS`. Concurrent
+   * callers share one in-flight request, and the result is reused for a few
+   * seconds. Pass `{ force: true }` when you have just changed the
+   * subscription and need to read your own write.
    */
-  async getCurrentSubscription(): Promise<ApiResponse<UserSubscription | null>> {
-    return apiClient.get<UserSubscription | null>('/subscriptions/current');
+  async getCurrentSubscription(options?: {
+    force?: boolean;
+  }): Promise<ApiResponse<UserSubscription | null>> {
+    if (!options?.force) {
+      if (currentSubCache && Date.now() - currentSubCachedAt < CURRENT_SUB_TTL_MS) {
+        return currentSubCache;
+      }
+      // Someone else is already asking — ride along rather than pile on.
+      if (currentSubInFlight) return currentSubInFlight;
+    }
+
+    currentSubInFlight = apiClient
+      .get<UserSubscription | null>('/subscriptions/current')
+      .then((res) => {
+        // Never cache a failure. Caching a 429 or 5xx would pin every consumer
+        // to its "free" fallback for the whole TTL, silently downgrading the
+        // UI for a user who actually has a paid plan.
+        if (!res.error) {
+          currentSubCache = res;
+          currentSubCachedAt = Date.now();
+        }
+        return res;
+      })
+      .finally(() => {
+        currentSubInFlight = null;
+      });
+
+    return currentSubInFlight;
   },
 
   /**
@@ -499,23 +591,34 @@ export const subscriptionApi = {
   async getSubscriptionPaymentStatus(
     reference: string
   ): Promise<ApiResponse<SubscriptionStatusResponse>> {
-    return apiClient.get<SubscriptionStatusResponse>(
+    const res = await apiClient.get<SubscriptionStatusResponse>(
       `/subscriptions/status/${reference}`
     );
+
+    // A checkout only truly changes the plan once its payment clears, and this
+    // poll is where the app learns that. Announce it once per reference —
+    // callers poll on an interval, and re-announcing would make every listener
+    // refetch on each tick.
+    if (res.data?.status === 'SUCCESS' && !announcedPayments.has(reference)) {
+      announcedPayments.add(reference);
+      notifySubscriptionChanged();
+    }
+
+    return res;
   },
 
   /**
    * Cancel subscription (at period end)
    */
   async cancelSubscription(): Promise<ApiResponse<UserSubscription>> {
-    return apiClient.post<UserSubscription>('/subscriptions/cancel');
+    return mutate(apiClient.post<UserSubscription>('/subscriptions/cancel'));
   },
 
   /**
    * Resume cancelled subscription
    */
   async resumeSubscription(): Promise<ApiResponse<UserSubscription>> {
-    return apiClient.post<UserSubscription>('/subscriptions/resume');
+    return mutate(apiClient.post<UserSubscription>('/subscriptions/resume'));
   },
 
   /**
@@ -525,7 +628,7 @@ export const subscriptionApi = {
     tier: SubscriptionTier,
     billingPeriod: BillingPeriod
   ): Promise<ApiResponse<{ requiresPayment: boolean; subscription?: UserSubscription }>> {
-    return apiClient.post('/subscriptions/change-tier', { tier, billingPeriod });
+    return mutate(apiClient.post('/subscriptions/change-tier', { tier, billingPeriod }));
   },
 
   /**
@@ -573,7 +676,7 @@ export const subscriptionApi = {
    * Cancel a scheduled downgrade
    */
   async cancelScheduledDowngrade(): Promise<ApiResponse<{ success: boolean; message: string }>> {
-    return apiClient.post('/subscriptions/downgrade/cancel');
+    return mutate(apiClient.post('/subscriptions/downgrade/cancel'));
   },
 
   /**
@@ -616,7 +719,7 @@ export const subscriptionApi = {
     trialActive: boolean;
     daysRemaining?: number;
   }>> {
-    return apiClient.post('/subscriptions/trial/start');
+    return mutate(apiClient.post('/subscriptions/trial/start'));
   },
 
   // ============================================
@@ -663,7 +766,7 @@ export const subscriptionApi = {
    * Update auto-renewal setting
    */
   async updateAutoRenew(dto: { enabled: boolean }): Promise<ApiResponse<AutoRenewStatusDto>> {
-    return apiClient.patch<AutoRenewStatusDto>('/subscriptions/auto-renew', dto);
+    return mutate(apiClient.patch<AutoRenewStatusDto>('/subscriptions/auto-renew', dto));
   },
 
   /**

@@ -5,6 +5,106 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.56.3] - 2026-07-29
+
+### Fixed
+
+- **The header tier now refreshes after an in-session plan change.** `Header` has always listened for a `subscription-changed` event to refetch the tier badge, but **nothing in the codebase ever dispatched it** — so upgrading, cancelling, resuming, starting a trial or toggling auto-renew left the header (and the cached subscription) showing the old plan until a full reload. Added `notifySubscriptionChanged()`, wired into every point where the plan actually changes: the direct mutations (`cancel`, `resume`, `change-tier`, `downgrade/cancel`, `trial/start`, `auto-renew`) on success, and the checkout payment poll the moment it reports `SUCCESS` — which is when a paid upgrade truly lands. The poll announces once per payment reference, since callers poll on an interval and re-announcing would make every listener refetch on each tick. Invalidation runs before the dispatch, because listeners refetch synchronously and would otherwise read the stale record they were being told to replace. (`services/subscription-api.ts`)
+
+## [1.56.2] - 2026-07-29
+
+### Fixed
+
+- **`GET /subscriptions/current` no longer fans out into 429s.** Nine components fetch the endpoint independently on mount — `Header`, `RenewalNotificationBanner`, and seven account/subscription panels — with no shared cache, so opening the drawer or moving between panels fired the same request several times over. Its budget is 60/min, which was being exhausted in normal use. The failure was silent but wrong: on a 429 `Header` falls back to the `free` tier, so a paying user is shown a free-tier UI. `getCurrentSubscription()` now shares one in-flight request between concurrent callers and reuses the result for 15s — comfortably under `subscription-store`'s 60s poll interval, so polling still refreshes. Failures are never cached (caching a 429 would pin every consumer to the free fallback for the whole TTL), and login/logout plus the global store reset invalidate it. Fixed at the service layer so all callers benefit without touching nine components; `{ force: true }` is available for read-your-own-write. (`services/subscription-api.ts`)
+
+### Notes
+
+- `subscription-store` already owns a single shared subscription state, but those nine call sites bypass it. Routing them through the store is the better long-term fix; the service-layer de-duplication is the low-risk version.
+- Nothing in the codebase dispatches the `subscription-changed` event, so `Header`'s listener for it is currently dead code — meaning the header tier is not refreshed after an in-session plan change. Left as-is here, but worth wiring up.
+
+## [1.56.1] - 2026-07-29
+
+### Fixed
+
+- **Short codes are no longer lowercased, which 404'd every mixed-case transfer.** Short codes are case-sensitive — the DB stores `HkGXm2GHhB` and `findByShortCode` looks it up with `=` — but the case-insensitive redirect added for SEO only exempted `/z-AbC` at the **root**. Any route carrying the code in a later segment was 308'd to a code that cannot exist: `/downloads/<uuid>/z-HkGXm2GHhB`, `/r/AbC`, `/review/AbC`. The short link itself survived (because `/z-CODE` redirects to `/downloads?code=…` and query strings are not lowercased), so the failure surfaced one hop later on the canonical download URL as "This transfer has vanished into thin air" — on a perfectly valid transfer. Every transfer whose code contains an uppercase letter was affected, which is the large majority. Exempting the `z-` prefix alone is insufficient, since `/review/<code>` and `/r/<code>` can carry a bare code with no prefix, so the code-bearing route families are exempted too. Marketing routes still lowercase, preserving the original SEO behaviour (`/About` → `/about`). (`middleware.ts`)
+- **Buyer hero no longer repeats a line already on the page.** `downloadHero.subtitlePaid` opened with the same sentence as `transferLanding.previewBeforeYouPay` ("Take a look before you pay."), which the download card renders a few lines below — so the buyer read it twice on one screen. The hero now carries the guarantee ("Your originals unlock the moment payment clears.") while the card keeps the instruction. (`i18n/messages/en.json`, `i18n/messages/fr.json`)
+
+## [1.56.0] - 2026-07-29
+
+### Added
+
+- **Animated hero process loop (`HeroProcessLoop`).** A looping product tour that *shows* the delivery flow instead of describing it, replacing the paper-plane Lottie in the hero. Ported from the Claude Design project "ZeFile Pitch Deck" (`hero-loop.jsx`): one soft white sheet on transparent ground — no shell, no outline, no browser chrome, no rotation, auto height (chrome and tilt were tried in the design and rejected, as they made the loop read as a second upload widget). Two variants share the component: `creator` (home, 40s — upload, price, link, preview, pay, download) and `buyer` (download page, 20.5s — preview, pay, download). Beats crossfade rather than cut: content fades out, the sheet resizes under a `ResizeObserver`-driven CSS transition while nothing is visible, then the new beat fades in — fading fully to zero so two layouts never superimpose, which lets the sheet keep `overflow: visible` for the dragged-file ghost. Decorative (`aria-hidden`, `pointer-events: none`), pauses off-screen and on tab switch, honours `prefers-reduced-motion`, throttled to 30fps. Desktop-only from `lg`, scaling 0.72/0.85/1.0 across `lg`/`xl`/`2xl` to reach the design's native 340px. (`components/shared/HeroProcessLoop.tsx`, `features/home/components/HomeClient.tsx`, `app/downloads/[transferId]/[shortCode]/page.tsx`, `i18n/messages/en.json`, `i18n/messages/fr.json`)
+- **Buyer-facing hero on the download page (`downloadHero`).** The download page previously rendered the creator hero, so a recipient deciding whether to pay a stranger was told to "send your work" and "get paid" — the wrong side of the transaction. It now has its own copy, and because that page also serves free transfers, the subtitle is conditional on price: paid recipients get "Take a look before you pay. They unlock the moment payment clears.", free recipients get "Have a look, then download." — so nobody is warned about a charge that isn't coming. Idiomatic EN + FR ("vous"). (`app/downloads/[transferId]/[shortCode]/page.tsx`, `i18n/messages/en.json`, `i18n/messages/fr.json`)
+- **`HeroText` props `copy` and `reserveRightGutter`.** `copy` overrides the headline/subtitle for non-creator audiences; `reserveRightGutter` pins the headline into the gap between the upload panel and the loop's column so it wraps instead of running underneath. Both are opt-in, leaving the review page and `/downloads` redirect shim unaffected. (`components/shared/HeroText.tsx`)
+
+### Changed
+
+- **Hero copy no longer narrates the process.** The old subtitle ("Drop in your files, set a price, share the link. Your client previews, pays, then downloads…") was a caption for the six beats the animation now performs, spending the page's most valuable text on redundancy. It is replaced with the positioning the hero was missing — mobile money in the first fold, per the messaging guidelines: *"Send your work. Get paid before they download." / "Your client pays with Mobile Money, card, or bank transfer." / "No credit card required."* Headline also changed from "the moment they download" to "**before** they download", which is what the product actually does — download is gated on payment. (`i18n/messages/en.json`, `i18n/messages/fr.json`)
+
+### Notes
+
+- `PaperPlaneAnimation` is intentionally untouched and still used by the review page and the `/downloads` redirect shim.
+- Deliberate deviations from the design source: copy lives in next-intl rather than inline ternaries; the platform fee is read from `PlatformConfigs` instead of being hardcoded to 7%; the voice guide is applied (no ellipsis, fees framed as "you keep"); the short link uses the brand domain rather than `NEXT_PUBLIC_SHORT_LINK_DOMAIN`, which renders `localhost:3000` in dev; and French formats money as "25 000 CFA" with the symbol after the amount.
+
+## [1.55.0] - 2026-07-01
+
+### Added
+
+- **Reserved (on-hold) funds surfaced to sellers (Story 133-2, AC3).** Pairs with the backend payout-reserve policy: earnings still inside the buyer refund window are held out of the withdrawable balance. `BalanceResponse` now carries `reservedMinorUnits` / `reservedFormatted`, and `PayoutsPanel` shows a reassuring, on-brand banner whenever funds are on hold — explaining why and that they release automatically — with idiomatic EN + FR copy ("vous"). (`services/withdrawals-api.ts`, `features/account/components/PayoutsPanel.tsx`, `i18n/messages/en.json`, `i18n/messages/fr.json`)
+
+### Fixed
+
+- **"Total earned" no longer undercounts held funds.** The payouts summary now adds the reserved amount alongside available and pending; once the reserve shipped, reserved earnings were excluded from the displayed total. (`features/account/components/PayoutsPanel.tsx`)
+
+## [1.54.4] - 2026-07-01
+
+### Added
+
+- **Graceful handling of strict paid-download email verification (HIGH-2).** Pairs with the backend `PAID_DOWNLOAD_STRICT_EMAIL_OTP` gate. When a paid download is refused for lack of a proven email (`401 { code: 'EMAIL_VERIFICATION_REQUIRED' }`, e.g. an expired session), the download page now routes the buyer back through the email OTP step and returns them to the paid download screen once re-verified — instead of showing a dead-end download error. Applies to both the ZIP (`handleDownload`) and per-file (`PerFileDownloadList`) paths via a shared `routeToEmailVerification()` helper, and adds `transferLanding.verifyEmailToDownload` copy (EN/FR). (`app/downloads/[transferId]/[shortCode]/page.tsx`, `features/transfer/components/PerFileDownloadList.tsx`, `i18n/messages/en.json`, `i18n/messages/fr.json`)
+
+## [1.54.3] - 2026-07-01
+
+### Fixed
+
+- **Paid per-file downloads for non-logged-in buyers.** The backend download endpoint now enforces the payment gate, so a buyer on the public download page must supply their payer email (as the ZIP download already does). Threaded `customerEmail` through `PerFileDownloadList` into the download request and added the optional `email` field to `PresignedUrlRequestDto`. Without this, per-file downloads of paid transfers would fail for recipients who are not signed in. (`features/transfer/components/PerFileDownloadList.tsx`, `services/storage-api.ts`, `app/downloads/[transferId]/[shortCode]/page.tsx`)
+
+## [1.54.2] - 2026-05-15
+
+### Fixed
+
+- **SideDrawer no longer leaks into the accessibility tree when closed.** The "Transfers" SideDrawer panel was always rendered in the DOM (slid off via `translate-x-full`), which meant screen readers and keyboard users saw a phantom modal on every initial page load. Added `inert={!isOpen}` (React 19 boolean attribute) to the panel — removes it from the focus + a11y tree when closed while preserving the existing slide animation. Also made `aria-modal` conditional on `isOpen` and added `aria-hidden={!isOpen}` for older AT compatibility. Verified: `dialog "Transfers" modal` no longer appears in the accessibility-tree snapshot when the drawer is closed. (`features/drawer/components/SideDrawer.tsx`)
+- **Earnings calculator now reflects the pass-through PSP fee model.** The Pricing-page calculator previously framed all fees as deducted from the creator's earnings (creator absorbs everything), which contradicted the BP claim of pass-through processing fees (Stripe-style buyer surcharge). Added `processingFeePercent` per country (4% for NGN/GHS/KES, 3.5% for XOF, per the BP processing-fee rates of 2.95-4.6%) and a new "Buyer pays" line at the top of the breakdown showing `price / (1 - processing_rate)` with subtitle `"includes ~{amount} processing fee (~{percent}%, passed through)"`. Worked example: NGN 10,000 on Basic 7% now reads "Buyer pays 10,417 ₦ (incl. ~417 ₦ processing) → Your price 10,000 → -700 platform fee → -50 payout fee → You earn 9,250 ₦". Story now matches the BP. (`features/subscription/components/TransactionFeesSection.tsx`)
+
+### Changed
+
+- **"Request files" tab renamed to "Receive files".** The previous "Send files" / "Request files" tab labels created cognitive overlap with the "Add files" action button inside the active Send tab — three similar verbs in close proximity. "Receive files" is now parallel to "Send files" and reads as the inverse flow (clients send to me) rather than an active request action. EN: "Request files" → "Receive files". FR (idiomatic): "Demander des fichiers" → "Recevoir des fichiers". (`i18n/messages/en.json`, `i18n/messages/fr.json`)
+
+### Added
+
+- `i18n/messages/en.json` + `fr.json` — new `subscriptions.calcBuyerPays` and `subscriptions.calcIncludesProcessing` keys (with `{amount}` + `{percent}` interpolation).
+
+### Notes
+
+- These three fixes resolve P1 #4, P1 #5, and P2 #7 from the Day-Zero onboarding walkthrough findings (`zefile-backend/_bmad-output/planning-artifacts/zefile-day-zero-walkthrough-findings.md`). Total effort ~2 hours per the walkthrough estimate. The remaining items in the walkthrough findings are either out-of-scope by founder decision (P1 #6 dedupe language switcher, P2 #8 surface tier limit on homepage) or require a real human / Android phone (the end-to-end paid-transfer flow walkthrough).
+
+## [1.54.1] - 2026-05-15
+
+### Fixed
+
+- **Homepage upload widget no longer contradicts the "5 GB free" marketing claim.** The anonymous upload widget previously displayed only `"Up to 2 GB"`, which clashed with the hero copy and FAQ promising "Send files up to 5 GB free." It now shows a two-line hint: `"Up to 2 GB"` + `"5 GB with a free account"` — communicating the anonymous-vs-Basic-tier gating without changing the underlying 2 GB anonymous cap. (`features/home/components/UploadPanel.tsx`)
+- **Signup placeholder typo fixed.** Email field placeholder changed from `"cemail@gmail.com"` (read as a typo of "email" and could be mistaken for pre-filled content) to `"yourname@gmail.com"`. (`features/auth/components/EmailAuthForm.tsx`)
+- **Signup placeholder visual hierarchy.** Email + Phone form placeholders previously inherited the input's full bold weight at the same large size, making the placeholder hint visually competitive with real typed content. Added `placeholder:opacity-25` so the placeholder reads as a clearly ghosted hint while preserving the input's bold + large clamp(2.5rem, 6vw, 5rem) font for typed text — same height, same weight, ghosted via opacity alone. (`features/auth/components/EmailAuthForm.tsx`, `features/auth/components/PhoneAuthForm.tsx`)
+
+### Added
+
+- **Wedge-aligned signup guidance under the anonymous upload widget.** New copy line `"Want to set a price and get paid? Sign up free."` (FR: `"Envie de fixer un prix et d'être payé ? Inscrivez-vous, c'est gratuit."`) appears above the existing `"Just exploring?"` text, only in real-send mode (not test mode). The `"Sign up free."` button dispatches a `CustomEvent("open-auth-signup")` which `Header.tsx` listens for via a new `useEffect`, opening the AuthPanel in signup mode. Uses the established cross-component CustomEvent pattern documented in CLAUDE.md (no new global store needed). (`features/home/components/UploadPanel.tsx`, `components/shared/Header.tsx`)
+- `i18n/messages/en.json` + `fr.json` — new `upload.upToWithSignup`, `upload.toSetPriceTitle`, `upload.toSetPriceCta` keys (FR is idiomatic, not literal translation).
+
+### Notes
+
+- These three P0 fixes resolve the friction points identified in the Day-Zero onboarding walkthrough (`zefile-backend/_bmad-output/planning-artifacts/zefile-day-zero-walkthrough-findings.md`). Total effort to clear the P0 list was ~1.5 hours per the walkthrough estimate.
+- Verified end-to-end on `localhost:3000`: clicking the new "Sign up free." button correctly opens the signup modal, and the modal's email field shows the new `"yourname@gmail.com"` placeholder at the proper ghosted-hint visual treatment.
+
 ## [1.54.0] - 2026-05-05
 
 ### Added

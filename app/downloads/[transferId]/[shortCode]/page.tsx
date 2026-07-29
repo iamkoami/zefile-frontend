@@ -43,7 +43,7 @@ import Header from "@/components/shared/Header";
 import BrandedHeader from "@/components/shared/BrandedHeader";
 import TimeOfDayBackground from "@/components/shared/TimeOfDayBackground";
 import HeroText from "@/components/shared/HeroText";
-import PaperPlaneAnimation from "@/components/shared/PaperPlaneAnimation";
+import HeroProcessLoop from "@/components/shared/HeroProcessLoop";
 import { useTimeOfDay, type TimeOfDay } from "@/hooks/useTimeOfDay";
 import { useCustomBranding } from "@/hooks/useCustomBranding";
 
@@ -141,6 +141,7 @@ function ContentPanelBackground({
   isAuthenticated,
   showUpgradeCta,
   onUpgradeClick,
+  hasPrice = false,
 }: {
   wallpaperUrl?: string;
   timeOfDay: TimeOfDay;
@@ -148,7 +149,10 @@ function ContentPanelBackground({
   isAuthenticated?: boolean;
   showUpgradeCta?: boolean;
   onUpgradeClick?: () => void;
+  /** Free transfers must not be told to pay — it reads as a surprise charge. */
+  hasPrice?: boolean;
 }) {
+  const tDl = useTranslations("downloadHero");
   const [wallpaperLoaded, setWallpaperLoaded] = useState(false);
 
   useEffect(() => {
@@ -184,8 +188,15 @@ function ContentPanelBackground({
         isAuthenticated={isAuthenticated}
         showUpgradeCta={showUpgradeCta}
         onUpgradeClick={onUpgradeClick}
+        reserveRightGutter
+        copy={{
+          line1: tDl("title"),
+          subtitle: hasPrice ? tDl("subtitlePaid") : tDl("subtitleFree"),
+        }}
       />
-      <PaperPlaneAnimation isVisible={true} timeOfDay={timeOfDay} />
+      {/* Buyer-side tour: preview → pay → download. Answers the one thing a
+          recipient is actually anxious about — "if I pay, do I get the files?" */}
+      <HeroProcessLoop variant="buyer" />
     </>
   );
 }
@@ -417,6 +428,9 @@ export default function TransferLandingPage() {
 
   // Download state
   const [isDownloading, setIsDownloading] = useState(false);
+  // Story 133-1 (HIGH-2): set when a strict-mode download bounced us to the email OTP step, so
+  // that after re-verification we return the buyer to the paid download screen (not the preview).
+  const [returnToPaymentAfterVerify, setReturnToPaymentAfterVerify] = useState(false);
 
   // Public sales state
   const [saleDownloadToken, setSaleDownloadToken] = useState<string | null>(null);
@@ -1028,6 +1042,16 @@ export default function TransferLandingPage() {
         );
       }
 
+      // Story 133-1 (HIGH-2): if a strict-mode paid download bounced us here to re-prove the
+      // email, the OTP just re-issued the JWT — return the buyer to the paid download screen
+      // (payment-prompt, still showing success) instead of the preview.
+      if (returnToPaymentAfterVerify) {
+        setReturnToPaymentAfterVerify(false);
+        setRecipientEmail(customerEmail || null);
+        setPageState("payment-prompt");
+        return;
+      }
+
       // For password-protected transfers, go to password state
       // Otherwise, go directly to ready state and open preview
       if (transfer?.accessControl === "password") {
@@ -1457,6 +1481,31 @@ export default function TransferLandingPage() {
     }
   };
 
+  /**
+   * Story 133-1 (HIGH-2): when the backend runs in strict mode it refuses a self-asserted
+   * email for paid downloads and returns { code: 'EMAIL_VERIFICATION_REQUIRED' } (e.g. the
+   * buyer's OTP-login JWT expired). Route them back through the email OTP step — which logs
+   * them in again — rather than showing a generic download error. Returns true when handled.
+   */
+  const routeToEmailVerification = () => {
+    toast.error(t("verifyEmailToDownload"));
+    // Remember to return to the paid download screen after the OTP login re-issues the JWT.
+    setReturnToPaymentAfterVerify(true);
+    setEmailSubmitted(false);
+    setOtpValue("");
+    setError("");
+    setPageState("email");
+  };
+
+  const maybeHandleEmailVerificationRequired = (error: {
+    code?: string;
+    message?: string;
+  } | null): boolean => {
+    if (error?.code !== "EMAIL_VERIFICATION_REQUIRED") return false;
+    routeToEmailVerification();
+    return true;
+  };
+
   const handleDownload = async () => {
     if (!transfer) return;
 
@@ -1469,6 +1518,7 @@ export default function TransferLandingPage() {
       });
 
       if (response.error) {
+        if (maybeHandleEmailVerificationRequired(response.error)) return;
         toast.error(response.error.message || t("downloadFailed"));
         handleDownloadFailure(null, response.error, response.status);
       } else {
@@ -1743,6 +1793,7 @@ export default function TransferLandingPage() {
           >
             <ContentPanelBackground
               wallpaperUrl={transfer?.wallpaperUrl}
+              hasPrice={(transfer?.price ?? 0) > 0}
               timeOfDay={timeOfDay}
               isHydrated={isHydrated}
               isAuthenticated={isAuthenticated}
@@ -1812,6 +1863,7 @@ export default function TransferLandingPage() {
           >
             <ContentPanelBackground
               wallpaperUrl={transfer?.wallpaperUrl}
+              hasPrice={(transfer?.price ?? 0) > 0}
               timeOfDay={timeOfDay}
               isHydrated={isHydrated}
               isAuthenticated={isAuthenticated}
@@ -1935,6 +1987,7 @@ export default function TransferLandingPage() {
           >
             <ContentPanelBackground
               wallpaperUrl={transfer?.wallpaperUrl}
+              hasPrice={(transfer?.price ?? 0) > 0}
               timeOfDay={timeOfDay}
               isHydrated={isHydrated}
               isAuthenticated={isAuthenticated}
@@ -2252,6 +2305,7 @@ export default function TransferLandingPage() {
           >
             <ContentPanelBackground
               wallpaperUrl={transfer?.wallpaperUrl}
+              hasPrice={(transfer?.price ?? 0) > 0}
               timeOfDay={timeOfDay}
               isHydrated={isHydrated}
               isAuthenticated={isAuthenticated}
@@ -2419,7 +2473,9 @@ export default function TransferLandingPage() {
                           shortCode={transfer.shortCode}
                           files={transfer.files}
                           sessionToken={passwordSessionToken || undefined}
+                          email={customerEmail || undefined}
                           onBackToBundle={handleBackToBundle}
+                          onEmailVerificationRequired={routeToEmailVerification}
                         />
                       ) : transfer && downloadRecovery ? (
                         <DownloadRecoveryCard
@@ -2514,6 +2570,7 @@ export default function TransferLandingPage() {
           >
             <ContentPanelBackground
               wallpaperUrl={transfer?.wallpaperUrl}
+              hasPrice={(transfer?.price ?? 0) > 0}
               timeOfDay={timeOfDay}
               isHydrated={isHydrated}
               isAuthenticated={isAuthenticated}
@@ -2954,6 +3011,7 @@ export default function TransferLandingPage() {
           >
             <ContentPanelBackground
               wallpaperUrl={transfer?.wallpaperUrl}
+              hasPrice={(transfer?.price ?? 0) > 0}
               timeOfDay={timeOfDay}
               isHydrated={isHydrated}
               isAuthenticated={isAuthenticated}
@@ -3036,6 +3094,7 @@ export default function TransferLandingPage() {
                     shortCode={transfer.shortCode}
                     files={transfer.files}
                     sessionToken={passwordSessionToken || undefined}
+                    email={customerEmail || undefined}
                     onBackToBundle={handleBackToBundle}
                   />
                 ) : downloadRecovery ? (
@@ -3097,6 +3156,7 @@ export default function TransferLandingPage() {
           >
             <ContentPanelBackground
               wallpaperUrl={transfer?.wallpaperUrl}
+              hasPrice={(transfer?.price ?? 0) > 0}
               timeOfDay={timeOfDay}
               isHydrated={isHydrated}
               isAuthenticated={isAuthenticated}
@@ -3347,6 +3407,7 @@ export default function TransferLandingPage() {
           >
             <ContentPanelBackground
               wallpaperUrl={transfer?.wallpaperUrl}
+              hasPrice={(transfer?.price ?? 0) > 0}
               timeOfDay={timeOfDay}
               isHydrated={isHydrated}
               isAuthenticated={isAuthenticated}
@@ -3405,6 +3466,7 @@ export default function TransferLandingPage() {
           >
             <ContentPanelBackground
               wallpaperUrl={transfer?.wallpaperUrl}
+              hasPrice={(transfer?.price ?? 0) > 0}
               timeOfDay={timeOfDay}
               isHydrated={isHydrated}
             />
@@ -3447,6 +3509,7 @@ export default function TransferLandingPage() {
           >
             <ContentPanelBackground
               wallpaperUrl={transfer?.wallpaperUrl}
+              hasPrice={(transfer?.price ?? 0) > 0}
               timeOfDay={timeOfDay}
               isHydrated={isHydrated}
             />
@@ -3525,6 +3588,7 @@ export default function TransferLandingPage() {
           >
             <ContentPanelBackground
               wallpaperUrl={transfer?.wallpaperUrl}
+              hasPrice={(transfer?.price ?? 0) > 0}
               timeOfDay={timeOfDay}
               isHydrated={isHydrated}
             />
@@ -3598,6 +3662,7 @@ export default function TransferLandingPage() {
           >
             <ContentPanelBackground
               wallpaperUrl={transfer?.wallpaperUrl}
+              hasPrice={(transfer?.price ?? 0) > 0}
               timeOfDay={timeOfDay}
               isHydrated={isHydrated}
               isAuthenticated={isAuthenticated}
@@ -3780,6 +3845,7 @@ export default function TransferLandingPage() {
                       shortCode={transfer.shortCode}
                       files={transfer.files}
                       sessionToken={passwordSessionToken || undefined}
+                      email={customerEmail || undefined}
                       onBackToBundle={handleBackToBundle}
                     />
                   ) : downloadRecovery ? (
@@ -3864,6 +3930,7 @@ export default function TransferLandingPage() {
           >
             <ContentPanelBackground
               wallpaperUrl={transfer?.wallpaperUrl}
+              hasPrice={(transfer?.price ?? 0) > 0}
               timeOfDay={timeOfDay}
               isHydrated={isHydrated}
             />

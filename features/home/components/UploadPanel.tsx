@@ -1583,11 +1583,18 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                     <p className="text-sm font-bold text-[#171717] dark:text-[oklch(0.91_0_0)]">
                       {t("addFiles")}
                     </p>
-                    <p className="text-xs text-gray-500">
-                      {isTestMode
-                        ? t("blockSendTestSub")
-                        : `${t("upTo")} ${formatBytes(maxUploadSize)}`}
-                    </p>
+                    {isTestMode ? (
+                      <p className="text-xs text-gray-500">
+                        {t("blockSendTestSub")}
+                      </p>
+                    ) : (
+                      <>
+                        <p className="text-xs text-gray-500">{`${t("upTo")} ${formatBytes(maxUploadSize)}`}</p>
+                        <p className="text-[11px] text-gray-400 mt-0.5">
+                          {t("upToWithSignup")}
+                        </p>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -1617,6 +1624,22 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
               >
                 {t("dropFilesHere")}
               </p>
+
+              {/* Sign up to get paid prompt (only in real-send mode) */}
+              {!isTestMode && (
+                <p className="text-xs text-[#171717] dark:text-[oklch(0.91_0_0)] mb-3 text-center">
+                  {t("toSetPriceTitle")}{" "}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      window.dispatchEvent(new CustomEvent("open-auth-signup"))
+                    }
+                    className="underline font-semibold hover:opacity-70 transition-opacity"
+                  >
+                    {t("toSetPriceCta")}
+                  </button>
+                </p>
+              )}
 
               {/* Test/Real mode toggle link */}
               <p className="text-xs text-gray-400 mb-6 text-center">

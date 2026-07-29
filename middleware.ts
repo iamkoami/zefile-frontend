@@ -135,13 +135,32 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Case-insensitive redirect for app routes. /@handle (creator profiles) and
-  // /z-AbC (short links) legitimately use mixed case. Files with extensions
-  // (favicon, og-image) keep their case so a typo 404s normally.
+  // short codes legitimately use mixed case. Files with extensions (favicon,
+  // og-image) keep their case so a typo 404s normally.
+  //
+  // Short codes are CASE-SENSITIVE: the DB stores "HkGXm2GHhB" and looks it up
+  // with `=`, so lowercasing the path turns a working transfer into a 404
+  // ("This transfer has vanished into thin air"). The old guard only matched
+  // /z-AbC at the ROOT, which missed every route that carries the code in a
+  // later segment — /downloads/<uuid>/z-AbC, /r/AbC, /review/AbC — i.e. the
+  // canonical download URL the short link ultimately redirects to. Matching on
+  // the "z-" prefix alone is also not enough, because /review/<code> and
+  // /r/<code> can carry a bare code with no prefix.
+  const SHORT_CODE_PREFIX = process.env.NEXT_PUBLIC_SHORT_CODE_PREFIX || 'z-';
+  const CODE_BEARING_ROUTES = ['/downloads/', '/r/', '/review/'];
+  const carriesShortCode =
+    CODE_BEARING_ROUTES.some((p) => pathname.startsWith(p)) ||
+    pathname
+      .split('/')
+      .some((seg) =>
+        seg.toLowerCase().startsWith(SHORT_CODE_PREFIX.toLowerCase())
+      );
+
   const hasExtension = pathname.includes('.') && !pathname.startsWith('/fr/');
   if (
     !hasExtension &&
     !pathname.startsWith('/@') &&
-    !/^\/z-/.test(pathname) &&
+    !carriesShortCode &&
     pathname !== pathname.toLowerCase()
   ) {
     const url = request.nextUrl.clone();

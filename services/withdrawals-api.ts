@@ -24,9 +24,12 @@ export enum WithdrawalStatus {
 export interface BalanceResponse {
   availableMinorUnits: number;
   pendingMinorUnits: number;
+  /** Earnings still inside the buyer refund window, held out of the withdrawable balance (Story 133-2) */
+  reservedMinorUnits: number;
   currency: string;
   availableFormatted: string;
   pendingFormatted: string;
+  reservedFormatted: string;
 }
 
 /**

@@ -11,6 +11,18 @@ interface HeroTextProps {
   isAuthenticated?: boolean;
   showUpgradeCta?: boolean;
   onUpgradeClick?: () => void;
+  /**
+   * Reserve a right-hand gutter on 2xl screens so the headline stops before the
+   * home page's HeroProcessLoop card. Off by default — the downloads and review
+   * pages have no card there and want the full width.
+   */
+  reserveRightGutter?: boolean;
+  /**
+   * Override the headline and subtitle. Without it the component speaks to the
+   * creator, from the `hero` namespace. The download page passes buyer-facing
+   * copy instead — the person reading it there isn't selling anything.
+   */
+  copy?: { line1: string; line2?: string; subtitle: string };
 }
 
 /**
@@ -24,6 +36,8 @@ const HeroText: React.FC<HeroTextProps> = ({
   isAuthenticated = false,
   showUpgradeCta = false,
   onUpgradeClick,
+  reserveRightGutter = false,
+  copy,
 }) => {
   const t = useTranslations("hero");
   const tHeader = useTranslations("header");
@@ -52,11 +66,16 @@ const HeroText: React.FC<HeroTextProps> = ({
 
   return (
     <div
-      className="hidden lg:flex flex-col items-center justify-center pointer-events-none select-none"
+      className={`hidden lg:flex flex-col items-center justify-center pointer-events-none select-none left-[180px] right-8 ${
+        // Built-in lg/xl/2xl only. Mixing these with arbitrary min-[…] variants
+        // is a trap: at 1280 both lg: and min-[1200px]: match and the cascade
+        // order between them is not guaranteed, so the wrong inset can win.
+        reserveRightGutter
+          ? "lg:left-[24rem] lg:right-[18rem] xl:right-[22rem] 2xl:left-[26rem] 2xl:right-[25rem]"
+          : ""
+      }`}
       style={{
         position: "absolute",
-        left: "180px",
-        right: "2rem",
         top: "42%",
         transform: "translateY(-50%)",
         transition: "opacity 500ms ease-in-out, color 1.5s ease-in-out",
@@ -78,8 +97,10 @@ const HeroText: React.FC<HeroTextProps> = ({
           transition: "color 1.5s ease-in-out",
         }}
       >
-        <div>{t("titleLine1")}</div>
-        {t("titleLine2") && <div>{t("titleLine2")}</div>}
+        <div>{copy ? copy.line1 : t("titleLine1")}</div>
+        {copy
+          ? copy.line2 && <div>{copy.line2}</div>
+          : t("titleLine2") && <div>{t("titleLine2")}</div>}
       </div>
 
       {/* Subtitle */}
@@ -90,8 +111,8 @@ const HeroText: React.FC<HeroTextProps> = ({
           transition: "color 1.5s ease-in-out",
         }}
       >
-        <p>{t("subtitle")}</p>
-        {t("subtitle2") && <p>{t("subtitle2")}</p>}
+        <p>{copy ? copy.subtitle : t("subtitle")}</p>
+        {!copy && t("subtitle2") && <p>{t("subtitle2")}</p>}
       </div>
 
       {/* Get Started CTA - for unauthenticated users (matches header CTA) */}
