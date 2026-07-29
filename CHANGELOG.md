@@ -5,6 +5,13 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.56.1] - 2026-07-29
+
+### Fixed
+
+- **Short codes are no longer lowercased, which 404'd every mixed-case transfer.** Short codes are case-sensitive — the DB stores `HkGXm2GHhB` and `findByShortCode` looks it up with `=` — but the case-insensitive redirect added for SEO only exempted `/z-AbC` at the **root**. Any route carrying the code in a later segment was 308'd to a code that cannot exist: `/downloads/<uuid>/z-HkGXm2GHhB`, `/r/AbC`, `/review/AbC`. The short link itself survived (because `/z-CODE` redirects to `/downloads?code=…` and query strings are not lowercased), so the failure surfaced one hop later on the canonical download URL as "This transfer has vanished into thin air" — on a perfectly valid transfer. Every transfer whose code contains an uppercase letter was affected, which is the large majority. Exempting the `z-` prefix alone is insufficient, since `/review/<code>` and `/r/<code>` can carry a bare code with no prefix, so the code-bearing route families are exempted too. Marketing routes still lowercase, preserving the original SEO behaviour (`/About` → `/about`). (`middleware.ts`)
+- **Buyer hero no longer repeats a line already on the page.** `downloadHero.subtitlePaid` opened with the same sentence as `transferLanding.previewBeforeYouPay` ("Take a look before you pay."), which the download card renders a few lines below — so the buyer read it twice on one screen. The hero now carries the guarantee ("Your originals unlock the moment payment clears.") while the card keeps the instruction. (`i18n/messages/en.json`, `i18n/messages/fr.json`)
+
 ## [1.56.0] - 2026-07-29
 
 ### Added
