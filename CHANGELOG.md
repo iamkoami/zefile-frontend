@@ -5,6 +5,23 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.56.0] - 2026-07-29
+
+### Added
+
+- **Animated hero process loop (`HeroProcessLoop`).** A looping product tour that *shows* the delivery flow instead of describing it, replacing the paper-plane Lottie in the hero. Ported from the Claude Design project "ZeFile Pitch Deck" (`hero-loop.jsx`): one soft white sheet on transparent ground — no shell, no outline, no browser chrome, no rotation, auto height (chrome and tilt were tried in the design and rejected, as they made the loop read as a second upload widget). Two variants share the component: `creator` (home, 40s — upload, price, link, preview, pay, download) and `buyer` (download page, 20.5s — preview, pay, download). Beats crossfade rather than cut: content fades out, the sheet resizes under a `ResizeObserver`-driven CSS transition while nothing is visible, then the new beat fades in — fading fully to zero so two layouts never superimpose, which lets the sheet keep `overflow: visible` for the dragged-file ghost. Decorative (`aria-hidden`, `pointer-events: none`), pauses off-screen and on tab switch, honours `prefers-reduced-motion`, throttled to 30fps. Desktop-only from `lg`, scaling 0.72/0.85/1.0 across `lg`/`xl`/`2xl` to reach the design's native 340px. (`components/shared/HeroProcessLoop.tsx`, `features/home/components/HomeClient.tsx`, `app/downloads/[transferId]/[shortCode]/page.tsx`, `i18n/messages/en.json`, `i18n/messages/fr.json`)
+- **Buyer-facing hero on the download page (`downloadHero`).** The download page previously rendered the creator hero, so a recipient deciding whether to pay a stranger was told to "send your work" and "get paid" — the wrong side of the transaction. It now has its own copy, and because that page also serves free transfers, the subtitle is conditional on price: paid recipients get "Take a look before you pay. They unlock the moment payment clears.", free recipients get "Have a look, then download." — so nobody is warned about a charge that isn't coming. Idiomatic EN + FR ("vous"). (`app/downloads/[transferId]/[shortCode]/page.tsx`, `i18n/messages/en.json`, `i18n/messages/fr.json`)
+- **`HeroText` props `copy` and `reserveRightGutter`.** `copy` overrides the headline/subtitle for non-creator audiences; `reserveRightGutter` pins the headline into the gap between the upload panel and the loop's column so it wraps instead of running underneath. Both are opt-in, leaving the review page and `/downloads` redirect shim unaffected. (`components/shared/HeroText.tsx`)
+
+### Changed
+
+- **Hero copy no longer narrates the process.** The old subtitle ("Drop in your files, set a price, share the link. Your client previews, pays, then downloads…") was a caption for the six beats the animation now performs, spending the page's most valuable text on redundancy. It is replaced with the positioning the hero was missing — mobile money in the first fold, per the messaging guidelines: *"Send your work. Get paid before they download." / "Your client pays with Mobile Money, card, or bank transfer." / "No credit card required."* Headline also changed from "the moment they download" to "**before** they download", which is what the product actually does — download is gated on payment. (`i18n/messages/en.json`, `i18n/messages/fr.json`)
+
+### Notes
+
+- `PaperPlaneAnimation` is intentionally untouched and still used by the review page and the `/downloads` redirect shim.
+- Deliberate deviations from the design source: copy lives in next-intl rather than inline ternaries; the platform fee is read from `PlatformConfigs` instead of being hardcoded to 7%; the voice guide is applied (no ellipsis, fees framed as "you keep"); the short link uses the brand domain rather than `NEXT_PUBLIC_SHORT_LINK_DOMAIN`, which renders `localhost:3000` in dev; and French formats money as "25 000 CFA" with the symbol after the amount.
+
 ## [1.55.0] - 2026-07-01
 
 ### Added
