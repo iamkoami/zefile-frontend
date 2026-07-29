@@ -87,6 +87,14 @@ const CARD_W = 340; // kit-native card width
 const CARD_PAD = 22;
 const GHOST_W = 190; // dragged file card in beat 1
 const DEMO_LINK = "zefile.co/z-K8MQ2P";
+/* Stand-in artwork for the preview stage, one per variant so the home page and
+   the download page never show the same "deliverable". 900px wide covers the
+   ~296px stage at 2x retina; they are pre-compressed rather than run through
+   next/image because the sheet is decorative and CSS-positioned. */
+const ARTWORK = {
+  creator: "/images/hero-preview-creator.jpg",
+  buyer: "/images/hero-preview-buyer.jpg",
+} as const;
 const FALLBACK_FEE = 7; // FREE tier; only used if the config call fails
 
 /* ── helpers ──────────────────────────────────────────────────────────────── */
@@ -159,6 +167,8 @@ type Beat = {
   /** Buyer variant hides every amount — the real page already shows the real
    *  price, and a second, different number beside it is just confusing. */
   showAmount: boolean;
+  /** Public path to the stand-in artwork shown in the preview stage. */
+  artwork: string;
 };
 
 /* ── primitives ───────────────────────────────────────────────────────────── */
@@ -310,10 +320,14 @@ function PreviewStage({
   t,
   unlocked,
   wm,
+  artwork,
 }: {
   t: Tr;
   unlocked?: boolean;
   wm: number;
+  /** Stand-in for the creator's work. A real image sells the "this is someone's
+   *  actual deliverable" idea in a way an abstract gradient never did. */
+  artwork: string;
 }) {
   return (
     <div
@@ -330,8 +344,9 @@ function PreviewStage({
         style={{
           position: "absolute",
           inset: 0,
-          background:
-            "linear-gradient(135deg,#5E53E0 0%,#BD51FF 45%,#FEC753 100%)",
+          backgroundImage: `url(${artwork})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
         }}
       />
       {!unlocked && (
@@ -848,7 +863,7 @@ function StepLink({ t, local, now }: Beat) {
 }
 
 /* ── beat 4 · client sees a watermarked preview ───────────────────────────── */
-function StepPreview({ t, lang, local, price, showAmount }: Beat) {
+function StepPreview({ t, lang, local, price, showAmount, artwork }: Beat) {
   return (
     <div>
       {showAmount && (
@@ -856,7 +871,7 @@ function StepPreview({ t, lang, local, price, showAmount }: Beat) {
           <AmountDue t={t} price={price} />
         </div>
       )}
-      <PreviewStage t={t} wm={clamp((local - 0.6) / 1.1)} />
+      <PreviewStage t={t} wm={clamp((local - 0.6) / 1.1)} artwork={artwork} />
       {FILES.map((f, i) => (
         <Reveal key={f.name} mt={i === 0 ? 14 : 8} p={clamp((local - 1.5 - i * 0.28) / 0.6)}>
           <FileRow
@@ -1047,7 +1062,12 @@ function StepPay({ t, m, local, now, price, showAmount }: Beat) {
         </>
       )}
       {paid && (
-        <div style={{ textAlign: "center", marginTop: 18 }}>
+        // Padding, not margin. A bottom MARGIN here collapses straight out
+        // through the beat wrapper and the measured content div — neither
+        // establishes a block formatting context — so it never reaches the
+        // height the sheet is sized from, and the confirmation stays pinned to
+        // the bottom edge. Padding cannot collapse, so it actually counts.
+        <div style={{ textAlign: "center", paddingTop: 18, paddingBottom: 18 }}>
           <div
             style={{
               width: 60,
@@ -1084,11 +1104,11 @@ function StepPay({ t, m, local, now, price, showAmount }: Beat) {
 }
 
 /* ── beat 6 · unlocked, download the originals ────────────────────────────── */
-function StepDownload({ t, lang, local }: Beat) {
+function StepDownload({ t, lang, local, artwork }: Beat) {
   const dl = clamp((local - 1.6) / 2.2);
   return (
     <div>
-      <PreviewStage t={t} unlocked wm={0} />
+      <PreviewStage t={t} unlocked wm={0} artwork={artwork} />
       {FILES.map((f, i) => {
         const done = dl > 0.35 + i * 0.3;
         return (
@@ -1384,6 +1404,7 @@ export default function HeroProcessLoop({
                 net={net}
                 priceDigits={priceDigits}
                 showAmount={variant === "creator"}
+                artwork={ARTWORK[variant]}
               />
             </div>
           </Sheet>
