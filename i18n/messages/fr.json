@@ -7,11 +7,11 @@
     "verifiedSeller": "Vendeur vérifié"
   },
   "hero": {
-    "title": "Envoyez votre travail. Soyez payé au moment du téléchargement.",
+    "title": "Envoyez votre travail. Soyez payé avant le téléchargement.",
     "titleLine1": "Envoyez votre travail.",
-    "titleLine2": "Soyez payé au moment du téléchargement.",
-    "subtitle": "Déposez vos fichiers, fixez un prix, partagez le lien.",
-    "subtitle2": "Votre client prévisualise, paie, puis télécharge — l'argent arrive directement sur votre compte.",
+    "titleLine2": "Soyez payé avant le téléchargement.",
+    "subtitle": "Votre client paie par Mobile Money, carte ou virement.",
+    "subtitle2": "Pas besoin de carte bancaire.",
     "proofStat1": "85 % des freelances font face aux retards de paiement",
     "proofStat2": "102 heures/an passées à relancer des factures",
     "proofStat3": "ZeFile : soyez payé avant le téléchargement",
@@ -3429,5 +3429,46 @@
       "label": "Paiements gérés par",
       "disclaimer": "Vos données de paiement ne transitent jamais par nos serveurs. Toutes les transactions sont traitées par des prestataires certifiés PCI-DSS (Paystack, Wave, MTN, Orange, Moov)."
     }
+  },
+  "heroProcessLoop": {
+    "addFiles": "Ajouter des fichiers",
+    "dropHere": "Déposez vos fichiers ou dossiers ici",
+    "dropHint": "Jusqu'à 2 Go · glissez ou parcourez",
+    "uploading": "Envoi en cours",
+    "uploadingSub": "{count} fichiers · gardez cet onglet ouvert",
+    "secondsLeft": "encore quelques secondes",
+    "almostThere": "presque fini",
+    "newTransfer": "Nouveau transfert",
+    "price": "Prix",
+    "youKeep": "Vous gardez <net>{amount}</net> après les {fee} % de commission",
+    "accessControl": "Contrôle d'accès",
+    "accessPrivate": "Privé",
+    "watermarkPreview": "Aperçu en filigrane",
+    "watermarkOn": "Activé",
+    "transfer": "Transférer",
+    "transferReady": "Votre transfert est prêt !",
+    "transferReadySub": "Partagez le lien. Votre client prévisualise, paie, puis télécharge — l'argent arrive directement sur votre compte.",
+    "copy": "Copier",
+    "copied": "Copié",
+    "previewAsClient": "Voir ce que voit votre client",
+    "amountDue": "Montant dû",
+    "lockedUntilPaid": "Verrouillé jusqu'au paiement",
+    "watermarkTag": "ZeFile · aperçu",
+    "unlocked": "Déverrouillé",
+    "card": "Carte",
+    "momoNumber": "Numéro Mobile Money",
+    "pay": "Payer {amount}",
+    "confirmingPayment": "Confirmation du paiement",
+    "securedRelease": "Sécurisé · débloqué dès que le paiement est validé",
+    "paymentComplete": "Paiement effectué",
+    "filesUnlocked": "Vos fichiers sont déverrouillés.",
+    "downloadAll": "Tout télécharger ({size})",
+    "releasedAfterPayment": "Débloqués dès que le paiement est validé",
+    "paySecurely": "Payer en toute sécurité"
+  },
+  "downloadHero": {
+    "title": "Vos fichiers vous attendent.",
+    "subtitlePaid": "Regardez avant de payer. Tout se débloque dès que le paiement est validé.",
+    "subtitleFree": "Jetez un œil, puis téléchargez."
   }
 }

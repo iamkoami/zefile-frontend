@@ -43,7 +43,7 @@ import Header from "@/components/shared/Header";
 import BrandedHeader from "@/components/shared/BrandedHeader";
 import TimeOfDayBackground from "@/components/shared/TimeOfDayBackground";
 import HeroText from "@/components/shared/HeroText";
-import PaperPlaneAnimation from "@/components/shared/PaperPlaneAnimation";
+import HeroProcessLoop from "@/components/shared/HeroProcessLoop";
 import { useTimeOfDay, type TimeOfDay } from "@/hooks/useTimeOfDay";
 import { useCustomBranding } from "@/hooks/useCustomBranding";
 
@@ -141,6 +141,7 @@ function ContentPanelBackground({
   isAuthenticated,
   showUpgradeCta,
   onUpgradeClick,
+  hasPrice = false,
 }: {
   wallpaperUrl?: string;
   timeOfDay: TimeOfDay;
@@ -148,7 +149,10 @@ function ContentPanelBackground({
   isAuthenticated?: boolean;
   showUpgradeCta?: boolean;
   onUpgradeClick?: () => void;
+  /** Free transfers must not be told to pay — it reads as a surprise charge. */
+  hasPrice?: boolean;
 }) {
+  const tDl = useTranslations("downloadHero");
   const [wallpaperLoaded, setWallpaperLoaded] = useState(false);
 
   useEffect(() => {
@@ -184,8 +188,15 @@ function ContentPanelBackground({
         isAuthenticated={isAuthenticated}
         showUpgradeCta={showUpgradeCta}
         onUpgradeClick={onUpgradeClick}
+        reserveRightGutter
+        copy={{
+          line1: tDl("title"),
+          subtitle: hasPrice ? tDl("subtitlePaid") : tDl("subtitleFree"),
+        }}
       />
-      <PaperPlaneAnimation isVisible={true} timeOfDay={timeOfDay} />
+      {/* Buyer-side tour: preview → pay → download. Answers the one thing a
+          recipient is actually anxious about — "if I pay, do I get the files?" */}
+      <HeroProcessLoop variant="buyer" />
     </>
   );
 }
@@ -1782,6 +1793,7 @@ export default function TransferLandingPage() {
           >
             <ContentPanelBackground
               wallpaperUrl={transfer?.wallpaperUrl}
+              hasPrice={(transfer?.price ?? 0) > 0}
               timeOfDay={timeOfDay}
               isHydrated={isHydrated}
               isAuthenticated={isAuthenticated}
@@ -1851,6 +1863,7 @@ export default function TransferLandingPage() {
           >
             <ContentPanelBackground
               wallpaperUrl={transfer?.wallpaperUrl}
+              hasPrice={(transfer?.price ?? 0) > 0}
               timeOfDay={timeOfDay}
               isHydrated={isHydrated}
               isAuthenticated={isAuthenticated}
@@ -1974,6 +1987,7 @@ export default function TransferLandingPage() {
           >
             <ContentPanelBackground
               wallpaperUrl={transfer?.wallpaperUrl}
+              hasPrice={(transfer?.price ?? 0) > 0}
               timeOfDay={timeOfDay}
               isHydrated={isHydrated}
               isAuthenticated={isAuthenticated}
@@ -2291,6 +2305,7 @@ export default function TransferLandingPage() {
           >
             <ContentPanelBackground
               wallpaperUrl={transfer?.wallpaperUrl}
+              hasPrice={(transfer?.price ?? 0) > 0}
               timeOfDay={timeOfDay}
               isHydrated={isHydrated}
               isAuthenticated={isAuthenticated}
@@ -2555,6 +2570,7 @@ export default function TransferLandingPage() {
           >
             <ContentPanelBackground
               wallpaperUrl={transfer?.wallpaperUrl}
+              hasPrice={(transfer?.price ?? 0) > 0}
               timeOfDay={timeOfDay}
               isHydrated={isHydrated}
               isAuthenticated={isAuthenticated}
@@ -2995,6 +3011,7 @@ export default function TransferLandingPage() {
           >
             <ContentPanelBackground
               wallpaperUrl={transfer?.wallpaperUrl}
+              hasPrice={(transfer?.price ?? 0) > 0}
               timeOfDay={timeOfDay}
               isHydrated={isHydrated}
               isAuthenticated={isAuthenticated}
@@ -3139,6 +3156,7 @@ export default function TransferLandingPage() {
           >
             <ContentPanelBackground
               wallpaperUrl={transfer?.wallpaperUrl}
+              hasPrice={(transfer?.price ?? 0) > 0}
               timeOfDay={timeOfDay}
               isHydrated={isHydrated}
               isAuthenticated={isAuthenticated}
@@ -3389,6 +3407,7 @@ export default function TransferLandingPage() {
           >
             <ContentPanelBackground
               wallpaperUrl={transfer?.wallpaperUrl}
+              hasPrice={(transfer?.price ?? 0) > 0}
               timeOfDay={timeOfDay}
               isHydrated={isHydrated}
               isAuthenticated={isAuthenticated}
@@ -3447,6 +3466,7 @@ export default function TransferLandingPage() {
           >
             <ContentPanelBackground
               wallpaperUrl={transfer?.wallpaperUrl}
+              hasPrice={(transfer?.price ?? 0) > 0}
               timeOfDay={timeOfDay}
               isHydrated={isHydrated}
             />
@@ -3489,6 +3509,7 @@ export default function TransferLandingPage() {
           >
             <ContentPanelBackground
               wallpaperUrl={transfer?.wallpaperUrl}
+              hasPrice={(transfer?.price ?? 0) > 0}
               timeOfDay={timeOfDay}
               isHydrated={isHydrated}
             />
@@ -3567,6 +3588,7 @@ export default function TransferLandingPage() {
           >
             <ContentPanelBackground
               wallpaperUrl={transfer?.wallpaperUrl}
+              hasPrice={(transfer?.price ?? 0) > 0}
               timeOfDay={timeOfDay}
               isHydrated={isHydrated}
             />
@@ -3640,6 +3662,7 @@ export default function TransferLandingPage() {
           >
             <ContentPanelBackground
               wallpaperUrl={transfer?.wallpaperUrl}
+              hasPrice={(transfer?.price ?? 0) > 0}
               timeOfDay={timeOfDay}
               isHydrated={isHydrated}
               isAuthenticated={isAuthenticated}
@@ -3907,6 +3930,7 @@ export default function TransferLandingPage() {
           >
             <ContentPanelBackground
               wallpaperUrl={transfer?.wallpaperUrl}
+              hasPrice={(transfer?.price ?? 0) > 0}
               timeOfDay={timeOfDay}
               isHydrated={isHydrated}
             />

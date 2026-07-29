@@ -8,7 +8,7 @@ import UploadPanel, {
   ReuseTransferData,
 } from "@/features/home/components/UploadPanel";
 import FilePreviewPanel from "@/features/transfer/components/FilePreviewPanel";
-import PaperPlaneAnimation from "@/components/shared/PaperPlaneAnimation";
+import HeroProcessLoop from "@/components/shared/HeroProcessLoop";
 import HeroText from "@/components/shared/HeroText";
 import TimeOfDayBackground from "@/components/shared/TimeOfDayBackground";
 import GlobalDragDropOverlay from "@/features/home/components/GlobalDragDropOverlay";
@@ -300,9 +300,11 @@ export default function HomeClient() {
               isAuthenticated={isAuthenticated}
               showUpgradeCta={isAuthenticated && userTier === "free"}
               onUpgradeClick={() => openDrawer("subscriptions")}
+              reserveRightGutter
             />
 
-            <PaperPlaneAnimation isVisible={true} timeOfDay={timeOfDay} />
+            {/* Creator-side "how it works" tour, always on. */}
+            <HeroProcessLoop />
 
             <div
               id="ze-panels-container"

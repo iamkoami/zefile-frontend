@@ -7,11 +7,11 @@
     "verifiedSeller": "Verified seller"
   },
   "hero": {
-    "title": "Send your work. Get paid the moment they download.",
+    "title": "Send your work. Get paid before they download.",
     "titleLine1": "Send your work.",
-    "titleLine2": "Get paid the moment they download.",
-    "subtitle": "Drop in your files, set a price, share the link.",
-    "subtitle2": "Your client previews, pays, then downloads — money straight to your account.",
+    "titleLine2": "Get paid before they download.",
+    "subtitle": "Your client pays with Mobile Money, card, or bank transfer.",
+    "subtitle2": "No credit card required.",
     "proofStat1": "85% of freelancers deal with late payments",
     "proofStat2": "102 hours/year spent chasing invoices",
     "proofStat3": "ZeFile: get paid before they download",
@@ -3459,5 +3459,46 @@
       "label": "Payments processed by",
       "disclaimer": "Your payment details never touch our servers. All transactions are handled by certified PCI-DSS providers (Paystack, Wave, MTN, Orange, Moov)."
     }
+  },
+  "heroProcessLoop": {
+    "addFiles": "Add files",
+    "dropHere": "Drop your files or folders here",
+    "dropHint": "Up to 2 GB · drop or browse",
+    "uploading": "Uploading",
+    "uploadingSub": "{count} files · keep this tab open",
+    "secondsLeft": "a few seconds left",
+    "almostThere": "almost there",
+    "newTransfer": "New transfer",
+    "price": "Price",
+    "youKeep": "You keep <net>{amount}</net> after the {fee}% platform fee",
+    "accessControl": "Access control",
+    "accessPrivate": "Private",
+    "watermarkPreview": "Watermark preview",
+    "watermarkOn": "On",
+    "transfer": "Transfer",
+    "transferReady": "Your transfer is ready!",
+    "transferReadySub": "Share the link. They preview, pay, then download — money straight to your account.",
+    "copy": "Copy",
+    "copied": "Copied",
+    "previewAsClient": "See what your client sees",
+    "amountDue": "Amount due",
+    "lockedUntilPaid": "Locked until paid",
+    "watermarkTag": "ZeFile · preview",
+    "unlocked": "Unlocked",
+    "card": "Card",
+    "momoNumber": "Mobile money number",
+    "pay": "Pay {amount}",
+    "confirmingPayment": "Confirming payment",
+    "securedRelease": "Secured · released only after payment clears",
+    "paymentComplete": "Payment complete",
+    "filesUnlocked": "Your files are unlocked.",
+    "downloadAll": "Download all ({size})",
+    "releasedAfterPayment": "Released only after payment clears",
+    "paySecurely": "Pay securely"
+  },
+  "downloadHero": {
+    "title": "Your files are ready.",
+    "subtitlePaid": "Take a look before you pay. They unlock the moment payment clears.",
+    "subtitleFree": "Have a look, then download."
   }
 }
