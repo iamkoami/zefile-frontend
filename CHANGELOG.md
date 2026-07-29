@@ -5,6 +5,20 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.56.4] - 2026-07-29
+
+### Changed
+
+- **Hero loop preview shows real artwork instead of a gradient.** The preview stage rendered an abstract CSS gradient as the stand-in for the creator's work; it now uses an image, which sells "this is somebody's actual deliverable" in a way a gradient never did. One per variant so the home page and the download page never show the same file: pink for `creator`, orange for `buyer`. Sources were downscaled 3840x2160 → 900x506 (~40 KB each) — the stage renders at roughly 296 CSS px, so the originals carried about 100x more pixels than the slot needs, on the homepage's critical path. (`components/shared/HeroProcessLoop.tsx`, `public/images/hero-preview-creator.jpg`, `public/images/hero-preview-buyer.jpg`)
+
+### Fixed
+
+- **"Payment complete" no longer sits flush against the bottom of the sheet.** The confirmation block used `marginTop`/`marginBottom`, but neither the beat wrapper nor the `ResizeObserver`-measured content div establishes a block formatting context, so both margins **collapsed out** and never reached the height the sheet is sized from — leaving only the 22px card padding on each side. It read as bottom-tight because a text baseline sits closer to an edge than a 60px circle does. Both are now padding, which cannot collapse and therefore counts toward the measured height. Most visible in the `buyer` variant, where the block is the first child and so had no effective top margin either. (`components/shared/HeroProcessLoop.tsx`)
+
+### Notes
+
+- On this component, outer spacing must use **padding, not margin**. The sheet's auto-height is derived from a measured element, so any collapsing margin is silently discarded.
+
 ## [1.56.3] - 2026-07-29
 
 ### Fixed
