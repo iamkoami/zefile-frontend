@@ -2175,7 +2175,9 @@
     "downloadReceipt": "Download receipt",
     "receiptGenerating": "Receipt is being generated",
     "downloadError": "Couldn't download the receipt",
-    "noReceiptAvailable": "No receipt available yet"
+    "noReceiptAvailable": "No receipt available yet",
+    "blockedFundsSafe": "Your balance stays right where it is — nothing is on hold with us and nothing is lost.",
+    "blockedWithdrawDisabled": "Verify your identity to request a payout"
   },
   "kyc": {
     "verificationRequired": "Identity verification needed",
@@ -2313,7 +2315,9 @@
     "privacyNotice": "We encrypt your data and handle it securely.",
     "rejectionReasonLabel": "Reason",
     "rejectionReasonDefault": "Your documents did not meet our verification requirements.",
-    "resubmitDocuments": "Resubmit Documents"
+    "resubmitDocuments": "Resubmit Documents",
+    "payoutsBlockedRejectedTitle": "We couldn't verify your identity",
+    "payoutsBlockedRejectedHint": "Payouts are paused for now. Get in touch with support and we'll sort it out together."
   },
   "analytics": {
     "title": "Stats and trends",

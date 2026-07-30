@@ -22,6 +22,8 @@ import {
   MOBILE_PROVIDER_NAMES,
 } from "@/services/payout-methods-api";
 import LoadingPanel from "@/components/LoadingPanel";
+import KycVerificationBanner from "@/components/shared/KycVerificationBanner";
+import { useDrawerStore } from "@/stores/drawer-store";
 
 // Provider icon component - uses SVG icons from /public/icons/payment/
 const ProviderIcon: React.FC<{ provider: string; size?: "sm" | "md" }> = ({
@@ -73,11 +75,22 @@ const WithdrawalRequestPanel: React.FC<WithdrawalRequestPanelProps> = ({
   onSuccess,
 }) => {
   const t = useTranslations("withdrawals");
+  // Story 137.3: the funds-safe reassurance lives in the payouts namespace that owns it.
+  const tPayouts = useTranslations("payouts");
+  const { openAccountView } = useDrawerStore();
   const locale = useLocale();
 
   // State
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  /**
+   * Story 137.3 (AC6). Held separately from `error` because a KYC block is not a generic failure:
+   * it renders localised copy plus a route into verification, whereas `error` is a plain red
+   * string. Keeping them apart means the generic path is untouched for every other 4xx.
+   */
+  const [kycBlockCode, setKycBlockCode] = useState<
+    "PAYOUT_KYC_REQUIRED" | "PAYOUT_KYC_PENDING" | "PAYOUT_KYC_REJECTED" | null
+  >(null);
   const [step, setStep] = useState<Step>("form");
 
   // Data
@@ -223,6 +236,9 @@ const WithdrawalRequestPanel: React.FC<WithdrawalRequestPanelProps> = ({
 
     setIsSubmitting(true);
     setError(null);
+    // Cleared alongside `error` so a creator who verifies and retries in the same session does
+    // not keep staring at a stale block notice.
+    setKycBlockCode(null);
 
     try {
       const amountMinorUnits = Math.round(parseFloat(amount) * 100);
@@ -235,7 +251,20 @@ const WithdrawalRequestPanel: React.FC<WithdrawalRequestPanelProps> = ({
         setStep("success");
         onSuccess?.();
       } else if (response.error) {
-        setError(response.error.message);
+        // Story 137.3 (AC6): a payout refused on identity verification gets localised copy and a
+        // way forward, not the backend's raw English fallback string. Branch on `code` — the API
+        // contract is explicit that clients must never branch on `message`.
+        const code = response.error.code;
+        if (
+          code === "PAYOUT_KYC_REQUIRED" ||
+          code === "PAYOUT_KYC_PENDING" ||
+          code === "PAYOUT_KYC_REJECTED"
+        ) {
+          setKycBlockCode(code);
+          setError(null);
+        } else {
+          setError(response.error.message);
+        }
         setStep("form");
       }
     } catch (err) {
@@ -388,6 +417,21 @@ const WithdrawalRequestPanel: React.FC<WithdrawalRequestPanelProps> = ({
           <WarningTriangle className="w-4 h-4" />
           {error}
         </div>
+      )}
+
+      {/* Payout refused pending identity verification (Story 137.3, AC6).
+          Amber rather than red, and it names the one action that unblocks it: the creator has
+          done nothing wrong, they crossed an earnings threshold that came with a form. */}
+      {kycBlockCode && (
+        <KycVerificationBanner
+          variant="compact"
+          className="mb-4"
+          // The code from the 403 is authoritative for this attempt, so it drives the banner
+          // rather than a second /kyc/status round trip that could disagree with it.
+          payoutBlockCode={kycBlockCode}
+          footnote={tPayouts("blockedFundsSafe")}
+          onVerify={() => openAccountView("verification")}
+        />
       )}
 
       {/* Balance card */}

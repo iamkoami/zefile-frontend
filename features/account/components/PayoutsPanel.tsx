@@ -27,6 +27,7 @@ import { withdrawalsApi, BalanceResponse } from "@/services/withdrawals-api";
 import { payoutMethodsApi } from "@/services/payout-methods-api";
 import { referralsApi, ReferralMyCode, RewardInfo } from "@/services/referrals-api";
 import LoadingPanel from "@/components/LoadingPanel";
+import KycVerificationBanner from "@/components/shared/KycVerificationBanner";
 import { useCurrentCurrency } from "@/stores/currency-store";
 import { useDrawerStore } from "@/stores/drawer-store";
 import { convertCurrency, formatCurrencyAmount } from "@/lib/currency";
@@ -497,6 +498,27 @@ const PayoutsPanel: React.FC = () => {
         </div>
       )}
 
+      {/* Payouts blocked on identity verification (Story 137.3, PK-FR3/PK-FR4).
+          Driven by the balance response rather than the banner's own KYC fetch, so this panel
+          and the server-side gate can never disagree about whether a payout would go through.
+          Placed directly above the withdraw button: the creator learns it here, on the screen
+          showing their money, instead of from a bare 403 after filling in an amount. */}
+      {balance?.payoutsBlocked && (
+        <KycVerificationBanner
+          variant="compact"
+          className="mb-6"
+          // Driven by the gate's own decision rather than the banner's /kyc/status fetch, so this
+          // panel and the server-side gate cannot disagree — including on the gate's fail-closed
+          // path, where a plain status read can look clean while payouts are in fact refused.
+          payoutBlockCode={balance.payoutBlockCode}
+          gracePeriodEnds={balance.gracePeriodEnds}
+          // PK-FR4 — the one thing the banner never said on its own, and the thing that matters
+          // most to a creator who has just learned a payout will not go through.
+          footnote={t("blockedFundsSafe")}
+          onVerify={() => openAccountView("verification")}
+        />
+      )}
+
       {/* Referral Earn Prompt — subtle nudge below earnings (AC: 3, Story 89.5) */}
       {myCode && (
         <div className="flex items-center justify-between bg-[#FDFAF4] dark:bg-[oklch(0.22_0_0)] border border-gray-100 dark:border-[oklch(0.30_0_0)] rounded px-4 py-3 mb-6">
@@ -527,14 +549,34 @@ const PayoutsPanel: React.FC = () => {
         </div>
       )}
 
-      {/* Request Withdrawal Button */}
-      <button
-        onClick={() => setShowWithdrawModal(true)}
-        disabled={(balance?.availableMinorUnits || 0) < 100000}
-        className="w-full md:w-auto px-6 py-3 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed mb-6"
-      >
-        {t("requestWithdrawal")}
-      </button>
+      {/* Request Withdrawal Button.
+          Also disabled while payouts are blocked (Story 137.3, AC4) — a button that opens a form
+          only to fail on submit is the experience this story exists to remove. This is presentation
+          only: PayoutKycGateService refuses server-side at every entry point regardless, and
+          hiding a control is never the enforcement mechanism (PK-NFR1). */}
+      <div className="mb-6">
+        <button
+          onClick={() => setShowWithdrawModal(true)}
+          disabled={
+            (balance?.availableMinorUnits || 0) < 100000 || balance?.payoutsBlocked === true
+          }
+          // Review finding R5: `title` alone is unreliable for screen readers and invisible on
+          // touch, so the reason is also rendered as visible text below and referenced here. A
+          // disabled control that cannot say why it is disabled is not accessible.
+          aria-describedby={balance?.payoutsBlocked ? "ze-withdraw-blocked-reason" : undefined}
+          className="w-full md:w-auto px-6 py-3 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {t("requestWithdrawal")}
+        </button>
+        {balance?.payoutsBlocked && (
+          <p
+            id="ze-withdraw-blocked-reason"
+            className="mt-2 text-xs text-gray-500 dark:text-[oklch(0.70_0_0)]"
+          >
+            {t("blockedWithdrawDisabled")}
+          </p>
+        )}
+      </div>
 
       {/* Tabs */}
       <div className="flex gap-1 border-b border-gray-200 dark:border-[oklch(0.30_0_0)] mb-6 mt-10">

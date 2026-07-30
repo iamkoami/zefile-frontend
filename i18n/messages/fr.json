@@ -2175,7 +2175,9 @@
     "downloadReceipt": "Télécharger le reçu",
     "receiptGenerating": "Le reçu est en cours de création",
     "downloadError": "On n'a pas pu télécharger le reçu",
-    "noReceiptAvailable": "Le reçu n'est pas encore disponible"
+    "noReceiptAvailable": "Le reçu n'est pas encore disponible",
+    "blockedFundsSafe": "Votre solde reste exactement où il est — rien n'est bloqué chez nous, rien n'est perdu.",
+    "blockedWithdrawDisabled": "Vérifiez votre identité pour demander un retrait"
   },
   "kyc": {
     "verificationRequired": "Vérification d'identité nécessaire",
@@ -2313,7 +2315,9 @@
     "privacyNotice": "Vos données sont chiffrées et traitées en toute sécurité.",
     "rejectionReasonLabel": "Motif",
     "rejectionReasonDefault": "Vos documents ne répondent pas à nos exigences de vérification.",
-    "resubmitDocuments": "Renvoyer les documents"
+    "resubmitDocuments": "Renvoyer les documents",
+    "payoutsBlockedRejectedTitle": "On n'a pas pu vérifier votre identité",
+    "payoutsBlockedRejectedHint": "Vos retraits sont en pause pour l'instant. Contactez le support, on trouve une solution ensemble."
   },
   "analytics": {
     "title": "Stats et tendances",

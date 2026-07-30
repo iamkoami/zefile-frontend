@@ -39,6 +39,21 @@ export interface BalanceResponse {
   pendingFormatted: string;
   reservedFormatted: string;
   totalEarnedFormatted?: string;
+
+  // --- Payout gate status (Story 137.3) ---
+  // Advisory only. The backend refuses payouts server-side at every entry point regardless of
+  // what the UI does with these; they exist so a creator learns about a block on the screen
+  // showing their money rather than from a 403 after filling in an amount.
+  // All optional: the frontend and backend deploy independently.
+
+  /** True when a payout request would currently be refused pending identity verification. */
+  payoutsBlocked?: boolean;
+  /** The creator's identity verification status as the payout gate resolved it. */
+  kycStatus?: "not_required" | "required" | "pending" | "verified" | "rejected";
+  /** Machine-readable block reason. Branch on this, never on a message string. */
+  payoutBlockCode?: "PAYOUT_KYC_REQUIRED" | "PAYOUT_KYC_PENDING" | "PAYOUT_KYC_REJECTED";
+  /** Verification deadline, when one is recorded. Present before and after it expires. */
+  gracePeriodEnds?: string;
 }
 
 /**
