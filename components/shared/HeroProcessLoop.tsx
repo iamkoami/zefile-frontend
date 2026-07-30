@@ -128,7 +128,15 @@ type Tr = ReturnType<typeof useTranslations>;
    `dial`/`flag` are null and `providers` is empty for DEFAULT (International).
    ZeFile has no mobile-money rail outside these six countries, so the loop shows
    the generic Mobile Money / Card choice there and names no provider it cannot
-   actually route to. */
+   actually route to.
+
+   PROVISIONAL: the GH, KE and BJ provider lists are unverified placeholders and
+   are to be replaced with the real ones when those payment gateways are wired
+   up. NG, CI and TG are confirmed. This matters more than it looks — naming a
+   provider ZeFile cannot route to is the exact failure the DEFAULT branch above
+   exists to avoid, and TG shipped as "T-Money" for a while, which had been the
+   provider's name before the Yas rebrand. Treat anything unconfirmed here as
+   wrong until someone checks it against the gateway. */
 type Market = {
   sym: string;
   symAfter: boolean;

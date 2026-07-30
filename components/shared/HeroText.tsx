@@ -32,24 +32,20 @@ interface HeroTextProps {
    */
   ctaLabel?: string;
   /**
-   * Hero composition.
+   * Hero composition. Defaults to `left`, which is the approved design.
    *
-   * Currently defaults to `left` while the left-rail variant is being evaluated
-   * on the running app — see
-   * `_bmad-output/planning-artifacts/ux-hero-alignment-preference-test.md`.
-   * Revert this default to `center` if the creator preference test does not
-   * clear the bar defined there.
+   * `left` is the "left rail": the trust strip, headline, subtitle and CTA all
+   * start on one shared x-axis, and the subtitle measure is capped so the
+   * ragged right edge stays tight instead of running into the HeroProcessLoop
+   * card. It replaced the original centred hero after a creator preference
+   * test — see
+   * `_bmad-output/planning-artifacts/ux-hero-alignment-preference-test.md`
+   * for what was compared and why.
    *
-   * `left` is the "left rail" variant under evaluation: the trust strip,
-   * headline, subtitle and CTA all start on one shared x-axis, and the subtitle
-   * measure is capped so the ragged right edge stays tight instead of running
-   * into the HeroProcessLoop card.
-   *
-   * Overridable per-visit with `?hero=left` / `?hero=center` so both versions
-   * can be captured at each breakpoint for the creator preference test, and so
-   * the control stays reachable while `left` is the default. The override is
-   * read after mount, which is safe here because nothing renders before
-   * `isHydrated`.
+   * `center` is kept as the losing variant rather than deleted, and stays
+   * reachable per-visit via `?hero=center`, so the two can still be put
+   * side by side when the hero is revisited. The override is read after mount,
+   * which is safe here because nothing renders before `isHydrated`.
    *
    * The column insets are deliberately NOT part of this variant — they are
    * coupled to the HeroProcessLoop sheet scale (see the note on its wrapper),
