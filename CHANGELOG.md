@@ -5,6 +5,17 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.56.5] - 2026-07-30
+
+### Fixed
+
+- **The sale gateway no longer reveals whether an email has bought a transfer.** Entering an email called `checkPurchase` first and branched the UI on the answer, which meant the page surfaced an unauthenticated "did this person buy this?" oracle. Signed-out buyers now go straight to `recoverPurchase` and are shown the OTP box **and** the Buy button together, because neither we nor they should be told which applies — a code only arrives if a purchase actually exists. Copy is conditional so it never asserts ownership: new `publicSale.alreadyBought` and `publicSale.otpSentIfPurchased` keys in `en` and `fr`, used whenever ownership is unknown, with the existing `alreadyOwned`/`otpSent` wording kept for the signed-in case where it is known. (`app/downloads/[transferId]/[shortCode]/page.tsx`)
+- **`checkPurchase` no longer sends an email address.** The backend now reads it from the JWT, so the client argument is gone and the call is authenticated-only. The signed-in auto-detect path still uses it — that is the caller's own email and discloses nothing — while the signed-out path does not call it at all. (`services/transfer-api.ts`)
+
+### Notes
+
+- Requires zefile-backend **v1.57.5** or later. That release makes `POST /transfers/:shortCode/buy/check` authenticated and stops it accepting a body email, so the two must ship together: an older frontend against the new backend would get 401s on the signed-out path.
+
 ## [1.56.4] - 2026-07-29
 
 ### Changed

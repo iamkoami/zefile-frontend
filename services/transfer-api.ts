@@ -538,17 +538,25 @@ export class TransferApi {
   }
 
   /**
-   * Check if a buyer has already purchased a public sale transfer
+   * Check whether the signed-in user has already purchased a public sale transfer.
+   *
+   * Requires authentication and answers only for the caller's own email, which the
+   * backend reads from the JWT — it no longer accepts an email, so it cannot be used
+   * to probe whether someone else bought a transfer. Signed-out buyers should use
+   * recoverPurchase() instead, which proves ownership by OTP.
    */
-  async checkPurchase(shortCode: string, email: string): Promise<ApiResponse<{ hasPurchase: boolean }>> {
+  async checkPurchase(shortCode: string): Promise<ApiResponse<{ hasPurchase: boolean }>> {
     return apiClient.post<{ hasPurchase: boolean }>(
       `/transfers/${shortCode}/buy/check`,
-      { email },
+      {},
     );
   }
 
   /**
-   * Recover a previous purchase by sending OTP to buyer's email
+   * Recover a previous purchase by sending OTP to buyer's email.
+   *
+   * Always reports otpSent: true — a code only actually arrives if the email has a
+   * purchase, so the response cannot be used to test whether it does.
    */
   async recoverPurchase(shortCode: string, email: string): Promise<ApiResponse<{ otpSent: boolean }>> {
     return apiClient.post<{ otpSent: boolean }>(
