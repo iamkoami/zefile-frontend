@@ -5,6 +5,28 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.57.0] - 2026-07-30
+
+### Added
+
+- **Currency now follows where the visitor actually is.** There was no detection of any kind — `getStoredCountryCode()` read localStorage and fell back to International, so every first-time visitor saw USD wherever they were, including the West African creators the product is built for. Middleware now maps Cloudflare's `CF-IPCountry` to a supported country (or `DEFAULT` for anywhere ZeFile cannot charge in local currency) and writes a client-readable cookie that the currency store reads on hydrate. Resolution order is: explicit choice in localStorage, then geo, then International. (`middleware.ts`, `stores/currency-store.ts`, `services/subscription-api.ts`)
+- **An explicit choice is never overridden by geo.** `getStoredCountryCode()` returned `DEFAULT` both for "chose International" and for "never chose anything", which are not the same thing. `hasStoredCountryCode()` separates them, so someone who deliberately selects International is not re-detected back to their own country on every page load. Geo is deliberately not written back to localStorage — that would freeze a guess into a stated preference and stop it re-detecting after travel.
+- **Four more markets in the hero animation** — Ghana, Kenya, Togo and Benin join Nigeria and Côte d'Ivoire, each with its own currency, flag, dial code and mobile-money providers. (`components/shared/HeroProcessLoop.tsx`)
+- **A left-rail alignment variant for the hero**, where the trust strip, headline, subtitle and CTA all start on one shared axis instead of each line floating on its own centre. Overridable per-visit with `?hero=left` / `?hero=center` so both versions can be shown side by side. Left is the default pending the creator preference test. (`components/shared/HeroText.tsx`, `components/shared/CreatorsTrustStrip.tsx`)
+
+### Changed
+
+- **The hero animation's market is no longer derived from the UI language.** French forced Côte d'Ivoire/XOF and English forced Nigeria/NGN, so an Ivorian reading the site in English was shown Naira. It now follows the header's currency switcher.
+- **International shows no provider it cannot route to.** Outside the six supported countries the payment beat shows the generic Mobile Money / Card choice with no provider chips, and drops the flag and dial prefix entirely rather than inventing a `+1` that would claim a money rail that does not exist there.
+- Hero headline `text-4xl` → `text-3xl` and subtitle `text-lg` → `text-base`. At 1280 this takes the headline from three lines to two.
+- `CF-IPCountry` added to `Vary` on responses that set the geo cookie. Without it the cookie-less edge-cache bucket would hand one country's `Set-Cookie` to every other country's first-time visitor. The cookie is only re-sent when its value changes, mirroring the existing `NEXT_LOCALE` rule, so steady-state responses stay cacheable.
+
+### Fixed
+
+- **A recipient hitting a dead link was told their files were ready.** The transfer landing page rendered the hero with no guard on transfer state, so "Your files are ready." sat next to a card saying the transfer had vanished into thin air — on not-found, expired, cancelled and not-ready links alike. The hero now carries state-appropriate copy and its own call to action, distinct from the card's. (`app/downloads/[transferId]/[shortCode]/page.tsx`)
+- **"Mobile Money" was a hardcoded English string** in the hero animation, rendering untranslated for French visitors. It is now a translation key in both locales.
+- Togo's mobile-money providers corrected to Mixx by Yas and Moov Flooz — T-Money is the pre-rebrand name.
+
 ## [1.56.7] - 2026-07-30
 
 ### Fixed
