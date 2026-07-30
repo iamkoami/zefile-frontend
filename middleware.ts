@@ -126,6 +126,62 @@ function parseAcceptLanguage(header: string | null): 'en' | 'fr' {
 }
 
 /**
+ * Countries where ZeFile has a real payment rail. Must stay in sync with
+ * SUPPORTED_COUNTRIES / REGIONAL_PRICING in services/subscription-api.ts and
+ * with the options the CurrencySwitcher offers.
+ */
+const GEO_SUPPORTED_COUNTRIES = new Set(['NG', 'GH', 'KE', 'CI', 'TG', 'BJ']);
+
+/** Client-readable (not HttpOnly) — the Zustand currency store reads it on hydrate. */
+export const GEO_COUNTRY_COOKIE = 'zefile_geo_country';
+
+/**
+ * Resolve the visitor's country from Cloudflare's CF-IPCountry header.
+ *
+ * Returns null when there is nothing trustworthy to say — no header at all
+ * (local dev, or any origin not behind Cloudflare), 'XX' (Cloudflare could not
+ * determine it) or 'T1' (Tor exit node). Callers must treat null as "don't
+ * touch the cookie" rather than "International", so a missing header never
+ * overwrites a good value from an earlier request.
+ *
+ * A supported country returns its own code; anywhere else returns 'DEFAULT',
+ * because International/USD is the honest answer for a country we cannot
+ * charge in local currency.
+ */
+function resolveGeoCountry(request: NextRequest): string | null {
+  const header = request.headers.get('cf-ipcountry');
+  if (!header) return null;
+  const code = header.toUpperCase();
+  if (code === 'XX' || code === 'T1') return null;
+  return GEO_SUPPORTED_COUNTRIES.has(code) ? code : 'DEFAULT';
+}
+
+/**
+ * Attach the geo country cookie, mirroring the NEXT_LOCALE pattern above: only
+ * Set-Cookie when the value actually changes, so steady-state responses stay
+ * edge-cacheable.
+ *
+ * The caller must also add CF-IPCountry to Vary. Without it the cookie-less
+ * cache bucket would serve one country's Set-Cookie to every other country's
+ * first-time visitors.
+ *
+ * This never writes localStorage — an explicit choice in the CurrencySwitcher
+ * always outranks geo, and the store enforces that on hydrate.
+ */
+function applyGeoCountryCookie(request: NextRequest, response: NextResponse): void {
+  const geo = resolveGeoCountry(request);
+  if (!geo) return;
+  if (request.cookies.get(GEO_COUNTRY_COOKIE)?.value === geo) return;
+  response.cookies.set(GEO_COUNTRY_COOKIE, geo, {
+    path: '/',
+    // Shorter than NEXT_LOCALE's year: where someone is can change, and a stale
+    // country is worse than re-detecting it.
+    maxAge: 30 * 24 * 60 * 60,
+    sameSite: 'lax',
+  });
+}
+
+/**
  * Middleware handles:
  * 1. Short link redirects (/z-{code} → /downloads?code=z-{code})
  * 2. Content-Security-Policy with per-request nonce
@@ -291,7 +347,8 @@ export async function middleware(request: NextRequest) {
     response.headers.set('X-Frame-Options', 'DENY');
     response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
     response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
-    response.headers.set('Vary', 'Accept-Language, Cookie');
+    applyGeoCountryCookie(request, response);
+    response.headers.set('Vary', 'Accept-Language, Cookie, CF-IPCountry');
     response.headers.set('Content-Language', 'fr');
     response.headers.set('Cache-Control', cacheControl);
     response.headers.delete('X-Powered-By');
@@ -324,7 +381,8 @@ export async function middleware(request: NextRequest) {
       response.headers.set('X-Frame-Options', 'DENY');
       response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
       response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
-      response.headers.set('Vary', 'Accept-Language, Cookie');
+      applyGeoCountryCookie(request, response);
+      response.headers.set('Vary', 'Accept-Language, Cookie, CF-IPCountry');
       response.headers.set('Content-Language', detectedLocale);
       response.headers.set('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=60');
       response.headers.delete('X-Powered-By');
@@ -380,9 +438,14 @@ export async function middleware(request: NextRequest) {
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   // X-XSS-Protection intentionally removed — deprecated header, CSP covers this.
 
+  // Currency follows the visitor's country, resolved from Cloudflare's edge.
+  // Applied before Vary below, which must declare CF-IPCountry for it.
+  applyGeoCountryCookie(request, response);
+
   // SEO: Signal language negotiation to search engines and CDN caches.
-  // Content varies by Accept-Language (i18n fallback) and Cookie (NEXT_LOCALE).
-  response.headers.set('Vary', 'Accept-Language, Cookie');
+  // Content varies by Accept-Language (i18n fallback) and Cookie (NEXT_LOCALE);
+  // the geo cookie above additionally varies the response by CF-IPCountry.
+  response.headers.set('Vary', 'Accept-Language, Cookie, CF-IPCountry');
 
   // SEO: Set Content-Language based on detected locale (cookie > Accept-Language > default)
   const localeCookie = request.cookies.get('NEXT_LOCALE')?.value;

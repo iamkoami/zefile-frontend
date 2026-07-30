@@ -10,6 +10,7 @@ import {
   REGIONAL_PRICING,
   getStoredCountryCode,
   setStoredCountryCode,
+  hasStoredCountryCode,
   type SupportedCountry,
   type RegionalPricing,
 } from '@/services/subscription-api';
@@ -30,6 +31,23 @@ export const COUNTRY_CONFIG: Record<string, { name: string; nameFr: string; flag
 
 // All available country codes (including DEFAULT)
 export const ALL_COUNTRY_CODES = [...SUPPORTED_COUNTRIES, 'DEFAULT'] as const;
+
+/**
+ * Country detected at the Cloudflare edge and written by middleware.ts.
+ * Absent in local dev and anywhere not behind Cloudflare — treat that as
+ * "no signal", not as International.
+ */
+const GEO_COUNTRY_COOKIE = 'zefile_geo_country';
+
+function readGeoCountryCookie(): string | null {
+  if (typeof document === 'undefined') return null;
+  const match = document.cookie.match(
+    new RegExp(`(?:^|;\\s*)${GEO_COUNTRY_COOKIE}=([^;]*)`),
+  );
+  if (!match) return null;
+  const value = decodeURIComponent(match[1]);
+  return ALL_COUNTRY_CODES.includes(value as SupportedCountry) ? value : null;
+}
 
 interface CurrencyState {
   // Current selected country code
@@ -74,8 +92,24 @@ export const useCurrencyStore = create<CurrencyState>((set, get) => ({
   hydrate: () => {
     if (get().isHydrated) return;
 
-    const storedCode = getStoredCountryCode() as SupportedCountry;
-    const validCode = ALL_COUNTRY_CODES.includes(storedCode) ? storedCode : 'DEFAULT';
+    /*
+     * Resolution order, highest first:
+     *   1. localStorage — the visitor picked a country in the CurrencySwitcher.
+     *      Checked with hasStoredCountryCode(), not the value, so an explicit
+     *      "International" is respected instead of being re-detected every load.
+     *   2. Geo cookie from CF-IPCountry, set by middleware.ts.
+     *   3. DEFAULT (International / USD).
+     *
+     * Geo is deliberately NOT written back to localStorage: that would freeze a
+     * guess into a stated preference and stop it re-detecting after travel.
+     */
+    const resolvedCode = hasStoredCountryCode()
+      ? getStoredCountryCode()
+      : (readGeoCountryCookie() ?? 'DEFAULT');
+
+    const validCode = (
+      ALL_COUNTRY_CODES.includes(resolvedCode as SupportedCountry) ? resolvedCode : 'DEFAULT'
+    ) as SupportedCountry;
     const pricing = REGIONAL_PRICING[validCode] || REGIONAL_PRICING.DEFAULT;
 
     set({

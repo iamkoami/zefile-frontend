@@ -2190,6 +2190,7 @@
     "graceExpiredDescription": "Vos paiements sont en attente jusqu'à la vérification.",
     "daysRemaining": "{days} jours restants",
     "oneDayRemaining": "1 jour restant",
+    "verifyToWithdraw": "Vérifiez votre identité pour retirer vos fonds",
     "deadline": "Date limite",
     "verifyNow": "Vérifier maintenant",
     "verify": "Vérifier",
@@ -3471,11 +3472,15 @@
     "filesUnlocked": "Vos fichiers sont déverrouillés.",
     "downloadAll": "Tout télécharger ({size})",
     "releasedAfterPayment": "Débloqués dès que le paiement est validé",
-    "paySecurely": "Payer en toute sécurité"
+    "paySecurely": "Payer en toute sécurité",
+    "mobileMoney": "Mobile Money"
   },
   "downloadHero": {
     "title": "Vos fichiers vous attendent.",
     "subtitlePaid": "Vos originaux se débloquent dès que le paiement est validé.",
-    "subtitleFree": "Jetez un œil, puis téléchargez."
+    "subtitleFree": "Jetez un œil, puis téléchargez.",
+    "unavailableTitle": "Nos liens ont une durée de vie.",
+    "unavailableSubtitle": "C'est voulu : votre travail n'a rien à faire en ligne une fois le projet livré.",
+    "unavailableCta": "Créer un compte gratuit"
   }
 }

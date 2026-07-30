@@ -436,6 +436,18 @@ export function getStoredCountryCode(): string {
 }
 
 /**
+ * Whether the visitor has ever picked a country themselves.
+ *
+ * `getStoredCountryCode()` returns 'DEFAULT' both for "chose International" and
+ * for "never chose anything", which are not the same thing: geo detection may
+ * override the second but must never override the first.
+ */
+export function hasStoredCountryCode(): boolean {
+  if (typeof window === 'undefined') return false;
+  return localStorage.getItem(STORAGE_KEY_COUNTRY) !== null;
+}
+
+/**
  * Store country code to localStorage
  */
 export function setStoredCountryCode(countryCode: string): void {

@@ -2190,6 +2190,7 @@
     "graceExpiredDescription": "Payouts are on hold until you're verified.",
     "daysRemaining": "{days} days remaining",
     "oneDayRemaining": "1 day remaining",
+    "verifyToWithdraw": "Verify your identity to withdraw",
     "deadline": "Deadline",
     "verifyNow": "Verify now",
     "verify": "Verify",
@@ -3501,11 +3502,15 @@
     "filesUnlocked": "Your files are unlocked.",
     "downloadAll": "Download all ({size})",
     "releasedAfterPayment": "Released only after payment clears",
-    "paySecurely": "Pay securely"
+    "paySecurely": "Pay securely",
+    "mobileMoney": "Mobile Money"
   },
   "downloadHero": {
     "title": "Your files are ready.",
     "subtitlePaid": "Your originals unlock the moment payment clears.",
-    "subtitleFree": "Have a look, then download."
+    "subtitleFree": "Have a look, then download.",
+    "unavailableTitle": "Our links don't live forever.",
+    "unavailableSubtitle": "That's on purpose — your work has no business sitting online once the project's delivered.",
+    "unavailableCta": "Create a free account"
   }
 }
