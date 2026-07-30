@@ -26,10 +26,19 @@ export interface BalanceResponse {
   pendingMinorUnits: number;
   /** Earnings still inside the buyer refund window, held out of the withdrawable balance (Story 133-2) */
   reservedMinorUnits: number;
+  /**
+   * Lifetime net earnings gross of withdrawals (settled + reserved). Use this rather
+   * than summing available + pending + reserved, which under-reports by every
+   * completed payout. Optional until every deployed API version returns it.
+   */
+  totalEarnedMinorUnits?: number;
+  /** Days buyer-funded earnings stay on hold before becoming withdrawable */
+  payoutHoldDays?: number;
   currency: string;
   availableFormatted: string;
   pendingFormatted: string;
   reservedFormatted: string;
+  totalEarnedFormatted?: string;
 }
 
 /**

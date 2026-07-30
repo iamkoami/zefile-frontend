@@ -457,10 +457,15 @@ const PayoutsPanel: React.FC = () => {
             <span className="text-sm text-gray-600 dark:text-[oklch(0.75_0_0)]">{t("totalEarned")}</span>
           </div>
           <p className="text-2xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)]">
+            {/* Lifetime earnings come from the backend: summing available + pending +
+                reserved here would under-report by every completed payout, since those
+                are already netted out of the available balance. Falls back to the sum
+                only while an older API version is still deployed. */}
             {formatAmount(
-              (balance?.availableMinorUnits || 0) +
-                (balance?.pendingMinorUnits || 0) +
-                (balance?.reservedMinorUnits || 0),
+              balance?.totalEarnedMinorUnits ??
+                (balance?.availableMinorUnits || 0) +
+                  (balance?.pendingMinorUnits || 0) +
+                  (balance?.reservedMinorUnits || 0),
               balance?.currency || "XOF",
             )}
           </p>
@@ -470,8 +475,8 @@ const PayoutsPanel: React.FC = () => {
       {/* Held / reserved funds notice — earnings still inside the buyer refund
           window (Story 133-2, AC3). Shown only when something is on hold. */}
       {(balance?.reservedMinorUnits || 0) > 0 && (
-        <div className="flex items-start gap-3 bg-amber-50 dark:bg-amber-900/15 border border-amber-200 dark:border-amber-900/30 rounded px-4 py-3 mb-6">
-          <Clock className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+        <div className="flex items-start gap-3 bg-[#FEF9EC] dark:bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded px-4 py-3 mb-6">
+          <Clock className="w-5 h-5 text-[#F59E0B] flex-shrink-0 mt-0.5" />
           <div className="flex-1">
             <p className="text-sm font-medium text-[#171717] dark:text-[oklch(0.91_0_0)]">
               {t("reservedTitle", {
@@ -482,7 +487,11 @@ const PayoutsPanel: React.FC = () => {
               })}
             </p>
             <p className="text-xs text-gray-500 dark:text-[oklch(0.70_0_0)] mt-1">
-              {t("reservedHint")}
+              {/* Say how long the hold actually is when the API tells us; the
+                  generic wording is only for older API versions. */}
+              {balance?.payoutHoldDays
+                ? t("reservedHintDays", { days: balance.payoutHoldDays })
+                : t("reservedHint")}
             </p>
           </div>
         </div>

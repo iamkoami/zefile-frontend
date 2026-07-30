@@ -2140,6 +2140,7 @@
     "totalEarned": "Total earned",
     "reservedTitle": "You've got {amount} on hold for now",
     "reservedHint": "These are recent sales still inside the buyer refund window. The moment that window closes, this moves into your available balance — nothing for you to do.",
+    "reservedHintDays": "These are recent sales still inside the buyer refund window. Each one moves into your available balance {days} days after the sale — nothing for you to do.",
     "withdrawalInfo": "Withdrawal Information",
     "withdrawalDescription": "Withdrawals take 1–3 business days to reach your account.",
     "minimumWithdrawal": "Minimum withdrawal",
