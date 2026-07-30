@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **The hero animation's market is no longer derived from the UI language.** French forced Côte d'Ivoire/XOF and English forced Nigeria/NGN, so an Ivorian reading the site in English was shown Naira. It now follows the header's currency switcher.
 - **International shows no provider it cannot route to.** Outside the six supported countries the payment beat shows the generic Mobile Money / Card choice with no provider chips, and drops the flag and dial prefix entirely rather than inventing a `+1` that would claim a money rail that does not exist there.
 - Hero headline `text-4xl` → `text-3xl` and subtitle `text-lg` → `text-base`. At 1280 this takes the headline from three lines to two.
+- Updated logo assets — new wordmark and mark. (`public/zefile-logo.svg`, `public/zefile-logo-white.svg`, `public/zefile-logo.png`)
 - `CF-IPCountry` added to `Vary` on responses that set the geo cookie. Without it the cookie-less edge-cache bucket would hand one country's `Set-Cookie` to every other country's first-time visitor. The cookie is only re-sent when its value changes, mirroring the existing `NEXT_LOCALE` rule, so steady-state responses stay cacheable.
 
 ### Fixed
