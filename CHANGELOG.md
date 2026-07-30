@@ -5,6 +5,12 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.57.2] - 2026-07-30
+
+### Fixed
+
+- **The geo cookie's cache guard did not actually exist.** A response carrying a country-specific `Set-Cookie` must never be reusable by anyone else, or a shared cache could hand one country's cookie to every cookie-less visitor behind it. That was guarded with `Vary: CF-IPCountry` — but the header does not survive to the client on Cloudflare Pages. Confirmed on `demo.zefile.io`: responses arrive with Next.js's own `vary: RSC, Next-Router-State-Tree, …, accept-encoding`, while `Content-Language` set in the same middleware block does survive, so the adapter overwrites `Vary` after middleware runs. The guarantee is now made by the response itself — when the geo cookie is written, that single response is marked `private, no-store`; every other response keeps the normal cacheable header. `Vary` is retained as belt-and-braces. This was latent rather than live, since Cloudflare currently returns `cf-cache-status: DYNAMIC` for these routes and caches nothing, but it would have opened the moment HTML edge caching was enabled. (`middleware.ts`)
+
 ## [1.57.0] - 2026-07-30
 
 ### Added

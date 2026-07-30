@@ -161,17 +161,17 @@ function resolveGeoCountry(request: NextRequest): string | null {
  * Set-Cookie when the value actually changes, so steady-state responses stay
  * edge-cacheable.
  *
- * The caller must also add CF-IPCountry to Vary. Without it the cookie-less
- * cache bucket would serve one country's Set-Cookie to every other country's
- * first-time visitors.
+ * Returns true when a cookie was written. The caller MUST then make that single
+ * response uncacheable via `geoCacheControl()` — see the note there for why Vary
+ * cannot be relied on to do it.
  *
  * This never writes localStorage — an explicit choice in the CurrencySwitcher
  * always outranks geo, and the store enforces that on hydrate.
  */
-function applyGeoCountryCookie(request: NextRequest, response: NextResponse): void {
+function applyGeoCountryCookie(request: NextRequest, response: NextResponse): boolean {
   const geo = resolveGeoCountry(request);
-  if (!geo) return;
-  if (request.cookies.get(GEO_COUNTRY_COOKIE)?.value === geo) return;
+  if (!geo) return false;
+  if (request.cookies.get(GEO_COUNTRY_COOKIE)?.value === geo) return false;
   response.cookies.set(GEO_COUNTRY_COOKIE, geo, {
     path: '/',
     // Shorter than NEXT_LOCALE's year: where someone is can change, and a stale
@@ -179,6 +179,28 @@ function applyGeoCountryCookie(request: NextRequest, response: NextResponse): vo
     maxAge: 30 * 24 * 60 * 60,
     sameSite: 'lax',
   });
+  return true;
+}
+
+/**
+ * Cache-Control for a response that may carry the geo cookie.
+ *
+ * A response containing a country-specific Set-Cookie must never be reusable by
+ * anyone else, or a shared cache could hand one country's cookie to every
+ * cookie-less visitor behind it. The usual guard for that is `Vary`, and this
+ * middleware does set `CF-IPCountry` there — but that header does NOT survive to
+ * the client on Cloudflare Pages. Verified on demo.zefile.io: the response
+ * arrives with Next.js's own `vary: RSC, Next-Router-State-Tree, …,
+ * accept-encoding`, while `Content-Language` from this same block does survive.
+ * The adapter overwrites Vary after middleware runs, so Vary is kept as
+ * belt-and-braces and the real guarantee is made here instead.
+ *
+ * Marking only the cookie-setting response private costs one uncacheable
+ * request per visitor per 30 days; every subsequent response takes the normal
+ * cacheable path because no Set-Cookie is emitted once the value matches.
+ */
+function geoCacheControl(geoCookieSet: boolean, cacheable: string): string {
+  return geoCookieSet ? 'private, no-store' : cacheable;
 }
 
 /**
@@ -347,10 +369,10 @@ export async function middleware(request: NextRequest) {
     response.headers.set('X-Frame-Options', 'DENY');
     response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
     response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
-    applyGeoCountryCookie(request, response);
+    const geoCookieSet = applyGeoCountryCookie(request, response);
     response.headers.set('Vary', 'Accept-Language, Cookie, CF-IPCountry');
     response.headers.set('Content-Language', 'fr');
-    response.headers.set('Cache-Control', cacheControl);
+    response.headers.set('Cache-Control', geoCacheControl(geoCookieSet, cacheControl));
     response.headers.delete('X-Powered-By');
     return response;
   }
@@ -381,10 +403,13 @@ export async function middleware(request: NextRequest) {
       response.headers.set('X-Frame-Options', 'DENY');
       response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
       response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
-      applyGeoCountryCookie(request, response);
+      const geoCookieSet = applyGeoCountryCookie(request, response);
       response.headers.set('Vary', 'Accept-Language, Cookie, CF-IPCountry');
       response.headers.set('Content-Language', detectedLocale);
-      response.headers.set('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=60');
+      response.headers.set(
+        'Cache-Control',
+        geoCacheControl(geoCookieSet, 'public, s-maxage=30, stale-while-revalidate=60'),
+      );
       response.headers.delete('X-Powered-By');
       return response;
     }
@@ -439,8 +464,9 @@ export async function middleware(request: NextRequest) {
   // X-XSS-Protection intentionally removed — deprecated header, CSP covers this.
 
   // Currency follows the visitor's country, resolved from Cloudflare's edge.
-  // Applied before Vary below, which must declare CF-IPCountry for it.
-  applyGeoCountryCookie(request, response);
+  // When this writes a cookie the response is forced private below — see
+  // geoCacheControl() for why Vary alone cannot carry that guarantee here.
+  const geoCookieSet = applyGeoCountryCookie(request, response);
 
   // SEO: Signal language negotiation to search engines and CDN caches.
   // Content varies by Accept-Language (i18n fallback) and Cookie (NEXT_LOCALE);
@@ -454,7 +480,10 @@ export async function middleware(request: NextRequest) {
 
   // Cache-control for HTML pages — prevent stale content from heuristic caching
   // (Cloudflare Pages _headers only applies to static files, not dynamic routes)
-  response.headers.set('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
+  response.headers.set(
+    'Cache-Control',
+    geoCacheControl(geoCookieSet, 'public, s-maxage=3600, stale-while-revalidate=86400'),
+  );
 
   // Remove server technology fingerprint
   response.headers.delete('X-Powered-By');
