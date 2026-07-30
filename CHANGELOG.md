@@ -5,6 +5,21 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.56.6] - 2026-07-30
+
+### Fixed
+
+- **"Total earned" shrank every time a seller got paid.** The card summed `available + pending + reserved`, but `available` already has completed withdrawals netted out of it, so the lifetime figure dropped by the value of each payout. It now reads `totalEarnedMinorUnits` from the balance response, which the backend computes gross of withdrawals; the old sum stays as a fallback so the card still renders against an API version that predates the field. (`features/account/components/PayoutsPanel.tsx`)
+
+### Changed
+
+- The held-funds notice now tells sellers how long the hold actually is, using the `payoutHoldDays` field the balance response started returning, instead of only saying the funds release "when the window closes". New `payouts.reservedHintDays` copy in `en` and `fr` (idiomatic French, "vous"), with the existing generic wording kept for older API versions. (`i18n/messages/{en,fr}.json`)
+- The notice uses the documented warning colour (`#F59E0B`) rather than raw `amber-*` utilities, so it matches the rest of the design system in both light and dark mode. (`features/account/components/PayoutsPanel.tsx`)
+
+### Notes
+
+- Pairs with backend v1.57.6, which extends the payout reserve to file-request escrow earnings. Sellers with recent escrow releases will see those funds appear under the on-hold notice once that deploys — this banner is what explains it, so shipping the two together is preferable to shipping the backend alone.
+
 ## [1.56.5] - 2026-07-30
 
 ### Fixed
