@@ -5,6 +5,63 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.57.0] - 2026-07-30
+
+### Added
+
+- **Currency now follows where the visitor actually is.** There was no detection of any kind — `getStoredCountryCode()` read localStorage and fell back to International, so every first-time visitor saw USD wherever they were, including the West African creators the product is built for. Middleware now maps Cloudflare's `CF-IPCountry` to a supported country (or `DEFAULT` for anywhere ZeFile cannot charge in local currency) and writes a client-readable cookie that the currency store reads on hydrate. Resolution order is: explicit choice in localStorage, then geo, then International. (`middleware.ts`, `stores/currency-store.ts`, `services/subscription-api.ts`)
+- **An explicit choice is never overridden by geo.** `getStoredCountryCode()` returned `DEFAULT` both for "chose International" and for "never chose anything", which are not the same thing. `hasStoredCountryCode()` separates them, so someone who deliberately selects International is not re-detected back to their own country on every page load. Geo is deliberately not written back to localStorage — that would freeze a guess into a stated preference and stop it re-detecting after travel.
+- **Four more markets in the hero animation** — Ghana, Kenya, Togo and Benin join Nigeria and Côte d'Ivoire, each with its own currency, flag, dial code and mobile-money providers. (`components/shared/HeroProcessLoop.tsx`)
+- **A left-rail alignment variant for the hero**, where the trust strip, headline, subtitle and CTA all start on one shared axis instead of each line floating on its own centre. Overridable per-visit with `?hero=left` / `?hero=center` so both versions can be shown side by side. Left is the default pending the creator preference test. (`components/shared/HeroText.tsx`, `components/shared/CreatorsTrustStrip.tsx`)
+
+### Changed
+
+- **The hero animation's market is no longer derived from the UI language.** French forced Côte d'Ivoire/XOF and English forced Nigeria/NGN, so an Ivorian reading the site in English was shown Naira. It now follows the header's currency switcher.
+- **International shows no provider it cannot route to.** Outside the six supported countries the payment beat shows the generic Mobile Money / Card choice with no provider chips, and drops the flag and dial prefix entirely rather than inventing a `+1` that would claim a money rail that does not exist there.
+- Hero headline `text-4xl` → `text-3xl` and subtitle `text-lg` → `text-base`. At 1280 this takes the headline from three lines to two.
+- Updated logo assets — new wordmark and mark. (`public/zefile-logo.svg`, `public/zefile-logo-white.svg`, `public/zefile-logo.png`)
+- `CF-IPCountry` added to `Vary` on responses that set the geo cookie. Without it the cookie-less edge-cache bucket would hand one country's `Set-Cookie` to every other country's first-time visitor. The cookie is only re-sent when its value changes, mirroring the existing `NEXT_LOCALE` rule, so steady-state responses stay cacheable.
+
+### Fixed
+
+- **A recipient hitting a dead link was told their files were ready.** The transfer landing page rendered the hero with no guard on transfer state, so "Your files are ready." sat next to a card saying the transfer had vanished into thin air — on not-found, expired, cancelled and not-ready links alike. The hero now carries state-appropriate copy and its own call to action, distinct from the card's. (`app/downloads/[transferId]/[shortCode]/page.tsx`)
+- **"Mobile Money" was a hardcoded English string** in the hero animation, rendering untranslated for French visitors. It is now a translation key in both locales.
+- Togo's mobile-money providers corrected to Mixx by Yas and Moov Flooz — T-Money is the pre-rebrand name.
+
+## [1.56.7] - 2026-07-30
+
+### Fixed
+
+- **A blocked payout failed with no explanation and no way forward.** The payouts view had no awareness of identity verification at all, and the withdrawal panel rendered only the backend's raw English error string — the machine-readable reason arrived in the API client and was discarded. The payouts view now shows the block above the balance, driven by the balance response so it can never disagree with the server, and the withdrawal panel branches on the error code to show localised copy plus a route into verification. Every other error keeps the existing generic treatment. (`features/account/components/PayoutsPanel.tsx`, `features/account/components/WithdrawalRequestPanel.tsx`)
+- **Verification links from email appeared to go nowhere.** `?account=verification` was not in the deep-link allow-list, so the parameter was silently ignored — even though the account menu type already contained `verification` and the account panel already routed it. One missing string was the whole reason those links looked broken. `?account=payouts` is accepted for the same reason. (`features/home/components/HomeClient.tsx`)
+- **A creator who had merely crossed an earnings threshold was shown a red alarm.** A gate block on REQUIRED is factually "grace period expired", which selects the right wording but was also selecting red-alert styling — and REQUIRED is by far the most common block. Visual severity is now separate from the wording: pending reads blue, required amber, rejected red. The reassurance that the balance is untouched is rendered in neutral grey in every state, rather than inheriting the panel's alert colour and fighting the message it carries. (`components/shared/KycVerificationBanner.tsx`)
+- **A rejected creator was told to verify, which sends them back into the flow that just refused them.** Rejection was folded in with "verification required". It now has its own wording pointing at support, and no call to action, consistently across all three banner variants — previously each variant derived its own copy and only one had been corrected.
+- The reason a disabled withdraw button is disabled is now visible text referenced by `aria-describedby` rather than a `title` tooltip, which is unreliable for screen readers and invisible on touch.
+
+### Added
+
+- **The identity-verification notice now appears where a creator will actually see it.** `KycVerificationBanner` existed as a finished, localised, three-variant component that nothing in the app rendered. It is now shown on the payouts view, in the withdrawal flow, and at the top of the home page — so a creator learns that payouts are held before they attempt one, not after. The home-page placement is gated on being signed in, so no anonymous visitor triggers a verification-status request, and the component renders nothing for anyone who is verified or unaffected.
+- The banner accepts an optional payout-gate decision (`payoutBlockCode`, `gracePeriodEnds`, `footnote`) and renders from it instead of fetching status itself. This matters because the gate can refuse while a plain status read looks clean — above all on its fail-closed path, where it blocks precisely *because* the lookup failed. Left to its own fetch the banner would have rendered nothing at the exact moment it was most needed. Omit the props and every existing behaviour is unchanged.
+
+### Changed
+
+- New payout-block copy in English and French states plainly that the balance stays where it is and nothing is lost — the line that matters most to someone who has just discovered a payout will not arrive.
+
+## [1.56.6] - 2026-07-30
+
+### Fixed
+
+- **"Total earned" shrank every time a seller got paid.** The card summed `available + pending + reserved`, but `available` already has completed withdrawals netted out of it, so the lifetime figure dropped by the value of each payout. It now reads `totalEarnedMinorUnits` from the balance response, which the backend computes gross of withdrawals; the old sum stays as a fallback so the card still renders against an API version that predates the field. (`features/account/components/PayoutsPanel.tsx`)
+
+### Changed
+
+- The held-funds notice now tells sellers how long the hold actually is, using the `payoutHoldDays` field the balance response started returning, instead of only saying the funds release "when the window closes". New `payouts.reservedHintDays` copy in `en` and `fr` (idiomatic French, "vous"), with the existing generic wording kept for older API versions. (`i18n/messages/{en,fr}.json`)
+- The notice uses the documented warning colour (`#F59E0B`) rather than raw `amber-*` utilities, so it matches the rest of the design system in both light and dark mode. (`features/account/components/PayoutsPanel.tsx`)
+
+### Notes
+
+- Pairs with backend v1.57.6, which extends the payout reserve to file-request escrow earnings. Sellers with recent escrow releases will see those funds appear under the on-hold notice once that deploys — this banner is what explains it, so shipping the two together is preferable to shipping the backend alone.
+
 ## [1.56.5] - 2026-07-30
 
 ### Fixed

@@ -142,6 +142,7 @@ function ContentPanelBackground({
   showUpgradeCta,
   onUpgradeClick,
   hasPrice = false,
+  isUnavailable = false,
 }: {
   wallpaperUrl?: string;
   timeOfDay: TimeOfDay;
@@ -151,6 +152,14 @@ function ContentPanelBackground({
   onUpgradeClick?: () => void;
   /** Free transfers must not be told to pay — it reads as a surprise charge. */
   hasPrice?: boolean;
+  /**
+   * True when the transfer cannot be delivered — not found, expired, cancelled
+   * or not yet ready. The default hero copy ("Your files are ready.") is a flat
+   * contradiction of the card next to it in those states, so it must not run.
+   * The card already explains which of the four happened; the hero's job here
+   * is only to stay honest and carry the invite.
+   */
+  isUnavailable?: boolean;
 }) {
   const tDl = useTranslations("downloadHero");
   const [wallpaperLoaded, setWallpaperLoaded] = useState(false);
@@ -189,13 +198,24 @@ function ContentPanelBackground({
         showUpgradeCta={showUpgradeCta}
         onUpgradeClick={onUpgradeClick}
         reserveRightGutter
-        copy={{
-          line1: tDl("title"),
-          subtitle: hasPrice ? tDl("subtitlePaid") : tDl("subtitleFree"),
-        }}
+        copy={
+          isUnavailable
+            ? {
+                line1: tDl("unavailableTitle"),
+                subtitle: tDl("unavailableSubtitle"),
+              }
+            : {
+                line1: tDl("title"),
+                subtitle: hasPrice ? tDl("subtitlePaid") : tDl("subtitleFree"),
+              }
+        }
+        ctaLabel={isUnavailable ? tDl("unavailableCta") : undefined}
       />
       {/* Buyer-side tour: preview → pay → download. Answers the one thing a
-          recipient is actually anxious about — "if I pay, do I get the files?" */}
+          recipient is actually anxious about — "if I pay, do I get the files?"
+          Kept in the unavailable state on purpose: it describes how ZeFile
+          works in general, it makes no claim about *this* transfer, and the
+          hero reserves its gutter either way. */}
       <HeroProcessLoop variant="buyer" />
     </>
   );
@@ -1800,6 +1820,7 @@ export default function TransferLandingPage() {
               isAuthenticated={isAuthenticated}
               showUpgradeCta={isAuthenticated && userTier === "free"}
               onUpgradeClick={() => openDrawer("subscriptions")}
+              isUnavailable
             />
             <div
               className="ze-panels-container"

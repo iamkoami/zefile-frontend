@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Header } from "@/components/shared";
+import KycVerificationBanner from "@/components/shared/KycVerificationBanner";
 import UploadPanel, {
   PanelState,
   ReuseTransferData,
@@ -122,7 +123,20 @@ export default function HomeClient() {
     }
 
     if (accountParam) {
-      const validViews = ["settings", "help", "analytics", "profile-settings"];
+      // "verification" is what every KYC email links to (Story 137.3). KYC is a drawer panel,
+      // not a route, so `?account=verification` is the only way an email can land a creator in
+      // the verification flow. It was missing here while the emails pointed at a non-existent
+      // /settings/kyc page, so those links 404'd from February to July 2026.
+      // "payouts" is included for the same reason: a blocked-payout email should be able to
+      // land on the balance it is talking about.
+      const validViews = [
+        "settings",
+        "help",
+        "analytics",
+        "profile-settings",
+        "verification",
+        "payouts",
+      ];
       if (validViews.includes(accountParam)) {
         openAccountView(accountParam as AccountMenuItem);
       }
@@ -279,6 +293,27 @@ export default function HomeClient() {
 
         {/* Header */}
         <Header />
+
+        {/*
+          Identity-verification notice (Story 137.3, AC3 — review finding R4).
+
+          AC3 requires the creator be told "before they attempt a withdrawal, not after". The
+          payouts panel already shows this, but only once they navigate there; this is the
+          proactive in-app half, and it is what `variant="banner"` was built for back in Story 4-1.
+
+          Two deliberate constraints:
+          - Gated on `isAuthenticated`, so the highest-traffic page in the product does not fire a
+            `/kyc/status` request for every anonymous visitor.
+          - Self-fetch mode (no `payoutBlockCode`), because the balance is not loaded here. The
+            component returns null for `verified` / `not_required` / a failed fetch, so it is
+            silent for everyone who is not affected — no layout shift, nothing to dismiss.
+        */}
+        {isAuthenticated && (
+          <KycVerificationBanner
+            variant="banner"
+            onVerify={() => openAccountView("verification")}
+          />
+        )}
 
         {/* Main Content */}
         <main

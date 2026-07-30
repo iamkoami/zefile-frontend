@@ -52,6 +52,7 @@ import {
   Link as LinkIcon,
 } from "iconoir-react";
 import { platformApi } from "@/services/platform-api";
+import { useCurrencyStore } from "@/stores/currency-store";
 
 /* ── design tokens ────────────────────────────────────────────────────────
    The --ze-* custom properties are not defined in globals.css today, so the
@@ -116,21 +117,43 @@ const group = (n: number) =>
 type Lang = "en" | "fr";
 type Tr = ReturnType<typeof useTranslations>;
 
-/* ── per-locale market ────────────────────────────────────────────────────
-   FR → Côte d'Ivoire / XOF, EN → Nigeria / NGN. `symAfter` matters: francophone
-   markets write "25 000 CFA", anglophone markets write "₦ 65 000". */
-const MARKETS = {
-  fr: {
-    sym: "CFA",
-    symAfter: true,
-    code: "XOF",
-    base: 25000,
-    flag: "CI",
-    dial: "+225",
-    phone: "07 12 34 56",
-    providers: ["MTN MoMo", "Moov", "Wave"],
-  },
-  en: {
+/* ── per-market money & payment rails ─────────────────────────────────────
+   Keyed by the country the visitor picked in the header's CurrencySwitcher, NOT
+   by locale — an Ivorian reading the site in English should still see CFA and
+   Wave, and someone on International should never be shown MTN.
+
+   `symAfter` matters: francophone markets write "25 000 CFA", anglophone markets
+   write "₦ 65 000".
+
+   `dial`/`flag` are null and `providers` is empty for DEFAULT (International).
+   ZeFile has no mobile-money rail outside these six countries, so the loop shows
+   the generic Mobile Money / Card choice there and names no provider it cannot
+   actually route to.
+
+   PROVISIONAL: the GH, KE and BJ provider lists are unverified placeholders and
+   are to be replaced with the real ones when those payment gateways are wired
+   up. NG, CI and TG are confirmed. This matters more than it looks — naming a
+   provider ZeFile cannot route to is the exact failure the DEFAULT branch above
+   exists to avoid, and TG shipped as "T-Money" for a while, which had been the
+   provider's name before the Yas rebrand. Treat anything unconfirmed here as
+   wrong until someone checks it against the gateway. */
+type Market = {
+  sym: string;
+  symAfter: boolean;
+  code: string;
+  /** Demo price, in whole major units of `code`. */
+  base: number;
+  /** ISO 3166-1 alpha-2, matching a file in `public/flags/m/`. */
+  flag: string | null;
+  dial: string | null;
+  phone: string;
+  providers: readonly string[];
+};
+
+type MarketKey = "NG" | "GH" | "KE" | "CI" | "TG" | "BJ" | "DEFAULT";
+
+const MARKETS: Record<MarketKey, Market> = {
+  NG: {
     sym: "₦",
     symAfter: false,
     code: "NGN",
@@ -140,9 +163,67 @@ const MARKETS = {
     phone: "0803 123 4567",
     providers: ["MTN MoMo", "Opay", "Paga"],
   },
-} as const;
-
-type Market = (typeof MARKETS)[Lang];
+  GH: {
+    sym: "GH₵",
+    symAfter: false,
+    code: "GHS",
+    base: 600,
+    flag: "GH",
+    dial: "+233",
+    phone: "024 123 4567",
+    providers: ["MTN MoMo", "Telecel Cash", "AT Money"],
+  },
+  KE: {
+    sym: "KSh",
+    symAfter: false,
+    code: "KES",
+    base: 5000,
+    flag: "KE",
+    dial: "+254",
+    phone: "0712 345 678",
+    providers: ["M-Pesa", "Airtel Money"],
+  },
+  CI: {
+    sym: "CFA",
+    symAfter: true,
+    code: "XOF",
+    base: 25000,
+    flag: "CI",
+    dial: "+225",
+    phone: "07 12 34 56",
+    providers: ["MTN MoMo", "Moov", "Wave"],
+  },
+  TG: {
+    sym: "CFA",
+    symAfter: true,
+    code: "XOF",
+    base: 25000,
+    flag: "TG",
+    dial: "+228",
+    phone: "90 12 34 56",
+    providers: ["Mixx by Yas", "Moov Flooz"],
+  },
+  BJ: {
+    sym: "CFA",
+    symAfter: true,
+    code: "XOF",
+    base: 25000,
+    flag: "BJ",
+    dial: "+229",
+    phone: "01 97 12 34 56",
+    providers: ["MTN MoMo", "Moov Flooz", "Celtiis"],
+  },
+  DEFAULT: {
+    sym: "$",
+    symAfter: false,
+    code: "USD",
+    base: 40,
+    flag: null,
+    dial: null,
+    phone: "555 0123",
+    providers: [],
+  },
+};
 
 const money = (m: Market, value: number) =>
   m.symAfter ? `${group(value)} ${m.sym}` : `${m.sym} ${group(value)}`;
@@ -921,33 +1002,38 @@ function StepPay({ t, m, local, now, price, showAmount }: Beat) {
       {!paid && (
         <>
           <div style={{ display: "flex", gap: 8, marginTop: showAmount ? 16 : 0 }}>
-            {tab(true, SmartphoneDevice, "Mobile Money")}
+            {tab(true, SmartphoneDevice, t("mobileMoney"))}
             {tab(false, CreditCard, t("card"))}
           </div>
-          <Reveal mt={12} p={clamp((local - 0.4) / 0.6)}>
-            <div style={{ display: "flex", gap: 8 }}>
-              {m.providers.map((pv, i) => (
-                <div
-                  key={pv}
-                  style={{
-                    flex: 1,
-                    height: 36,
-                    borderRadius: 8,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: 12,
-                    fontWeight: 600,
-                    border: `1px solid ${i === 0 ? GREEN : HAIR}`,
-                    background: i === 0 ? "var(--ze-green-soft, #F0FDF4)" : "#fff",
-                    color: i === 0 ? GREEN_DARK : G600,
-                  }}
-                >
-                  {pv}
-                </div>
-              ))}
-            </div>
-          </Reveal>
+          {/* Provider chips only where ZeFile actually has a mobile-money rail.
+              On International the row is dropped rather than filled with names
+              we cannot route a payment to. */}
+          {m.providers.length > 0 && (
+            <Reveal mt={12} p={clamp((local - 0.4) / 0.6)}>
+              <div style={{ display: "flex", gap: 8 }}>
+                {m.providers.map((pv, i) => (
+                  <div
+                    key={pv}
+                    style={{
+                      flex: 1,
+                      height: 36,
+                      borderRadius: 8,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 12,
+                      fontWeight: 600,
+                      border: `1px solid ${i === 0 ? GREEN : HAIR}`,
+                      background: i === 0 ? "var(--ze-green-soft, #F0FDF4)" : "#fff",
+                      color: i === 0 ? GREEN_DARK : G600,
+                    }}
+                  >
+                    {pv}
+                  </div>
+                ))}
+              </div>
+            </Reveal>
+          )}
           <Reveal mt={14} p={clamp((local - 1.0) / 0.6)}>
             <div>
               <label
@@ -962,29 +1048,35 @@ function StepPay({ t, m, local, now, price, showAmount }: Beat) {
                 {t("momoNumber")}
               </label>
               <div style={{ display: "flex", gap: 8 }}>
-                <div
-                  style={{
-                    width: 92,
-                    height: 46,
-                    border: `1px solid ${INK}`,
-                    borderRadius: 4,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    padding: "0 14px",
-                    fontSize: 14,
-                    fontWeight: 600,
-                  }}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={`/flags/m/${m.flag}.svg`}
-                    alt=""
-                    width={20}
-                    style={{ borderRadius: 3 }}
-                  />{" "}
-                  {m.dial}
-                </div>
+                {/* No flag/dial prefix on International — there is no single
+                    country behind it, and inventing one (a US "+1") would be a
+                    lie about where the money rail lives. The number field takes
+                    the full width instead. */}
+                {m.flag && m.dial && (
+                  <div
+                    style={{
+                      width: 92,
+                      height: 46,
+                      border: `1px solid ${INK}`,
+                      borderRadius: 4,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      padding: "0 14px",
+                      fontSize: 14,
+                      fontWeight: 600,
+                    }}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={`/flags/m/${m.flag}.svg`}
+                      alt=""
+                      width={20}
+                      style={{ borderRadius: 3 }}
+                    />{" "}
+                    {m.dial}
+                  </div>
+                )}
                 <div
                   style={{
                     flex: 1,
@@ -1246,7 +1338,11 @@ export default function HeroProcessLoop({
   const t = useTranslations("heroProcessLoop");
   const locale = useLocale();
   const lang: Lang = locale === "fr" ? "fr" : "en";
-  const m = MARKETS[lang];
+  // Follows the header's CurrencySwitcher. Before the store hydrates from
+  // localStorage this is "DEFAULT", which is the correct thing to show a
+  // first-time visitor anyway — no flash of the wrong country's rails.
+  const countryCode = useCurrencyStore((s) => s.countryCode);
+  const m = MARKETS[countryCode as MarketKey] ?? MARKETS.DEFAULT;
 
   const [now, setNow] = useState(0);
   const [fee, setFee] = useState<number>(feePercent ?? FALLBACK_FEE);
