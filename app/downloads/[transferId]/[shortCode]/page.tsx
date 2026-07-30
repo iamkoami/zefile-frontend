@@ -672,10 +672,12 @@ export default function TransferLandingPage() {
           if (response.data.isPublicSales) {
             setPageState("sale-preview");
             // Auto-detect purchase for logged-in users
+            // Signed-in only: the backend answers this from the JWT, for the
+            // caller's own email, so it discloses nothing about anyone else.
             const loggedInEmail = getCurrentUserEmail();
             if (loggedInEmail) {
               setSaleBuyerEmail(loggedInEmail);
-              transferApi.checkPurchase(response.data.shortCode, loggedInEmail).then((checkRes) => {
+              transferApi.checkPurchase(response.data.shortCode).then((checkRes) => {
                 if (checkRes.data?.hasPurchase) {
                   setSaleHasPurchase(true);
                   setSaleEmailChecked(true);
@@ -1609,25 +1611,24 @@ export default function TransferLandingPage() {
     setIsFallbackMode(false);
   };
 
-  // Handle email check for public sale gateway
+  // Handle email entry for the public sale gateway.
+  //
+  // Signed-out buyers go straight to recovery rather than asking the backend
+  // "has this email bought?" first. That question is no longer answerable to an
+  // anonymous caller by design — it would let anyone probe who bought what — so
+  // we offer both paths at once: enter the code if a purchase exists, or buy.
   const handleSaleEmailCheck = async () => {
     if (!transfer || !saleBuyerEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(saleBuyerEmail)) return;
 
     setSaleCheckingEmail(true);
     try {
-      const checkRes = await transferApi.checkPurchase(transfer.shortCode, saleBuyerEmail);
-      if (checkRes.data?.hasPurchase) {
-        setSaleHasPurchase(true);
-        // Auto-send OTP
-        const recoverRes = await transferApi.recoverPurchase(transfer.shortCode, saleBuyerEmail);
-        if (recoverRes.data?.otpSent) {
-          setSaleOtpSent(true);
-        }
-      }
-      setSaleEmailChecked(true);
+      await transferApi.recoverPurchase(transfer.shortCode, saleBuyerEmail);
+      // Always true: a code only lands if the email actually has a purchase.
+      setSaleOtpSent(true);
     } catch {
-      setSaleEmailChecked(true);
+      // Recovery is best-effort here; the buy path below stays available either way.
     } finally {
+      setSaleEmailChecked(true);
       setSaleCheckingEmail(false);
     }
   };
@@ -3294,16 +3295,22 @@ export default function TransferLandingPage() {
                   </div>
                 )}
 
-                {/* Already purchased: OTP verification */}
-                {saleEmailChecked && saleHasPurchase && (
+                {/* Purchase recovery: OTP verification.
+                    For a signed-in user we know they own it, so we say so. For a
+                    signed-out buyer we don't know and must not imply either way,
+                    so the copy stays conditional and the Buy button stays visible. */}
+                {saleOtpSent && (
                   <div className="mb-4 bg-[#F0FDE4] dark:bg-[oklch(0.25_0.05_130)] rounded p-5">
                     <p className="font-semibold text-[#171717] dark:text-[oklch(0.91_0_0)] text-sm mb-1">
-                      {tSale("alreadyOwned")}
+                      {saleHasPurchase ? tSale("alreadyOwned") : tSale("alreadyBought")}
                     </p>
                     {saleOtpSent && (
                       <>
                         <p className="text-sm text-gray-600 dark:text-[oklch(0.65_0_0)] mb-3">
-                          {tSale("otpSent").replace("{email}", saleBuyerEmail)}
+                          {(saleHasPurchase
+                            ? tSale("otpSent")
+                            : tSale("otpSentIfPurchased")
+                          ).replace("{email}", saleBuyerEmail)}
                         </p>
                         <input
                           type="text"

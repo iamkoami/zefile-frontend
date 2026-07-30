@@ -637,6 +637,8 @@
     "continue": "Continue",
     "checking": "Checking...",
     "alreadyOwned": "You already have this.",
+    "alreadyBought": "Already bought this?",
+    "otpSentIfPurchased": "If you've bought this before, we just sent a code to {email}",
     "otpSent": "Enter the code we just sent to {email}",
     "verifyAndDownload": "Verify and download",
     "noCharge": "No charge. Just confirming it's you."
