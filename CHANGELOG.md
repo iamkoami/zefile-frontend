@@ -5,6 +5,25 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.56.7] - 2026-07-30
+
+### Fixed
+
+- **A blocked payout failed with no explanation and no way forward.** The payouts view had no awareness of identity verification at all, and the withdrawal panel rendered only the backend's raw English error string — the machine-readable reason arrived in the API client and was discarded. The payouts view now shows the block above the balance, driven by the balance response so it can never disagree with the server, and the withdrawal panel branches on the error code to show localised copy plus a route into verification. Every other error keeps the existing generic treatment. (`features/account/components/PayoutsPanel.tsx`, `features/account/components/WithdrawalRequestPanel.tsx`)
+- **Verification links from email appeared to go nowhere.** `?account=verification` was not in the deep-link allow-list, so the parameter was silently ignored — even though the account menu type already contained `verification` and the account panel already routed it. One missing string was the whole reason those links looked broken. `?account=payouts` is accepted for the same reason. (`features/home/components/HomeClient.tsx`)
+- **A creator who had merely crossed an earnings threshold was shown a red alarm.** A gate block on REQUIRED is factually "grace period expired", which selects the right wording but was also selecting red-alert styling — and REQUIRED is by far the most common block. Visual severity is now separate from the wording: pending reads blue, required amber, rejected red. The reassurance that the balance is untouched is rendered in neutral grey in every state, rather than inheriting the panel's alert colour and fighting the message it carries. (`components/shared/KycVerificationBanner.tsx`)
+- **A rejected creator was told to verify, which sends them back into the flow that just refused them.** Rejection was folded in with "verification required". It now has its own wording pointing at support, and no call to action, consistently across all three banner variants — previously each variant derived its own copy and only one had been corrected.
+- The reason a disabled withdraw button is disabled is now visible text referenced by `aria-describedby` rather than a `title` tooltip, which is unreliable for screen readers and invisible on touch.
+
+### Added
+
+- **The identity-verification notice now appears where a creator will actually see it.** `KycVerificationBanner` existed as a finished, localised, three-variant component that nothing in the app rendered. It is now shown on the payouts view, in the withdrawal flow, and at the top of the home page — so a creator learns that payouts are held before they attempt one, not after. The home-page placement is gated on being signed in, so no anonymous visitor triggers a verification-status request, and the component renders nothing for anyone who is verified or unaffected.
+- The banner accepts an optional payout-gate decision (`payoutBlockCode`, `gracePeriodEnds`, `footnote`) and renders from it instead of fetching status itself. This matters because the gate can refuse while a plain status read looks clean — above all on its fail-closed path, where it blocks precisely *because* the lookup failed. Left to its own fetch the banner would have rendered nothing at the exact moment it was most needed. Omit the props and every existing behaviour is unchanged.
+
+### Changed
+
+- New payout-block copy in English and French states plainly that the balance stays where it is and nothing is lost — the line that matters most to someone who has just discovered a payout will not arrive.
+
 ## [1.56.6] - 2026-07-30
 
 ### Fixed
