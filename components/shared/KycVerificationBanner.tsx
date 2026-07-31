@@ -107,10 +107,19 @@ export function KycVerificationBanner({
   const isRejected = isGateDriven
     ? payoutBlockCode === 'PAYOUT_KYC_REJECTED'
     : kycStatus!.status === 'rejected';
-  // A gate block on REQUIRED means the grace period is over (or was never recorded) — that is the
-  // only way the gate refuses REQUIRED at all.
+  /**
+   * A deadline can only have *expired* if there was one. The block code alone is not enough:
+   *
+   *  - Under the threshold-linked policy, a creator whose KYC was rejected at max attempts has
+   *    `kycGracePeriodEnds` nulled, and the gate then refuses REQUIRED with no date at all.
+   *  - Under the universal policy (Story 137.5) the deadline decides nothing, so the gate sends
+   *    no date and refuses statuses — including NOT_REQUIRED — that never had one.
+   *
+   * In both cases the old inference told the creator their deadline had passed when they never
+   * had a deadline to miss. Requiring the date is what makes the copy true in every branch.
+   */
   const isExpired = isGateDriven
-    ? payoutBlockCode === 'PAYOUT_KYC_REQUIRED'
+    ? payoutBlockCode === 'PAYOUT_KYC_REQUIRED' && Boolean(gracePeriodEnds)
     : kycStatus!.isGracePeriodExpired;
   const isUrgent = isGateDriven
     ? payoutBlockCode === 'PAYOUT_KYC_REQUIRED'
@@ -158,8 +167,12 @@ export function KycVerificationBanner({
     if (isPending) return t('pendingReview');
     if (isRejected) return t('rejectedResubmit');
     if (isExpired) return t('graceExpired');
+    // No countdown to show. Every gate-driven block lands here unless a deadline came with it,
+    // and without this branch the fallback below renders a confident "0 days remaining" for a
+    // creator who was never given a deadline in the first place.
+    if (daysRemaining === undefined) return t('verifyToWithdraw');
     if (daysRemaining === 1) return t('oneDayRemaining');
-    return t('daysRemaining', { days: daysRemaining ?? 0 });
+    return t('daysRemaining', { days: daysRemaining });
   };
 
   // Get colors based on severity (see the `severity` note above)
