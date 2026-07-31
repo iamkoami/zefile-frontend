@@ -143,6 +143,7 @@ function ContentPanelBackground({
   onUpgradeClick,
   hasPrice = false,
   isUnavailable = false,
+  isBranded = false,
 }: {
   wallpaperUrl?: string;
   timeOfDay: TimeOfDay;
@@ -160,6 +161,14 @@ function ContentPanelBackground({
    * is only to stay honest and carry the invite.
    */
   isUnavailable?: boolean;
+  /**
+   * Custom branding is a Pro feature whose whole point is that ZeFile stays
+   * minimal on the creator's link — the page even swaps in BrandedHeader. So no
+   * ZeFile signup CTA here either, including in the unavailable state. Without
+   * this an expired branded transfer would put "Start free on ZeFile" on a
+   * paying customer's white-labelled page.
+   */
+  isBranded?: boolean;
 }) {
   const tDl = useTranslations("downloadHero");
   const [wallpaperLoaded, setWallpaperLoaded] = useState(false);
@@ -210,6 +219,13 @@ function ContentPanelBackground({
               }
         }
         ctaLabel={isUnavailable ? tDl("unavailableCta") : undefined}
+        /* Only pitch a signup when the recipient has nothing left to do. In
+           every other state they are mid-task — previewing, paying,
+           downloading — and a creator CTA there competes with "Pay and
+           download". The post-download state already makes this pitch at the
+           right moment, once they have actually experienced a delivery.
+           Branded transfers never get it — see the isBranded prop. */
+        showSignupCta={isUnavailable && !isBranded}
       />
       {/* Buyer-side tour: preview → pay → download. Answers the one thing a
           recipient is actually anxious about — "if I pay, do I get the files?"
@@ -1821,6 +1837,7 @@ export default function TransferLandingPage() {
               showUpgradeCta={isAuthenticated && userTier === "free"}
               onUpgradeClick={() => openDrawer("subscriptions")}
               isUnavailable
+              isBranded={isBranded}
             />
             <div
               className="ze-panels-container"
@@ -3771,17 +3788,12 @@ export default function TransferLandingPage() {
                   )}
                 </h2>
 
-                {/* Preview Before You Pay subtitle (paid transfers only) */}
-                {(transfer.price ?? 0) > 0 && !transfer.isPaid && (
-                  <p className="text-sm font-medium text-[#5E53E0] mb-4">
-                    {t("previewBeforeYouPay")}
-                  </p>
-                )}
-
-                {/* Spacer when no preview subtitle */}
-                {(!transfer.price ||
-                  transfer.price <= 0 ||
-                  transfer.isPaid) && <div className="mb-3" />}
+                {/* Spacer below the title. Unconditional: it used to be the
+                    else-branch of a "Take a look before you pay." subtitle that
+                    only rendered for unpaid paid transfers. With that line gone,
+                    a conditional spacer would leave exactly those transfers with
+                    no gap at all between the title and the file row. */}
+                <div className="mb-3" />
 
                 {/* File Info Row */}
                 <div className="flex items-center justify-between py-5 px-4 bg-gray-100 dark:bg-[oklch(0.28_0_0)] rounded mb-4">

@@ -17,7 +17,7 @@
     "proofStat3": "ZeFile : soyez payé avant le téléchargement",
     "ctaText": "Gardez plus de vos revenus.",
     "ctaButton": "Passer au Pro",
-    "getStartedButton": "Commencer - c'est gratuit"
+    "getStartedButton": "Commencez à être payé"
   },
   "homeSeo": {
     "description": "ZeFile est la plateforme de livraison de fichiers conçue pour les créateurs africains. Soyez payé par Mobile Money, virement bancaire ou carte avant le téléchargement. Aperçus filigranés pour protéger vos originaux. Envoyez jusqu'à 5 Go gratuitement, mettez à jour vos fichiers sur le même lien, et gardez jusqu'à 97 % de chaque transfert payant. Pas besoin de carte bancaire.",
@@ -599,7 +599,6 @@
     "stepEmail": "E-mail",
     "stepCode": "Code",
     "stepPassword": "Mot de passe",
-    "previewBeforeYouPay": "Jetez un œil avant de payer.",
     "newUserWelcomeBanner": "Vous êtes maintenant sur ZeFile. La prochaine fois, vos téléchargements seront à portée de main.",
     "dismissBanner": "Fermer",
     "downloadedTitle": "Vos fichiers sont en cours de téléchargement",
@@ -3481,6 +3480,6 @@
     "subtitleFree": "Jetez un œil, puis téléchargez.",
     "unavailableTitle": "Nos liens ont une durée de vie.",
     "unavailableSubtitle": "C'est voulu : votre travail n'a rien à faire en ligne une fois le projet livré.",
-    "unavailableCta": "Créer un compte gratuit"
+    "unavailableCta": "Commencer gratuitement sur ZeFile"
   }
 }

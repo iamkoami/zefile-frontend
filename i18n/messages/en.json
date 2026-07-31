@@ -17,7 +17,7 @@
     "proofStat3": "ZeFile: get paid before they download",
     "ctaText": "Keep more of what you earn.",
     "ctaButton": "Upgrade Now",
-    "getStartedButton": "Get Started - it's free"
+    "getStartedButton": "Start getting paid"
   },
   "homeSeo": {
     "description": "ZeFile is the file delivery platform built for African creators. Get paid with Mobile Money, bank transfer, or card before recipients can download. Watermarked previews protect your originals. Send files up to 5 GB free, upload revisions to the same link, and keep up to 97% of every paid transfer. No credit card required.",
@@ -599,7 +599,6 @@
     "stepEmail": "Email",
     "stepCode": "Code",
     "stepPassword": "Password",
-    "previewBeforeYouPay": "Take a look before you pay.",
     "newUserWelcomeBanner": "You're on ZeFile now. Next time, your downloads are just a click away.",
     "dismissBanner": "Dismiss",
     "downloadedTitle": "Your files are downloading",
@@ -3511,6 +3510,6 @@
     "subtitleFree": "Have a look, then download.",
     "unavailableTitle": "Our links don't live forever.",
     "unavailableSubtitle": "That's on purpose — your work has no business sitting online once the project's delivered.",
-    "unavailableCta": "Create a free account"
+    "unavailableCta": "Start free on ZeFile"
   }
 }
