@@ -5,6 +5,12 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.58.3] - 2026-07-31
+
+### Fixed
+
+- **Five more places gave the logo a box built for the artwork it replaced.** v1.58.2 corrected the header; the maintenance page, the waitlist page, the footer, the mobile menu and the download page's "powered by" mark were all still declaring the old proportions. Four of them set no rendered size at all, so the declared box *was* the box — the artwork was fitted inside proportions that are not its own and never filled them, with the maintenance and waitlist pages furthest off at a box a quarter wider in proportion than the logo actually is. The fifth was already sized in CSS and only reserved the wrong space before loading. All now declare the artwork's own 371x90 viewBox and set one dimension in CSS, letting the other follow; the effective size is unchanged at every site (24px tall on maintenance and waitlist, 90px wide in the footer, 120px wide in the mobile menu, 14px tall on the download page). That accounts for all nine logo images in this repo — the two remaining fixed-dimension images in the header are avatars, square by design. (`components/MaintenancePage.tsx`, `components/WaitlistPage.tsx`, `components/shared/Footer.tsx`, `components/shared/MobileMenu.tsx`, `app/downloads/[transferId]/[shortCode]/page.tsx`)
+
 ## [1.58.2] - 2026-07-31
 
 ### Fixed
