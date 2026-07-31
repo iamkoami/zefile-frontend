@@ -5,6 +5,13 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.59.0] - 2026-07-31
+
+### Added
+
+- **Shaka Player, and a loader that keeps it out of the Cloudflare worker bundle.** Groundwork for streaming playback (Epic 135); nothing renders it yet — `StreamPlayer.tsx` arrives in Story 135.6 — so this ships as a dependency and a loading helper, stated here rather than left to be rediscovered as an orphan. Pinned to **5.1.17**, not the 5.1.4 the architecture recorded: 5.1.4 was already 13 patches behind its own line on the day it was written down. 5.2.x was deliberately not taken, because it disables HLS `sequenceMode` by default — a playback behaviour change on exactly the format this feature delivers — and there is no working player yet to debug that against. `next` is unchanged at 15.3.6; `@cloudflare/next-on-pages` requires `<= 15.5.2`, and an incidental bump during install breaks the deploy rather than the build. (`lib/stream/shaka-loader.ts`)
+- **The loader documents a requirement measured rather than assumed.** A dynamic `import()` inside a `'use client'` module is *not* enough to keep the library out of the edge bundle: the component is still server-rendered for the initial HTML, so webpack keeps the chunk in the server graph and `next-on-pages` copies it into the worker. Measured against a probe route — a plain client import produced a 1140 KB edge function carrying the whole player, while mounting through `next/dynamic` with `ssr: false` produced 376 KB with the library absent; an ordinary route's edge function is ~480 KB for scale. Both numbers are recorded at the top of the loader, so Story 135.6 inherits the constraint instead of rediscovering it against a hard worker size limit. The 748 KB client chunk is unaffected, which is where the library belongs. (`lib/stream/shaka-loader.ts`)
+
 ## [1.58.3] - 2026-07-31
 
 ### Fixed
