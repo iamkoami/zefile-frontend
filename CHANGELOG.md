@@ -5,6 +5,13 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.58.1] - 2026-07-31
+
+### Fixed
+
+- **The blocked-payout banner told creators a verification deadline had passed when they never had one.** `KycVerificationBanner` inferred expiry from the payout block code alone, but a block code says a payout was refused — it says nothing about whether there was ever a deadline to miss. That inference is already wrong today for a creator whose verification was rejected at the maximum number of attempts, which clears their deadline and leaves the gate refusing them with no date at all; the stricter gate policy now available in the admin panel (backend Story 137.5) would have made it the common case, since that policy refuses creators who were never asked to verify. The banner now requires a deadline before claiming one expired, and a refusal under the stricter policy carries no deadline, so the two halves are one mechanism rather than two guesses. (`components/shared/KycVerificationBanner.tsx`)
+- **"0 days remaining" was shown to creators who were never given a date.** Correcting the expiry inference exposed a fallback underneath it: with no deadline and no countdown, the copy fell through to a message that rendered a confident, invented number. The fallback is gone and the no-countdown case has its own line, which simply asks the creator to verify. It reads `kyc.verifyToWithdraw` — "Verify your identity to withdraw" / "Vérifiez votre identité pour retirer vos fonds" — a key that shipped in v1.58.0 and had nothing referencing it until now.
+
 ## [1.58.0] - 2026-07-31
 
 ### Changed
