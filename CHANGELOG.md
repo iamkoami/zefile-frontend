@@ -5,6 +5,12 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.58.2] - 2026-07-31
+
+### Fixed
+
+- **The header drew the logo about 5% taller than it is.** Both dimensions were pinned in CSS at 130x33, a box built for the previous artwork; the current mark is 371x90, a slightly wider proportion, so forcing it into the old box stretched it vertically. Height is now automatic and only width is set, so the artwork keeps its own proportions, and the declared intrinsic dimensions are the real viewBox rather than the rendered size — those are what reserve space before the image loads, and they described artwork that is no longer there. The mark renders slightly smaller as a result, 100px wide rather than 130. (`components/shared/Header.tsx`)
+
 ## [1.58.1] - 2026-07-31
 
 ### Fixed
