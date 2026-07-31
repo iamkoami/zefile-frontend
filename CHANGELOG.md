@@ -5,6 +5,22 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.58.0] - 2026-07-31
+
+### Changed
+
+- **The header and hero CTAs were the same words and the same action, 400px apart.** Both rendered `header.signupBold` + `signupSuffix` and both dispatched `open-auth-panel`, so the hero was structurally incapable of differing — editing the header silently edited the hero. The hero now reads its own `hero.getStartedButton` key (which already existed, unused, in both locales) and says **"Start getting paid"** / **"Commencez à être payé"**, finishing the sentence the headline above it starts instead of restarting with "Get Started". The header is unchanged. (`components/shared/HeroText.tsx`)
+- **The transfer landing page no longer pitches a signup while the recipient still has something to do.** A creator CTA in the preview, password, email, payment and ready states competed with "Pay and download" — the one action on that page that produces revenue — and duplicated the post-download state, which already makes the same pitch at the moment it lands ("Want to send files like this?"). The hero CTA now appears only in the unavailable state, where the link is dead and it competes with nothing. Free transfers are unaffected: the post-download pitch fires from the download action, not from payment. (`app/downloads/[transferId]/[shortCode]/page.tsx`)
+- The unavailable-state CTA now reads **"Start free on ZeFile"** / **"Commencer gratuitement sur ZeFile"**, reusing the wording the post-download state already uses, rather than introducing a third phrasing of the same idea.
+
+### Removed
+
+- **"Take a look before you pay." on the download card.** The spacer beneath it was conditional on the exact complement of the line's own condition, so it is now unconditional — otherwise unpaid paid transfers, the only case that ever showed the line, would have been left with no gap between the title and the file row. The orphaned `transferLanding.previewBeforeYouPay` key is deleted from both locales; `testResult.previewBeforeYouPay` stays, still used by the test-file simulation.
+
+### Fixed
+
+- **A branded transfer could show ZeFile marketing on a paying customer's link.** Custom branding is a Pro feature that swaps in `BrandedHeader` and already skips the post-download CTA via `!isBranded`, but the unavailable state had no such guard — an expired or cancelled branded transfer would have rendered "Start free on ZeFile" on a white-labelled page. The signup CTA is now suppressed for branded transfers in every state.
+
 ## [1.57.2] - 2026-07-30
 
 ### Fixed
