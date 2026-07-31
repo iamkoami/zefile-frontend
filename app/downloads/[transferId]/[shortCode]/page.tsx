@@ -3938,11 +3938,14 @@ export default function TransferLandingPage() {
               className="inline-flex items-center gap-1.5 text-xs text-gray-400 dark:text-[oklch(0.50_0_0)] hover:text-gray-500 dark:hover:text-[oklch(0.65_0_0)] transition-colors"
             >
               Powered by
+              {/* width/height are the artwork's intrinsic 371x90 viewBox, not the rendered
+                  size — the class already sets the height. Rendering is unchanged; the old
+                  50x14 only affected the space reserved before the image loads. */}
               <Image
                 src="/zefile-logo.svg"
                 alt="ZeFile"
-                width={50}
-                height={14}
+                width={371}
+                height={90}
                 className="h-3.5 w-auto opacity-60"
               />
             </a>
