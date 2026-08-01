@@ -3439,10 +3439,14 @@ export default function TransferLandingPage() {
                     {saleOtpSent && (
                       <>
                         <p className="text-sm text-gray-600 dark:text-[oklch(0.65_0_0)] mb-3">
-                          {(saleHasPurchase
-                            ? tSale("otpSent")
-                            : tSale("otpSentIfPurchased")
-                          ).replace("{email}", saleBuyerEmail)}
+                          {/* next-intl resolves ICU placeholders INSIDE t(), so the value has to
+                              be passed there. Calling t() bare and then .replace("{email}", …)
+                              throws IntlError FORMATTING_ERROR before replace can run, and t()
+                              returns the key — buyers saw the literal "publicSale.otpSentIfPurchased"
+                              on this screen, in both languages. */}
+                          {saleHasPurchase
+                            ? tSale("otpSent", { email: saleBuyerEmail })
+                            : tSale("otpSentIfPurchased", { email: saleBuyerEmail })}
                         </p>
                         <input
                           type="text"
