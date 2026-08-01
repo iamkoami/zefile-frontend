@@ -673,10 +673,21 @@ export default function TransferLandingPage() {
 
           setTransfer(response.data);
 
-          // Check if transfer is expired by status OR by expireAt date
+          // Check if transfer is expired by status OR by expireAt date.
+          //
+          // Story 134.9 (D9, D6): a stream-only transfer is exempt from the DATE. Its films are
+          // sold and must stay playable indefinitely, and this page is the only surface a buyer
+          // ever sees — a backend-only exemption leaves them staring at an expired page while the
+          // film sits intact in storage and the API would happily serve it.
+          //
+          // `status === "expired"` stays UNCONDITIONAL on purpose. The exemption is on the date,
+          // never on the state: an admin action, or Story 136.4's wind-down, expires a stream
+          // transfer deliberately and that must remain visible here.
+          const isStreamOnly = response.data.deliveryMode === "stream";
           const isExpired =
             response.data.status === "expired" ||
-            (response.data.expireAt &&
+            (!isStreamOnly &&
+              response.data.expireAt &&
               new Date(response.data.expireAt).getTime() < Date.now());
 
           if (isExpired) {

@@ -84,9 +84,16 @@ const TransferItem: React.FC<TransferItemProps> = ({
   // Get created date (backend uses createdAt, some places use createdDate)
   const createdDateStr = transfer.createdAt || transfer.createdDate;
 
+  // Story 134.9 (D9, D7) — a stream-only film never expires on the clock. Declared here,
+  // above the expiry helpers, because both of them must be gated by it; the 134.7 marker
+  // below reuses this same constant.
+  const isStreamTransfer = transfer.deliveryMode === 'stream';
+
   // Calculate days until expiry
   const getDaysUntilExpiry = (): { text: string; isUrgent: boolean } => {
-    if (!expiryDateStr) {
+    // Story 134.9 — the nominal date is on the row but is never enforced (D9). Counting down
+    // to it would show "Expired" in red on a film that is still on sale.
+    if (isStreamTransfer || !expiryDateStr) {
       return { text: t('noExpiration'), isUrgent: false };
     }
 
@@ -111,13 +118,16 @@ const TransferItem: React.FC<TransferItemProps> = ({
   };
 
   const expiryInfo = getDaysUntilExpiry();
+  // Story 134.9 — the DATE half is skipped for stream transfers; the STATUS half is not.
+  // An `expired` or `cancelled` stream transfer is genuinely gone (an admin action, or
+  // 136.4's wind-down) and must still read that way here, including hiding the preview
+  // action below. Exempt the clock, never the state.
   const isExpired = transfer.status === 'expired' || transfer.status === 'cancelled' ||
-    (expiryDateStr ? new Date(expiryDateStr).getTime() <= Date.now() : false);
+    (!isStreamTransfer && expiryDateStr ? new Date(expiryDateStr).getTime() <= Date.now() : false);
 
   // Story 134.7 — stream packaging markers. `pending` and `processing` are one
   // creator-facing state; a download transfer matches neither, because deliveryMode gates
   // both (its streamStatus is null by design).
-  const isStreamTransfer = transfer.deliveryMode === 'stream';
   const isStreamPreparing =
     isStreamTransfer && (transfer.streamStatus === 'pending' || transfer.streamStatus === 'processing');
   const isStreamFailed = isStreamTransfer && transfer.streamStatus === 'failed';

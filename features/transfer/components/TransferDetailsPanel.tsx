@@ -590,11 +590,18 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
     ],
   );
 
+  // Story 134.9 (D9, D7): a stream-only transfer never expires on the clock, so its creator
+  // must not see an expired or "expires soon" badge counting down to something that will not
+  // happen. The nominal date still exists on the row — it is simply not enforced — so the date
+  // line below renders `noExpiration` rather than a date for these transfers.
+  const isStreamOnly = currentTransfer?.deliveryMode === "stream";
+
   // Check expiry status
   const expiryStatus = useMemo((): {
     isExpired: boolean;
     isUrgent: boolean;
   } => {
+    if (isStreamOnly) return { isExpired: false, isUrgent: false };
     if (!expiryDateStr) return { isExpired: false, isUrgent: false };
     const now = new Date();
     const expiry = new Date(expiryDateStr);
@@ -605,7 +612,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
       isExpired: diffDays <= 0,
       isUrgent: diffDays > 0 && diffDays <= 3,
     };
-  }, [expiryDateStr]);
+  }, [expiryDateStr, isStreamOnly]);
 
   // Determine if WhatsApp reminder button should be shown
   const showWhatsAppReminder =
@@ -1616,7 +1623,11 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
                 />
               </div>
               <p className="text-sm text-gray-600 dark:text-[oklch(0.65_0_0)]">
-                {expiryDateStr ? formatDate(expiryDateStr) : t("noExpiration")}
+                {/* Story 134.9 — a stream-only film has a nominal date on the row that is never
+                    enforced (D9). Showing it would promise a deletion that will not happen. */}
+                {isStreamOnly || !expiryDateStr
+                  ? t("noExpiration")
+                  : formatDate(expiryDateStr)}
               </p>
             </div>
 
