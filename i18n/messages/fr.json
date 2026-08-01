@@ -3496,7 +3496,7 @@
     "retryQueued": "C'est reparti : on prépare votre film.",
     "retryFailed": "La relance n'a pas démarré. Réessayez dans un instant.",
     "retryNotFailed": "Ce film n'est pas encore prêt pour une relance. Réessayez dans quelques minutes.",
-    "retryTooMany": "Ça fait plusieurs tentatives d'affilée. Laissez passer une heure avant de relancer.",
+    "retryTooMany": "Cela fait 5 relances en une heure. Patientez un peu avant de réessayer — si un film échoue à répétition, relancer n'y changera sans doute rien.",
     "checkAgain": "Actualiser",
     "stillPreparing": "Toujours en préparation. Revenez dans un moment.",
     "listPreparing": "En préparation",

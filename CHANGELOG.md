@@ -5,6 +5,12 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.60.1] - 2026-08-01
+
+### Fixed
+
+- **Clearer wording when a retry is refused.** The messages now say how long the wait actually is instead of promising a moment, and the retry-limit message explains that a film failing repeatedly is unlikely to be fixed by retrying it again. (`i18n/messages/en.json`, `i18n/messages/fr.json`)
+
 ## [1.60.0] - 2026-08-01
 
 ### Added
