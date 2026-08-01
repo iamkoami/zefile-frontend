@@ -5,6 +5,16 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.61.0] - 2026-08-01
+
+### Added
+
+- **A film that is not ready to watch is no longer offered for sale.** The sale page now shows a prepared state instead of a buy button while a stream-only film is still being packaged, and the backend refuses the purchase in the same case, so the page and the API agree. The buy action is removed rather than greyed out, because a disabled call to action reads as a broken page. The price stays visible — it previously lived inside the buy button, so hiding the button hid the price and made a film look unavailable rather than imminent. Preparing, processing and failed all read as one state to a buyer: there is nothing they can do about a packaging failure, and naming it would hand a stranger the creator's operational trouble. Refreshing goes around the edge cache, so a buyer who has just heard from the creator is not told to wait another minute. (`app/downloads/[transferId]/[shortCode]/page.tsx`, `features/payment/components/SaleCheckoutPanel.tsx`, `i18n/messages/en.json`, `i18n/messages/fr.json`)
+
+### Fixed
+
+- **The purchase recovery message shows the buyer's email again.** A buyer recovering an earlier purchase saw a raw translation key where the confirmation should have been, in both languages. The message carries the email as a placeholder and the translator fills placeholders as it resolves the string, but the call site asked for the string first and tried to substitute afterwards — so it failed before the substitution could run and returned the key. Its sibling message had the same shape and is fixed too. (`app/downloads/[transferId]/[shortCode]/page.tsx`)
+
 ## [1.60.1] - 2026-08-01
 
 ### Fixed
