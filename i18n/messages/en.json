@@ -3525,7 +3525,7 @@
     "retrying": "Starting again...",
     "retryQueued": "On it — we're preparing your film again.",
     "retryFailed": "That didn't start. Try again in a moment.",
-    "retryNotFailed": "This film isn't ready for a retry just yet. Give it a moment, then check again.",
+    "retryNotFailed": "This film isn't ready for a retry just yet. Try again in a few minutes.",
     "retryTooMany": "That's a few tries in a row. Give it an hour, then have another go.",
     "checkAgain": "Check again",
     "stillPreparing": "Still preparing. Check back in a bit.",
