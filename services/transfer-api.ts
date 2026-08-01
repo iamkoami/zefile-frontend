@@ -26,6 +26,12 @@ export interface CreateTransferDto {
   paymentRequired?: boolean;
   /** Public sales mode — transfer is available for purchase by anyone */
   isPublicSales?: boolean;
+  /**
+   * Story 134.4 — delivery mode. 'stream' means buyers watch the film and never receive the
+   * file. Requires public sales mode, a tier with the streamDelivery feature, and video-only
+   * files; the backend refuses any other combination. Set at creation and never flipped.
+   */
+  deliveryMode?: 'download' | 'stream';
 }
 
 export interface CreateTransferWithFilesDto extends CreateTransferDto {
@@ -121,6 +127,23 @@ export interface TransferDto {
     totalRevenueMinor: number;
     currency: string;
   };
+  /**
+   * How the files reach the recipient (Story 134.2). 'stream' transfers refuse every
+   * download route and play encrypted segments instead.
+   *
+   * Story 134.7: both this and `streamStatus` have been on the wire since 134.2 — the
+   * backend returns them to the OWNER deliberately unstripped — and were simply not
+   * declared here, so TypeScript hid data the browser already had.
+   */
+  deliveryMode?: 'download' | 'stream';
+  /**
+   * Packaging lifecycle of a stream transfer's media (Story 134.2, rendered by 134.7).
+   *
+   * Null/absent on every download transfer — they never await packaging, so 'pending'
+   * would be a lie. Always test `deliveryMode === 'stream'` alongside this; a bare
+   * `streamStatus !== 'ready'` is true for every download transfer in the system.
+   */
+  streamStatus?: 'pending' | 'processing' | 'ready' | 'failed' | null;
 }
 
 export interface UpdateTransferDto {

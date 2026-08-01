@@ -236,6 +236,9 @@
     "captchaNotReady": "Security check couldn't load. Disable any ad blocker and refresh the page.",
     "publicSalesToggle": "Put it on sale",
     "publicSalesDescription": "Share one link — anyone can preview, pay, and download.",
+    "streamOnlyToggle": "Stream-only delivery",
+    "streamOnlyDescription": "Buyers watch your film right on the sale page. The file never leaves your hands.",
+    "streamOnlyVideoRequired": "Video files only for this one — swap out anything that is not a video to turn it on.",
     "publicSalesHint": "Set your price below. Drop the link wherever your audience is.",
     "errors": {
       "transferCreateFailed": "Couldn't create the transfer. Let's try again.",
@@ -243,10 +246,7 @@
       "fileUploadFailed": "Couldn't upload {name}. Try again.",
       "uploadFailed": "Upload didn't go through. Let's try again.",
       "someFilesFailed": "{count, plural, one {# file} other {# files}} didn't make it, but the rest went through fine."
-    },
-    "streamOnlyToggle": "Stream-only delivery",
-    "streamOnlyDescription": "Buyers watch your film right on the sale page. The file never leaves your hands.",
-    "streamOnlyVideoRequired": "Video files only for this one — swap out anything that is not a video to turn it on."
+    }
   },
   "fileRequests": {
     "comingSoon": "File requests are coming soon",
@@ -3514,5 +3514,22 @@
     "unavailableTitle": "Our links don't live forever.",
     "unavailableSubtitle": "That's on purpose — your work has no business sitting online once the project's delivered.",
     "unavailableCta": "Start free on ZeFile"
+  },
+  "streamPackaging": {
+    "preparingTitle": "Getting your film ready",
+    "preparingBody": "We're preparing it for streaming. This takes a few minutes for a short film, longer for a feature.",
+    "preparingHint": "You can close this — we'll email you if anything goes wrong.",
+    "failedTitle": "We couldn't get this film ready",
+    "failedBody": "Your original file is safe and nobody has been charged. Give it another go — if it stops again, we'll take a look with you.",
+    "retry": "Retry preparing",
+    "retrying": "Starting again...",
+    "retryQueued": "On it — we're preparing your film again.",
+    "retryFailed": "That didn't start. Try again in a moment.",
+    "retryNotFailed": "This film isn't ready for a retry just yet. Give it a moment, then check again.",
+    "retryTooMany": "That's a few tries in a row. Give it an hour, then have another go.",
+    "checkAgain": "Check again",
+    "stillPreparing": "Still preparing. Check back in a bit.",
+    "listPreparing": "Preparing",
+    "listFailed": "Needs attention"
   }
 }

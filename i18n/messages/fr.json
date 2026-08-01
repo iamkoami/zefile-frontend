@@ -237,6 +237,9 @@
     "captchaNotReady": "La vérification de sécurité n'a pas pu charger. Désactivez votre bloqueur de publicités et rafraîchissez la page.",
     "publicSalesToggle": "Mettre en vente",
     "publicSalesDescription": "Un seul lien — n'importe qui peut voir, payer et télécharger.",
+    "streamOnlyToggle": "Diffusion en streaming",
+    "streamOnlyDescription": "Vos acheteurs regardent votre film directement sur la page. Le fichier, lui, ne quitte jamais vos mains.",
+    "streamOnlyVideoRequired": "Uniquement des vidéos pour cette option — retirez ce qui n'en est pas pour l'activer.",
     "publicSalesHint": "Fixez votre prix ci-dessous. Partagez le lien où se trouve votre audience.",
     "errors": {
       "transferCreateFailed": "On n'a pas pu créer le transfert. Réessayons.",
@@ -244,10 +247,7 @@
       "fileUploadFailed": "On n'a pas pu envoyer {name}. Réessayez.",
       "uploadFailed": "L'envoi n'a pas abouti. Réessayons.",
       "someFilesFailed": "{count, plural, one {# fichier n'a} other {# fichiers n'ont}} pas pu être envoyé(s), mais le reste est passé."
-    },
-    "streamOnlyToggle": "Diffusion en streaming",
-    "streamOnlyDescription": "Vos acheteurs regardent votre film directement sur la page. Le fichier, lui, ne quitte jamais vos mains.",
-    "streamOnlyVideoRequired": "Uniquement des vidéos pour cette option — retirez ce qui n'en est pas pour l'activer."
+    }
   },
   "fileRequests": {
     "comingSoon": "Les demandes de fichiers arrivent bientôt",
@@ -3484,5 +3484,22 @@
     "unavailableTitle": "Nos liens ont une durée de vie.",
     "unavailableSubtitle": "C'est voulu : votre travail n'a rien à faire en ligne une fois le projet livré.",
     "unavailableCta": "Commencer gratuitement sur ZeFile"
+  },
+  "streamPackaging": {
+    "preparingTitle": "Votre film se prépare",
+    "preparingBody": "On le prépare pour la diffusion. Comptez quelques minutes pour un court format, un peu plus pour un long.",
+    "preparingHint": "Vous pouvez fermer cette page : on vous écrit si quelque chose coince.",
+    "failedTitle": "Le film n'a pas pu être préparé",
+    "failedBody": "Votre fichier d'origine est intact et personne n'a été débité. Relancez la préparation : si ça bloque encore, on regarde ça avec vous.",
+    "retry": "Relancer la préparation",
+    "retrying": "Relance en cours...",
+    "retryQueued": "C'est reparti : on prépare votre film.",
+    "retryFailed": "La relance n'a pas démarré. Réessayez dans un instant.",
+    "retryNotFailed": "Ce film n'est pas encore prêt pour une relance. Patientez un instant, puis actualisez.",
+    "retryTooMany": "Ça fait plusieurs tentatives d'affilée. Laissez passer une heure avant de relancer.",
+    "checkAgain": "Actualiser",
+    "stillPreparing": "Toujours en préparation. Revenez dans un moment.",
+    "listPreparing": "En préparation",
+    "listFailed": "À vérifier"
   }
 }

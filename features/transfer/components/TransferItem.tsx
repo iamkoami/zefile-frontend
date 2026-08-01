@@ -33,6 +33,9 @@ const TransferItem: React.FC<TransferItemProps> = ({
   onSelectionChange,
 }) => {
   const t = useTranslations('transferItem');
+  // Story 134.7 — shared with TransferDetailsPanel so the list marker and the panel cannot
+  // drift into describing the same state with different words.
+  const tStream = useTranslations('streamPackaging');
   const locale = useLocale();
   const [isHovered, setIsHovered] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
@@ -110,6 +113,14 @@ const TransferItem: React.FC<TransferItemProps> = ({
   const expiryInfo = getDaysUntilExpiry();
   const isExpired = transfer.status === 'expired' || transfer.status === 'cancelled' ||
     (expiryDateStr ? new Date(expiryDateStr).getTime() <= Date.now() : false);
+
+  // Story 134.7 — stream packaging markers. `pending` and `processing` are one
+  // creator-facing state; a download transfer matches neither, because deliveryMode gates
+  // both (its streamStatus is null by design).
+  const isStreamTransfer = transfer.deliveryMode === 'stream';
+  const isStreamPreparing =
+    isStreamTransfer && (transfer.streamStatus === 'pending' || transfer.streamStatus === 'processing');
+  const isStreamFailed = isStreamTransfer && transfer.streamStatus === 'failed';
   const downloadStatus = (transfer.downloadCount || 0) > 0 ? t('downloaded') : t('notDownloaded');
   const versionCount = transfer.versionCount || 1;
 
@@ -202,6 +213,27 @@ const TransferItem: React.FC<TransferItemProps> = ({
               isActive ? 'opacity-100 bg-gray-700 text-gray-300' : 'opacity-0'
             }`}>
               {t('expired')}
+            </span>
+          )}
+          {/*
+            Stream packaging marker (Story 134.7). A creator scanning the list can see which
+            film is still being prepared or needs attention without opening each one.
+
+            Marker only, no action: the retry lives in TransferDetailsPanel, because this row
+            already uses its click for navigation and has no room for a second target.
+
+            Both conditions are required. `streamStatus` is null on every download transfer,
+            so a bare status check would mark nothing — but a bare `!== 'ready'` check would
+            mark EVERY download transfer in the list.
+          */}
+          {isStreamPreparing && (
+            <span className="text-xs px-2 py-0.5 rounded-full flex-shrink-0 bg-gray-100 text-gray-600 dark:bg-[oklch(0.25_0_0)] dark:text-[oklch(0.75_0_0)]">
+              {tStream('listPreparing')}
+            </span>
+          )}
+          {isStreamFailed && (
+            <span className="text-xs px-2 py-0.5 rounded-full flex-shrink-0 bg-[#FEF3C7] text-[#92400E] dark:bg-[oklch(0.30_0.06_75)] dark:text-[oklch(0.85_0.10_75)]">
+              {tStream('listFailed')}
             </span>
           )}
         </div>
