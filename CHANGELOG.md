@@ -5,6 +5,14 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.62.0] - 2026-08-01
+
+### Fixed
+
+- **A sold film is no longer shown to its buyer as expired.** The public download page decides expiry in the browser, comparing the transfer's date against the clock rather than asking the server. With stream-only films now exempt from expiry on the backend, that comparison would still have shown a buyer the expired page for a film sitting intact in storage that the API would have served happily — no player, no purchase, no explanation, and the server never consulted. The date is now skipped for stream-only transfers. An explicitly expired **status** is still honoured exactly as before: the exemption is on the clock, never on the state, so a film revoked on purpose still reads as gone. (`app/downloads/[transferId]/[shortCode]/page.tsx`)
+- **A creator's own list no longer marks a live film as expired, or hides its preview.** Every row in the transfers list computed its own countdown from the same date, so a stream-only film older than its nominal window showed a red "Expired" badge beside the title and "Expired" as its metadata line — and, because the preview action was hidden on anything the row believed to be expired, the creator lost the ability to preview a film that was still on sale. Both now read the delivery mode. A cancelled or genuinely expired film still hides its preview, unchanged. (`features/transfer/components/TransferItem.tsx`)
+- **The transfer details panel no longer counts down to a date that will not arrive.** The expiry line and its status dot are driven by the same comparison, so a stream-only film showed an amber "expires soon" or a red expired indicator on the way to a deletion that no longer happens. It now shows that there is no expiry, reusing the wording the panel already had for transfers without one. (`features/transfer/components/TransferDetailsPanel.tsx`)
+
 ## [1.61.0] - 2026-08-01
 
 ### Added
