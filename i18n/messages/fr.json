@@ -244,7 +244,10 @@
       "fileUploadFailed": "On n'a pas pu envoyer {name}. Réessayez.",
       "uploadFailed": "L'envoi n'a pas abouti. Réessayons.",
       "someFilesFailed": "{count, plural, one {# fichier n'a} other {# fichiers n'ont}} pas pu être envoyé(s), mais le reste est passé."
-    }
+    },
+    "streamOnlyToggle": "Diffusion en streaming",
+    "streamOnlyDescription": "Vos acheteurs regardent votre film directement sur la page. Le fichier, lui, ne quitte jamais vos mains.",
+    "streamOnlyVideoRequired": "Uniquement des vidéos pour cette option — retirez ce qui n'en est pas pour l'activer."
   },
   "fileRequests": {
     "comingSoon": "Les demandes de fichiers arrivent bientôt",

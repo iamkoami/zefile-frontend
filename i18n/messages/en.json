@@ -243,7 +243,10 @@
       "fileUploadFailed": "Couldn't upload {name}. Try again.",
       "uploadFailed": "Upload didn't go through. Let's try again.",
       "someFilesFailed": "{count, plural, one {# file} other {# files}} didn't make it, but the rest went through fine."
-    }
+    },
+    "streamOnlyToggle": "Stream-only delivery",
+    "streamOnlyDescription": "Buyers watch your film right on the sale page. The file never leaves your hands.",
+    "streamOnlyVideoRequired": "Video files only for this one — swap out anything that is not a video to turn it on."
   },
   "fileRequests": {
     "comingSoon": "File requests are coming soon",
