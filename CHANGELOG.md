@@ -5,6 +5,14 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **A Pro creator can mark a video transfer as stream-only.** Story 134.4's interface, which had been sitting uncommitted while its backend already shipped — meaning the feature existed server-side and could not be reached by anyone. The toggle appears only when the creator's plan carries the streaming feature, public sales is on, and every selected file is video. Whether the plan carries it is answered by the server rather than by a hardcoded plan comparison, so granting streaming to another plan makes the toggle appear without a deploy. The interface is not the control: the backend refuses the same combinations independently. (`features/home/components/UploadPanel.tsx`)
+
+- **The creator can see a film being prepared, and retry it when preparation fails.** The first creator-facing surface for stream delivery. The state was already arriving in the browser and being discarded — the fields were simply never declared — so a film that failed preparation looked identical to one still in progress, with nothing to click. Preparing and queued are presented as a single "preparing" state, since the distinction is ours and not the creator's. Failure offers a retry; no technical reason is shown, because the underlying tooling writes decryption key material into its own error output. The view refreshes itself every ten seconds while preparation is in flight and stops as soon as it finishes, when the panel closes, or after ten minutes — and its refresh state resets between films, so one long preparation cannot silently stop the next film from updating. Copy is EN and FR. (`features/transfer/components/TransferDetailsPanel.tsx`, `features/transfer/components/TransferItem.tsx`)
+
 ## [1.59.0] - 2026-07-31
 
 ### Added
