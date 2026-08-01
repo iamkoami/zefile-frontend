@@ -5,6 +5,80 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.62.0] - 2026-08-01
+
+### Fixed
+
+- **A sold film is no longer shown to its buyer as expired.** The public download page decides expiry in the browser, comparing the transfer's date against the clock rather than asking the server. With stream-only films now exempt from expiry on the backend, that comparison would still have shown a buyer the expired page for a film sitting intact in storage that the API would have served happily — no player, no purchase, no explanation, and the server never consulted. The date is now skipped for stream-only transfers. An explicitly expired **status** is still honoured exactly as before: the exemption is on the clock, never on the state, so a film revoked on purpose still reads as gone. (`app/downloads/[transferId]/[shortCode]/page.tsx`)
+- **A creator's own list no longer marks a live film as expired, or hides its preview.** Every row in the transfers list computed its own countdown from the same date, so a stream-only film older than its nominal window showed a red "Expired" badge beside the title and "Expired" as its metadata line — and, because the preview action was hidden on anything the row believed to be expired, the creator lost the ability to preview a film that was still on sale. Both now read the delivery mode. A cancelled or genuinely expired film still hides its preview, unchanged. (`features/transfer/components/TransferItem.tsx`)
+- **The transfer details panel no longer counts down to a date that will not arrive.** The expiry line and its status dot are driven by the same comparison, so a stream-only film showed an amber "expires soon" or a red expired indicator on the way to a deletion that no longer happens. It now shows that there is no expiry, reusing the wording the panel already had for transfers without one. (`features/transfer/components/TransferDetailsPanel.tsx`)
+
+## [1.61.0] - 2026-08-01
+
+### Added
+
+- **A film that is not ready to watch is no longer offered for sale.** The sale page now shows a prepared state instead of a buy button while a stream-only film is still being packaged, and the backend refuses the purchase in the same case, so the page and the API agree. The buy action is removed rather than greyed out, because a disabled call to action reads as a broken page. The price stays visible — it previously lived inside the buy button, so hiding the button hid the price and made a film look unavailable rather than imminent. Preparing, processing and failed all read as one state to a buyer: there is nothing they can do about a packaging failure, and naming it would hand a stranger the creator's operational trouble. Refreshing goes around the edge cache, so a buyer who has just heard from the creator is not told to wait another minute. (`app/downloads/[transferId]/[shortCode]/page.tsx`, `features/payment/components/SaleCheckoutPanel.tsx`, `i18n/messages/en.json`, `i18n/messages/fr.json`)
+
+### Fixed
+
+- **The purchase recovery message shows the buyer's email again.** A buyer recovering an earlier purchase saw a raw translation key where the confirmation should have been, in both languages. The message carries the email as a placeholder and the translator fills placeholders as it resolves the string, but the call site asked for the string first and tried to substitute afterwards — so it failed before the substitution could run and returned the key. Its sibling message had the same shape and is fixed too. (`app/downloads/[transferId]/[shortCode]/page.tsx`)
+
+## [1.60.1] - 2026-08-01
+
+### Fixed
+
+- **Clearer wording when a retry is refused.** The messages now say how long the wait actually is instead of promising a moment, and the retry-limit message explains that a film failing repeatedly is unlikely to be fixed by retrying it again. (`i18n/messages/en.json`, `i18n/messages/fr.json`)
+
+## [1.60.0] - 2026-08-01
+
+### Added
+
+- **A Pro creator can mark a video transfer as stream-only.** Story 134.4's interface, which had been sitting uncommitted while its backend already shipped — meaning the feature existed server-side and could not be reached by anyone. The toggle appears only when the creator's plan carries the streaming feature, public sales is on, and every selected file is video. Whether the plan carries it is answered by the server rather than by a hardcoded plan comparison, so granting streaming to another plan makes the toggle appear without a deploy. The interface is not the control: the backend refuses the same combinations independently. (`features/home/components/UploadPanel.tsx`)
+
+- **The creator can see a film being prepared, and retry it when preparation fails.** The first creator-facing surface for stream delivery. The state was already arriving in the browser and being discarded — the fields were simply never declared — so a film that failed preparation looked identical to one still in progress, with nothing to click. Preparing and queued are presented as a single "preparing" state, since the distinction is ours and not the creator's. Failure offers a retry; no technical reason is shown, because the underlying tooling writes decryption key material into its own error output. The view refreshes itself every ten seconds while preparation is in flight and stops as soon as it finishes, when the panel closes, or after ten minutes — and its refresh state resets between films, so one long preparation cannot silently stop the next film from updating. Copy is EN and FR. (`features/transfer/components/TransferDetailsPanel.tsx`, `features/transfer/components/TransferItem.tsx`)
+
+## [1.59.0] - 2026-07-31
+
+### Added
+
+- **Shaka Player, and a loader that keeps it out of the Cloudflare worker bundle.** Groundwork for streaming playback (Epic 135); nothing renders it yet — `StreamPlayer.tsx` arrives in Story 135.6 — so this ships as a dependency and a loading helper, stated here rather than left to be rediscovered as an orphan. Pinned to **5.1.17**, not the 5.1.4 the architecture recorded: 5.1.4 was already 13 patches behind its own line on the day it was written down. 5.2.x was deliberately not taken, because it disables HLS `sequenceMode` by default — a playback behaviour change on exactly the format this feature delivers — and there is no working player yet to debug that against. `next` is unchanged at 15.3.6; `@cloudflare/next-on-pages` requires `<= 15.5.2`, and an incidental bump during install breaks the deploy rather than the build. (`lib/stream/shaka-loader.ts`)
+- **The loader documents a requirement measured rather than assumed.** A dynamic `import()` inside a `'use client'` module is *not* enough to keep the library out of the edge bundle: the component is still server-rendered for the initial HTML, so webpack keeps the chunk in the server graph and `next-on-pages` copies it into the worker. Measured against a probe route — a plain client import produced a 1140 KB edge function carrying the whole player, while mounting through `next/dynamic` with `ssr: false` produced 376 KB with the library absent; an ordinary route's edge function is ~480 KB for scale. Both numbers are recorded at the top of the loader, so Story 135.6 inherits the constraint instead of rediscovering it against a hard worker size limit. The 748 KB client chunk is unaffected, which is where the library belongs. (`lib/stream/shaka-loader.ts`)
+
+## [1.58.3] - 2026-07-31
+
+### Fixed
+
+- **Five more places gave the logo a box built for the artwork it replaced.** v1.58.2 corrected the header; the maintenance page, the waitlist page, the footer, the mobile menu and the download page's "powered by" mark were all still declaring the old proportions. Four of them set no rendered size at all, so the declared box *was* the box — the artwork was fitted inside proportions that are not its own and never filled them, with the maintenance and waitlist pages furthest off at a box a quarter wider in proportion than the logo actually is. The fifth was already sized in CSS and only reserved the wrong space before loading. All now declare the artwork's own 371x90 viewBox and set one dimension in CSS, letting the other follow; the effective size is unchanged at every site (24px tall on maintenance and waitlist, 90px wide in the footer, 120px wide in the mobile menu, 14px tall on the download page). That accounts for all nine logo images in this repo — the two remaining fixed-dimension images in the header are avatars, square by design. (`components/MaintenancePage.tsx`, `components/WaitlistPage.tsx`, `components/shared/Footer.tsx`, `components/shared/MobileMenu.tsx`, `app/downloads/[transferId]/[shortCode]/page.tsx`)
+
+## [1.58.2] - 2026-07-31
+
+### Fixed
+
+- **The header drew the logo about 5% taller than it is.** Both dimensions were pinned in CSS at 130x33, a box built for the previous artwork; the current mark is 371x90, a slightly wider proportion, so forcing it into the old box stretched it vertically. Height is now automatic and only width is set, so the artwork keeps its own proportions, and the declared intrinsic dimensions are the real viewBox rather than the rendered size — those are what reserve space before the image loads, and they described artwork that is no longer there. The mark renders slightly smaller as a result, 100px wide rather than 130. (`components/shared/Header.tsx`)
+
+## [1.58.1] - 2026-07-31
+
+### Fixed
+
+- **The blocked-payout banner told creators a verification deadline had passed when they never had one.** `KycVerificationBanner` inferred expiry from the payout block code alone, but a block code says a payout was refused — it says nothing about whether there was ever a deadline to miss. That inference is already wrong today for a creator whose verification was rejected at the maximum number of attempts, which clears their deadline and leaves the gate refusing them with no date at all; the stricter gate policy now available in the admin panel (backend Story 137.5) would have made it the common case, since that policy refuses creators who were never asked to verify. The banner now requires a deadline before claiming one expired, and a refusal under the stricter policy carries no deadline, so the two halves are one mechanism rather than two guesses. (`components/shared/KycVerificationBanner.tsx`)
+- **"0 days remaining" was shown to creators who were never given a date.** Correcting the expiry inference exposed a fallback underneath it: with no deadline and no countdown, the copy fell through to a message that rendered a confident, invented number. The fallback is gone and the no-countdown case has its own line, which simply asks the creator to verify. It reads `kyc.verifyToWithdraw` — "Verify your identity to withdraw" / "Vérifiez votre identité pour retirer vos fonds" — a key that shipped in v1.58.0 and had nothing referencing it until now.
+
+## [1.58.0] - 2026-07-31
+
+### Changed
+
+- **The header and hero CTAs were the same words and the same action, 400px apart.** Both rendered `header.signupBold` + `signupSuffix` and both dispatched `open-auth-panel`, so the hero was structurally incapable of differing — editing the header silently edited the hero. The hero now reads its own `hero.getStartedButton` key (which already existed, unused, in both locales) and says **"Start getting paid"** / **"Commencez à être payé"**, finishing the sentence the headline above it starts instead of restarting with "Get Started". The header is unchanged. (`components/shared/HeroText.tsx`)
+- **The transfer landing page no longer pitches a signup while the recipient still has something to do.** A creator CTA in the preview, password, email, payment and ready states competed with "Pay and download" — the one action on that page that produces revenue — and duplicated the post-download state, which already makes the same pitch at the moment it lands ("Want to send files like this?"). The hero CTA now appears only in the unavailable state, where the link is dead and it competes with nothing. Free transfers are unaffected: the post-download pitch fires from the download action, not from payment. (`app/downloads/[transferId]/[shortCode]/page.tsx`)
+- The unavailable-state CTA now reads **"Start free on ZeFile"** / **"Commencer gratuitement sur ZeFile"**, reusing the wording the post-download state already uses, rather than introducing a third phrasing of the same idea.
+
+### Removed
+
+- **"Take a look before you pay." on the download card.** The spacer beneath it was conditional on the exact complement of the line's own condition, so it is now unconditional — otherwise unpaid paid transfers, the only case that ever showed the line, would have been left with no gap between the title and the file row. The orphaned `transferLanding.previewBeforeYouPay` key is deleted from both locales; `testResult.previewBeforeYouPay` stays, still used by the test-file simulation.
+
+### Fixed
+
+- **A branded transfer could show ZeFile marketing on a paying customer's link.** Custom branding is a Pro feature that swaps in `BrandedHeader` and already skips the post-download CTA via `!isBranded`, but the unavailable state had no such guard — an expired or cancelled branded transfer would have rendered "Start free on ZeFile" on a white-labelled page. The signup CTA is now suppressed for branded transfers in every state.
+
 ## [1.57.2] - 2026-07-30
 
 ### Fixed

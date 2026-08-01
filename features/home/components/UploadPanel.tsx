@@ -168,6 +168,35 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
   const [isPublicSales, setIsPublicSales] = useState(false);
   const canUsePublicSales = userTier === "starter" || userTier === "pro";
 
+  // Stream-only delivery — Story 134.4.
+  //
+  // Deliberately NOT a hardcoded tier comparison like canUsePublicSales above. The backend
+  // resolves this from the `streamDelivery` tier feature, so an admin granting it to another tier
+  // makes this toggle appear with no deploy and no restart. Copying the line above would leave it
+  // permanently hidden for that tier.
+  const [isStreamOnly, setIsStreamOnly] = useState(false);
+  const [canUseStreamDelivery, setCanUseStreamDelivery] = useState(false);
+
+  // The browser knows every selected file's MIME type before the transfer is created, so the
+  // creator learns about a non-video file immediately rather than at the first upload completion.
+  // This HIDES a control; it does not enforce anything (P11) — the guarantee is the backend
+  // refusal in FilesService.createFileRecord, and the two must agree.
+  const allSelectedFilesAreVideo = useMemo(
+    () =>
+      selectedFiles.length > 0 &&
+      selectedFiles.every((file) => file.type.toLowerCase().startsWith("video/")),
+    [selectedFiles],
+  );
+
+  // If the creator turns stream-only on with an .mp4 and then adds a .pdf, clear the toggle rather
+  // than sending a combination the backend refuses. Clearing it (and re-showing the reason) beats
+  // silently downgrading the transfer to a download, which is not what they asked for.
+  useEffect(() => {
+    if (isStreamOnly && !allSelectedFilesAreVideo) {
+      setIsStreamOnly(false);
+    }
+  }, [isStreamOnly, allSelectedFilesAreVideo]);
+
   // Free transfer & minimum price state
   const [isFreeTransfer, setIsFreeTransfer] = useState(false);
   const savedPriceRef = React.useRef("");
@@ -394,7 +423,10 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
           setServiceChargePercentage(response.data.serviceChargePercentage);
           setMinimumTransferPriceNGN(response.data.minimumTransferPriceNGN);
           setCanCreateFreeTransfers(response.data.canCreateFreeTransfers);
+          // Story 134.4 — one extra field on a payload this panel already fetches on mount.
+          setCanUseStreamDelivery(response.data.canUseStreamDelivery === true);
           return;
+
         }
       }
       const publicResponse = await platformApi.getPublicConfig();
@@ -1004,6 +1036,11 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
         wallpaperKey,
         coverKey,
         isPublicSales: isPublicSales ? true : undefined,
+        // Story 134.4. Omitted entirely for an ordinary transfer so the request body is
+        // byte-identical to before this story (AC8). This is the only createTransfer call site in
+        // the frontend — `handleReuseTransfer` above calls reuseTransfer, which the backend
+        // refuses outright for stream transfers (AC7), so it deliberately sends nothing here.
+        deliveryMode: isStreamOnly ? "stream" : undefined,
       });
 
       if (transferResponse.error) {
@@ -2042,6 +2079,11 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                       checked={isPublicSales}
                       onChange={(checked) => {
                         setIsPublicSales(checked);
+                        // Stream-only requires public sales (backend AC5). Leaving it on here
+                        // would make the panel send a combination the backend refuses with a 400.
+                        if (!checked) {
+                          setIsStreamOnly(false);
+                        }
                         if (checked && isFreeTransfer) {
                           setIsFreeTransfer(false);
                           setPrice(savedPriceRef.current);
@@ -2055,6 +2097,44 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                         }
                       }}
                       label={t("publicSalesToggle")}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Stream-Only Delivery Toggle — Story 134.4.
+                  Shown when the creator's tier carries the streamDelivery feature AND public
+                  sales is on (stream-only means nothing on a private recipient transfer).
+                  Disabled unless every selected file is video, with the reason stated in text and
+                  wired to the switch via aria-describedby so it is announced rather than conveyed
+                  by the greyed-out state alone. */}
+              {canUseStreamDelivery && isPublicSales && (
+                <div className="rounded border border-neutral-200 dark:border-border p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm text-[#171717] dark:text-[oklch(0.91_0_0)]">
+                        {t("streamOnlyToggle")}
+                      </p>
+                      <p className="text-xs text-neutral-500 dark:text-[oklch(0.65_0_0)] mt-0.5">
+                        {t("streamOnlyDescription")}
+                      </p>
+                      {!allSelectedFilesAreVideo && (
+                        <p
+                          id="stream-only-reason"
+                          className="text-xs text-[#F59E0B] mt-1.5"
+                        >
+                          {t("streamOnlyVideoRequired")}
+                        </p>
+                      )}
+                    </div>
+                    <Toggle
+                      checked={isStreamOnly}
+                      disabled={!allSelectedFilesAreVideo}
+                      onChange={(checked) => setIsStreamOnly(checked)}
+                      label={t("streamOnlyToggle")}
+                      aria-describedby={
+                        !allSelectedFilesAreVideo ? "stream-only-reason" : undefined
+                      }
                     />
                   </div>
                 </div>

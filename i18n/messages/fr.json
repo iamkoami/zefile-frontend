@@ -17,7 +17,7 @@
     "proofStat3": "ZeFile : soyez payé avant le téléchargement",
     "ctaText": "Gardez plus de vos revenus.",
     "ctaButton": "Passer au Pro",
-    "getStartedButton": "Commencer - c'est gratuit"
+    "getStartedButton": "Commencez à être payé"
   },
   "homeSeo": {
     "description": "ZeFile est la plateforme de livraison de fichiers conçue pour les créateurs africains. Soyez payé par Mobile Money, virement bancaire ou carte avant le téléchargement. Aperçus filigranés pour protéger vos originaux. Envoyez jusqu'à 5 Go gratuitement, mettez à jour vos fichiers sur le même lien, et gardez jusqu'à 97 % de chaque transfert payant. Pas besoin de carte bancaire.",
@@ -237,6 +237,9 @@
     "captchaNotReady": "La vérification de sécurité n'a pas pu charger. Désactivez votre bloqueur de publicités et rafraîchissez la page.",
     "publicSalesToggle": "Mettre en vente",
     "publicSalesDescription": "Un seul lien — n'importe qui peut voir, payer et télécharger.",
+    "streamOnlyToggle": "Diffusion en streaming",
+    "streamOnlyDescription": "Vos acheteurs regardent votre film directement sur la page. Le fichier, lui, ne quitte jamais vos mains.",
+    "streamOnlyVideoRequired": "Uniquement des vidéos pour cette option — retirez ce qui n'en est pas pour l'activer.",
     "publicSalesHint": "Fixez votre prix ci-dessous. Partagez le lien où se trouve votre audience.",
     "errors": {
       "transferCreateFailed": "On n'a pas pu créer le transfert. Réessayons.",
@@ -599,7 +602,6 @@
     "stepEmail": "E-mail",
     "stepCode": "Code",
     "stepPassword": "Mot de passe",
-    "previewBeforeYouPay": "Jetez un œil avant de payer.",
     "newUserWelcomeBanner": "Vous êtes maintenant sur ZeFile. La prochaine fois, vos téléchargements seront à portée de main.",
     "dismissBanner": "Fermer",
     "downloadedTitle": "Vos fichiers sont en cours de téléchargement",
@@ -3481,6 +3483,31 @@
     "subtitleFree": "Jetez un œil, puis téléchargez.",
     "unavailableTitle": "Nos liens ont une durée de vie.",
     "unavailableSubtitle": "C'est voulu : votre travail n'a rien à faire en ligne une fois le projet livré.",
-    "unavailableCta": "Créer un compte gratuit"
+    "unavailableCta": "Commencer gratuitement sur ZeFile"
+  },
+  "streamPackaging": {
+    "preparingTitle": "Votre film se prépare",
+    "preparingBody": "On le prépare pour la diffusion. Comptez quelques minutes pour un court format, un peu plus pour un long.",
+    "preparingHint": "Vous pouvez fermer cette page : on vous écrit si quelque chose coince.",
+    "failedTitle": "Le film n'a pas pu être préparé",
+    "failedBody": "Votre fichier d'origine est intact et personne n'a été débité. Relancez la préparation : si ça bloque encore, on regarde ça avec vous.",
+    "retry": "Relancer la préparation",
+    "retrying": "Relance en cours...",
+    "retryQueued": "C'est reparti : on prépare votre film.",
+    "retryFailed": "La relance n'a pas démarré. Réessayez dans un instant.",
+    "retryNotFailed": "Ce film n'est pas encore prêt pour une relance. Réessayez dans quelques minutes.",
+    "retryTooMany": "Cela fait 5 relances en une heure. Patientez un peu avant de réessayer — si un film échoue à répétition, relancer n'y changera sans doute rien.",
+    "checkAgain": "Actualiser",
+    "stillPreparing": "Toujours en préparation. Revenez dans un moment.",
+    "listPreparing": "En préparation",
+    "listFailed": "À vérifier"
+  },
+  "streamSale": {
+    "preparingTitle": "Ce film n'est pas encore disponible",
+    "preparingBody": "Il est encore en préparation pour la diffusion. Revenez dans quelques minutes — rien ne vous a été facturé.",
+    "checkAgain": "Actualiser",
+    "checking": "Vérification...",
+    "nowAvailable": "C'est prêt : vous pouvez l'acheter.",
+    "notReady": "Ce film n'est pas encore en vente. Laissez-lui quelques minutes et réessayez."
   }
 }

@@ -17,7 +17,7 @@
     "proofStat3": "ZeFile: get paid before they download",
     "ctaText": "Keep more of what you earn.",
     "ctaButton": "Upgrade Now",
-    "getStartedButton": "Get Started - it's free"
+    "getStartedButton": "Start getting paid"
   },
   "homeSeo": {
     "description": "ZeFile is the file delivery platform built for African creators. Get paid with Mobile Money, bank transfer, or card before recipients can download. Watermarked previews protect your originals. Send files up to 5 GB free, upload revisions to the same link, and keep up to 97% of every paid transfer. No credit card required.",
@@ -236,6 +236,9 @@
     "captchaNotReady": "Security check couldn't load. Disable any ad blocker and refresh the page.",
     "publicSalesToggle": "Put it on sale",
     "publicSalesDescription": "Share one link — anyone can preview, pay, and download.",
+    "streamOnlyToggle": "Stream-only delivery",
+    "streamOnlyDescription": "Buyers watch your film right on the sale page. The file never leaves your hands.",
+    "streamOnlyVideoRequired": "Video files only for this one — swap out anything that is not a video to turn it on.",
     "publicSalesHint": "Set your price below. Drop the link wherever your audience is.",
     "errors": {
       "transferCreateFailed": "Couldn't create the transfer. Let's try again.",
@@ -599,7 +602,6 @@
     "stepEmail": "Email",
     "stepCode": "Code",
     "stepPassword": "Password",
-    "previewBeforeYouPay": "Take a look before you pay.",
     "newUserWelcomeBanner": "You're on ZeFile now. Next time, your downloads are just a click away.",
     "dismissBanner": "Dismiss",
     "downloadedTitle": "Your files are downloading",
@@ -3511,6 +3513,31 @@
     "subtitleFree": "Have a look, then download.",
     "unavailableTitle": "Our links don't live forever.",
     "unavailableSubtitle": "That's on purpose — your work has no business sitting online once the project's delivered.",
-    "unavailableCta": "Create a free account"
+    "unavailableCta": "Start free on ZeFile"
+  },
+  "streamPackaging": {
+    "preparingTitle": "Getting your film ready",
+    "preparingBody": "We're preparing it for streaming. This takes a few minutes for a short film, longer for a feature.",
+    "preparingHint": "You can close this — we'll email you if anything goes wrong.",
+    "failedTitle": "We couldn't get this film ready",
+    "failedBody": "Your original file is safe and nobody has been charged. Give it another go — if it stops again, we'll take a look with you.",
+    "retry": "Retry preparing",
+    "retrying": "Starting again...",
+    "retryQueued": "On it — we're preparing your film again.",
+    "retryFailed": "That didn't start. Try again in a moment.",
+    "retryNotFailed": "This film isn't ready for a retry just yet. Try again in a few minutes.",
+    "retryTooMany": "That's 5 retries in an hour. Give it a while, then try again — if a film keeps failing, retrying probably won't fix it.",
+    "checkAgain": "Check again",
+    "stillPreparing": "Still preparing. Check back in a bit.",
+    "listPreparing": "Preparing",
+    "listFailed": "Needs attention"
+  },
+  "streamSale": {
+    "preparingTitle": "This film isn't ready yet",
+    "preparingBody": "It's still being prepared for streaming. Check back in a few minutes — you haven't been charged for anything.",
+    "checkAgain": "Check again",
+    "checking": "Checking...",
+    "nowAvailable": "It's ready. You can buy it now.",
+    "notReady": "This film isn't on sale just yet. Give it a few minutes and try again."
   }
 }

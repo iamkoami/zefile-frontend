@@ -32,6 +32,16 @@ interface HeroTextProps {
    */
   ctaLabel?: string;
   /**
+   * Whether to offer the signup CTA to logged-out visitors. On by default.
+   *
+   * The transfer landing page turns it off while a recipient still has
+   * something to do — previewing, paying, downloading. Pitching a creator
+   * signup there competes with "Pay and download", the one action on that page
+   * that produces revenue, and the post-download state already runs the same
+   * pitch at the moment it actually lands ("Want to send files like this?").
+   */
+  showSignupCta?: boolean;
+  /**
    * Hero composition. Defaults to `left`, which is the approved design.
    *
    * `left` is the "left rail": the trust strip, headline, subtitle and CTA all
@@ -68,10 +78,10 @@ const HeroText: React.FC<HeroTextProps> = ({
   reserveRightGutter = false,
   copy,
   ctaLabel,
+  showSignupCta = true,
   align = "left",
 }) => {
   const t = useTranslations("hero");
-  const tHeader = useTranslations("header");
 
   // `?hero=left|center` override for the preference test. Read from
   // window.location rather than useSearchParams so this component never forces
@@ -188,8 +198,14 @@ const HeroText: React.FC<HeroTextProps> = ({
         {!copy && t("subtitle2") && <p>{t("subtitle2")}</p>}
       </div>
 
-      {/* Get Started CTA - for unauthenticated users (matches header CTA) */}
-      {!isAuthenticated && (
+      {/* Signup CTA for logged-out visitors.
+          Deliberately NOT the header's string. Both used to render
+          `header.signupBold` + `signupSuffix`, so the same words and the same
+          action appeared twice about 400px apart, and the hero was structurally
+          incapable of differing — editing the header silently edited the hero.
+          The hero sits under "Get paid before they download", so its button
+          finishes that sentence instead of restarting with "Get Started". */}
+      {showSignupCta && !isAuthenticated && (
         <div
           className={`flex flex-col mt-8 animate-[fadeIn_1s_ease-in-out_2s_both] ${
             isLeft ? "items-start" : "items-center"
@@ -201,14 +217,7 @@ const HeroText: React.FC<HeroTextProps> = ({
             }}
             className="pointer-events-auto ze-button-primary"
           >
-            {ctaLabel ? (
-              <span className="font-bold">{ctaLabel}</span>
-            ) : (
-              <>
-                <span className="font-bold">{tHeader("signupBold")}</span>
-                &nbsp;-&nbsp;{tHeader("signupSuffix")}
-              </>
-            )}
+            <span className="font-bold">{ctaLabel ?? t("getStartedButton")}</span>
           </button>
         </div>
       )}

@@ -174,6 +174,14 @@ export interface UserPlatformConfig {
   isFirstPaidTransferUsed?: boolean;
   minimumTransferPriceNGN: number;
   canCreateFreeTransfers: boolean;
+  /**
+   * Story 134.4 — may this creator publish a transfer as stream-only?
+   *
+   * Resolved server-side from the `streamDelivery` tier feature, NOT from a tier comparison, so
+   * an admin granting the feature to another tier makes the toggle appear with no deploy.
+   * Presentation only: the backend gate in StreamEligibilityService is the guarantee (P11).
+   */
+  canUseStreamDelivery?: boolean;
 }
 
 export class PlatformApi {
