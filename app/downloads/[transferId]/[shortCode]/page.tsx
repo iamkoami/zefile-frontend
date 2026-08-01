@@ -248,6 +248,10 @@ export default function TransferLandingPage() {
   const tPayment = useTranslations("payment");
   const tNotFound = useTranslations("notFound");
   const tSale = useTranslations("publicSale");
+  // Story 134.8 — buyer-facing stream copy. Deliberately NOT `streamPackaging`, which is 134.7's
+  // creator namespace: different audience, and a shared namespace forks the first time one side
+  // needs different wording.
+  const tStreamSale = useTranslations("streamSale");
   const { timeOfDay, isHydrated } = useTimeOfDay();
 
   // Parse tracking params from URL query string (memoized to prevent useEffect re-runs)
@@ -478,6 +482,8 @@ export default function TransferLandingPage() {
   const [saleCheckingEmail, setSaleCheckingEmail] = useState(false);
   const [saleVerifyingOtp, setSaleVerifyingOtp] = useState(false);
   const saleVerifyAttemptedRef = useRef(false);
+  // Story 134.8 — in-flight guard for the manual readiness re-check.
+  const [isRecheckingStreamStatus, setIsRecheckingStreamStatus] = useState(false);
 
   // Dispute modal
   const [showDisputeModal, setShowDisputeModal] = useState(false);
@@ -1784,6 +1790,52 @@ export default function TransferLandingPage() {
   };
 
   const fileCount = transfer?.files?.length || 0;
+
+  // ──── Story 134.8: a stream-only film is not for sale until its media is playable ────
+  //
+  // The predicate is COMPOUND on purpose. Every download transfer carries a null streamStatus
+  // (134.2 D3 — no default, because a download transfer never awaits packaging), so a bare
+  // `streamStatus !== "ready"` is true for the entire download catalogue and would hide the buy
+  // button on every sale in the system. Backend keys on the same pair.
+  //
+  // `pending`, `processing` and `failed` collapse into ONE buyer-facing state. A buyer cannot act
+  // on a packaging failure, the creator can and already has a retry button (134.7), and naming it
+  // leaks the creator's operational state to a stranger.
+  const isStreamTransfer = transfer?.deliveryMode === "stream";
+  const isStreamNotReady = isStreamTransfer && transfer?.streamStatus !== "ready";
+
+  // The free trailer (SD-FR6) is the 20-second watermarked clip, and it is NOT guaranteed to
+  // exist: preview generation refuses files over PREVIEW_MAX_FILE_SIZE (2GB), which a feature
+  // film clears easily. When there is no clip, 134.3's guard answers POST /storage/preview/url
+  // with 409 — so the button is not offered rather than offered and broken.
+  const hasTrailer = (transfer?.files ?? []).some((file) => !!file.previewClipUrl);
+
+  // Manual re-check for a buyer waiting on a film.
+  //
+  // GET /transfers/code/:shortCode is edge-cached (`s-maxage=60, stale-while-revalidate=30`), so
+  // a plain reload can show a stale status for up to 90 seconds. Cloudflare keys on the full URL,
+  // so a changing query parameter is a fresh origin fetch. Deliberately NOT a poll — packaging
+  // takes minutes and a buyer is not sitting on the page the way a creator is.
+  const handleStreamReadinessRecheck = async () => {
+    if (!transfer || isRecheckingStreamStatus) return;
+
+    setIsRecheckingStreamStatus(true);
+    try {
+      const response = await transferApi.getTransferByShortCode(
+        `${shortCode}?_=${Date.now()}`,
+      );
+      if (!response.error && response.data) {
+        setTransfer(response.data);
+        if (response.data.streamStatus === "ready") {
+          toast.success(tStreamSale("nowAvailable"));
+        }
+      }
+    } catch {
+      // Best-effort: the buyer can still reload the page.
+    } finally {
+      setIsRecheckingStreamStatus(false);
+    }
+  };
 
   // Loading state
   if (pageState === "loading") {
@@ -3273,23 +3325,65 @@ export default function TransferLandingPage() {
                   </p>
                 </div>
 
-                {/* Preview button */}
-                <button
-                  onClick={() => {
-                    if (transfer) {
-                      openDrawerToView(
-                        "transfers",
-                        "transfer-preview",
-                        transfer,
-                        "receiver",
-                      );
-                    }
-                  }}
-                  className="w-full px-6 py-3 border-2 border-gray-300 dark:border-[oklch(0.30_0_0)] bg-white dark:bg-[oklch(0.24_0_0)] text-[#171717] dark:text-[oklch(0.91_0_0)] font-medium rounded hover:bg-gray-50 dark:hover:bg-[oklch(0.28_0_0)] transition-colors flex items-center justify-center gap-2 mb-4"
-                >
-                  <Eye className="w-5 h-5" />
-                  {t("preview")}
-                </button>
+                {/* Story 134.8 — the film is not playable yet, so it is not for sale yet.
+                    One state for pending/processing/failed (D4): a buyer can act on none of
+                    them, and naming a failure leaks the creator's operational state. */}
+                {isStreamNotReady && (
+                  <div
+                    className="w-full bg-[#FDFAF4] dark:bg-[oklch(0.22_0_0)] rounded p-6 mb-4 text-center"
+                    role="status"
+                    aria-live="polite"
+                  >
+                    <LoadingPanel className="py-2" />
+                    <p className="text-base font-semibold text-[#171717] dark:text-[oklch(0.91_0_0)] mt-2">
+                      {tStreamSale("preparingTitle")}
+                    </p>
+                    <p className="text-sm text-gray-600 dark:text-[oklch(0.65_0_0)] mt-1">
+                      {tStreamSale("preparingBody")}
+                    </p>
+                    {/* The price normally lives inside the Buy button, which is hidden here — so
+                        without this it vanishes entirely. Fee-model principle 1: the buyer sees
+                        the terms before committing, and a film with no price reads as
+                        unavailable rather than as coming soon. */}
+                    {priceDisplay && (
+                      <p className="text-lg font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mt-3">
+                        {priceDisplay}
+                      </p>
+                    )}
+                    <button
+                      onClick={handleStreamReadinessRecheck}
+                      disabled={isRecheckingStreamStatus}
+                      className="mt-4 min-h-[44px] px-6 py-3 border-2 border-gray-300 dark:border-[oklch(0.30_0_0)] bg-white dark:bg-[oklch(0.24_0_0)] text-[#171717] dark:text-[oklch(0.91_0_0)] font-medium rounded hover:bg-gray-50 dark:hover:bg-[oklch(0.28_0_0)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#5E53E0] focus-visible:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isRecheckingStreamStatus
+                        ? tStreamSale("checking")
+                        : tStreamSale("checkAgain")}
+                    </button>
+                  </div>
+                )}
+
+                {/* Preview button — the free trailer (SD-FR6).
+                    Hidden when no watermarked clip exists: preview generation refuses files over
+                    2GB, and 134.3's guard then answers preview/url with 409, so offering it would
+                    be offering an action that cannot succeed (Story 134.8, Finding 9). */}
+                {(!isStreamTransfer || hasTrailer) && (
+                  <button
+                    onClick={() => {
+                      if (transfer) {
+                        openDrawerToView(
+                          "transfers",
+                          "transfer-preview",
+                          transfer,
+                          "receiver",
+                        );
+                      }
+                    }}
+                    className="w-full px-6 py-3 border-2 border-gray-300 dark:border-[oklch(0.30_0_0)] bg-white dark:bg-[oklch(0.24_0_0)] text-[#171717] dark:text-[oklch(0.91_0_0)] font-medium rounded hover:bg-gray-50 dark:hover:bg-[oklch(0.28_0_0)] transition-colors flex items-center justify-center gap-2 mb-4"
+                  >
+                    <Eye className="w-5 h-5" />
+                    {t("preview")}
+                  </button>
+                )}
 
                 {/* Email Gateway */}
                 {!isAuthenticated && (
@@ -3380,8 +3474,14 @@ export default function TransferLandingPage() {
                   </div>
                 )}
 
-                {/* New purchase: Buy button */}
-                {(saleEmailChecked && !saleHasPurchase) || (isAuthenticated && !saleHasPurchase) ? (
+                {/* New purchase: Buy button.
+                    Story 134.8 — NOT RENDERED while the film is being prepared. Deliberately not
+                    a disabled button: a greyed-out green CTA reads as a broken page, and the
+                    prepared-state block above already says what is happening. The backend refuses
+                    the same case with 409 regardless of what this renders. */}
+                {!isStreamNotReady &&
+                ((saleEmailChecked && !saleHasPurchase) ||
+                  (isAuthenticated && !saleHasPurchase)) ? (
                   <button
                     onClick={handleBuy}
                     disabled={isLoading}
@@ -3475,6 +3575,13 @@ export default function TransferLandingPage() {
                   onBack={() => setPageState("sale-preview")}
                   onPaymentInitiated={handleSalePaymentInitiated}
                   getCaptchaToken={getToken}
+                  /* Story 134.8 — the film stopped being sellable while the buyer was in
+                     checkout. Refetch (cache-busted) so the sale page renders the prepared
+                     state rather than the Buy button they just came from. */
+                  onStreamNotReady={() => {
+                    setPageState("sale-preview");
+                    void handleStreamReadinessRecheck();
+                  }}
                 />
               </div>
 

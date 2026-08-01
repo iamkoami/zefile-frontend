@@ -42,6 +42,14 @@ interface SaleCheckoutPanelProps {
   onPaymentInitiated: (reference: string, isMobileMoney: boolean) => void;
   /** Optional: parent's Turnstile getToken to avoid duplicate widgets on same page. */
   getCaptchaToken?: () => Promise<string | null>;
+  /**
+   * Story 134.8 — the film stopped being sellable between page load and checkout.
+   *
+   * The backend answers 409 `STREAM_NOT_READY`. A toast alone would leave the buyer sitting on a
+   * checkout form for something that is not on sale, so the parent takes them back to the sale
+   * page, where the prepared-state block explains it.
+   */
+  onStreamNotReady?: () => void;
 }
 
 /**
@@ -55,8 +63,10 @@ export function SaleCheckoutPanel({
   onBack,
   onPaymentInitiated,
   getCaptchaToken,
+  onStreamNotReady,
 }: SaleCheckoutPanelProps) {
   const t = useTranslations("payment");
+  const tStreamSale = useTranslations("streamSale");
   // Use parent's token getter if provided (avoids duplicate Turnstile widgets on same page)
   const ownTurnstile = useTurnstile();
   const getTurnstileToken = getCaptchaToken || ownTurnstile.getToken;
@@ -129,6 +139,28 @@ export function SaleCheckoutPanel({
 
   const getProviderIconPath = (icon: string): string => `/icons/payment/${icon}.svg`;
 
+  /**
+   * Story 134.8 — surface a payment-init failure.
+   *
+   * Discriminates on `error.code`, NOT on the 409 status: `/v2/payments/initialize` already
+   * answers 409 for "a pending payment already exists", which is a different situation with
+   * different advice. `ApiError.code` is populated by api-client.ts:333 for every failed request.
+   *
+   * ⚠ Do NOT "simplify" this by adding `case 409:` to getErrorKey() in api-client.ts — that maps
+   * a bare STATUS platform-wide and would rewrite the pending-payment 409 for every caller of
+   * every endpoint.
+   *
+   * The backend's `message` is English-only, so the stream case renders our own localised copy.
+   */
+  const reportPaymentError = (error: { message?: string; code?: string }) => {
+    if (error.code === "STREAM_NOT_READY") {
+      toast.error(tStreamSale("notReady"));
+      onStreamNotReady?.();
+      return;
+    }
+    toast.error(error.message || t("paymentInitFailed"));
+  };
+
   const handlePay = async () => {
     if (!selectedMethod) return;
 
@@ -153,7 +185,7 @@ export function SaleCheckoutPanel({
         });
 
         if (response.error) {
-          toast.error(response.error.message || t("paymentInitFailed"));
+          reportPaymentError(response.error);
           return;
         }
 
@@ -171,7 +203,7 @@ export function SaleCheckoutPanel({
         });
 
         if (response.error) {
-          toast.error(response.error.message || t("paymentInitFailed"));
+          reportPaymentError(response.error);
           return;
         }
 
@@ -200,7 +232,7 @@ export function SaleCheckoutPanel({
         });
 
         if (response.error) {
-          toast.error(response.error.message || t("paymentInitFailed"));
+          reportPaymentError(response.error);
           return;
         }
 

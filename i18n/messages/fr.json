@@ -3501,5 +3501,13 @@
     "stillPreparing": "Toujours en préparation. Revenez dans un moment.",
     "listPreparing": "En préparation",
     "listFailed": "À vérifier"
+  },
+  "streamSale": {
+    "preparingTitle": "Ce film n'est pas encore disponible",
+    "preparingBody": "Il est encore en préparation pour la diffusion. Revenez dans quelques minutes — rien ne vous a été facturé.",
+    "checkAgain": "Actualiser",
+    "checking": "Vérification...",
+    "nowAvailable": "C'est prêt : vous pouvez l'acheter.",
+    "notReady": "Ce film n'est pas encore en vente. Laissez-lui quelques minutes et réessayez."
   }
 }

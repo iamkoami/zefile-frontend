@@ -3531,5 +3531,13 @@
     "stillPreparing": "Still preparing. Check back in a bit.",
     "listPreparing": "Preparing",
     "listFailed": "Needs attention"
+  },
+  "streamSale": {
+    "preparingTitle": "This film isn't ready yet",
+    "preparingBody": "It's still being prepared for streaming. Check back in a few minutes — you haven't been charged for anything.",
+    "checkAgain": "Check again",
+    "checking": "Checking...",
+    "nowAvailable": "It's ready. You can buy it now.",
+    "notReady": "This film isn't on sale just yet. Give it a few minutes and try again."
   }
 }
