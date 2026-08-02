@@ -5,6 +5,18 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.63.0] - 2026-08-02
+
+### Added
+
+- **A stream-only sale page now says what the buyer is actually getting.** The page offered a title, a file count and a green button, and mentioned nowhere that the film could never be downloaded. Buyers in these markets learn video from WhatsApp, where you download it and then it is yours — offline, permanently — and stream-only inverts that expectation rather than merely failing to meet it. Four plain sentences now sit above the email field: you watch it here and there is no download, access lasts as long as the film is published and the creator's subscription does not affect it, buying it and not watching is not refundable but a failure on our side is, and a payment fee is added at checkout. What the page deliberately does **not** say is anything about access ending — that mechanism ships later, and describing it now would be a promise with nothing behind it. (`app/downloads/[transferId]/[shortCode]/page.tsx`)
+- **The free trailer plays on the page instead of in a side panel.** The 20-second preview opened the drawer, a surface meant for signed-in creators — and one that would have left the free trailer and the purchased film in two different places once playback ships. It now plays where the buyer is reading, from a watermarked clip fetched at view time, and it does not download a single byte until play is pressed. Mobile data costs real money here; a trailer that helps itself to it before being asked is not a preview, it is a charge. (`app/downloads/[transferId]/[shortCode]/page.tsx`)
+- **The checkout shows the total before the pay button, not after.** Price, payment fee and total now appear once a country and a payment method are chosen — including for card, bank transfer and USSD, none of which previously showed a fee anywhere. Where the buyer's provider settles in a different currency, the panel says so and names the amount. (`features/payment/components/SaleCheckoutPanel.tsx`)
+
+### Fixed
+
+- **Two totals in two currencies on the same screen.** The summary card converted the price into whichever currency the header was set to, using approximate rates, while the checkout showed the real amount — so one purchase read `$8.26` in one panel and `5,208.34 Fr CFA` in the other, with the less reliable of the two rendered larger and closer to the pay button. Both panels now read from the same quote and the same formatter. The amount that will be debited leads; the viewer's own currency sits beneath it, clearly marked as an approximation, because a total an international buyer cannot interpret is not one they can agree to. (`components/shared/TransferSummaryCard.tsx`, `features/payment/components/SaleCheckoutPanel.tsx`)
+
 ## [1.62.0] - 2026-08-01
 
 ### Fixed
