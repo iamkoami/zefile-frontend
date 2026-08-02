@@ -17,6 +17,31 @@ export interface PlatformFee {
 }
 
 /**
+ * Story 135.1 — the buyer's pass-through processing surcharge for one country + method.
+ * All amounts are minor units. `price + processingFee === total` always holds, so a caller
+ * renders the breakdown without doing arithmetic of its own.
+ */
+export interface ProcessingFeeQuote {
+  countryCode: string;
+  paymentMethod: "mobile_money" | "card";
+  feePercent: number;
+  currency: string;
+  priceMinorUnits: number;
+  processingFeeMinorUnits: number;
+  totalMinorUnits: number;
+  /**
+   * Non-null when the buyer's gateway cannot charge `currency` natively and the payment path
+   * converts before charging — Togo, Benin and Senegal route to Startbutton, which does not
+   * support XOF. When set, `totalMinorUnits` is NOT what the buyer is charged; this is.
+   */
+  settlement: {
+    currency: string;
+    amountMinorUnits: number;
+    fxRate: number;
+  } | null;
+}
+
+/**
  * Transfer limits per tier
  */
 export interface TransferLimits {
@@ -212,6 +237,32 @@ export class PlatformApi {
    */
   async getAllFees(): Promise<ApiResponse<{ fees: PlatformFee[] }>> {
     return apiClient.get<{ fees: PlatformFee[] }>('/public/config/fees');
+  }
+
+  /**
+   * Story 135.1 (D3) — quote the processing surcharge a buyer will pay, without starting a payment.
+   *
+   * The sale page cannot show an exact surcharge: the rate depends on country AND payment method
+   * (2.0%-4.6%), and neither is known until checkout. This is what lets SaleCheckoutPanel show the
+   * real total before the gateway is called — which it never did before, so a card buyer was shown
+   * no surcharge by ZeFile at any point.
+   *
+   * The backend computes through the same two calls the payment path uses, so the total returned
+   * here is the amount that will actually be charged. Never re-derive it on the client.
+   */
+  async getProcessingFeeQuote(params: {
+    amountMinorUnits: number;
+    paymentMethod: "mobile_money" | "card";
+    countryCode?: string;
+    currency?: string;
+  }): Promise<ApiResponse<ProcessingFeeQuote>> {
+    const query = new URLSearchParams({
+      amountMinorUnits: String(params.amountMinorUnits),
+      paymentMethod: params.paymentMethod,
+    });
+    if (params.countryCode) query.set("countryCode", params.countryCode);
+    if (params.currency) query.set("currency", params.currency);
+    return apiClient.get<ProcessingFeeQuote>(`/public/config/processing-fee?${query.toString()}`);
   }
 
   /**

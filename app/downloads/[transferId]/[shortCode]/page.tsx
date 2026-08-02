@@ -64,6 +64,7 @@ import usePaymentStatus from "@/hooks/usePaymentStatus";
 import ReportIssueModal from "@/components/shared/ReportIssueModal";
 import TransferPreviewModal from "@/features/transfer/components/TransferPreviewModal";
 import { SaleCheckoutPanel } from "@/features/payment/components/SaleCheckoutPanel";
+import type { ProcessingFeeQuote } from "@/services/platform-api";
 import { useDrawerStore } from "@/stores/drawer-store";
 import FloatingPollWidget from "@/components/shared/FloatingPollWidget";
 import CreatorStrip from "@/features/transfer/components/CreatorStrip";
@@ -430,6 +431,9 @@ export default function TransferLandingPage() {
   const [paymentReference, setPaymentReference] = useState("");
   const [paymentAmount, setPaymentAmount] = useState(0);
   // Processing fee breakdown (from payment initialization response)
+  // Story 135.1 — the fee quote published by SaleCheckoutPanel, so the summary card beside it
+  // renders the same numbers instead of its own display-currency conversion of the bare price.
+  const [saleFeeQuote, setSaleFeeQuote] = useState<ProcessingFeeQuote | null>(null);
   const [processingFee, setProcessingFee] = useState(0);
   const [processingFeePercent, setProcessingFeePercent] = useState(0);
   const [totalAmountCharged, setTotalAmountCharged] = useState(0);
@@ -1827,6 +1831,60 @@ export default function TransferLandingPage() {
   // a plain reload can show a stale status for up to 90 seconds. Cloudflare keys on the full URL,
   // so a changing query parameter is a fresh origin fetch. Deliberately NOT a poll — packaging
   // takes minutes and a buyer is not sitting on the page the way a creator is.
+  // Story 135.1 (D2) — the free 20-second trailer, played INLINE on the sale page.
+  //
+  // It used to open the SideDrawer, which works but contradicts the cross-cutting playback-surface
+  // rule (`epics-stream-delivery.md:216-220`): a public buyer is never inside the drawer, and 135.6
+  // will render the paid film inline on this same page. Two surfaces for one film is the thing that
+  // rule exists to prevent.
+  //
+  // `file.previewClipUrl` is a STORAGE KEY, not a URL (`preview.service.ts:141-144` returns the key
+  // and the controller presigns it). Rendering it as a `src` gives a broken player. The playable URL
+  // comes from POST /storage/preview/url, which for video returns the watermarked 20s clip.
+  const streamTrailerFile = useMemo(
+    () => (transfer?.files ?? []).find((file) => !!file.previewClipUrl) ?? null,
+    [transfer],
+  );
+  const [trailerUrl, setTrailerUrl] = useState<string | null>(null);
+  const [trailerFailed, setTrailerFailed] = useState(false);
+
+  useEffect(() => {
+    // Stream transfers only. A download transfer keeps the drawer preview it has always had.
+    // Clear the previous transfer's trailer BEFORE fetching the new one (review, Medium).
+    // The `cancelled` flag stops a stale write, but it does not clear stale STATE — and the App
+    // Router does not force-remount this component just because the dynamic route params change.
+    // On a client-side navigation between two transfers the previous film's `<video src>` would
+    // stay on screen until the new fetch resolved. Not a leak (that URL was itself watermarked),
+    // but the wrong film, briefly, on a page whose whole job is telling the buyer what she is buying.
+    setTrailerUrl(null);
+    setTrailerFailed(false);
+
+    if (!isStreamTransfer || !transfer || !streamTrailerFile) return;
+
+    let cancelled = false;
+    (async () => {
+      const response = await storageApi.getFilePreviewUrl(
+        transfer.shortCode,
+        streamTrailerFile.id,
+      );
+      if (cancelled) return;
+
+      // `isWatermarked` is the gate, not a formality. The preview-protection rules forbid showing
+      // an unwatermarked original in a full-size surface, and generation is async after upload, so
+      // `false` is a real state rather than only an error path. 134.3's guard answers 409 when the
+      // clip is missing entirely, which lands here as `response.error`.
+      if (response.error || !response.data?.url || !response.data.isWatermarked) {
+        setTrailerFailed(true);
+        return;
+      }
+      setTrailerUrl(response.data.url);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isStreamTransfer, transfer, streamTrailerFile]);
+
   const handleStreamReadinessRecheck = async () => {
     if (!transfer || isRecheckingStreamStatus) return;
 
@@ -3373,11 +3431,97 @@ export default function TransferLandingPage() {
                   </div>
                 )}
 
-                {/* Preview button — the free trailer (SD-FR6).
-                    Hidden when no watermarked clip exists: preview generation refuses files over
-                    2GB, and 134.3's guard then answers preview/url with 409, so offering it would
-                    be offering an action that cannot succeed (Story 134.8, Finding 9). */}
-                {(!isStreamTransfer || hasTrailer) && (
+                {/* Story 135.1 (D2, AC1) — the free trailer, inline.
+                    SD-FR6 makes the existing 20-second watermarked clip the trailer, and the UX
+                    specification treats it as the entire conversion case for a buyer who has never
+                    heard of the creator — so it plays here rather than in the SideDrawer, which the
+                    cross-cutting playback-surface rule reserves for authenticated creator flows.
+
+                    `preload="none"` because mobile data carries real cost in the target markets: a
+                    trailer that downloads itself before anyone presses play spends the buyer's money
+                    without being asked. `playsInline` because iOS Safari otherwise takes the clip
+                    fullscreen the moment it plays, which is the modal interruption the UX spec
+                    rejects. No autoplay — Flow A has the buyer choosing to watch. */}
+                {isStreamTransfer && hasTrailer && (
+                  <div className="mb-4">
+                    <p className="text-xs font-medium text-gray-400 dark:text-[oklch(0.50_0_0)] mb-2">
+                      {tStreamSale("trailerLabel")}
+                    </p>
+                    {trailerUrl ? (
+                      <video
+                        src={trailerUrl}
+                        controls
+                        playsInline
+                        preload="none"
+                        poster={transfer.coverUrl || undefined}
+                        className="w-full max-w-full rounded bg-black aspect-video"
+                      />
+                    ) : (
+                      <div
+                        className="w-full aspect-video rounded bg-gray-100 dark:bg-[oklch(0.24_0_0)] flex items-center justify-center px-4"
+                        role="status"
+                        aria-live="polite"
+                      >
+                        {trailerFailed ? (
+                          <p className="text-sm text-gray-600 dark:text-[oklch(0.65_0_0)] text-center">
+                            {tStreamSale("trailerUnavailable")}
+                          </p>
+                        ) : (
+                          <LoadingPanel className="py-2" />
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Story 135.1 (D1, AC2) — what the buyer is actually buying, before she commits.
+                    Fee-model principle 1, and the UX specification's central point: these four
+                    sentences are not boilerplate, they are the mechanism that corrects a WhatsApp-
+                    shaped mental model ("download it, then it's mine, offline, forever").
+
+                    Rendered on delivery mode alone, NOT gated on `streamStatus` (D4) — a buyer
+                    looking at a film being prepared is a buyer deciding whether to come back.
+
+                    Deliberately absent: the 30-day wind-down, the automatic refund on revocation,
+                    and anything about deletion. Those mechanisms ship in Epic 136 (136.4/136.5) and
+                    stating them here would publish a promise with nothing enforcing it — the exact
+                    defect readiness finding Q1 corrected once already. */}
+                {isStreamTransfer && (
+                  <div
+                    className="w-full bg-[#FDFAF4] dark:bg-[oklch(0.22_0_0)] rounded p-5 mb-4"
+                    aria-label={tStreamSale("termsTitle")}
+                    role="region"
+                  >
+                    <p className="text-sm font-semibold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-2">
+                      {tStreamSale("termsTitle")}
+                    </p>
+                    <ul className="space-y-2 text-sm text-gray-600 dark:text-[oklch(0.65_0_0)] leading-relaxed">
+                      <li>{tStreamSale("termsStreamOnly")}</li>
+                      <li>{tStreamSale("termsAccess")}</li>
+                      <li>{tStreamSale("termsRefund")}</li>
+                      <li>{tStreamSale("termsFee")}</li>
+                    </ul>
+                    {/* The price renders here as its own element and not only inside the Buy label.
+                        134.8 learned this the hard way: hiding the Buy button removed the price from
+                        the page entirely, because `Buy {price}` was the only place it appeared.
+
+                        Suppressed while the film is being prepared: 134.8's prepared-state block
+                        already carries the price in that state and this story leaves that block
+                        untouched (AC5). The buyer sees the price exactly once either way. */}
+                    {priceDisplay && !isStreamNotReady && (
+                      <p className="text-lg font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mt-3">
+                        {priceDisplay}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Preview button — the drawer path, kept for DOWNLOAD transfers only.
+                    Stream transfers play the trailer inline above (D2). Hidden when no watermarked
+                    clip exists: preview generation refuses files over 2GB, and 134.3's guard then
+                    answers preview/url with 409, so offering it would be offering an action that
+                    cannot succeed (Story 134.8, Finding 9). */}
+                {!isStreamTransfer && (
                   <button
                     onClick={() => {
                       if (transfer) {
@@ -3586,6 +3730,11 @@ export default function TransferLandingPage() {
                 <SaleCheckoutPanel
                   transferId={transfer.id}
                   transferCurrency={transfer.currency || "XOF"}
+                  // Story 135.1 (D3) — lets the panel quote the exact surcharge before paying.
+                  transferPriceMinorUnits={transfer.price}
+                  // ...and publishes it, so the summary card beside it shows the SAME numbers
+                  // from the SAME fetch rather than its own display-currency conversion.
+                  onQuoteChange={setSaleFeeQuote}
                   buyerEmail={saleBuyerEmail}
                   onBack={() => setPageState("sale-preview")}
                   onPaymentInitiated={handleSalePaymentInitiated}
@@ -3611,6 +3760,15 @@ export default function TransferLandingPage() {
                   message={transfer.message}
                   createdAt={transfer.createdAt}
                   versionCount={transfer.versionCount}
+                  // Story 135.1 — same quote the checkout panel is showing, so the two panels
+                  // cannot disagree, and rendered in the charge currency with the viewer's own
+                  // currency beneath it as an approximation.
+                  useChargeCurrency
+                  processingFeeMinorUnits={saleFeeQuote?.processingFeeMinorUnits}
+                  processingFeePercent={saleFeeQuote?.feePercent}
+                  totalAmountMinorUnits={saleFeeQuote?.totalMinorUnits}
+                  settlementAmountMinorUnits={saleFeeQuote?.settlement?.amountMinorUnits}
+                  settlementCurrency={saleFeeQuote?.settlement?.currency}
                 />
               </div>
             </div>

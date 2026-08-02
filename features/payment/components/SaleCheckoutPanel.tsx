@@ -15,6 +15,7 @@ import {
 import { useTranslations } from "next-intl";
 import { PhoneNumberInput } from "@/features/payment/components/PhoneNumberInput";
 import { paymentApi, type PaymentMethodInfo } from "@/services/payment-api";
+import { platformApi, type ProcessingFeeQuote } from "@/services/platform-api";
 import type { MobileMoneyProvider } from "@/features/payment/components/PaymentMethodSelector";
 import type { CountryCode } from "libphonenumber-js";
 import { toast } from "@/components/shared/Toast";
@@ -22,6 +23,8 @@ import { safePaymentRedirect } from "@/utils/security";
 import { Turnstile } from '@marsidev/react-turnstile';
 import { useTurnstile } from "@/hooks/useTurnstile";
 import { setCaptchaToken } from "@/services/api-client";
+import { useCurrencyStore } from "@/stores/currency-store";
+import { convertCurrency, formatCurrencyAmount, type CurrencyCode } from "@/lib/currency";
 
 // Supported countries for payment — matches download page DOWNLOAD_PAYMENT_COUNTRIES
 const PAYMENT_COUNTRIES = [
@@ -37,6 +40,12 @@ const PAYMENT_COUNTRIES = [
 interface SaleCheckoutPanelProps {
   transferId: string;
   transferCurrency: string;
+  /**
+   * Story 135.1 (D3) — the film's price in minor units, needed to quote the processing surcharge
+   * before the gateway is called. Optional so the panel degrades to its previous behaviour rather
+   * than breaking if a caller does not supply it.
+   */
+  transferPriceMinorUnits?: number;
   buyerEmail: string;
   onBack: () => void;
   onPaymentInitiated: (reference: string, isMobileMoney: boolean) => void;
@@ -50,6 +59,15 @@ interface SaleCheckoutPanelProps {
    * page, where the prepared-state block explains it.
    */
   onStreamNotReady?: () => void;
+  /**
+   * Story 135.1 — publishes the fee quote so the sibling TransferSummaryCard can render the SAME
+   * numbers from the SAME fetch. Without this the two panels disagreed on screen: the summary
+   * showed a display-currency conversion ($8.26) while this panel showed the real charge
+   * (5,208.34 Fr CFA).
+   *
+   * Must be a stable reference (a `useState` setter). It is called from inside the quote effect.
+   */
+  onQuoteChange?: (quote: ProcessingFeeQuote | null) => void;
 }
 
 /**
@@ -59,11 +77,13 @@ interface SaleCheckoutPanelProps {
 export function SaleCheckoutPanel({
   transferId,
   transferCurrency,
+  transferPriceMinorUnits,
   buyerEmail,
   onBack,
   onPaymentInitiated,
   getCaptchaToken,
   onStreamNotReady,
+  onQuoteChange,
 }: SaleCheckoutPanelProps) {
   const t = useTranslations("payment");
   const tStreamSale = useTranslations("streamSale");
@@ -114,6 +134,108 @@ export function SaleCheckoutPanel({
       setPhoneCountryCode(selectedCountry.phoneCode);
     }
   }, [selectedCountry.code, selectedCountry.phoneCode]);
+
+  /**
+   * Story 135.1 (D3, AC4) — quote the processing surcharge as soon as country AND method are known.
+   *
+   * Before this, the panel showed no fee at all. A mobile-money buyer met the surcharge on the
+   * `payment-prompt` screen, AFTER initializePayment had created a Transaction; a card buyer was
+   * redirected to Paystack and never saw it inside ZeFile at all. Fee-model principle 1 says the
+   * buyer sees the full total before paying, so it belongs here — the last screen before the money.
+   *
+   * The quote endpoint is read-only: no Transaction, no velocity write, no gateway call. The total
+   * it returns is computed through the same service calls the payment path uses, so it equals the
+   * amount charged to the minor unit.
+   */
+  const [feeQuote, setFeeQuote] = useState<ProcessingFeeQuote | null>(null);
+
+  /**
+   * Which rate the backend will actually apply — found at review (High).
+   *
+   * `PaymentService.initializePayment` narrows to two rates only:
+   *     paymentMethod = request.paymentMethod === 'mobile_money' ? 'mobile_money' : 'card'
+   *
+   * and `handlePay` below sends bank transfer and USSD as `paymentMethod: "card"`. So those two
+   * methods are charged the CARD rate (4% in CI, against 2.95% for mobile money) — and quoting
+   * only for `card`/`mobile_money` left them with no surcharge shown at all, reproducing for two
+   * more methods the exact defect this story exists to close.
+   *
+   * Mirror the backend's narrowing rather than the UI's method list: anything that is not mobile
+   * money is charged the card rate.
+   *
+   * NOTE: whether the card rate is the RIGHT rate for a bank transfer or a USSD push is a separate
+   * question — PROCESSING_FEES has no `{country}.bank_transfer` or `.ussd` key today. Raised as its
+   * own story; this only makes the buyer see what she is already being charged.
+   */
+  const quoteMethod: "mobile_money" | "card" | null = !selectedMethod
+    ? null
+    : selectedMethod.type === "mobile_money"
+      ? "mobile_money"
+      : "card";
+
+  useEffect(() => {
+    if (!quoteMethod || !transferPriceMinorUnits || transferPriceMinorUnits <= 0) {
+      setFeeQuote(null);
+      onQuoteChange?.(null);
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      const response = await platformApi.getProcessingFeeQuote({
+        amountMinorUnits: transferPriceMinorUnits,
+        paymentMethod: quoteMethod,
+        countryCode: selectedCountry.code === "INTL" ? undefined : selectedCountry.code,
+        // The gateway may not support this currency for this country, in which case the payment
+        // path converts and charges the converted amount. Send it so the quote can say so.
+        currency: transferCurrency,
+      });
+      if (cancelled) return;
+      // A failed quote must never block checkout — degrade to the previous behaviour (no breakdown)
+      // rather than stranding a buyer who is ready to pay.
+      const quote = response.error ? null : (response.data ?? null);
+      setFeeQuote(quote);
+      onQuoteChange?.(quote);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+    // `transferCurrency` belongs here: the quote is currency-specific, so a currency change must
+    // re-quote rather than leave a stale settlement block on screen.
+  }, [quoteMethod, transferPriceMinorUnits, selectedCountry.code, transferCurrency, onQuoteChange]);
+
+  /**
+   * Story 135.1 — formats through the SHARED `formatCurrencyAmount`, the same helper
+   * TransferSummaryCard uses, so the two panels on this screen cannot disagree.
+   *
+   * A hand-rolled `${minor / 100} Fr CFA` was rendering "5,208.34 Fr CFA" beside the card's
+   * "5,208 XOF" for the same purchase — different symbol AND different precision. The shared
+   * helper also knows XOF is a zero-decimal currency, so it stops quoting buyers a fractional
+   * franc that cannot be paid.
+   */
+  const formatMinor = (minorUnits: number) =>
+    formatCurrencyAmount(minorUnits / 100, transferCurrency as CurrencyCode);
+
+  /**
+   * Story 135.1 — the buyer's own-currency reference beneath the authoritative total.
+   *
+   * The amount debited is in `transferCurrency`, so that is the headline. But an international
+   * buyer reading "5,208.34 Fr CFA" has no way to judge what she is spending, which is its own
+   * failure of fee-model principle 1 — a total you cannot interpret is not a total you can consent
+   * to. "≈" because this uses approximate client-side rates, never the gateway's.
+   */
+  const { pricing } = useCurrencyStore();
+  const displayCurrency = pricing.currency as CurrencyCode;
+  const approxInDisplayCurrency = (minorUnits: number): string | null => {
+    if (!transferCurrency || transferCurrency === displayCurrency) return null;
+    const converted = convertCurrency(
+      minorUnits / 100,
+      transferCurrency as CurrencyCode,
+      displayCurrency,
+    );
+    return `≈ ${formatCurrencyAmount(converted, displayCurrency)}`;
+  };
 
   const momoMethods = useMemo(
     () => paymentMethods.filter((m) => m.type === "mobile_money"),
@@ -458,6 +580,68 @@ export function SaleCheckoutPanel({
           </div>
         )}
       </div>
+
+      {/* Story 135.1 (D3, AC4) — the exact total, before the gateway.
+          Same three lines and the same labels the `payment-prompt` screen already uses, so a buyer
+          who reaches that screen sees a number she has already been shown rather than a new one.
+          `aria-live` because the total changes when she switches country or method, and a screen
+          reader user must hear that the amount moved. */}
+      {/* Rendered whenever a quote exists, including a 0% rate (review, Low). Gating on
+          `processingFeeMinorUnits > 0` made the whole breakdown — price included — disappear if an
+          admin ever configured a zero or out-of-range rate, which is the opposite of AC4's
+          "price, processing fee and total are shown". A 0 fee line is honest; no line is not. */}
+      {feeQuote && (
+        <div
+          className="bg-gray-50 dark:bg-[oklch(0.24_0_0)] rounded p-4 mb-4 text-sm"
+          role="status"
+          aria-live="polite"
+        >
+          <div className="flex justify-between items-center mb-1">
+            <span className="text-gray-600 dark:text-[oklch(0.65_0_0)]">{t("filePrice")}</span>
+            <span className="font-medium text-[#171717] dark:text-[oklch(0.91_0_0)]">
+              {formatMinor(feeQuote.priceMinorUnits)}
+            </span>
+          </div>
+          <div className="flex justify-between items-center mb-1">
+            <span className="text-gray-500 dark:text-[oklch(0.65_0_0)]">
+              {feeQuote.feePercent
+                ? t("processingFee", {
+                    percent: feeQuote.feePercent.toFixed(feeQuote.feePercent % 1 === 0 ? 0 : 2),
+                  })
+                : t("processingFeeGeneric")}
+            </span>
+            <span className="font-medium text-[#171717] dark:text-[oklch(0.91_0_0)]">
+              {formatMinor(feeQuote.processingFeeMinorUnits)}
+            </span>
+          </div>
+          <div className="flex justify-between items-center pt-2 border-t border-gray-200 dark:border-[oklch(0.30_0_0)]">
+            <span className="text-gray-600 dark:text-[oklch(0.65_0_0)] font-bold">
+              {t("totalCharged")}
+            </span>
+            <span className="flex flex-col items-end">
+              <span className="font-bold text-[#171717] dark:text-[oklch(0.91_0_0)]">
+                {formatMinor(feeQuote.totalMinorUnits)}
+              </span>
+              {approxInDisplayCurrency(feeQuote.totalMinorUnits) && (
+                <span className="text-xs font-normal text-gray-500 dark:text-[oklch(0.60_0_0)]">
+                  {approxInDisplayCurrency(feeQuote.totalMinorUnits)}
+                </span>
+              )}
+            </span>
+          </div>
+          {/* The buyer's gateway cannot charge this currency, so the payment path converts and
+              charges the converted amount. Without this line the total above is a number she will
+              never be charged — the Critical found at review, which hits Togo, Benin and Senegal,
+              three of the markets ZeFile is built for. */}
+          {feeQuote.settlement && (
+            <p className="text-xs text-gray-500 dark:text-[oklch(0.60_0_0)] mt-2">
+              {t("chargedAs", {
+                amount: `${(feeQuote.settlement.amountMinorUnits / 100).toLocaleString()} ${feeQuote.settlement.currency}`,
+              })}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Action Buttons */}
       <div className="flex gap-3 mb-4">

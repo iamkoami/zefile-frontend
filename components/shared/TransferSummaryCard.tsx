@@ -26,6 +26,26 @@ export interface TransferSummaryCardProps {
   processingFeePercent?: number;
   /** Total charged to buyer in minor units (price + processing fee) */
   totalAmountMinorUnits?: number;
+  /**
+   * Story 135.1 — checkout mode. Amounts render in the transfer's OWN currency (the one that will
+   * be debited) with the viewer's display currency shown beneath the total as a clearly-marked
+   * approximation.
+   *
+   * Both are needed and neither alone is enough: the charge currency is the only honest headline
+   * on a screen with a Pay button, but an international buyer who thinks in dollars cannot judge
+   * "5,208 Fr CFA" without it. Defaults false, so browsing call sites are unchanged.
+   */
+  useChargeCurrency?: boolean;
+  /**
+   * Story 135.1 — the gateway settlement amount, when the buyer's gateway cannot charge the
+   * transfer currency natively (Togo/Benin/Senegal route to Startbutton, which has no XOF).
+   *
+   * Must be passed wherever the checkout panel shows it: with it on one panel and not the other,
+   * a Togolese buyer sees two totals and only one of them mentions that she is actually charged
+   * in GHS — which is the same two-panels-disagree defect this card was just fixed for.
+   */
+  settlementAmountMinorUnits?: number;
+  settlementCurrency?: string;
 }
 
 /**
@@ -46,6 +66,9 @@ export function TransferSummaryCard({
   processingFeeMinorUnits,
   processingFeePercent,
   totalAmountMinorUnits,
+  useChargeCurrency = false,
+  settlementAmountMinorUnits,
+  settlementCurrency,
 }: TransferSummaryCardProps) {
   const t = useTranslations("payment");
   const { pricing } = useCurrencyStore();
@@ -59,6 +82,17 @@ export function TransferSummaryCard({
     // Amount is in minor units, convert to major units first
     const majorUnits = amount / 100;
 
+    // Story 135.1 — at checkout, money is shown in the currency that DETERMINES THE CHARGE.
+    //
+    // The display-currency toggle is a browsing convenience backed by approximate client-side
+    // rates with a hardcoded fallback table (`lib/currency.ts` getCurrentRates). That is fine for
+    // scanning a page; it is not fine as the headline figure on a screen with a Pay button. The
+    // buyer's card is debited the transfer's own currency, and this card was rendering "$8.26"
+    // beside a checkout panel reading "5,208.34 Fr CFA" for the same purchase.
+    if (useChargeCurrency) {
+      return formatCurrencyAmount(majorUnits, originalCurrency as CurrencyCode);
+    }
+
     // Convert to display currency if different
     if (originalCurrency !== displayCurrency) {
       const convertedAmount = convertCurrency(
@@ -71,6 +105,27 @@ export function TransferSummaryCard({
 
     // Same currency, just format
     return formatCurrencyAmount(majorUnits, originalCurrency as CurrencyCode);
+  };
+
+  /**
+   * Story 135.1 — the buyer's own-currency reference, beneath the authoritative charge amount.
+   *
+   * An international buyer thinking in dollars cannot judge "5,208 Fr CFA"; the charge currency
+   * alone is honest but unreadable to her. Returns null when it would add nothing (same currency,
+   * or not in checkout mode) so the line never appears as noise.
+   *
+   * Marked with "≈" deliberately: this comes from approximate client-side rates
+   * (`lib/currency.ts`), NOT from the gateway. It is a reference, never the amount charged.
+   */
+  const approxInDisplayCurrency = (amount: number, originalCurrency: string): string | null => {
+    if (!useChargeCurrency) return null;
+    if (originalCurrency === displayCurrency) return null;
+    const converted = convertCurrency(
+      amount / 100,
+      originalCurrency as CurrencyCode,
+      displayCurrency,
+    );
+    return `≈ ${formatCurrencyAmount(converted, displayCurrency)}`;
   };
 
   const formatFileSize = (bytes: number): string => {
@@ -180,19 +235,46 @@ export function TransferSummaryCard({
             <span className="font-bold text-[#171717] dark:text-[oklch(0.91_0_0)]">
               {t("totalCharged")}
             </span>
-            <span className="text-xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)]">
-              {formatAmount(
+            <span className="flex flex-col items-end">
+              <span className="text-xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)]">
+                {formatAmount(
+                  totalAmountMinorUnits || price + processingFeeMinorUnits,
+                  currency,
+                )}
+              </span>
+              {approxInDisplayCurrency(
                 totalAmountMinorUnits || price + processingFeeMinorUnits,
                 currency,
+              ) && (
+                <span className="text-sm font-normal text-gray-500 dark:text-[oklch(0.60_0_0)]">
+                  {approxInDisplayCurrency(
+                    totalAmountMinorUnits || price + processingFeeMinorUnits,
+                    currency,
+                  )}
+                </span>
               )}
             </span>
           </div>
+          {settlementCurrency && settlementAmountMinorUnits != null && (
+            <p className="text-xs text-gray-500 dark:text-[oklch(0.60_0_0)] pt-1">
+              {t("chargedAs", {
+                amount: `${(settlementAmountMinorUnits / 100).toLocaleString()} ${settlementCurrency}`,
+              })}
+            </p>
+          )}
         </div>
       ) : (
         <div className="flex items-center justify-between pt-4 border-t border-[#E8E0D5] dark:border-[oklch(0.30_0_0)]">
           <span className="font-bold text-[#171717] dark:text-[oklch(0.91_0_0)]">{t("total")}</span>
-          <span className="text-xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)]">
-            {price > 0 ? formatAmount(price, currency) : t("freeTransfer")}
+          <span className="flex flex-col items-end">
+            <span className="text-xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)]">
+              {price > 0 ? formatAmount(price, currency) : t("freeTransfer")}
+            </span>
+            {price > 0 && approxInDisplayCurrency(price, currency) && (
+              <span className="text-sm font-normal text-gray-500 dark:text-[oklch(0.60_0_0)]">
+                {approxInDisplayCurrency(price, currency)}
+              </span>
+            )}
           </span>
         </div>
       )}

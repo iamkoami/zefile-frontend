@@ -791,7 +791,8 @@
     "youReceive": "Vous recevez",
     "platformFeePercent": "Frais plateforme ({percent}%)",
     "buyerPaysEstimate": "L'acheteur paie ~{amount} (dont ~{fee} de frais de traitement)",
-    "payoutFeeNote": "Des frais de retrait de {percent}% s'appliquent au retrait."
+    "payoutFeeNote": "Des frais de retrait de {percent}% s'appliquent au retrait.",
+    "chargedAs": "Débité autour de {amount} par votre opérateur de paiement."
   },
   "transfers": {
     "title": "Transferts",
@@ -3508,6 +3509,13 @@
     "checkAgain": "Actualiser",
     "checking": "Vérification...",
     "nowAvailable": "C'est prêt : vous pouvez l'acheter.",
-    "notReady": "Ce film n'est pas encore en vente. Laissez-lui quelques minutes et réessayez."
+    "notReady": "Ce film n'est pas encore en vente. Laissez-lui quelques minutes et réessayez.",
+    "termsTitle": "Ce que vous obtenez",
+    "termsStreamOnly": "Ce film se regarde ici, dans votre navigateur. Il n'y a pas de fichier à télécharger, ni de copie hors ligne.",
+    "termsAccess": "Votre accès reste valable tant que le film est en ligne. L'abonnement du créateur n'y change rien.",
+    "termsRefund": "Vous l'avez acheté sans jamais le regarder ? Ce n'est pas remboursable. En revanche, si la lecture ne marche pas de notre côté, vous êtes remboursé.",
+    "termsFee": "Des frais de paiement s'ajoutent selon le moyen que vous choisissez. Le montant exact s'affiche avant le paiement.",
+    "trailerLabel": "Aperçu gratuit",
+    "trailerUnavailable": "L'aperçu n'est pas encore prêt. Revenez dans quelques minutes."
   }
 }
