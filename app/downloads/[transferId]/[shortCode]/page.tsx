@@ -486,6 +486,28 @@ export default function TransferLandingPage() {
   const [saleCheckingEmail, setSaleCheckingEmail] = useState(false);
   const [saleVerifyingOtp, setSaleVerifyingOtp] = useState(false);
   const saleVerifyAttemptedRef = useRef(false);
+  /**
+   * Story 143.1 — mobile money claims its token from a polling success rather than a redirect, so
+   * it needs its own guard. Keyed on the reference, not a boolean: a shared flag meant whichever
+   * effect ran first permanently blocked the other, and a failed claim had no way back.
+   */
+  const momoClaimAttemptedRef = useRef<string | null>(null);
+  const isMountedRef = useRef(true);
+  /**
+   * Whether the mobile-money buyer's download token has been obtained. The success screen must not
+   * offer a download action until it has — handleSaleDownload() returns silently without a token,
+   * which renders as a button that does nothing.
+   */
+  const [saleClaimState, setSaleClaimState] = useState<
+    "idle" | "claiming" | "ready" | "failed"
+  >("idle");
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
   // Story 134.8 — in-flight guard for the manual readiness re-check.
   const [isRecheckingStreamStatus, setIsRecheckingStreamStatus] = useState(false);
 
@@ -776,35 +798,132 @@ export default function TransferLandingPage() {
     }
   }, [shortCode, transferId, t]);
 
-  // Handle Paystack callback for public sales (URL has ?reference=xxx&trxref=xxx)
+  /**
+   * Story 143.1 — exchange a settled payment reference for the buyer's download token.
+   *
+   * Shared by BOTH post-payment paths, which is the point. The redirect flow (card, bank transfer,
+   * USSD) comes back to `?reference=…` and the effect below calls this. Mobile money never
+   * redirects, so before this story it never reached a token fetch at all: its success handler
+   * called handleDownload(), which sends no saleToken, and the public-sales download gate answered
+   * 401 "Download token required for public sales transfers." Two copies of this logic would drift
+   * and only one of them would ever be exercised.
+   *
+   * Returns true once the token is in hand.
+   */
+  const claimSaleDownloadToken = useCallback(
+    async (reference: string): Promise<boolean> => {
+      // The token is written by confirmSale(), which runs fire-and-forget from the gateway webhook.
+      // The payment can therefore be settled a moment before the session is. verifySaleAndGetToken
+      // answers SALE_SETTLEMENT_PENDING in that window — a DIFFERENT answer from the 404 that means
+      // no session exists. Falling through to sale-expired on it would show a paying buyer
+      // "expired" plus a Buy again button, which is the very defect this story removes.
+      //
+      // Keyed on the error CODE, not the message text. Matching prose made a user-facing string
+      // load-bearing for retry logic, with nothing to warn whoever next reworded it.
+      const RETRY_DELAYS_MS = [1000, 2000, 4000, 8000];
+
+      // `transfer.shortCode`, NOT the route param. The route param carries the `z-` prefix when a
+      // buyer arrives through a short link (`/downloads` builds `shortCodeWithPrefix`), and
+      // verifySaleAndGetToken compares it to the stored code with `!==` — so a prefixed value 404s
+      // and the buyer is shown "sale-expired" despite having paid. The API-supplied value is the
+      // raw code, which is what every other call on this page already sends
+      // (recoverPurchase, verifyRecovery, streamZipDownload). Found by walking it in a browser;
+      // no test or type would have caught it.
+      const apiShortCode = transfer?.shortCode ?? shortCode;
+
+      for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+        if (!isMountedRef.current) return false;
+
+        try {
+          const response = await transferApi.verifyPurchase(
+            apiShortCode,
+            reference,
+          );
+          if (!isMountedRef.current) return false;
+
+          if (!response.error && response.data) {
+            setSaleDownloadToken(response.data.downloadToken);
+            return true;
+          }
+
+          const stillSettling =
+            response.error?.code === "SALE_SETTLEMENT_PENDING";
+          if (!stillSettling || attempt === RETRY_DELAYS_MS.length) return false;
+
+          await new Promise((resolve) =>
+            setTimeout(resolve, RETRY_DELAYS_MS[attempt]),
+          );
+        } catch {
+          return false;
+        }
+      }
+
+      return false;
+    },
+    [shortCode, transfer?.shortCode],
+  );
+
+  // Handle gateway redirect callback for public sales (URL has ?reference=xxx&trxref=xxx)
   useEffect(() => {
     if (!transfer?.isPublicSales) return;
     if (saleVerifyAttemptedRef.current) return;
 
-    const reference = searchParams.get("reference") || searchParams.get("trxref");
+    // `ref` is the buyer receipt's parameter name (sale-sessions.service.ts builds
+    // `/{prefix}{shortCode}?ref={reference}`); `reference`/`trxref` are what gateways return on
+    // redirect. All three name the same thing, and the receipt link is the recovery path a paying
+    // buyer is most likely to use, so it must be honoured here.
+    const reference =
+      searchParams.get("reference") ||
+      searchParams.get("trxref") ||
+      searchParams.get("ref");
     if (!reference) return;
 
     // Guard: prevent double-execution on re-renders
     saleVerifyAttemptedRef.current = true;
     setPageState("sale-processing");
 
-    const verifyPayment = async () => {
-      try {
-        const response = await transferApi.verifyPurchase(shortCode, reference);
-        if (!response.error && response.data) {
-          setSaleDownloadToken(response.data.downloadToken);
-          setPageState("sale-ready");
-        } else {
-          // Token expired or payment failed
-          setPageState("sale-expired");
-        }
-      } catch {
-        setPageState("sale-expired");
-      }
-    };
+    claimSaleDownloadToken(reference).then((claimed) => {
+      // Same unmount guard as the mobile-money effect below — both call the same async claim,
+      // and applying the pattern to only one of them is how it rots.
+      if (!isMountedRef.current) return;
+      setPageState(claimed ? "sale-ready" : "sale-expired");
+    });
+  }, [transfer, shortCode, searchParams, claimSaleDownloadToken]);
 
-    verifyPayment();
-  }, [transfer, shortCode, searchParams]);
+  /**
+   * Story 143.1 — the mobile-money half of the same thing.
+   *
+   * Mobile money stays on the page and polls, so it has a settled payment and no redirect. Once
+   * polling reports success on a public-sales transfer, fetch the token the same way the redirect
+   * path does, so the download action below can send a saleToken instead of 401ing.
+   */
+  useEffect(() => {
+    if (!transfer?.isPublicSales) return;
+    if (pageState !== "payment-prompt") return;
+    if (pollingStatus !== "success") return;
+    if (!paymentReference) return;
+    if (saleDownloadToken) return;
+    // Keyed on the reference rather than a shared boolean: the redirect effect and this one are
+    // distinct events, and a single flag let whichever ran first permanently block the other.
+    if (momoClaimAttemptedRef.current === paymentReference) return;
+
+    momoClaimAttemptedRef.current = paymentReference;
+    setSaleClaimState("claiming");
+    claimSaleDownloadToken(paymentReference).then((claimed) => {
+      if (!isMountedRef.current) return;
+      // The outcome is NOT discarded. Without this the button below renders "ready to download"
+      // while handleSaleDownload() returns silently for want of a token — a dead button with no
+      // feedback, on the payment method this story exists to fix.
+      setSaleClaimState(claimed ? "ready" : "failed");
+    });
+  }, [
+    transfer,
+    pageState,
+    pollingStatus,
+    paymentReference,
+    saleDownloadToken,
+    claimSaleDownloadToken,
+  ]);
 
   // Update page title when transfer is loaded
   useEffect(() => {
@@ -2618,9 +2737,48 @@ export default function TransferLandingPage() {
                 <div className="space-y-2">
                   {isSuccess && (
                     <>
+                      {/*
+                        Story 143.1 — on a public sale the token is claimed asynchronously after
+                        polling reports success, because confirmSale() runs from the webhook and
+                        can lag. Until it lands, say so; handleSaleDownload() without a token
+                        returns silently, which reads as a button that does nothing.
+                      */}
+                      {transfer?.isPublicSales && saleClaimState === "claiming" && (
+                        <p
+                          aria-live="polite"
+                          className="text-xs text-gray-500 dark:text-[oklch(0.65_0_0)] text-center mb-2"
+                        >
+                          {tSale("preparingDownload")}
+                        </p>
+                      )}
+                      {transfer?.isPublicSales && saleClaimState === "failed" && (
+                        <p
+                          aria-live="polite"
+                          className="text-xs text-yellow-700 dark:text-yellow-400 text-center mb-2"
+                        >
+                          {/*
+                            Deliberately NOT downloadExpiredHint, which reads "you can buy again".
+                            This buyer has already paid. Telling them to pay again is the
+                            double-charge invitation Finding 4 records as a defect — it must not be
+                            introduced by the copy on the very state this story added.
+                          */}
+                          {tSale("downloadDelayed")}
+                        </p>
+                      )}
                       <button
-                        onClick={handleDownload}
-                        disabled={isDownloading}
+                        onClick={
+                          // Story 143.1 — a public-sales transfer authorises downloads ONLY by
+                          // saleToken (storage.controller has no payment-based fallback on that
+                          // branch), so this path must use handleSaleDownload. handleDownload
+                          // sends { sessionToken, email } and earns a 401 here.
+                          transfer?.isPublicSales ? handleSaleDownload : handleDownload
+                        }
+                        disabled={
+                          isDownloading ||
+                          // Never offer an action that cannot succeed: without a token
+                          // handleSaleDownload() is a no-op with no feedback.
+                          (!!transfer?.isPublicSales && !saleDownloadToken)
+                        }
                         className="w-full px-6 py-3.5 bg-[#87E64B] text-[#171717] font-medium rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                       >
                         <Download className="w-5 h-5" />

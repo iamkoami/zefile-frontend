@@ -634,6 +634,8 @@
     "downloadReady": "Votre téléchargement est prêt.",
     "downloadExpired": "Ce lien de téléchargement a expiré.",
     "downloadExpiredHint": "Pas de souci — vous pouvez acheter à nouveau pour obtenir un nouveau lien.",
+    "preparingDownload": "Paiement confirmé. On prépare votre téléchargement...",
+    "downloadDelayed": "Votre paiement est bien passé — c'est le téléchargement qui coince. Actualisez la page, ou utilisez le lien reçu par e-mail.",
     "buyAgain": "Acheter à nouveau",
     "enterEmail": "Entrez votre email pour continuer",
     "continue": "Continuer",
