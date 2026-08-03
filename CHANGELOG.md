@@ -5,6 +5,19 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.63.2] - 2026-08-03
+
+### Fixed
+
+- **A buyer waiting on a mobile money prompt was shown no price at all.** On a public sale, the screen that asks you to approve the payment on your phone is handed only the payment's reference — never the price, the fee or the total — so its money breakdown rendered an empty "Amount" row beside an otherwise complete summary. It now carries the figures from the payment that was actually created, rather than from the estimate shown a moment earlier, which could still be describing the previous country if the buyer changed it just before paying. (`app/downloads/[transferId]/[shortCode]/page.tsx`, `features/payment/components/SaleCheckoutPanel.tsx`)
+- **Where a purchase is converted before it is charged, only one of the two panels said so.** Buyers in Togo, Benin and Senegal are charged in another currency, and the summary card showed the converted amount only when a processing fee also happened to be present — so on a sale with no fee, the panel on the left disclosed the conversion and the card on the right did not, for the same purchase. The line is no longer tied to the fee. (`components/shared/TransferSummaryCard.tsx`, `app/downloads/[transferId]/[shortCode]/page.tsx`)
+- **Amounts on the payment screen were converted twice over.** The summary beside a payment in progress showed the total in whichever currency the viewer had selected for browsing, using approximate rates, while the panel next to it showed the currency actually being charged — two different figures for one purchase. The charged currency is now the headline on that screen, with the viewer's own currency beneath it as a clearly marked approximation, matching the checkout. (`app/downloads/[transferId]/[shortCode]/page.tsx`)
+
+### Changed
+
+- Converted amounts are now displayed exactly as the server formats them, instead of being divided by a hundred on the page. That division is only correct for currencies that have a smaller unit, and several of the ones ZeFile handles do not. (`components/shared/TransferSummaryCard.tsx`, `features/payment/components/SaleCheckoutPanel.tsx`, `services/payment-api.ts`, `services/platform-api.ts`)
+- Prices on the payment screen are formatted by the same shared helper as the rest of the checkout, so a CFA amount reads the same way there as it does on the invoice and in the emails. (`app/downloads/[transferId]/[shortCode]/page.tsx`)
+
 ## [1.63.1] - 2026-08-02
 
 ### Fixed
