@@ -14,7 +14,11 @@ import {
 } from "iconoir-react";
 import { useTranslations } from "next-intl";
 import { PhoneNumberInput } from "@/features/payment/components/PhoneNumberInput";
-import { paymentApi, type PaymentMethodInfo } from "@/services/payment-api";
+import {
+  paymentApi,
+  type PaymentMethodInfo,
+  type InitializePaymentV2Response,
+} from "@/services/payment-api";
 import { platformApi, type ProcessingFeeQuote } from "@/services/platform-api";
 import type { MobileMoneyProvider } from "@/features/payment/components/PaymentMethodSelector";
 import type { CountryCode } from "libphonenumber-js";
@@ -48,7 +52,22 @@ interface SaleCheckoutPanelProps {
   transferPriceMinorUnits?: number;
   buyerEmail: string;
   onBack: () => void;
-  onPaymentInitiated: (reference: string, isMobileMoney: boolean) => void;
+  /**
+   * Story 144.1 — `payment` is the AUTHORITATIVE initialize response, and callers must render money
+   * from it rather than from the fee quote they already hold.
+   *
+   * The quote is re-fetched asynchronously whenever the buyer changes country, the effect does not
+   * clear the previous quote while that request is in flight, and the Pay button is not gated on it
+   * settling. So a buyer who switches from Togo to Côte d'Ivoire and pays quickly can initialize
+   * against the NEW country while the quote in state still describes the OLD one — a total and a
+   * settlement line that have nothing to do with what was charged. Passing the response closes that
+   * race by construction. Found at cross-model review.
+   */
+  onPaymentInitiated: (
+    reference: string,
+    isMobileMoney: boolean,
+    payment?: InitializePaymentV2Response,
+  ) => void;
   /** Optional: parent's Turnstile getToken to avoid duplicate widgets on same page. */
   getCaptchaToken?: () => Promise<string | null>;
   /**
@@ -312,7 +331,7 @@ export function SaleCheckoutPanel({
         }
 
         if (response.data) {
-          onPaymentInitiated(response.data.reference, true);
+          onPaymentInitiated(response.data.reference, true, response.data);
         }
       } else if (selectedMethod.type === "card") {
         setCaptchaToken(await getTurnstileToken());
@@ -330,7 +349,7 @@ export function SaleCheckoutPanel({
         }
 
         if (response.data?.authorizationUrl) {
-          onPaymentInitiated(response.data.reference, false);
+          onPaymentInitiated(response.data.reference, false, response.data);
           safePaymentRedirect(response.data.authorizationUrl);
         }
       } else {
@@ -359,7 +378,7 @@ export function SaleCheckoutPanel({
         }
 
         if (response.data?.authorizationUrl) {
-          onPaymentInitiated(response.data.reference, false);
+          onPaymentInitiated(response.data.reference, false, response.data);
           safePaymentRedirect(response.data.authorizationUrl);
         }
       }
@@ -636,7 +655,11 @@ export function SaleCheckoutPanel({
           {feeQuote.settlement && (
             <p className="text-xs text-gray-500 dark:text-[oklch(0.60_0_0)] mt-2">
               {t("chargedAs", {
-                amount: `${(feeQuote.settlement.amountMinorUnits / 100).toLocaleString()} ${feeQuote.settlement.currency}`,
+                // Story 144.1 — prefer the backend's formatting; the local `/100` is only right
+                // while every currency the gateway settles in is two-decimal.
+                amount:
+                  feeQuote.settlement.displayAmount ??
+                  `${(feeQuote.settlement.amountMinorUnits / 100).toLocaleString()} ${feeQuote.settlement.currency}`,
               })}
             </p>
           )}

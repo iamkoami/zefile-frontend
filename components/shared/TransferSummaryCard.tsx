@@ -46,6 +46,12 @@ export interface TransferSummaryCardProps {
    */
   settlementAmountMinorUnits?: number;
   settlementCurrency?: string;
+  /**
+   * Story 144.1 — the settlement amount as the BACKEND formatted it, in the settlement currency.
+   * Preferred over the local `/100`, which is only right while every currency the gateway settles
+   * in happens to be two-decimal. Falls back when an older API does not send it.
+   */
+  settlementDisplayAmount?: string;
 }
 
 /**
@@ -69,6 +75,7 @@ export function TransferSummaryCard({
   useChargeCurrency = false,
   settlementAmountMinorUnits,
   settlementCurrency,
+  settlementDisplayAmount,
 }: TransferSummaryCardProps) {
   const t = useTranslations("payment");
   const { pricing } = useCurrencyStore();
@@ -255,13 +262,6 @@ export function TransferSummaryCard({
               )}
             </span>
           </div>
-          {settlementCurrency && settlementAmountMinorUnits != null && (
-            <p className="text-xs text-gray-500 dark:text-[oklch(0.60_0_0)] pt-1">
-              {t("chargedAs", {
-                amount: `${(settlementAmountMinorUnits / 100).toLocaleString()} ${settlementCurrency}`,
-              })}
-            </p>
-          )}
         </div>
       ) : (
         <div className="flex items-center justify-between pt-4 border-t border-[#E8E0D5] dark:border-[oklch(0.30_0_0)]">
@@ -277,6 +277,28 @@ export function TransferSummaryCard({
             )}
           </span>
         </div>
+      )}
+
+      {/*
+        Story 144.1 — OUTSIDE the fee ternary, deliberately.
+
+        This line used to sit inside the `processingFeeMinorUnits > 0` branch, so a converted payment
+        with a legitimately DB-configured 0% processing rate took the else branch and the conversion
+        was never disclosed at all — while the payment panel beside this card still showed it. Two
+        panels, one purchase, and only one of them mentioning that the buyer is debited in another
+        currency: the exact defect the settlement props above were added to prevent.
+
+        Found at cross-model review. `SaleCheckoutPanel` had already hit and fixed the same
+        truthiness trap in its own breakdown; the lesson had not been carried into this shared card.
+      */}
+      {settlementCurrency && settlementAmountMinorUnits != null && (
+        <p className="text-xs text-gray-500 dark:text-[oklch(0.60_0_0)] pt-2">
+          {t("chargedAs", {
+            amount:
+              settlementDisplayAmount ??
+              `${(settlementAmountMinorUnits / 100).toLocaleString()} ${settlementCurrency}`,
+          })}
+        </p>
       )}
     </div>
   );

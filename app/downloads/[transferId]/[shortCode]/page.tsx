@@ -51,7 +51,11 @@ import ToastContainer from "@/components/shared/Toast";
 import { TransferSummaryCard } from "@/components/shared/TransferSummaryCard";
 import { transferApi, TransferDto } from "@/services/transfer-api";
 import { platformApi } from "@/services/platform-api";
-import { paymentApi, type PaymentMethodInfo } from "@/services/payment-api";
+import {
+  paymentApi,
+  type PaymentMethodInfo,
+  type InitializePaymentV2Response,
+} from "@/services/payment-api";
 import { storageApi } from "@/services/storage-api";
 import { authApi } from "@/services/auth-api";
 import { toast } from "@/components/shared/Toast";
@@ -86,6 +90,20 @@ import {
   trackEvent,
   AnalyticsEventType,
 } from "@/lib/posthog";
+import { formatCurrencyAmount, type CurrencyCode } from "@/lib/currency";
+
+/**
+ * Story 144.1 — the same shared formatter `SaleCheckoutPanel` and `TransferSummaryCard` use, so
+ * the checkout screens cannot describe one purchase three different ways.
+ *
+ * It replaces four hand-rolled `${minor / 100} ${currency === "XOF" ? "Fr CFA" : currency}` strings
+ * on the payment-prompt screen. The division is unchanged and deliberately so: whether XOF minor
+ * units are stored at a one- or two-decimal scale is Story 144.2's question, not this one's. Only
+ * the symbol moves ("Fr CFA" to "F CFA"), which brings this screen into line with the invoice PDF
+ * and the money emails.
+ */
+const formatMinor = (minorUnits: number, currency?: string): string =>
+  formatCurrencyAmount(minorUnits / 100, (currency || "XOF") as CurrencyCode);
 
 // Helper to extract sender email from senderId
 const getSenderEmail = (transfer: TransferDto): string | undefined => {
@@ -437,6 +455,17 @@ export default function TransferLandingPage() {
   const [processingFee, setProcessingFee] = useState(0);
   const [processingFeePercent, setProcessingFeePercent] = useState(0);
   const [totalAmountCharged, setTotalAmountCharged] = useState(0);
+  /**
+   * Story 144.1 — the gateway amount for a converted payment (Togo/Benin/Senegal route to
+   * Startbutton, which cannot charge XOF). `totalAmountCharged` is what the purchase costs in the
+   * transfer's own currency; this is what the buyer's provider actually debits. Without it the
+   * total on this screen is a figure she will never be charged, which is the defect this closes.
+   */
+  const [paymentSettlement, setPaymentSettlement] = useState<{
+    currency: string;
+    amountMinorUnits: number;
+    displayAmount?: string;
+  } | null>(null);
 
   // Payment block (admin can disable all payments)
   // null = not yet checked, true = disabled, false = enabled
@@ -1550,6 +1579,7 @@ export default function TransferLandingPage() {
             response.data.totalAmountMinorUnits ||
               response.data.pricingAmountMinorUnits,
           );
+          setPaymentSettlement(response.data.settlement ?? null);
           setPageState("payment-prompt");
         }
       } catch {
@@ -1590,6 +1620,7 @@ export default function TransferLandingPage() {
             response.data.totalAmountMinorUnits ||
               response.data.pricingAmountMinorUnits,
           );
+          setPaymentSettlement(response.data.settlement ?? null);
         }
 
         if (response.data?.authorizationUrl) {
@@ -1836,8 +1867,46 @@ export default function TransferLandingPage() {
   };
 
   // Called by SaleCheckoutPanel after payment is initialized
-  const handleSalePaymentInitiated = (reference: string, isMobileMoney: boolean) => {
+  const handleSalePaymentInitiated = (
+    reference: string,
+    isMobileMoney: boolean,
+    payment?: InitializePaymentV2Response,
+  ) => {
     setPaymentReference(reference);
+    /**
+     * Story 144.1 — carry the money across to the payment-prompt screen.
+     *
+     * This is the THIRD route into `payment-prompt` and the one a public-sale buyer actually takes.
+     * It set only the reference, so that screen rendered an empty "Amount" row and no breakdown at
+     * all — the same panel the other two routes populate. Found by walking the flow in a browser;
+     * no test would have caught a row that renders blank.
+     *
+     * PREFER THE INITIALIZE RESPONSE over `saleFeeQuote`, which is what this first did. The quote is
+     * re-fetched asynchronously on country change without being cleared in the meantime, and the Pay
+     * button is not gated on it settling — so a buyer who switches Togo to Côte d'Ivoire and pays
+     * quickly could be shown the previous country's total and settlement while being charged for the
+     * new one. The response is by definition the payment that was actually created. The quote stays
+     * only as a fallback for an older API that does not return the fee fields. Raised at review.
+     */
+    const money = payment?.totalAmountMinorUnits != null ? payment : null;
+    if (money) {
+      setPaymentAmount(money.pricingAmountMinorUnits);
+      setProcessingFee(money.processingFeeMinorUnits ?? 0);
+      setProcessingFeePercent(money.processingFeePercent ?? 0);
+      setTotalAmountCharged(money.totalAmountMinorUnits ?? money.pricingAmountMinorUnits);
+      setPaymentSettlement(money.settlement ?? null);
+    } else if (saleFeeQuote) {
+      setPaymentAmount(saleFeeQuote.priceMinorUnits);
+      setProcessingFee(saleFeeQuote.processingFeeMinorUnits);
+      setProcessingFeePercent(saleFeeQuote.feePercent);
+      setTotalAmountCharged(saleFeeQuote.totalMinorUnits);
+      setPaymentSettlement(saleFeeQuote.settlement ?? null);
+    } else {
+      // Neither source available. Clear rather than leave a previous attempt's numbers on screen:
+      // a stale settlement line naming a currency this payment does not convert to is worse than
+      // no line at all, and this screen is reachable more than once per session. Raised by audit.
+      setPaymentSettlement(null);
+    }
     if (isMobileMoney) {
       // Mobile money: transition to polling state
       setPageState("payment-prompt");
@@ -2685,7 +2754,7 @@ export default function TransferLandingPage() {
                         </span>
                         <span className="font-medium text-[#171717] dark:text-[oklch(0.91_0_0)]">
                           {paymentAmount
-                            ? `${(paymentAmount / 100).toLocaleString()} ${transfer?.currency === "XOF" ? "Fr CFA" : transfer?.currency || ""}`
+                            ? formatMinor(paymentAmount, transfer?.currency)
                             : ""}
                         </span>
                       </div>
@@ -2700,7 +2769,7 @@ export default function TransferLandingPage() {
                             : tPayment("processingFeeGeneric")}
                         </span>
                         <span className="font-medium text-[#171717] dark:text-[oklch(0.91_0_0)]">
-                          {`${(processingFee / 100).toLocaleString()} ${transfer?.currency === "XOF" ? "Fr CFA" : transfer?.currency || ""}`}
+                          {formatMinor(processingFee, transfer?.currency)}
                         </span>
                       </div>
                       <div className="flex justify-between items-center pt-1 border-t border-gray-200 dark:border-[oklch(0.30_0_0)]">
@@ -2708,7 +2777,7 @@ export default function TransferLandingPage() {
                           {tPayment("totalCharged")}
                         </span>
                         <span className="font-bold text-[#171717] dark:text-[oklch(0.91_0_0)]">
-                          {`${(totalAmountCharged / 100).toLocaleString()} ${transfer?.currency === "XOF" ? "Fr CFA" : transfer?.currency || ""}`}
+                          {formatMinor(totalAmountCharged, transfer?.currency)}
                         </span>
                       </div>
                     </>
@@ -2718,11 +2787,25 @@ export default function TransferLandingPage() {
                         {tPayment("amount")}
                       </span>
                       <span className="font-bold text-[#171717] dark:text-[oklch(0.91_0_0)]">
-                        {paymentAmount
-                          ? `${(paymentAmount / 100).toLocaleString()} ${transfer?.currency === "XOF" ? "Fr CFA" : transfer?.currency || ""}`
-                          : ""}
+                        {paymentAmount ? formatMinor(paymentAmount, transfer?.currency) : ""}
                       </span>
                     </div>
+                  )}
+                  {/* Story 144.1 — the buyer's gateway cannot charge this currency, so the payment
+                      path converts and debits the converted amount. Without this line the total
+                      above is a number she will never be charged. Same copy and placement as the
+                      sale checkout, so the two screens agree.
+
+                      OUTSIDE the fee ternary on purpose: a 0% processing rate takes the else branch,
+                      and a converted payment with no surcharge still converts. */}
+                  {paymentSettlement && (
+                    <p className="text-xs text-gray-500 dark:text-[oklch(0.60_0_0)] pt-1">
+                      {tPayment("chargedAs", {
+                        amount:
+                          paymentSettlement.displayAmount ??
+                          `${(paymentSettlement.amountMinorUnits / 100).toLocaleString()} ${paymentSettlement.currency}`,
+                      })}
+                    </p>
                   )}
                 </div>
 
@@ -2865,6 +2948,19 @@ export default function TransferLandingPage() {
                     processingFeeMinorUnits={processingFee}
                     processingFeePercent={processingFeePercent}
                     totalAmountMinorUnits={totalAmountCharged}
+                    // Story 144.1 — the charge currency is the headline here for the same reason it
+                    // is on the sale checkout (135.1): this screen has a payment in flight, and the
+                    // card was rendering "$8.52" from approximate client-side rates beside the
+                    // panel's authoritative "5,152 XOF" for the one purchase. Seen in a browser.
+                    useChargeCurrency
+                    // Story 144.1 — this card and the payment panel beside it show the same total,
+                    // so both must name the settlement or neither does. With it on one and not the
+                    // other, a Togolese buyer sees two totals and only one of them mentions that
+                    // she is actually debited in GHS — the two-panels-disagree defect this card's
+                    // own prop docblock was written to prevent.
+                    settlementAmountMinorUnits={paymentSettlement?.amountMinorUnits}
+                    settlementCurrency={paymentSettlement?.currency}
+                    settlementDisplayAmount={paymentSettlement?.displayAmount}
                   />
                 </div>
               )}
@@ -3927,6 +4023,7 @@ export default function TransferLandingPage() {
                   totalAmountMinorUnits={saleFeeQuote?.totalMinorUnits}
                   settlementAmountMinorUnits={saleFeeQuote?.settlement?.amountMinorUnits}
                   settlementCurrency={saleFeeQuote?.settlement?.currency}
+                  settlementDisplayAmount={saleFeeQuote?.settlement?.displayAmount}
                 />
               </div>
             </div>

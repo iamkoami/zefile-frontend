@@ -37,6 +37,12 @@ export interface ProcessingFeeQuote {
   settlement: {
     currency: string;
     amountMinorUnits: number;
+    /**
+     * Story 144.1 — server-formatted in the SETTLEMENT currency, by the same function the payment
+     * initialize response uses. Render this rather than dividing by 100 yourself. Optional so an
+     * older API is tolerated.
+     */
+    displayAmount?: string;
     fxRate: number;
   } | null;
 }

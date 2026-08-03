@@ -148,6 +148,30 @@ export interface InitializePaymentV2Response {
   displayTotalAmount?: string;
   /** Pre-formatted processing fee for display (e.g. "304 XOF") */
   displayProcessingFee?: string;
+  /**
+   * Story 144.1 — the gateway amount, when the buyer's gateway cannot charge `pricingCurrency`
+   * natively and the payment path converts before charging. Togo, Benin and Senegal route to
+   * Startbutton, which has no XOF, so for them this is always set.
+   *
+   * When set, `totalAmountMinorUnits` is what the purchase COSTS (in `pricingCurrency`) and this is
+   * what the buyer's provider actually debits. Neither replaces the other — show both.
+   *
+   * Same shape as `ProcessingFeeQuote.settlement` in `platform-api.ts`, deliberately: the sale
+   * checkout and this screen must not describe the same purchase two different ways.
+   *
+   * Optional because the backend deploys separately from this app — an older API simply omits it.
+   */
+  settlement?: {
+    currency: string;
+    amountMinorUnits: number;
+    /**
+     * Server-formatted in the SETTLEMENT currency. Render this rather than dividing
+     * `amountMinorUnits` by 100 — that division is only right while every currency the gateway
+     * settles in happens to be two-decimal. Optional so an older API is tolerated.
+     */
+    displayAmount?: string;
+    fxRate?: number;
+  } | null;
 }
 
 /**
