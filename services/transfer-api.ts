@@ -11,7 +11,17 @@ export interface CreateTransferDto {
   recipientEmails: string[]; // Always passed; empty array when isPublicSales is true
   recipients?: TransferRecipient[]; // Unified recipients (email + whatsapp) — Epic 124
   title: string; // Required by backend
+  /**
+   * LEGACY — MINOR units. Do not use for new code; send `priceMajorUnits` instead.
+   * Sending both is rejected by the backend: they are different scales (story 144.7).
+   */
   price?: number;
+  /**
+   * MAJOR units, as typed by a person — 3000 means 3,000 CFA.
+   * The backend owns the exponent and scales this to minor units. The frontend never needs a
+   * currency-exponent list for input, which is deliberate (story 144.8).
+   */
+  priceMajorUnits?: number;
   currency?: string;
   message?: string;
   /** Access control mode: private (default), password, or public */

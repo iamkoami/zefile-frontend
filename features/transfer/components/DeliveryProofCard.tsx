@@ -2,7 +2,7 @@
 
 import React, { useCallback, useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
-import { formatCurrencyAmount } from "@/lib/currency";
+import { formatCurrencyFromMinor } from "@/lib/currency";
 import { invoicesApi } from "@/services/invoices-api";
 import { toast } from "@/components/shared/Toast";
 
@@ -57,7 +57,8 @@ const DeliveryProofCard: React.FC<DeliveryProofCardProps> = ({
 
   const formattedAmount =
     paymentAmount != null && paymentCurrency
-      ? formatCurrencyAmount(paymentAmount, paymentCurrency, locale)
+      ? // `paymentAmount` is `metadata.payment.amountMinor` — MINOR units (story 144.7).
+        formatCurrencyFromMinor(paymentAmount, paymentCurrency, locale)
       : null;
 
   return (

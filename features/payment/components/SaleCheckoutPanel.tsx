@@ -28,7 +28,12 @@ import { Turnstile } from '@marsidev/react-turnstile';
 import { useTurnstile } from "@/hooks/useTurnstile";
 import { setCaptchaToken } from "@/services/api-client";
 import { useCurrencyStore } from "@/stores/currency-store";
-import { convertCurrency, formatCurrencyAmount, type CurrencyCode } from "@/lib/currency";
+import {
+  convertCurrency,
+  formatCurrencyAmount,
+  formatCurrencyFromMinor,
+  type CurrencyCode,
+} from "@/lib/currency";
 
 // Supported countries for payment — matches download page DOWNLOAD_PAYMENT_COUNTRIES
 const PAYMENT_COUNTRIES = [
@@ -233,8 +238,9 @@ export function SaleCheckoutPanel({
    * helper also knows XOF is a zero-decimal currency, so it stops quoting buyers a fractional
    * franc that cannot be paid.
    */
+  // Story 144.7 — the shared minor-unit formatter, not a hand-rolled `/ 100`.
   const formatMinor = (minorUnits: number) =>
-    formatCurrencyAmount(minorUnits / 100, transferCurrency as CurrencyCode);
+    formatCurrencyFromMinor(minorUnits, transferCurrency as CurrencyCode);
 
   /**
    * Story 135.1 — the buyer's own-currency reference beneath the authoritative total.

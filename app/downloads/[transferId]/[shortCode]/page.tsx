@@ -90,7 +90,12 @@ import {
   trackEvent,
   AnalyticsEventType,
 } from "@/lib/posthog";
-import { formatCurrencyAmount, type CurrencyCode } from "@/lib/currency";
+import {
+  formatCurrencyAmount,
+  formatCurrencyFromMinor,
+  minorToMajorUnits,
+  type CurrencyCode,
+} from "@/lib/currency";
 
 /**
  * Story 144.1 — the same shared formatter `SaleCheckoutPanel` and `TransferSummaryCard` use, so
@@ -102,8 +107,10 @@ import { formatCurrencyAmount, type CurrencyCode } from "@/lib/currency";
  * the symbol moves ("Fr CFA" to "F CFA"), which brings this screen into line with the invoice PDF
  * and the money emails.
  */
+// Story 144.7 — the shared helper, not a hand-rolled `/ 100`. Four copies of this conversion
+// existed across the app; the exponent now lives in one place.
 const formatMinor = (minorUnits: number, currency?: string): string =>
-  formatCurrencyAmount(minorUnits / 100, (currency || "XOF") as CurrencyCode);
+  formatCurrencyFromMinor(minorUnits, (currency || "XOF") as CurrencyCode);
 
 // Helper to extract sender email from senderId
 const getSenderEmail = (transfer: TransferDto): string | undefined => {
@@ -3389,7 +3396,10 @@ export default function TransferLandingPage() {
   if (pageState === "preview" && transfer) {
     const requiresPaymentAction =
       transfer.price && transfer.price > 0 && !transfer.isPaid;
-    const formatPrice = (price: number, currency: string) => {
+    // `transfer.price` is MINOR units (story 144.7). This rendered it raw, so the pay button on
+    // the buyer's preview screen quoted 100x what the gateway would actually charge.
+    const formatPrice = (priceMinorUnits: number, currency: string) => {
+      const price = minorToMajorUnits(priceMinorUnits, currency);
       if (currency === "XOF") return `${price.toLocaleString()} Fr CFA`;
       return `${price.toLocaleString()} ${currency}`;
     };

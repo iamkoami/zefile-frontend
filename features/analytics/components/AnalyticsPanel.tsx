@@ -31,8 +31,20 @@ import {
 } from "../utils/analytics-tips";
 import { useCurrentCurrency } from "@/stores/currency-store";
 import { useDrawerStore } from "@/stores/drawer-store";
-import { formatInDisplayCurrency } from "@/lib/currency";
+import { formatInDisplayCurrency, minorToMajorUnits } from "@/lib/currency";
 import { transferApi } from "@/services/transfer-api";
+
+/**
+ * Every revenue figure from `GET /analytics/*` is MINOR units — the backend computes it as
+ * `SUM(t.price - t.service_charge_amount)` and `Transfer.price` is minor units. But
+ * `formatInDisplayCurrency` takes MAJOR units and does not divide, so the whole analytics
+ * panel — KPI card, bar chart, per-transfer rows — reported 100x the creator's real earnings.
+ *
+ * Story 144.7. One helper rather than four call-site divisions, so the next revenue field
+ * added here inherits the right scale.
+ */
+const revenueMajor = (minorUnits: number, currency: string) =>
+  minorToMajorUnits(minorUnits, currency);
 
 const PERIOD_OPTIONS: AnalyticsPeriod[] = ["7d", "30d", "90d", "year", "all"];
 
@@ -276,7 +288,7 @@ const AnalyticsPanel: React.FC = () => {
           <KpiCard
             label={t("totalRevenue")}
             value={formatInDisplayCurrency(
-              overview.totalRevenueDelta.value,
+              revenueMajor(overview.totalRevenueDelta.value, overview.currency),
               overview.currency,
               globalCurrency,
               { showFreeForZero: false },
@@ -371,7 +383,7 @@ const AnalyticsPanel: React.FC = () => {
               formatDate={fmtDate}
               formatRevenue={(amount) =>
                 formatInDisplayCurrency(
-                  amount,
+                  revenueMajor(amount, overview?.currency ?? globalCurrency),
                   overview?.currency ?? globalCurrency,
                   globalCurrency,
                   { showFreeForZero: false },
@@ -380,7 +392,7 @@ const AnalyticsPanel: React.FC = () => {
             />
             <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mt-3">
               {formatInDisplayCurrency(
-                trends.totals.revenue,
+                revenueMajor(trends.totals.revenue, overview?.currency ?? globalCurrency),
                 overview?.currency ?? globalCurrency,
                 globalCurrency,
                 { showFreeForZero: false },
@@ -448,7 +460,7 @@ const AnalyticsPanel: React.FC = () => {
                   {tr.revenue > 0 && (
                     <span className="text-[#5E53E0] font-medium text-xs">
                       {formatInDisplayCurrency(
-                        tr.revenue,
+                        revenueMajor(tr.revenue, tr.currency),
                         tr.currency,
                         globalCurrency,
                       )}
