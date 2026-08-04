@@ -5,6 +5,19 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.64.0] - 2026-08-04
+
+### Fixed
+
+- **The earnings line under the price box overstated what a creator would be paid, by a factor of a hundred.** It worked out her share from the number she had typed, while the service stored that number as a count of centimes — so a creator asking three thousand francs was told she would receive two thousand seven hundred and ninety, against the twenty-seven francs and ninety centimes that would actually reach her. The figure now describes the money she will be credited. (`features/home/components/UploadPanel.tsx`)
+- **The smallest price the form would accept was a hundredth of the intended one.** The minimum is held as a sum in whole francs and was compared against a typed price the service counted in centimes. Both sides of that comparison are now on the same footing, and the form accepts and refuses exactly the same prices the service does, so a price is never taken here and rejected there. The same fault, and the same fix, on the budget field when commissioning work. (`features/home/components/UploadPanel.tsx`, `features/file-request/components/FileRequestPanel.tsx`)
+- **Several screens showed stored amounts a hundred times too large.** Money is kept by the service in the smallest unit a currency has, but a number of screens handed those amounts to a formatter that expects whole francs and does no conversion. The price and the sales total in the transfer drawer, the amount on a delivery receipt, the price advertised on the link preview that social sites and search engines read, the price on the button a buyer pays from, and every revenue figure in the analytics panel — the headline, the chart, the period total and each row — were all affected. All of them now convert before they display. (`features/transfer/components/TransferDetailsPanel.tsx`, `features/transfer/components/DeliveryProofCard.tsx`, `features/analytics/components/AnalyticsPanel.tsx`, `app/downloads/[transferId]/[shortCode]/layout.tsx`, `app/downloads/[transferId]/[shortCode]/page.tsx`)
+
+### Changed
+
+- **The price and the budget are now sent as the person wrote them**, and the service converts. Nothing in the browser needs to know how finely a currency is counted, which is the point: the same list kept in two places is the kind of thing that drifts. (`features/home/components/UploadPanel.tsx`, `features/file-request/components/FileRequestPanel.tsx`, `services/transfer-api.ts`, `services/file-request-api.ts`)
+- **The conversion between stored amounts and readable ones lives in one place.** Five separate copies of it had grown up across the payment screens, the download page and the checkout, each written out by hand. They now share a single pair of helpers, and one leftover function that nothing called at all has been removed. (`lib/currency.ts`, `features/payment/components/PaymentPanels.tsx`, `features/payment/components/SaleCheckoutPanel.tsx`, `features/transfer/components/TransferPreviewPanel.tsx`)
+
 ## [1.63.2] - 2026-08-03
 
 ### Fixed
