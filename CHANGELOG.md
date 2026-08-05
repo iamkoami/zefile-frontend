@@ -5,6 +5,12 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.65.0] - 2026-08-05
+
+### Changed
+
+- **The checkout now asks about the payment method the buyer actually chose.** When a buyer picked bank transfer or USSD, the fee breakdown was worked out as though they had chosen a card — deliberately so, because that is what the charge itself did, and the one rule this panel must never break is that the total shown matches the total charged. Both sides have now been corrected together, so the breakdown describes the method in front of the buyer. **The figure on screen does not change**: no rate has been set for either method yet, so both still resolve to the card rate exactly as before. What changes is that correcting them later becomes a settings change rather than a code release. (`features/payment/components/SaleCheckoutPanel.tsx`, `services/platform-api.ts`)
+
 ## [1.64.0] - 2026-08-04
 
 ### Fixed
