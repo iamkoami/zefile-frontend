@@ -19,7 +19,11 @@ import {
   type PaymentMethodInfo,
   type InitializePaymentV2Response,
 } from "@/services/payment-api";
-import { platformApi, type ProcessingFeeQuote } from "@/services/platform-api";
+import {
+  platformApi,
+  type ProcessingFeeQuote,
+  type ProcessingFeeMethod,
+} from "@/services/platform-api";
 import type { MobileMoneyProvider } from "@/features/payment/components/PaymentMethodSelector";
 import type { CountryCode } from "libphonenumber-js";
 import { toast } from "@/components/shared/Toast";
@@ -174,27 +178,34 @@ export function SaleCheckoutPanel({
   const [feeQuote, setFeeQuote] = useState<ProcessingFeeQuote | null>(null);
 
   /**
-   * Which rate the backend will actually apply — found at review (High).
+   * Which rate the backend will actually apply.
    *
-   * `PaymentService.initializePayment` narrows to two rates only:
-   *     paymentMethod = request.paymentMethod === 'mobile_money' ? 'mobile_money' : 'card'
+   * Story 135.1 collapsed everything that was not mobile money to `"card"` here, deliberately,
+   * because `PaymentService.initializePayment` did the same and the one rule this panel must obey
+   * is that the quote equals the charge. **Story 144.3 removed that narrowing on both sides at
+   * once**, so this now sends the method the buyer actually picked.
    *
-   * and `handlePay` below sends bank transfer and USSD as `paymentMethod: "card"`. So those two
-   * methods are charged the CARD rate (4% in CI, against 2.95% for mobile money) — and quoting
-   * only for `card`/`mobile_money` left them with no surcharge shown at all, reproducing for two
-   * more methods the exact defect this story exists to close.
+   * `handlePay` below still sends `paymentMethod: "card"` with the real method on
+   * `preferredChannel` — that is the payment DTO's shape, not a pricing decision — and the backend
+   * resolves the fee method from the channel.
    *
-   * Mirror the backend's narrowing rather than the UI's method list: anything that is not mobile
-   * money is charged the card rate.
+   * The number on screen does not move yet: `PROCESSING_FEES` has no `{country}.bank_transfer` or
+   * `.ussd` row, so `getProcessingFeeRate` falls through its chain to the same card rate as before.
+   * What changes is that the rate is now *reachable*: seeding a row is a config edit rather than a
+   * deploy. Whether the card rate is the RIGHT rate for these rails is a commercial question,
+   * gated on real gateway costs (story 144.3, gate G1).
    *
-   * NOTE: whether the card rate is the RIGHT rate for a bank transfer or a USSD push is a separate
-   * question — PROCESSING_FEES has no `{country}.bank_transfer` or `.ussd` key today. Raised as its
-   * own story; this only makes the buyer see what she is already being charged.
+   * The `QUOTABLE_METHODS` guard is belt-and-braces, not a live path: `PaymentMethodInfo["type"]`
+   * is exactly this union on both sides, so `selectedMethod.type` cannot currently fall through.
+   * It is here because the backend now **400s** on anything outside the set (`bank`, `qr`), and a
+   * 400 silently removes the buyer's fee breakdown — so if an adapter ever offers a new method,
+   * this degrades to the card quote instead of showing no total at all.
    */
-  const quoteMethod: "mobile_money" | "card" | null = !selectedMethod
+  const QUOTABLE_METHODS: ProcessingFeeMethod[] = ["mobile_money", "card", "bank_transfer", "ussd"];
+  const quoteMethod: ProcessingFeeMethod | null = !selectedMethod
     ? null
-    : selectedMethod.type === "mobile_money"
-      ? "mobile_money"
+    : QUOTABLE_METHODS.includes(selectedMethod.type as ProcessingFeeMethod)
+      ? (selectedMethod.type as ProcessingFeeMethod)
       : "card";
 
   useEffect(() => {

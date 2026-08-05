@@ -17,13 +17,28 @@ export interface PlatformFee {
 }
 
 /**
+ * Story 144.3 — the payment methods that can carry their own processing rate.
+ *
+ * Mirrors the backend's `ProcessingFeeMethod` (`src/modules/platform-config/processing-fee-method.ts`).
+ * Deliberately narrower than the checkout's own method list: `bank` and `qr` are valid Paystack
+ * channels but no adapter offers them, and the quote endpoint 400s on anything outside this set
+ * rather than silently answering with the card rate.
+ */
+export type ProcessingFeeMethod = "mobile_money" | "card" | "bank_transfer" | "ussd";
+
+/**
  * Story 135.1 — the buyer's pass-through processing surcharge for one country + method.
  * All amounts are minor units. `price + processingFee === total` always holds, so a caller
  * renders the breakdown without doing arithmetic of its own.
  */
 export interface ProcessingFeeQuote {
   countryCode: string;
-  paymentMethod: "mobile_money" | "card";
+  /**
+   * Story 144.3 — bank transfer and USSD now carry their own rate namespace and are quoted as
+   * themselves. Until then the panel collapsed them to "card" to mirror a backend that could not
+   * express them.
+   */
+  paymentMethod: ProcessingFeeMethod;
   feePercent: number;
   currency: string;
   priceMinorUnits: number;
@@ -258,7 +273,7 @@ export class PlatformApi {
    */
   async getProcessingFeeQuote(params: {
     amountMinorUnits: number;
-    paymentMethod: "mobile_money" | "card";
+    paymentMethod: ProcessingFeeMethod;
     countryCode?: string;
     currency?: string;
   }): Promise<ApiResponse<ProcessingFeeQuote>> {
