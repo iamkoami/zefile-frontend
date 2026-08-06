@@ -192,6 +192,36 @@ export function convertCurrency(
 }
 
 /**
+ * How many decimals a money amount shows — **zero, or exactly two. Never one.**
+ *
+ * ── WHY THIS REPLACED A PER-CURRENCY LIST (story 144.12) ───────────────────────────────
+ *
+ * This function used to branch on `["XOF", "XAF", "NGN", "KES"]` and `Math.round` those four,
+ * under a comment calling them "currencies with small unit values". **All four are two-decimal on
+ * the path this platform charges through** — that is the same ISO 4217 intuition Epic 144 has
+ * already been reversed once for trusting. `formatCurrencyFromMinor(515199, 'XOF')` rendered
+ * "5,152 XOF" against a charge of 5,151.99, and the same branch hid kobo and Kenyan cents.
+ *
+ * The list is gone rather than corrected. A per-currency list in a repo with no test layer drifts:
+ * the two copies of this function in `zefile-admin` had already lost XAF. One uniform rule cannot.
+ *
+ * ── THE RULE ───────────────────────────────────────────────────────────────────────────
+ *
+ * No fractional part -> no decimals, because a CFA price list reading "5,000.00 F CFA" throughout
+ * is worse than the defect. Any fractional part -> BOTH digits, because "5,151.9" is a money
+ * figure that invites being read as a rounded one, and roughly one charge in ten ends in a zero
+ * minor digit. Rounded to two decimals before the decision, so 5151.999 reads "5,152" rather than
+ * being dressed up as "5,152.00".
+ *
+ * This mirrors `currencyFractionDigits` in the backend's `string-formatting.util.ts`, which is the
+ * function that renders the same amounts into emails and invoices. Keep them in step.
+ */
+export function currencyFractionDigits(amount: number): 0 | 2 {
+  const rounded = Math.round(amount * 100) / 100;
+  return Number.isInteger(rounded) ? 0 : 2;
+}
+
+/**
  * Format amount with currency symbol
  * @param amount - The amount to format
  * @param currency - The currency code
@@ -205,18 +235,11 @@ export function formatCurrencyAmount(
 ): string {
   const symbol = CURRENCY_SYMBOLS[currency as CurrencyCode] || currency;
 
-  // Format number with appropriate decimal places
-  let formattedAmount: string;
-
-  // For currencies with small unit values (XOF, XAF, NGN, KES), show no decimals
-  if (["XOF", "XAF", "NGN", "KES"].includes(currency)) {
-    formattedAmount = Math.round(amount).toLocaleString(locale);
-  } else {
-    formattedAmount = amount.toLocaleString(locale, {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
-  }
+  const digits = currencyFractionDigits(amount);
+  const formattedAmount = amount.toLocaleString(locale, {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  });
 
   // Position symbol based on currency convention
   if (["XOF", "XAF"].includes(currency)) {
