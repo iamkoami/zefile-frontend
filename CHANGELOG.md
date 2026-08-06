@@ -5,6 +5,16 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.65.1] - 2026-08-06
+
+### Removed
+
+- **An unused upload method that pointed at a route the backend no longer has.** It sent a whole transfer — details and files together — in a single request, which is how uploads worked before the current chunked flow replaced them. No screen had called it since, but it stayed in the API client, and the README presented it as *the* way to upload a file. Anyone following that example would have written code against a route that skipped the minimum price, stored prices at one hundredth of their value, and recorded no platform fee. The method, its type, and its export are gone. (`services/transfer-api.ts`, `services/index.ts`)
+
+### Changed
+
+- **The README's upload example now shows how uploading actually works.** Three steps — create the transfer, send the files in chunks, then finalize, which is what notifies the sender and recipients — checked against the real function signatures rather than written from memory. It also notes that the amount a person types goes in as a plain amount, with the server doing the conversion, so an example can no longer imply a price one hundredth of what was meant. (`README.md`)
+
 ## [1.65.0] - 2026-08-05
 
 ### Changed
