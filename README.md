@@ -172,24 +172,48 @@ console.log(auth.data.user);
 
 ### File Upload
 
+Upload is three steps, not one: create the transfer, upload each file via multipart, then finalize
+(finalize is what sends the notification emails). See `features/home/components/UploadPanel.tsx` for
+the production implementation.
+
 ```typescript
 import { transferApi } from '@/services';
+import { multipartUploadService } from '@/services/multipart-upload.service';
 
-// Upload files with progress tracking
-const transfer = await transferApi.createTransferWithFiles(
-  {
-    senderId: user.id,
-    recipientEmail: 'recipient@example.com',
-    message: 'Here are your files!',
-    files: selectedFiles,
-  },
-  (progress) => {
-    console.log(`Upload progress: ${progress}%`);
-  }
-);
+// 1. Create the transfer. `priceMajorUnits` is the amount a person types —
+//    the server owns the conversion to the minor units the gateway charges in.
+const transfer = await transferApi.createTransfer({
+  senderId: user.id,
+  recipientEmails: ['recipient@example.com'],
+  title: 'Project files',
+  message: 'Here are your files!',
+  priceMajorUnits: 5000,
+  currency: 'XOF',
+});
+
+// 2. Upload each file in chunks, with progress
+for (const file of selectedFiles) {
+  await multipartUploadService.uploadFile(
+    file,
+    transfer.data.shortCode,
+    user.id,
+    transfer.data.id,
+    (progress) => {
+      console.log(`Upload progress: ${progress.progress}%`);
+    }
+  );
+}
+
+// 3. Finalize — this is what notifies the sender and recipients
+await transferApi.finalizeTransfer(transfer.data.id);
 
 console.log('Share link:', transfer.data.shortCode);
 ```
+
+> There used to be a single-call `transferApi.createTransferWithFiles()` posting to
+> `POST /transfers/with-files`. It was removed by story 144.14: it bypassed the minimum-price floor,
+> the minor-unit price scaling and the platform fee, and no component had called it since the
+> multipart flow shipped.
 
 ### Download Files
 
