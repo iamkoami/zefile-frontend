@@ -220,7 +220,7 @@
     "transferPaid": "Envoyer et recevoir",
     "freeTransfer": "Transfert gratuit",
     "setPriceMin": "Min. {amount}",
-    "priceBelowMinimum": "Le prix minimum est de {amount}",
+    "priceBelowMinimum": "Votre prix doit être d'au moins {amount}",
     "transferFree": "Envoyer les fichiers",
     "earningsInline": "Vous recevrez <b>{formattedAmount}</b> après <b>{percentage}%</b> de frais",
     "addDetails": "Ajouter une note de livraison",
@@ -273,7 +273,7 @@
     "titleTooLong": "Le titre doit faire moins de 255 caractères",
     "budgetRequired": "Fixez un budget pour cette demande",
     "budgetInvalid": "Le budget doit être un nombre positif",
-    "budgetBelowMinimum": "Le budget minimum est de {amount}",
+    "budgetBelowMinimum": "Votre budget doit être d'au moins {amount}",
     "budgetMin": "Min. {amount}",
     "creativeEmailRequired": "Saisissez l'email du créatif",
     "creativeEmailInvalid": "Cet email ne semble pas valide",
@@ -634,6 +634,8 @@
     "downloadReady": "Votre téléchargement est prêt.",
     "downloadExpired": "Ce lien de téléchargement a expiré.",
     "downloadExpiredHint": "Pas de souci — vous pouvez acheter à nouveau pour obtenir un nouveau lien.",
+    "preparingDownload": "Paiement confirmé. On prépare votre téléchargement...",
+    "downloadDelayed": "Votre paiement est bien passé — c'est le téléchargement qui coince. Actualisez la page, ou utilisez le lien reçu par e-mail.",
     "buyAgain": "Acheter à nouveau",
     "enterEmail": "Entrez votre email pour continuer",
     "continue": "Continuer",
@@ -664,6 +666,7 @@
     "payWithCard": "Payer par carte",
     "continue": "Continuer",
     "cancel": "Annuler",
+    "checkAgain": "Vérifier à nouveau",
     "mtnMobileMoney": "MTN Mobile Money",
     "vodafoneCash": "Vodafone Cash",
     "airtelTigoMoney": "AirtelTigo Money",
@@ -791,7 +794,8 @@
     "youReceive": "Vous recevez",
     "platformFeePercent": "Frais plateforme ({percent}%)",
     "buyerPaysEstimate": "L'acheteur paie ~{amount} (dont ~{fee} de frais de traitement)",
-    "payoutFeeNote": "Des frais de retrait de {percent}% s'appliquent au retrait."
+    "payoutFeeNote": "Des frais de retrait de {percent}% s'appliquent au retrait.",
+    "chargedAs": "Débité autour de {amount} par votre opérateur de paiement."
   },
   "transfers": {
     "title": "Transferts",
@@ -3508,6 +3512,13 @@
     "checkAgain": "Actualiser",
     "checking": "Vérification...",
     "nowAvailable": "C'est prêt : vous pouvez l'acheter.",
-    "notReady": "Ce film n'est pas encore en vente. Laissez-lui quelques minutes et réessayez."
+    "notReady": "Ce film n'est pas encore en vente. Laissez-lui quelques minutes et réessayez.",
+    "termsTitle": "Ce que vous obtenez",
+    "termsStreamOnly": "Ce film se regarde ici, dans votre navigateur. Il n'y a pas de fichier à télécharger, ni de copie hors ligne.",
+    "termsAccess": "Votre accès reste valable tant que le film est en ligne. L'abonnement du créateur n'y change rien.",
+    "termsRefund": "Vous l'avez acheté sans jamais le regarder ? Ce n'est pas remboursable. En revanche, si la lecture ne marche pas de notre côté, vous êtes remboursé.",
+    "termsFee": "Des frais de paiement s'ajoutent selon le moyen que vous choisissez. Le montant exact s'affiche avant le paiement.",
+    "trailerLabel": "Aperçu gratuit",
+    "trailerUnavailable": "L'aperçu n'est pas encore prêt. Revenez dans quelques minutes."
   }
 }

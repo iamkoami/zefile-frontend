@@ -33,7 +33,7 @@ import { storageApi } from "@/services/storage-api";
 import { platformApi } from "@/services/platform-api";
 import LoadingPanel from "@/components/LoadingPanel";
 import VerifiedBadge from "@/components/shared/VerifiedBadge";
-import { formatCurrencyAmount } from "@/lib/currency";
+import { formatCurrencyAmount, formatCurrencyFromMinor } from "@/lib/currency";
 import { invoicesApi, InvoiceDto, VerifyDeliveryProofResponse } from "@/services/invoices-api";
 import DeliveryProofCard from "./DeliveryProofCard";
 
@@ -1560,7 +1560,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
               <p className="text-xs text-neutral-500 dark:text-[oklch(0.65_0_0)]" id="revenue-label">{t("revenue")}</p>
               <p className="text-lg font-semibold dark:text-[oklch(0.91_0_0)]" aria-labelledby="revenue-label">
                 {currentTransfer.salesStats
-                  ? formatCurrencyAmount(currentTransfer.salesStats.totalRevenueMinor, currentTransfer.salesStats.currency, locale)
+                  ? formatCurrencyFromMinor(currentTransfer.salesStats.totalRevenueMinor, currentTransfer.salesStats.currency, locale)
                   : formatCurrencyAmount(0, currentTransfer.currency || "XOF", locale)}
               </p>
             </div>
@@ -1638,7 +1638,9 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
                   {t("price")}
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-[oklch(0.65_0_0)]">
-                  {formatCurrencyAmount(currentTransfer.price ?? 0, currentTransfer.currency || "XOF", locale)}
+                  {/* `Transfer.price` is MINOR units — story 144.7. `formatCurrencyAmount` takes
+                      MAJOR units and does not divide, so this rendered 100x the real price. */}
+                  {formatCurrencyFromMinor(currentTransfer.price ?? 0, currentTransfer.currency || "XOF", locale)}
                 </p>
               </div>
             )}

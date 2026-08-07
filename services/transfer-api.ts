@@ -11,7 +11,17 @@ export interface CreateTransferDto {
   recipientEmails: string[]; // Always passed; empty array when isPublicSales is true
   recipients?: TransferRecipient[]; // Unified recipients (email + whatsapp) — Epic 124
   title: string; // Required by backend
+  /**
+   * LEGACY — MINOR units. Do not use for new code; send `priceMajorUnits` instead.
+   * Sending both is rejected by the backend: they are different scales (story 144.7).
+   */
   price?: number;
+  /**
+   * MAJOR units, as typed by a person — 3000 means 3,000 CFA.
+   * The backend owns the exponent and scales this to minor units. The frontend never needs a
+   * currency-exponent list for input, which is deliberate (story 144.8).
+   */
+  priceMajorUnits?: number;
   currency?: string;
   message?: string;
   /** Access control mode: private (default), password, or public */
@@ -32,10 +42,6 @@ export interface CreateTransferDto {
    * files; the backend refuses any other combination. Set at creation and never flipped.
    */
   deliveryMode?: 'download' | 'stream';
-}
-
-export interface CreateTransferWithFilesDto extends CreateTransferDto {
-  files: File[];
 }
 
 export interface SenderBrandingDto {
@@ -442,40 +448,6 @@ export class TransferApi {
       error: { message: responseData.message || 'Failed to create test session', statusCode: response.status },
       status: response.status,
     };
-  }
-
-  /**
-   * Create transfer with file uploads
-   */
-  async createTransferWithFiles(
-    data: CreateTransferWithFilesDto,
-    onProgress?: (progress: number) => void
-  ): Promise<ApiResponse<TransferDto>> {
-    const formData = new FormData();
-
-    // Add transfer data
-    formData.append('senderId', data.senderId);
-    // Send recipientEmails as JSON string for FormData
-    formData.append('recipientEmails', JSON.stringify(data.recipientEmails));
-    // Epic 124 dual-write: send unified recipients alongside legacy recipientEmails
-    if (data.recipients) {
-      formData.append('recipients', JSON.stringify(data.recipients));
-    }
-    // Title is required by backend - ensure it's always present
-    formData.append('title', data.title || 'Untitled Transfer');
-    if (data.price) formData.append('price', data.price.toString());
-    if (data.currency) formData.append('currency', data.currency);
-    if (data.message) formData.append('message', data.message);
-    if (data.password) formData.append('password', data.password);
-    if (data.expiryDate) formData.append('expiryDate', data.expiryDate);
-    if (data.maxDownloads) formData.append('maxDownloads', data.maxDownloads.toString());
-
-    // Add files
-    data.files.forEach((file) => {
-      formData.append('files', file);
-    });
-
-    return apiClient.upload<TransferDto>('/transfers/with-files', formData, onProgress);
   }
 
   /**

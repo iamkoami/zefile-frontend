@@ -43,6 +43,7 @@ import { useCurrencyStore } from "@/stores/currency-store";
 import {
   convertCurrency,
   formatCurrencyAmount,
+  minorToMajorUnits,
   type CurrencyCode,
 } from "@/lib/currency";
 
@@ -812,8 +813,9 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
   // Format price for display with currency conversion
   const formatPrice = useCallback(
     (price: number, originalCurrency?: string): string => {
-      // Price is in minor units, convert to major units
-      const majorUnits = price / 100;
+      // Price is in minor units, convert to major units (story 144.7 — shared helper, not a
+      // hand-rolled / 100, so the exponent lives in one place if it ever stops being 100)
+      const majorUnits = minorToMajorUnits(price, originalCurrency || "XOF");
       const sourceCurrency = (originalCurrency || "XOF") as CurrencyCode;
 
       // Convert to display currency if different

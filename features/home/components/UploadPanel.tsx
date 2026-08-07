@@ -32,7 +32,11 @@ import { multipartUploadService } from "@/services/multipart-upload.service";
 import { useUploadStore } from "@/stores/upload-store";
 import { useDrawerStore } from "@/stores/drawer-store";
 import { useCurrentCurrency } from "@/stores/currency-store";
-import { formatCurrencyAmount, convertCurrency } from "@/lib/currency";
+import {
+  formatCurrencyAmount,
+  formatCurrencyFromMinor,
+  convertCurrency,
+} from "@/lib/currency";
 import { TransferOptions } from "@/features/transfer/components/TransferOptionsPanel";
 import { storageApi } from "@/services/storage-api";
 import { getTierTranslationKey } from "@/hooks/useTierLimits";
@@ -204,7 +208,19 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
     useState<number>(300);
   const [canCreateFreeTransfers, setCanCreateFreeTransfers] = useState(false);
 
-  // Minimum price converted to selected currency
+  /**
+   * The minimum price, in MAJOR units — the same scale the price box is denominated in, so the
+   * comparison is like-for-like (story 144.7, AC2).
+   *
+   * `minimumTransferPriceNGN` is a MAJOR-unit floor (₦300 by default) and `convertCurrency` is
+   * scale-agnostic, so this stays in major units end to end. It used to be compared against a
+   * minor-unit typed value, which enforced a floor one hundredth of the intended one: ~1.18 CFA
+   * rather than ~118 CFA.
+   *
+   * The server-side gate in `transfers.controller.ts` scales this floor to minor units to match
+   * the stored price. Both reject the same set of inputs; they just do the comparison on
+   * opposite sides of the conversion.
+   */
   const minimumPriceInCurrency = useMemo(() => {
     if (currency === "NGN") return minimumTransferPriceNGN;
     return Math.ceil(convertCurrency(minimumTransferPriceNGN, "NGN", currency));
@@ -736,6 +752,23 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
     setPrice(formattedValue);
   };
 
+  /**
+   * Returns MAJOR units — the number the creator typed, meaning exactly what she thinks it
+   * means. `3000` is 3,000 CFA.
+   *
+   * ── DO NOT SCALE THIS, AND DO NOT SCALE ITS CALLERS (story 144.7) ─────────────────────
+   *
+   * This value is sent as `priceMajorUnits` and the BACKEND converts it to the minor units the
+   * gateway charges in, using `getMinorUnitExponent`. That is the single conversion site for
+   * the whole platform. Multiplying by 100 here would double-scale every price and charge
+   * buyers 100x — and it would put a currency-exponent assumption in the frontend, which is
+   * precisely what story 144.8 exists to prevent.
+   *
+   * It used to be otherwise: this returned an unscaled number that the backend read as
+   * CENTIMES, so a creator typing 3,000 CFA was charged 30.92 XOF while her preview promised
+   * her the full 2,790. If you are reading this because a number looks 100x wrong, the bug is
+   * almost certainly a *render* site treating a stored minor-unit amount as major — not here.
+   */
   const parsePriceToNumber = (formattedPrice: string): number => {
     // Remove all spaces (thousand separators in French format)
     const numericString = formattedPrice.replace(/\s/g, "");
@@ -871,14 +904,17 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
     }
 
     try {
-      // Calculate charge info before processing
+      // Calculate charge info before processing.
+      //
+      // MAJOR units throughout, matching `parsePriceToNumber` and the price box — a percentage
+      // of an amount is scale-invariant, so the arithmetic is the same either way; what matters
+      // is that this and the earnings line below agree on which scale they are on. Story 144.7.
       const chargeCalc = await platformApi.getPublicConfig();
       if (chargeCalc.data) {
-        const priceNum = parsePriceToNumber(price);
+        const priceMajorUnits = parsePriceToNumber(price);
         const serviceCharge =
-          (priceNum * chargeCalc.data.serviceChargePercentage) / 100;
-        const receivedAmt = priceNum - serviceCharge;
-        setReceivedAmount(receivedAmt);
+          (priceMajorUnits * chargeCalc.data.serviceChargePercentage) / 100;
+        setReceivedAmount(priceMajorUnits - serviceCharge);
       }
 
       // Check if user is already logged in
@@ -1020,7 +1056,9 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
         recipientEmails: isPublicSales ? [] : recipientEmails,
         recipients: isPublicSales ? [] : recipients,
         title: transferTitle,
-        price: isFreeTransfer ? 0 : parsePriceToNumber(price),
+        // MAJOR units. The backend scales this to the minor units the gateway charges in — one
+        // conversion, server-side, using the exponent it already owns (story 144.7).
+        priceMajorUnits: isFreeTransfer ? 0 : parsePriceToNumber(price),
         currency: currency,
         paymentRequired: isFreeTransfer ? false : undefined,
         message: message || undefined,
@@ -1924,7 +1962,19 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                       {formErrors.price}
                     </p>
                   )}
-                  {/* Service Charge — single-line inline */}
+                  {/*
+                    Service Charge — single-line inline.
+
+                    Story 144.7, AC1. This is the number the creator decides her price on, and it
+                    was a lie by a factor of one hundred for as long as the typed value reached
+                    the database unscaled: she was promised "2,790 XOF" on a sale that credited
+                    her 27.90.
+
+                    It is honest now because both sides are MAJOR units — `parsePriceToNumber`
+                    returns what she typed, `receivedAmount` is derived from it in the same scale,
+                    and `formatCurrencyAmount` takes major units. The conversion to the minor
+                    units the gateway charges in happens once, server-side. Do NOT divide here.
+                  */}
                   {price && parsePriceToNumber(price) > 0 && (
                     <p className="text-xs text-[#171717] dark:text-[oklch(0.91_0_0)] mt-3">
                       {t.rich("earningsInline", {

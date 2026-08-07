@@ -219,7 +219,7 @@
     "transferPaid": "Send & get paid",
     "freeTransfer": "Free transfer",
     "setPriceMin": "Min. {amount}",
-    "priceBelowMinimum": "Minimum price is {amount}",
+    "priceBelowMinimum": "Your price needs to be at least {amount}",
     "transferFree": "Send files",
     "earningsInline": "You'll receive <b>{formattedAmount}</b> after <b>{percentage}%</b> fee",
     "addDetails": "Add a delivery note",
@@ -272,7 +272,7 @@
     "titleTooLong": "Title must be under 255 characters",
     "budgetRequired": "Set a budget for this request",
     "budgetInvalid": "Budget must be a positive number",
-    "budgetBelowMinimum": "Minimum budget is {amount}",
+    "budgetBelowMinimum": "Your budget needs to be at least {amount}",
     "budgetMin": "Min. {amount}",
     "creativeEmailRequired": "Enter the creative's email",
     "creativeEmailInvalid": "That doesn't look like a valid email",
@@ -634,6 +634,8 @@
     "downloadReady": "Your download is ready.",
     "downloadExpired": "This download link has expired.",
     "downloadExpiredHint": "No worries — you can buy again to get a new download link.",
+    "preparingDownload": "Payment confirmed. Getting your download ready...",
+    "downloadDelayed": "Your payment went through — we're just having trouble loading your download. Refresh the page, or use the link in your receipt email.",
     "buyAgain": "Buy again",
     "enterEmail": "Enter your email to continue",
     "continue": "Continue",
@@ -664,6 +666,7 @@
     "payWithCard": "Pay with Card",
     "continue": "Continue",
     "cancel": "Cancel",
+    "checkAgain": "Check again",
     "mtnMobileMoney": "MTN Mobile Money",
     "vodafoneCash": "Vodafone Cash",
     "airtelTigoMoney": "AirtelTigo Money",
@@ -791,7 +794,8 @@
     "youReceive": "You receive",
     "platformFeePercent": "Platform fee ({percent}%)",
     "buyerPaysEstimate": "Buyer pays ~{amount} (incl. ~{fee} processing fee)",
-    "payoutFeeNote": "A {percent}% payout fee applies on withdrawal."
+    "payoutFeeNote": "A {percent}% payout fee applies on withdrawal.",
+    "chargedAs": "Charged as about {amount} by your payment provider."
   },
   "transfers": {
     "title": "Transfers",
@@ -3538,6 +3542,13 @@
     "checkAgain": "Check again",
     "checking": "Checking...",
     "nowAvailable": "It's ready. You can buy it now.",
-    "notReady": "This film isn't on sale just yet. Give it a few minutes and try again."
+    "notReady": "This film isn't on sale just yet. Give it a few minutes and try again.",
+    "termsTitle": "What you're getting",
+    "termsStreamOnly": "You watch this film right here, in your browser. There's no file to download and no offline copy.",
+    "termsAccess": "Your access stays for as long as the film is published. The creator's subscription doesn't change that.",
+    "termsRefund": "Bought it and never watched it? That one's not refundable. But if we can't play it for you, you get your money back.",
+    "termsFee": "A payment fee is added depending on how you pay. You'll see the exact total before you pay.",
+    "trailerLabel": "Free preview",
+    "trailerUnavailable": "The preview isn't ready yet. Check back in a few minutes."
   }
 }

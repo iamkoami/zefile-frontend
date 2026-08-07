@@ -51,7 +51,11 @@ import ToastContainer from "@/components/shared/Toast";
 import { TransferSummaryCard } from "@/components/shared/TransferSummaryCard";
 import { transferApi, TransferDto } from "@/services/transfer-api";
 import { platformApi } from "@/services/platform-api";
-import { paymentApi, type PaymentMethodInfo } from "@/services/payment-api";
+import {
+  paymentApi,
+  type PaymentMethodInfo,
+  type InitializePaymentV2Response,
+} from "@/services/payment-api";
 import { storageApi } from "@/services/storage-api";
 import { authApi } from "@/services/auth-api";
 import { toast } from "@/components/shared/Toast";
@@ -64,6 +68,7 @@ import usePaymentStatus from "@/hooks/usePaymentStatus";
 import ReportIssueModal from "@/components/shared/ReportIssueModal";
 import TransferPreviewModal from "@/features/transfer/components/TransferPreviewModal";
 import { SaleCheckoutPanel } from "@/features/payment/components/SaleCheckoutPanel";
+import type { ProcessingFeeQuote } from "@/services/platform-api";
 import { useDrawerStore } from "@/stores/drawer-store";
 import FloatingPollWidget from "@/components/shared/FloatingPollWidget";
 import CreatorStrip from "@/features/transfer/components/CreatorStrip";
@@ -85,6 +90,27 @@ import {
   trackEvent,
   AnalyticsEventType,
 } from "@/lib/posthog";
+import {
+  formatCurrencyAmount,
+  formatCurrencyFromMinor,
+  minorToMajorUnits,
+  type CurrencyCode,
+} from "@/lib/currency";
+
+/**
+ * Story 144.1 — the same shared formatter `SaleCheckoutPanel` and `TransferSummaryCard` use, so
+ * the checkout screens cannot describe one purchase three different ways.
+ *
+ * It replaces four hand-rolled `${minor / 100} ${currency === "XOF" ? "Fr CFA" : currency}` strings
+ * on the payment-prompt screen. The division is unchanged and deliberately so: whether XOF minor
+ * units are stored at a one- or two-decimal scale is Story 144.2's question, not this one's. Only
+ * the symbol moves ("Fr CFA" to "F CFA"), which brings this screen into line with the invoice PDF
+ * and the money emails.
+ */
+// Story 144.7 — the shared helper, not a hand-rolled `/ 100`. Four copies of this conversion
+// existed across the app; the exponent now lives in one place.
+const formatMinor = (minorUnits: number, currency?: string): string =>
+  formatCurrencyFromMinor(minorUnits, (currency || "XOF") as CurrencyCode);
 
 // Helper to extract sender email from senderId
 const getSenderEmail = (transfer: TransferDto): string | undefined => {
@@ -430,9 +456,23 @@ export default function TransferLandingPage() {
   const [paymentReference, setPaymentReference] = useState("");
   const [paymentAmount, setPaymentAmount] = useState(0);
   // Processing fee breakdown (from payment initialization response)
+  // Story 135.1 — the fee quote published by SaleCheckoutPanel, so the summary card beside it
+  // renders the same numbers instead of its own display-currency conversion of the bare price.
+  const [saleFeeQuote, setSaleFeeQuote] = useState<ProcessingFeeQuote | null>(null);
   const [processingFee, setProcessingFee] = useState(0);
   const [processingFeePercent, setProcessingFeePercent] = useState(0);
   const [totalAmountCharged, setTotalAmountCharged] = useState(0);
+  /**
+   * Story 144.1 — the gateway amount for a converted payment (Togo/Benin/Senegal route to
+   * Startbutton, which cannot charge XOF). `totalAmountCharged` is what the purchase costs in the
+   * transfer's own currency; this is what the buyer's provider actually debits. Without it the
+   * total on this screen is a figure she will never be charged, which is the defect this closes.
+   */
+  const [paymentSettlement, setPaymentSettlement] = useState<{
+    currency: string;
+    amountMinorUnits: number;
+    displayAmount?: string;
+  } | null>(null);
 
   // Payment block (admin can disable all payments)
   // null = not yet checked, true = disabled, false = enabled
@@ -482,6 +522,28 @@ export default function TransferLandingPage() {
   const [saleCheckingEmail, setSaleCheckingEmail] = useState(false);
   const [saleVerifyingOtp, setSaleVerifyingOtp] = useState(false);
   const saleVerifyAttemptedRef = useRef(false);
+  /**
+   * Story 143.1 — mobile money claims its token from a polling success rather than a redirect, so
+   * it needs its own guard. Keyed on the reference, not a boolean: a shared flag meant whichever
+   * effect ran first permanently blocked the other, and a failed claim had no way back.
+   */
+  const momoClaimAttemptedRef = useRef<string | null>(null);
+  const isMountedRef = useRef(true);
+  /**
+   * Whether the mobile-money buyer's download token has been obtained. The success screen must not
+   * offer a download action until it has — handleSaleDownload() returns silently without a token,
+   * which renders as a button that does nothing.
+   */
+  const [saleClaimState, setSaleClaimState] = useState<
+    "idle" | "claiming" | "ready" | "failed"
+  >("idle");
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
   // Story 134.8 — in-flight guard for the manual readiness re-check.
   const [isRecheckingStreamStatus, setIsRecheckingStreamStatus] = useState(false);
 
@@ -772,35 +834,132 @@ export default function TransferLandingPage() {
     }
   }, [shortCode, transferId, t]);
 
-  // Handle Paystack callback for public sales (URL has ?reference=xxx&trxref=xxx)
+  /**
+   * Story 143.1 — exchange a settled payment reference for the buyer's download token.
+   *
+   * Shared by BOTH post-payment paths, which is the point. The redirect flow (card, bank transfer,
+   * USSD) comes back to `?reference=…` and the effect below calls this. Mobile money never
+   * redirects, so before this story it never reached a token fetch at all: its success handler
+   * called handleDownload(), which sends no saleToken, and the public-sales download gate answered
+   * 401 "Download token required for public sales transfers." Two copies of this logic would drift
+   * and only one of them would ever be exercised.
+   *
+   * Returns true once the token is in hand.
+   */
+  const claimSaleDownloadToken = useCallback(
+    async (reference: string): Promise<boolean> => {
+      // The token is written by confirmSale(), which runs fire-and-forget from the gateway webhook.
+      // The payment can therefore be settled a moment before the session is. verifySaleAndGetToken
+      // answers SALE_SETTLEMENT_PENDING in that window — a DIFFERENT answer from the 404 that means
+      // no session exists. Falling through to sale-expired on it would show a paying buyer
+      // "expired" plus a Buy again button, which is the very defect this story removes.
+      //
+      // Keyed on the error CODE, not the message text. Matching prose made a user-facing string
+      // load-bearing for retry logic, with nothing to warn whoever next reworded it.
+      const RETRY_DELAYS_MS = [1000, 2000, 4000, 8000];
+
+      // `transfer.shortCode`, NOT the route param. The route param carries the `z-` prefix when a
+      // buyer arrives through a short link (`/downloads` builds `shortCodeWithPrefix`), and
+      // verifySaleAndGetToken compares it to the stored code with `!==` — so a prefixed value 404s
+      // and the buyer is shown "sale-expired" despite having paid. The API-supplied value is the
+      // raw code, which is what every other call on this page already sends
+      // (recoverPurchase, verifyRecovery, streamZipDownload). Found by walking it in a browser;
+      // no test or type would have caught it.
+      const apiShortCode = transfer?.shortCode ?? shortCode;
+
+      for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+        if (!isMountedRef.current) return false;
+
+        try {
+          const response = await transferApi.verifyPurchase(
+            apiShortCode,
+            reference,
+          );
+          if (!isMountedRef.current) return false;
+
+          if (!response.error && response.data) {
+            setSaleDownloadToken(response.data.downloadToken);
+            return true;
+          }
+
+          const stillSettling =
+            response.error?.code === "SALE_SETTLEMENT_PENDING";
+          if (!stillSettling || attempt === RETRY_DELAYS_MS.length) return false;
+
+          await new Promise((resolve) =>
+            setTimeout(resolve, RETRY_DELAYS_MS[attempt]),
+          );
+        } catch {
+          return false;
+        }
+      }
+
+      return false;
+    },
+    [shortCode, transfer?.shortCode],
+  );
+
+  // Handle gateway redirect callback for public sales (URL has ?reference=xxx&trxref=xxx)
   useEffect(() => {
     if (!transfer?.isPublicSales) return;
     if (saleVerifyAttemptedRef.current) return;
 
-    const reference = searchParams.get("reference") || searchParams.get("trxref");
+    // `ref` is the buyer receipt's parameter name (sale-sessions.service.ts builds
+    // `/{prefix}{shortCode}?ref={reference}`); `reference`/`trxref` are what gateways return on
+    // redirect. All three name the same thing, and the receipt link is the recovery path a paying
+    // buyer is most likely to use, so it must be honoured here.
+    const reference =
+      searchParams.get("reference") ||
+      searchParams.get("trxref") ||
+      searchParams.get("ref");
     if (!reference) return;
 
     // Guard: prevent double-execution on re-renders
     saleVerifyAttemptedRef.current = true;
     setPageState("sale-processing");
 
-    const verifyPayment = async () => {
-      try {
-        const response = await transferApi.verifyPurchase(shortCode, reference);
-        if (!response.error && response.data) {
-          setSaleDownloadToken(response.data.downloadToken);
-          setPageState("sale-ready");
-        } else {
-          // Token expired or payment failed
-          setPageState("sale-expired");
-        }
-      } catch {
-        setPageState("sale-expired");
-      }
-    };
+    claimSaleDownloadToken(reference).then((claimed) => {
+      // Same unmount guard as the mobile-money effect below — both call the same async claim,
+      // and applying the pattern to only one of them is how it rots.
+      if (!isMountedRef.current) return;
+      setPageState(claimed ? "sale-ready" : "sale-expired");
+    });
+  }, [transfer, shortCode, searchParams, claimSaleDownloadToken]);
 
-    verifyPayment();
-  }, [transfer, shortCode, searchParams]);
+  /**
+   * Story 143.1 — the mobile-money half of the same thing.
+   *
+   * Mobile money stays on the page and polls, so it has a settled payment and no redirect. Once
+   * polling reports success on a public-sales transfer, fetch the token the same way the redirect
+   * path does, so the download action below can send a saleToken instead of 401ing.
+   */
+  useEffect(() => {
+    if (!transfer?.isPublicSales) return;
+    if (pageState !== "payment-prompt") return;
+    if (pollingStatus !== "success") return;
+    if (!paymentReference) return;
+    if (saleDownloadToken) return;
+    // Keyed on the reference rather than a shared boolean: the redirect effect and this one are
+    // distinct events, and a single flag let whichever ran first permanently block the other.
+    if (momoClaimAttemptedRef.current === paymentReference) return;
+
+    momoClaimAttemptedRef.current = paymentReference;
+    setSaleClaimState("claiming");
+    claimSaleDownloadToken(paymentReference).then((claimed) => {
+      if (!isMountedRef.current) return;
+      // The outcome is NOT discarded. Without this the button below renders "ready to download"
+      // while handleSaleDownload() returns silently for want of a token — a dead button with no
+      // feedback, on the payment method this story exists to fix.
+      setSaleClaimState(claimed ? "ready" : "failed");
+    });
+  }, [
+    transfer,
+    pageState,
+    pollingStatus,
+    paymentReference,
+    saleDownloadToken,
+    claimSaleDownloadToken,
+  ]);
 
   // Update page title when transfer is loaded
   useEffect(() => {
@@ -1427,6 +1586,7 @@ export default function TransferLandingPage() {
             response.data.totalAmountMinorUnits ||
               response.data.pricingAmountMinorUnits,
           );
+          setPaymentSettlement(response.data.settlement ?? null);
           setPageState("payment-prompt");
         }
       } catch {
@@ -1467,6 +1627,7 @@ export default function TransferLandingPage() {
             response.data.totalAmountMinorUnits ||
               response.data.pricingAmountMinorUnits,
           );
+          setPaymentSettlement(response.data.settlement ?? null);
         }
 
         if (response.data?.authorizationUrl) {
@@ -1713,8 +1874,46 @@ export default function TransferLandingPage() {
   };
 
   // Called by SaleCheckoutPanel after payment is initialized
-  const handleSalePaymentInitiated = (reference: string, isMobileMoney: boolean) => {
+  const handleSalePaymentInitiated = (
+    reference: string,
+    isMobileMoney: boolean,
+    payment?: InitializePaymentV2Response,
+  ) => {
     setPaymentReference(reference);
+    /**
+     * Story 144.1 — carry the money across to the payment-prompt screen.
+     *
+     * This is the THIRD route into `payment-prompt` and the one a public-sale buyer actually takes.
+     * It set only the reference, so that screen rendered an empty "Amount" row and no breakdown at
+     * all — the same panel the other two routes populate. Found by walking the flow in a browser;
+     * no test would have caught a row that renders blank.
+     *
+     * PREFER THE INITIALIZE RESPONSE over `saleFeeQuote`, which is what this first did. The quote is
+     * re-fetched asynchronously on country change without being cleared in the meantime, and the Pay
+     * button is not gated on it settling — so a buyer who switches Togo to Côte d'Ivoire and pays
+     * quickly could be shown the previous country's total and settlement while being charged for the
+     * new one. The response is by definition the payment that was actually created. The quote stays
+     * only as a fallback for an older API that does not return the fee fields. Raised at review.
+     */
+    const money = payment?.totalAmountMinorUnits != null ? payment : null;
+    if (money) {
+      setPaymentAmount(money.pricingAmountMinorUnits);
+      setProcessingFee(money.processingFeeMinorUnits ?? 0);
+      setProcessingFeePercent(money.processingFeePercent ?? 0);
+      setTotalAmountCharged(money.totalAmountMinorUnits ?? money.pricingAmountMinorUnits);
+      setPaymentSettlement(money.settlement ?? null);
+    } else if (saleFeeQuote) {
+      setPaymentAmount(saleFeeQuote.priceMinorUnits);
+      setProcessingFee(saleFeeQuote.processingFeeMinorUnits);
+      setProcessingFeePercent(saleFeeQuote.feePercent);
+      setTotalAmountCharged(saleFeeQuote.totalMinorUnits);
+      setPaymentSettlement(saleFeeQuote.settlement ?? null);
+    } else {
+      // Neither source available. Clear rather than leave a previous attempt's numbers on screen:
+      // a stale settlement line naming a currency this payment does not convert to is worse than
+      // no line at all, and this screen is reachable more than once per session. Raised by audit.
+      setPaymentSettlement(null);
+    }
     if (isMobileMoney) {
       // Mobile money: transition to polling state
       setPageState("payment-prompt");
@@ -1827,6 +2026,60 @@ export default function TransferLandingPage() {
   // a plain reload can show a stale status for up to 90 seconds. Cloudflare keys on the full URL,
   // so a changing query parameter is a fresh origin fetch. Deliberately NOT a poll — packaging
   // takes minutes and a buyer is not sitting on the page the way a creator is.
+  // Story 135.1 (D2) — the free 20-second trailer, played INLINE on the sale page.
+  //
+  // It used to open the SideDrawer, which works but contradicts the cross-cutting playback-surface
+  // rule (`epics-stream-delivery.md:216-220`): a public buyer is never inside the drawer, and 135.6
+  // will render the paid film inline on this same page. Two surfaces for one film is the thing that
+  // rule exists to prevent.
+  //
+  // `file.previewClipUrl` is a STORAGE KEY, not a URL (`preview.service.ts:141-144` returns the key
+  // and the controller presigns it). Rendering it as a `src` gives a broken player. The playable URL
+  // comes from POST /storage/preview/url, which for video returns the watermarked 20s clip.
+  const streamTrailerFile = useMemo(
+    () => (transfer?.files ?? []).find((file) => !!file.previewClipUrl) ?? null,
+    [transfer],
+  );
+  const [trailerUrl, setTrailerUrl] = useState<string | null>(null);
+  const [trailerFailed, setTrailerFailed] = useState(false);
+
+  useEffect(() => {
+    // Stream transfers only. A download transfer keeps the drawer preview it has always had.
+    // Clear the previous transfer's trailer BEFORE fetching the new one (review, Medium).
+    // The `cancelled` flag stops a stale write, but it does not clear stale STATE — and the App
+    // Router does not force-remount this component just because the dynamic route params change.
+    // On a client-side navigation between two transfers the previous film's `<video src>` would
+    // stay on screen until the new fetch resolved. Not a leak (that URL was itself watermarked),
+    // but the wrong film, briefly, on a page whose whole job is telling the buyer what she is buying.
+    setTrailerUrl(null);
+    setTrailerFailed(false);
+
+    if (!isStreamTransfer || !transfer || !streamTrailerFile) return;
+
+    let cancelled = false;
+    (async () => {
+      const response = await storageApi.getFilePreviewUrl(
+        transfer.shortCode,
+        streamTrailerFile.id,
+      );
+      if (cancelled) return;
+
+      // `isWatermarked` is the gate, not a formality. The preview-protection rules forbid showing
+      // an unwatermarked original in a full-size surface, and generation is async after upload, so
+      // `false` is a real state rather than only an error path. 134.3's guard answers 409 when the
+      // clip is missing entirely, which lands here as `response.error`.
+      if (response.error || !response.data?.url || !response.data.isWatermarked) {
+        setTrailerFailed(true);
+        return;
+      }
+      setTrailerUrl(response.data.url);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isStreamTransfer, transfer, streamTrailerFile]);
+
   const handleStreamReadinessRecheck = async () => {
     if (!transfer || isRecheckingStreamStatus) return;
 
@@ -2508,7 +2761,7 @@ export default function TransferLandingPage() {
                         </span>
                         <span className="font-medium text-[#171717] dark:text-[oklch(0.91_0_0)]">
                           {paymentAmount
-                            ? `${(paymentAmount / 100).toLocaleString()} ${transfer?.currency === "XOF" ? "Fr CFA" : transfer?.currency || ""}`
+                            ? formatMinor(paymentAmount, transfer?.currency)
                             : ""}
                         </span>
                       </div>
@@ -2523,7 +2776,7 @@ export default function TransferLandingPage() {
                             : tPayment("processingFeeGeneric")}
                         </span>
                         <span className="font-medium text-[#171717] dark:text-[oklch(0.91_0_0)]">
-                          {`${(processingFee / 100).toLocaleString()} ${transfer?.currency === "XOF" ? "Fr CFA" : transfer?.currency || ""}`}
+                          {formatMinor(processingFee, transfer?.currency)}
                         </span>
                       </div>
                       <div className="flex justify-between items-center pt-1 border-t border-gray-200 dark:border-[oklch(0.30_0_0)]">
@@ -2531,7 +2784,7 @@ export default function TransferLandingPage() {
                           {tPayment("totalCharged")}
                         </span>
                         <span className="font-bold text-[#171717] dark:text-[oklch(0.91_0_0)]">
-                          {`${(totalAmountCharged / 100).toLocaleString()} ${transfer?.currency === "XOF" ? "Fr CFA" : transfer?.currency || ""}`}
+                          {formatMinor(totalAmountCharged, transfer?.currency)}
                         </span>
                       </div>
                     </>
@@ -2541,11 +2794,25 @@ export default function TransferLandingPage() {
                         {tPayment("amount")}
                       </span>
                       <span className="font-bold text-[#171717] dark:text-[oklch(0.91_0_0)]">
-                        {paymentAmount
-                          ? `${(paymentAmount / 100).toLocaleString()} ${transfer?.currency === "XOF" ? "Fr CFA" : transfer?.currency || ""}`
-                          : ""}
+                        {paymentAmount ? formatMinor(paymentAmount, transfer?.currency) : ""}
                       </span>
                     </div>
+                  )}
+                  {/* Story 144.1 — the buyer's gateway cannot charge this currency, so the payment
+                      path converts and debits the converted amount. Without this line the total
+                      above is a number she will never be charged. Same copy and placement as the
+                      sale checkout, so the two screens agree.
+
+                      OUTSIDE the fee ternary on purpose: a 0% processing rate takes the else branch,
+                      and a converted payment with no surcharge still converts. */}
+                  {paymentSettlement && (
+                    <p className="text-xs text-gray-500 dark:text-[oklch(0.60_0_0)] pt-1">
+                      {tPayment("chargedAs", {
+                        amount:
+                          paymentSettlement.displayAmount ??
+                          `${(paymentSettlement.amountMinorUnits / 100).toLocaleString()} ${paymentSettlement.currency}`,
+                      })}
+                    </p>
                   )}
                 </div>
 
@@ -2560,9 +2827,48 @@ export default function TransferLandingPage() {
                 <div className="space-y-2">
                   {isSuccess && (
                     <>
+                      {/*
+                        Story 143.1 — on a public sale the token is claimed asynchronously after
+                        polling reports success, because confirmSale() runs from the webhook and
+                        can lag. Until it lands, say so; handleSaleDownload() without a token
+                        returns silently, which reads as a button that does nothing.
+                      */}
+                      {transfer?.isPublicSales && saleClaimState === "claiming" && (
+                        <p
+                          aria-live="polite"
+                          className="text-xs text-gray-500 dark:text-[oklch(0.65_0_0)] text-center mb-2"
+                        >
+                          {tSale("preparingDownload")}
+                        </p>
+                      )}
+                      {transfer?.isPublicSales && saleClaimState === "failed" && (
+                        <p
+                          aria-live="polite"
+                          className="text-xs text-yellow-700 dark:text-yellow-400 text-center mb-2"
+                        >
+                          {/*
+                            Deliberately NOT downloadExpiredHint, which reads "you can buy again".
+                            This buyer has already paid. Telling them to pay again is the
+                            double-charge invitation Finding 4 records as a defect — it must not be
+                            introduced by the copy on the very state this story added.
+                          */}
+                          {tSale("downloadDelayed")}
+                        </p>
+                      )}
                       <button
-                        onClick={handleDownload}
-                        disabled={isDownloading}
+                        onClick={
+                          // Story 143.1 — a public-sales transfer authorises downloads ONLY by
+                          // saleToken (storage.controller has no payment-based fallback on that
+                          // branch), so this path must use handleSaleDownload. handleDownload
+                          // sends { sessionToken, email } and earns a 401 here.
+                          transfer?.isPublicSales ? handleSaleDownload : handleDownload
+                        }
+                        disabled={
+                          isDownloading ||
+                          // Never offer an action that cannot succeed: without a token
+                          // handleSaleDownload() is a no-op with no feedback.
+                          (!!transfer?.isPublicSales && !saleDownloadToken)
+                        }
                         className="w-full px-6 py-3.5 bg-[#87E64B] text-[#171717] font-medium rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                       >
                         <Download className="w-5 h-5" />
@@ -2649,6 +2955,19 @@ export default function TransferLandingPage() {
                     processingFeeMinorUnits={processingFee}
                     processingFeePercent={processingFeePercent}
                     totalAmountMinorUnits={totalAmountCharged}
+                    // Story 144.1 — the charge currency is the headline here for the same reason it
+                    // is on the sale checkout (135.1): this screen has a payment in flight, and the
+                    // card was rendering "$8.52" from approximate client-side rates beside the
+                    // panel's authoritative "5,152 XOF" for the one purchase. Seen in a browser.
+                    useChargeCurrency
+                    // Story 144.1 — this card and the payment panel beside it show the same total,
+                    // so both must name the settlement or neither does. With it on one and not the
+                    // other, a Togolese buyer sees two totals and only one of them mentions that
+                    // she is actually debited in GHS — the two-panels-disagree defect this card's
+                    // own prop docblock was written to prevent.
+                    settlementAmountMinorUnits={paymentSettlement?.amountMinorUnits}
+                    settlementCurrency={paymentSettlement?.currency}
+                    settlementDisplayAmount={paymentSettlement?.displayAmount}
                   />
                 </div>
               )}
@@ -3077,7 +3396,10 @@ export default function TransferLandingPage() {
   if (pageState === "preview" && transfer) {
     const requiresPaymentAction =
       transfer.price && transfer.price > 0 && !transfer.isPaid;
-    const formatPrice = (price: number, currency: string) => {
+    // `transfer.price` is MINOR units (story 144.7). This rendered it raw, so the pay button on
+    // the buyer's preview screen quoted 100x what the gateway would actually charge.
+    const formatPrice = (priceMinorUnits: number, currency: string) => {
+      const price = minorToMajorUnits(priceMinorUnits, currency);
       if (currency === "XOF") return `${price.toLocaleString()} Fr CFA`;
       return `${price.toLocaleString()} ${currency}`;
     };
@@ -3373,11 +3695,97 @@ export default function TransferLandingPage() {
                   </div>
                 )}
 
-                {/* Preview button — the free trailer (SD-FR6).
-                    Hidden when no watermarked clip exists: preview generation refuses files over
-                    2GB, and 134.3's guard then answers preview/url with 409, so offering it would
-                    be offering an action that cannot succeed (Story 134.8, Finding 9). */}
-                {(!isStreamTransfer || hasTrailer) && (
+                {/* Story 135.1 (D2, AC1) — the free trailer, inline.
+                    SD-FR6 makes the existing 20-second watermarked clip the trailer, and the UX
+                    specification treats it as the entire conversion case for a buyer who has never
+                    heard of the creator — so it plays here rather than in the SideDrawer, which the
+                    cross-cutting playback-surface rule reserves for authenticated creator flows.
+
+                    `preload="none"` because mobile data carries real cost in the target markets: a
+                    trailer that downloads itself before anyone presses play spends the buyer's money
+                    without being asked. `playsInline` because iOS Safari otherwise takes the clip
+                    fullscreen the moment it plays, which is the modal interruption the UX spec
+                    rejects. No autoplay — Flow A has the buyer choosing to watch. */}
+                {isStreamTransfer && hasTrailer && (
+                  <div className="mb-4">
+                    <p className="text-xs font-medium text-gray-400 dark:text-[oklch(0.50_0_0)] mb-2">
+                      {tStreamSale("trailerLabel")}
+                    </p>
+                    {trailerUrl ? (
+                      <video
+                        src={trailerUrl}
+                        controls
+                        playsInline
+                        preload="none"
+                        poster={transfer.coverUrl || undefined}
+                        className="w-full max-w-full rounded bg-black aspect-video"
+                      />
+                    ) : (
+                      <div
+                        className="w-full aspect-video rounded bg-gray-100 dark:bg-[oklch(0.24_0_0)] flex items-center justify-center px-4"
+                        role="status"
+                        aria-live="polite"
+                      >
+                        {trailerFailed ? (
+                          <p className="text-sm text-gray-600 dark:text-[oklch(0.65_0_0)] text-center">
+                            {tStreamSale("trailerUnavailable")}
+                          </p>
+                        ) : (
+                          <LoadingPanel className="py-2" />
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Story 135.1 (D1, AC2) — what the buyer is actually buying, before she commits.
+                    Fee-model principle 1, and the UX specification's central point: these four
+                    sentences are not boilerplate, they are the mechanism that corrects a WhatsApp-
+                    shaped mental model ("download it, then it's mine, offline, forever").
+
+                    Rendered on delivery mode alone, NOT gated on `streamStatus` (D4) — a buyer
+                    looking at a film being prepared is a buyer deciding whether to come back.
+
+                    Deliberately absent: the 30-day wind-down, the automatic refund on revocation,
+                    and anything about deletion. Those mechanisms ship in Epic 136 (136.4/136.5) and
+                    stating them here would publish a promise with nothing enforcing it — the exact
+                    defect readiness finding Q1 corrected once already. */}
+                {isStreamTransfer && (
+                  <div
+                    className="w-full bg-[#FDFAF4] dark:bg-[oklch(0.22_0_0)] rounded p-5 mb-4"
+                    aria-label={tStreamSale("termsTitle")}
+                    role="region"
+                  >
+                    <p className="text-sm font-semibold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-2">
+                      {tStreamSale("termsTitle")}
+                    </p>
+                    <ul className="space-y-2 text-sm text-gray-600 dark:text-[oklch(0.65_0_0)] leading-relaxed">
+                      <li>{tStreamSale("termsStreamOnly")}</li>
+                      <li>{tStreamSale("termsAccess")}</li>
+                      <li>{tStreamSale("termsRefund")}</li>
+                      <li>{tStreamSale("termsFee")}</li>
+                    </ul>
+                    {/* The price renders here as its own element and not only inside the Buy label.
+                        134.8 learned this the hard way: hiding the Buy button removed the price from
+                        the page entirely, because `Buy {price}` was the only place it appeared.
+
+                        Suppressed while the film is being prepared: 134.8's prepared-state block
+                        already carries the price in that state and this story leaves that block
+                        untouched (AC5). The buyer sees the price exactly once either way. */}
+                    {priceDisplay && !isStreamNotReady && (
+                      <p className="text-lg font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mt-3">
+                        {priceDisplay}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Preview button — the drawer path, kept for DOWNLOAD transfers only.
+                    Stream transfers play the trailer inline above (D2). Hidden when no watermarked
+                    clip exists: preview generation refuses files over 2GB, and 134.3's guard then
+                    answers preview/url with 409, so offering it would be offering an action that
+                    cannot succeed (Story 134.8, Finding 9). */}
+                {!isStreamTransfer && (
                   <button
                     onClick={() => {
                       if (transfer) {
@@ -3586,6 +3994,11 @@ export default function TransferLandingPage() {
                 <SaleCheckoutPanel
                   transferId={transfer.id}
                   transferCurrency={transfer.currency || "XOF"}
+                  // Story 135.1 (D3) — lets the panel quote the exact surcharge before paying.
+                  transferPriceMinorUnits={transfer.price}
+                  // ...and publishes it, so the summary card beside it shows the SAME numbers
+                  // from the SAME fetch rather than its own display-currency conversion.
+                  onQuoteChange={setSaleFeeQuote}
                   buyerEmail={saleBuyerEmail}
                   onBack={() => setPageState("sale-preview")}
                   onPaymentInitiated={handleSalePaymentInitiated}
@@ -3611,6 +4024,16 @@ export default function TransferLandingPage() {
                   message={transfer.message}
                   createdAt={transfer.createdAt}
                   versionCount={transfer.versionCount}
+                  // Story 135.1 — same quote the checkout panel is showing, so the two panels
+                  // cannot disagree, and rendered in the charge currency with the viewer's own
+                  // currency beneath it as an approximation.
+                  useChargeCurrency
+                  processingFeeMinorUnits={saleFeeQuote?.processingFeeMinorUnits}
+                  processingFeePercent={saleFeeQuote?.feePercent}
+                  totalAmountMinorUnits={saleFeeQuote?.totalMinorUnits}
+                  settlementAmountMinorUnits={saleFeeQuote?.settlement?.amountMinorUnits}
+                  settlementCurrency={saleFeeQuote?.settlement?.currency}
+                  settlementDisplayAmount={saleFeeQuote?.settlement?.displayAmount}
                 />
               </div>
             </div>

@@ -5,6 +5,68 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.65.1] - 2026-08-06
+
+### Removed
+
+- **An unused upload method that pointed at a route the backend no longer has.** It sent a whole transfer — details and files together — in a single request, which is how uploads worked before the current chunked flow replaced them. No screen had called it since, but it stayed in the API client, and the README presented it as *the* way to upload a file. Anyone following that example would have written code against a route that skipped the minimum price, stored prices at one hundredth of their value, and recorded no platform fee. The method, its type, and its export are gone. (`services/transfer-api.ts`, `services/index.ts`)
+
+### Changed
+
+- **The README's upload example now shows how uploading actually works.** Three steps — create the transfer, send the files in chunks, then finalize, which is what notifies the sender and recipients — checked against the real function signatures rather than written from memory. It also notes that the amount a person types goes in as a plain amount, with the server doing the conversion, so an example can no longer imply a price one hundredth of what was meant. (`README.md`)
+
+## [1.65.0] - 2026-08-05
+
+### Changed
+
+- **The checkout now asks about the payment method the buyer actually chose.** When a buyer picked bank transfer or USSD, the fee breakdown was worked out as though they had chosen a card — deliberately so, because that is what the charge itself did, and the one rule this panel must never break is that the total shown matches the total charged. Both sides have now been corrected together, so the breakdown describes the method in front of the buyer. **The figure on screen does not change**: no rate has been set for either method yet, so both still resolve to the card rate exactly as before. What changes is that correcting them later becomes a settings change rather than a code release. (`features/payment/components/SaleCheckoutPanel.tsx`, `services/platform-api.ts`)
+
+## [1.64.0] - 2026-08-04
+
+### Fixed
+
+- **The earnings line under the price box overstated what a creator would be paid, by a factor of a hundred.** It worked out her share from the number she had typed, while the service stored that number as a count of centimes — so a creator asking three thousand francs was told she would receive two thousand seven hundred and ninety, against the twenty-seven francs and ninety centimes that would actually reach her. The figure now describes the money she will be credited. (`features/home/components/UploadPanel.tsx`)
+- **The smallest price the form would accept was a hundredth of the intended one.** The minimum is held as a sum in whole francs and was compared against a typed price the service counted in centimes. Both sides of that comparison are now on the same footing, and the form accepts and refuses exactly the same prices the service does, so a price is never taken here and rejected there. The same fault, and the same fix, on the budget field when commissioning work. (`features/home/components/UploadPanel.tsx`, `features/file-request/components/FileRequestPanel.tsx`)
+- **Several screens showed stored amounts a hundred times too large.** Money is kept by the service in the smallest unit a currency has, but a number of screens handed those amounts to a formatter that expects whole francs and does no conversion. The price and the sales total in the transfer drawer, the amount on a delivery receipt, the price advertised on the link preview that social sites and search engines read, the price on the button a buyer pays from, and every revenue figure in the analytics panel — the headline, the chart, the period total and each row — were all affected. All of them now convert before they display. (`features/transfer/components/TransferDetailsPanel.tsx`, `features/transfer/components/DeliveryProofCard.tsx`, `features/analytics/components/AnalyticsPanel.tsx`, `app/downloads/[transferId]/[shortCode]/layout.tsx`, `app/downloads/[transferId]/[shortCode]/page.tsx`)
+
+### Changed
+
+- **The price and the budget are now sent as the person wrote them**, and the service converts. Nothing in the browser needs to know how finely a currency is counted, which is the point: the same list kept in two places is the kind of thing that drifts. (`features/home/components/UploadPanel.tsx`, `features/file-request/components/FileRequestPanel.tsx`, `services/transfer-api.ts`, `services/file-request-api.ts`)
+- **The conversion between stored amounts and readable ones lives in one place.** Five separate copies of it had grown up across the payment screens, the download page and the checkout, each written out by hand. They now share a single pair of helpers, and one leftover function that nothing called at all has been removed. (`lib/currency.ts`, `features/payment/components/PaymentPanels.tsx`, `features/payment/components/SaleCheckoutPanel.tsx`, `features/transfer/components/TransferPreviewPanel.tsx`)
+
+## [1.63.2] - 2026-08-03
+
+### Fixed
+
+- **A buyer waiting on a mobile money prompt was shown no price at all.** On a public sale, the screen that asks you to approve the payment on your phone is handed only the payment's reference — never the price, the fee or the total — so its money breakdown rendered an empty "Amount" row beside an otherwise complete summary. It now carries the figures from the payment that was actually created, rather than from the estimate shown a moment earlier, which could still be describing the previous country if the buyer changed it just before paying. (`app/downloads/[transferId]/[shortCode]/page.tsx`, `features/payment/components/SaleCheckoutPanel.tsx`)
+- **Where a purchase is converted before it is charged, only one of the two panels said so.** Buyers in Togo, Benin and Senegal are charged in another currency, and the summary card showed the converted amount only when a processing fee also happened to be present — so on a sale with no fee, the panel on the left disclosed the conversion and the card on the right did not, for the same purchase. The line is no longer tied to the fee. (`components/shared/TransferSummaryCard.tsx`, `app/downloads/[transferId]/[shortCode]/page.tsx`)
+- **Amounts on the payment screen were converted twice over.** The summary beside a payment in progress showed the total in whichever currency the viewer had selected for browsing, using approximate rates, while the panel next to it showed the currency actually being charged — two different figures for one purchase. The charged currency is now the headline on that screen, with the viewer's own currency beneath it as a clearly marked approximation, matching the checkout. (`app/downloads/[transferId]/[shortCode]/page.tsx`)
+
+### Changed
+
+- Converted amounts are now displayed exactly as the server formats them, instead of being divided by a hundred on the page. That division is only correct for currencies that have a smaller unit, and several of the ones ZeFile handles do not. (`components/shared/TransferSummaryCard.tsx`, `features/payment/components/SaleCheckoutPanel.tsx`, `services/payment-api.ts`, `services/platform-api.ts`)
+- Prices on the payment screen are formatted by the same shared helper as the rest of the checkout, so a CFA amount reads the same way there as it does on the invoice and in the emails. (`app/downloads/[transferId]/[shortCode]/page.tsx`)
+
+## [1.63.1] - 2026-08-02
+
+### Fixed
+
+- **A buyer who had paid could still be refused their download, by three separate routes.** Mobile money never leaves the page — it waits and checks — so it never reached the step that exchanges a settled payment for the permission to download, and its success button asked for the file the ordinary way, which a paid sale does not accept. The receipt email links back with the payment reference under one name and the page only read the two others, so the single recovery link every paying buyer is guaranteed to have was ignored, and the short-link hop in front of it dropped the parameter on the way past in any case. All three names are now read, the parameter survives the redirect, and both ways back — waiting on the page, or returning from the payment provider — ask for the download the same way instead of by two separate pieces of code, only one of which was ever exercised. Permission is granted by a message from the payment provider that can arrive a moment after the payment itself, so the page now waits through that gap and tells the difference between "not ready yet" and "no such sale", rather than showing someone who has just paid that their purchase expired. (`app/downloads/[transferId]/[shortCode]/page.tsx`, `app/downloads/page.tsx`)
+- **A download button that did nothing when pressed.** On a paid sale the button appeared as soon as the payment succeeded, but the permission it needs can arrive slightly later; pressed in that window it returned silently. It is now disabled until the download is genuinely ready and says what it is waiting for. The waiting message deliberately does not offer to buy again — this buyer has already paid, and inviting a second payment is the failure the rest of this work exists to prevent. (`app/downloads/[transferId]/[shortCode]/page.tsx`)
+- **The page a payment provider returns to verified against an address that no longer exists.** It posted to a first-generation endpoint removed long ago, so the request failed, and every buyer who came back that way was shown the failure page although their payment had succeeded. That page is reached more often than it appears: a payment started without an explicit, approved return address falls back to it. Three further faults in the same request — no security token, a response shape the API does not send, and a comparison against differently-cased text — are fixed by routing it through the shared payment client, which also means a wrong address stops the build rather than reaching a buyer. A payment still in progress when the checks run out is no longer called failed: the page says so and offers to check again, which previously required reloading. (`app/payment/processing/page.tsx`)
+
+## [1.63.0] - 2026-08-02
+
+### Added
+
+- **A stream-only sale page now says what the buyer is actually getting.** The page offered a title, a file count and a green button, and mentioned nowhere that the film could never be downloaded. Buyers in these markets learn video from WhatsApp, where you download it and then it is yours — offline, permanently — and stream-only inverts that expectation rather than merely failing to meet it. Four plain sentences now sit above the email field: you watch it here and there is no download, access lasts as long as the film is published and the creator's subscription does not affect it, buying it and not watching is not refundable but a failure on our side is, and a payment fee is added at checkout. What the page deliberately does **not** say is anything about access ending — that mechanism ships later, and describing it now would be a promise with nothing behind it. (`app/downloads/[transferId]/[shortCode]/page.tsx`)
+- **The free trailer plays on the page instead of in a side panel.** The 20-second preview opened the drawer, a surface meant for signed-in creators — and one that would have left the free trailer and the purchased film in two different places once playback ships. It now plays where the buyer is reading, from a watermarked clip fetched at view time, and it does not download a single byte until play is pressed. Mobile data costs real money here; a trailer that helps itself to it before being asked is not a preview, it is a charge. (`app/downloads/[transferId]/[shortCode]/page.tsx`)
+- **The checkout shows the total before the pay button, not after.** Price, payment fee and total now appear once a country and a payment method are chosen — including for card, bank transfer and USSD, none of which previously showed a fee anywhere. Where the buyer's provider settles in a different currency, the panel says so and names the amount. (`features/payment/components/SaleCheckoutPanel.tsx`)
+
+### Fixed
+
+- **Two totals in two currencies on the same screen.** The summary card converted the price into whichever currency the header was set to, using approximate rates, while the checkout showed the real amount — so one purchase read `$8.26` in one panel and `5,208.34 Fr CFA` in the other, with the less reliable of the two rendered larger and closer to the pay button. Both panels now read from the same quote and the same formatter. The amount that will be debited leads; the viewer's own currency sits beneath it, clearly marked as an approximation, because a total an international buyer cannot interpret is not one they can agree to. (`components/shared/TransferSummaryCard.tsx`, `features/payment/components/SaleCheckoutPanel.tsx`)
+
 ## [1.62.0] - 2026-08-01
 
 ### Fixed

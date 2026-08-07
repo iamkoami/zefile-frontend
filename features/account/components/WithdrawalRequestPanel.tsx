@@ -24,6 +24,7 @@ import {
 import LoadingPanel from "@/components/LoadingPanel";
 import KycVerificationBanner from "@/components/shared/KycVerificationBanner";
 import { useDrawerStore } from "@/stores/drawer-store";
+import { currencyFractionDigits } from "@/lib/currency";
 
 // Provider icon component - uses SVG icons from /public/icons/payment/
 const ProviderIcon: React.FC<{ provider: string; size?: "sm" | "md" }> = ({
@@ -203,9 +204,18 @@ const WithdrawalRequestPanel: React.FC<WithdrawalRequestPanelProps> = ({
       USD: "$",
     };
     const symbol = symbols[currency] || currency;
-    const formatted = (minorUnits / 100).toLocaleString(
-      locale === "fr" ? "fr-FR" : "en-US",
-    );
+    // Story 144.12 (review follow-up). A bare `toLocaleString` defaults to a MAXIMUM of three
+    // fraction digits and a minimum of zero, so a withdrawal fee of 5151.90 rendered "5,151.9" and
+    // one of 5151.999 rendered "5,151.999" — a lone decimal and a third decimal, on the screen a
+    // creator confirms a payout from. Same rule as `formatCurrencyAmount`: zero decimals, or
+    // exactly two. This panel is not a caller of that function, which is why the story's original
+    // caller-inventory sweep did not reach it.
+    const major = minorUnits / 100;
+    const digits = currencyFractionDigits(major);
+    const formatted = major.toLocaleString(locale === "fr" ? "fr-FR" : "en-US", {
+      minimumFractionDigits: digits,
+      maximumFractionDigits: digits,
+    });
     return currency === "XOF"
       ? `${formatted} ${symbol}`
       : `${symbol}${formatted}`;
