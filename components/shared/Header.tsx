@@ -33,6 +33,18 @@ const Header = () => {
   const { canInterrupt, reset: resetUpload } = useUploadStore();
   const [showAuthPanel, setShowAuthPanel] = useState(false);
   const [authMode, setAuthMode] = useState<"login" | "signup">("signup");
+
+  // Listen for cross-component auth-open events
+  // (UploadPanel anonymous-upload guidance dispatches "open-auth-signup")
+  useEffect(() => {
+    const handleOpenAuthSignup = () => {
+      setAuthMode("signup");
+      setShowAuthPanel(true);
+    };
+    window.addEventListener("open-auth-signup", handleOpenAuthSignup);
+    return () =>
+      window.removeEventListener("open-auth-signup", handleOpenAuthSignup);
+  }, []);
   const [showResourcesDropdown, setShowResourcesDropdown] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -449,22 +461,27 @@ const Header = () => {
               <Menu className="w-6 h-6 text-[#171717] dark:text-gray-100" />
             </button>
 
+            {/* width/height are the artwork's intrinsic 371x90 viewBox, so Next
+                reserves the right aspect ratio and nothing shifts on load; the
+                rendered size comes from the classes. Height is `auto` on
+                purpose — the previous fixed 130x33 was sized for the older
+                logo and stretched the current artwork vertically by ~5%. */}
             <Link href="/" className="flex items-center">
               <Image
                 src="/zefile-logo.svg"
                 alt={tCommon("logoAlt")}
-                width={130}
-                height={33}
+                width={371}
+                height={90}
                 priority
-                className="w-[130px] h-[33px] dark:hidden"
+                className="w-[100px] h-auto dark:hidden"
               />
               <Image
                 src="/zefile-logo-white.svg"
                 alt={tCommon("logoAlt")}
-                width={130}
-                height={33}
+                width={371}
+                height={90}
                 priority
-                className="w-[130px] h-[33px] hidden dark:block"
+                className="w-[100px] h-auto hidden dark:block"
               />
             </Link>
           </div>

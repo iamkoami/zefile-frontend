@@ -192,6 +192,36 @@ export function convertCurrency(
 }
 
 /**
+ * How many decimals a money amount shows — **zero, or exactly two. Never one.**
+ *
+ * ── WHY THIS REPLACED A PER-CURRENCY LIST (story 144.12) ───────────────────────────────
+ *
+ * This function used to branch on `["XOF", "XAF", "NGN", "KES"]` and `Math.round` those four,
+ * under a comment calling them "currencies with small unit values". **All four are two-decimal on
+ * the path this platform charges through** — that is the same ISO 4217 intuition Epic 144 has
+ * already been reversed once for trusting. `formatCurrencyFromMinor(515199, 'XOF')` rendered
+ * "5,152 XOF" against a charge of 5,151.99, and the same branch hid kobo and Kenyan cents.
+ *
+ * The list is gone rather than corrected. A per-currency list in a repo with no test layer drifts:
+ * the two copies of this function in `zefile-admin` had already lost XAF. One uniform rule cannot.
+ *
+ * ── THE RULE ───────────────────────────────────────────────────────────────────────────
+ *
+ * No fractional part -> no decimals, because a CFA price list reading "5,000.00 F CFA" throughout
+ * is worse than the defect. Any fractional part -> BOTH digits, because "5,151.9" is a money
+ * figure that invites being read as a rounded one, and roughly one charge in ten ends in a zero
+ * minor digit. Rounded to two decimals before the decision, so 5151.999 reads "5,152" rather than
+ * being dressed up as "5,152.00".
+ *
+ * This mirrors `currencyFractionDigits` in the backend's `string-formatting.util.ts`, which is the
+ * function that renders the same amounts into emails and invoices. Keep them in step.
+ */
+export function currencyFractionDigits(amount: number): 0 | 2 {
+  const rounded = Math.round(amount * 100) / 100;
+  return Number.isInteger(rounded) ? 0 : 2;
+}
+
+/**
  * Format amount with currency symbol
  * @param amount - The amount to format
  * @param currency - The currency code
@@ -205,18 +235,11 @@ export function formatCurrencyAmount(
 ): string {
   const symbol = CURRENCY_SYMBOLS[currency as CurrencyCode] || currency;
 
-  // Format number with appropriate decimal places
-  let formattedAmount: string;
-
-  // For currencies with small unit values (XOF, XAF, NGN, KES), show no decimals
-  if (["XOF", "XAF", "NGN", "KES"].includes(currency)) {
-    formattedAmount = Math.round(amount).toLocaleString(locale);
-  } else {
-    formattedAmount = amount.toLocaleString(locale, {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
-  }
+  const digits = currencyFractionDigits(amount);
+  const formattedAmount = amount.toLocaleString(locale, {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  });
 
   // Position symbol based on currency convention
   if (["XOF", "XAF"].includes(currency)) {
@@ -230,6 +253,73 @@ export function formatCurrencyAmount(
     // For others (NGN, ZAR, KES), symbol before with space
     return `${symbol} ${formattedAmount}`;
   }
+}
+
+/**
+ * Convert a MINOR-unit amount (what the backend stores and the gateway charges) to MAJOR units
+ * (what a person reads).
+ *
+ * ── WHY THIS EXISTS ────────────────────────────────────────────────────────────────────
+ *
+ * `formatCurrencyAmount` and `formatPrice` above both take MAJOR units and neither divides.
+ * Backend money fields — `Transfer.price`, `pricingAmountMinorUnits`, `serviceChargeAmount`,
+ * `budgetMinorUnits` — are all MINOR units. Handing one to the other renders it 100x too large,
+ * which is the defect story 144.7 was raised for: a creator's earnings preview promised
+ * "2,790 XOF" on a sale that pays her 27.90.
+ *
+ * Four separate hand-rolled `/ 100` conversions already exist in this repo
+ * (`downloads/page.tsx`, `SaleCheckoutPanel.tsx`, `PaymentPanels.tsx`, `TransferPreviewPanel.tsx`).
+ * This is the one they should all become. **Do not add a fifth.**
+ *
+ * ── WHY A BARE 100 IS CORRECT HERE, AND WHERE THAT STOPS BEING TRUE ────────────────────
+ *
+ * The authority on minor-unit exponents is the BACKEND file
+ * `src/shared/constants/currency-units.constant.ts`. Every currency in `CurrencyCode` above —
+ * XOF, XAF, NGN, GHS, ZAR, KES, USD, EUR — is two-decimal on the gateway path this platform
+ * charges through, so one divisor covers all of them.
+ *
+ * XOF and XAF are two-decimal **against ISO 4217**, which assigns them an exponent of 0. Paystack
+ * does not follow ISO: a test charge of `{ amount: 515199, currency: "XOF" }` renders on its own
+ * checkout page as "Pay XOF 5,151.99". Verified 2026-08-03. Do not "correct" this to ISO — that
+ * exact correction was made once, propagated across three repos, and fully reverted.
+ *
+ * **This deliberately does NOT mirror the backend's exponent list.** A second list in a second
+ * repo with no test layer to guard it is story 144.8's open problem, and duplicating it here
+ * would make that worse. The day this platform supports a currency that is genuinely
+ * zero-decimal at the gateway (JPY, KRW, XPF…), this function needs the real exponent — and that
+ * is the moment to solve 144.8 properly rather than to paste a list.
+ */
+export function minorToMajorUnits(minorUnits: number, _currency?: CurrencyCode | string): number {
+  if (!Number.isFinite(minorUnits)) return 0;
+  return minorUnits / 100;
+}
+
+/**
+ * Format a MINOR-unit amount for display. The pairing of {@link minorToMajorUnits} with
+ * {@link formatCurrencyAmount}, so callers never have to remember which of the two takes which
+ * scale.
+ */
+export function formatCurrencyFromMinor(
+  minorUnits: number,
+  currency: CurrencyCode | string,
+  locale: string = "en-US"
+): string {
+  return formatCurrencyAmount(minorToMajorUnits(minorUnits, currency), currency, locale);
+}
+
+/**
+ * {@link formatPrice} for a MINOR-unit amount — converts to the display currency and returns
+ * "Free" for zero.
+ *
+ * `formatPrice` takes MAJOR units and does not divide. Every site that handed it a
+ * `*MinorUnits` field was rendering 100x the real figure; this is the pairing that stops that.
+ */
+export function formatPriceFromMinor(
+  minorUnits: number,
+  originalCurrency: CurrencyCode | string,
+  displayCurrency: CurrencyCode | string
+): string {
+  return formatPrice(minorToMajorUnits(minorUnits, originalCurrency), originalCurrency, displayCurrency);
 }
 
 /**

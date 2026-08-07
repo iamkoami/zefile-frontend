@@ -32,7 +32,11 @@ import { multipartUploadService } from "@/services/multipart-upload.service";
 import { useUploadStore } from "@/stores/upload-store";
 import { useDrawerStore } from "@/stores/drawer-store";
 import { useCurrentCurrency } from "@/stores/currency-store";
-import { formatCurrencyAmount, convertCurrency } from "@/lib/currency";
+import {
+  formatCurrencyAmount,
+  formatCurrencyFromMinor,
+  convertCurrency,
+} from "@/lib/currency";
 import { TransferOptions } from "@/features/transfer/components/TransferOptionsPanel";
 import { storageApi } from "@/services/storage-api";
 import { getTierTranslationKey } from "@/hooks/useTierLimits";
@@ -168,6 +172,35 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
   const [isPublicSales, setIsPublicSales] = useState(false);
   const canUsePublicSales = userTier === "starter" || userTier === "pro";
 
+  // Stream-only delivery — Story 134.4.
+  //
+  // Deliberately NOT a hardcoded tier comparison like canUsePublicSales above. The backend
+  // resolves this from the `streamDelivery` tier feature, so an admin granting it to another tier
+  // makes this toggle appear with no deploy and no restart. Copying the line above would leave it
+  // permanently hidden for that tier.
+  const [isStreamOnly, setIsStreamOnly] = useState(false);
+  const [canUseStreamDelivery, setCanUseStreamDelivery] = useState(false);
+
+  // The browser knows every selected file's MIME type before the transfer is created, so the
+  // creator learns about a non-video file immediately rather than at the first upload completion.
+  // This HIDES a control; it does not enforce anything (P11) — the guarantee is the backend
+  // refusal in FilesService.createFileRecord, and the two must agree.
+  const allSelectedFilesAreVideo = useMemo(
+    () =>
+      selectedFiles.length > 0 &&
+      selectedFiles.every((file) => file.type.toLowerCase().startsWith("video/")),
+    [selectedFiles],
+  );
+
+  // If the creator turns stream-only on with an .mp4 and then adds a .pdf, clear the toggle rather
+  // than sending a combination the backend refuses. Clearing it (and re-showing the reason) beats
+  // silently downgrading the transfer to a download, which is not what they asked for.
+  useEffect(() => {
+    if (isStreamOnly && !allSelectedFilesAreVideo) {
+      setIsStreamOnly(false);
+    }
+  }, [isStreamOnly, allSelectedFilesAreVideo]);
+
   // Free transfer & minimum price state
   const [isFreeTransfer, setIsFreeTransfer] = useState(false);
   const savedPriceRef = React.useRef("");
@@ -175,7 +208,19 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
     useState<number>(300);
   const [canCreateFreeTransfers, setCanCreateFreeTransfers] = useState(false);
 
-  // Minimum price converted to selected currency
+  /**
+   * The minimum price, in MAJOR units — the same scale the price box is denominated in, so the
+   * comparison is like-for-like (story 144.7, AC2).
+   *
+   * `minimumTransferPriceNGN` is a MAJOR-unit floor (₦300 by default) and `convertCurrency` is
+   * scale-agnostic, so this stays in major units end to end. It used to be compared against a
+   * minor-unit typed value, which enforced a floor one hundredth of the intended one: ~1.18 CFA
+   * rather than ~118 CFA.
+   *
+   * The server-side gate in `transfers.controller.ts` scales this floor to minor units to match
+   * the stored price. Both reject the same set of inputs; they just do the comparison on
+   * opposite sides of the conversion.
+   */
   const minimumPriceInCurrency = useMemo(() => {
     if (currency === "NGN") return minimumTransferPriceNGN;
     return Math.ceil(convertCurrency(minimumTransferPriceNGN, "NGN", currency));
@@ -394,7 +439,10 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
           setServiceChargePercentage(response.data.serviceChargePercentage);
           setMinimumTransferPriceNGN(response.data.minimumTransferPriceNGN);
           setCanCreateFreeTransfers(response.data.canCreateFreeTransfers);
+          // Story 134.4 — one extra field on a payload this panel already fetches on mount.
+          setCanUseStreamDelivery(response.data.canUseStreamDelivery === true);
           return;
+
         }
       }
       const publicResponse = await platformApi.getPublicConfig();
@@ -704,6 +752,23 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
     setPrice(formattedValue);
   };
 
+  /**
+   * Returns MAJOR units — the number the creator typed, meaning exactly what she thinks it
+   * means. `3000` is 3,000 CFA.
+   *
+   * ── DO NOT SCALE THIS, AND DO NOT SCALE ITS CALLERS (story 144.7) ─────────────────────
+   *
+   * This value is sent as `priceMajorUnits` and the BACKEND converts it to the minor units the
+   * gateway charges in, using `getMinorUnitExponent`. That is the single conversion site for
+   * the whole platform. Multiplying by 100 here would double-scale every price and charge
+   * buyers 100x — and it would put a currency-exponent assumption in the frontend, which is
+   * precisely what story 144.8 exists to prevent.
+   *
+   * It used to be otherwise: this returned an unscaled number that the backend read as
+   * CENTIMES, so a creator typing 3,000 CFA was charged 30.92 XOF while her preview promised
+   * her the full 2,790. If you are reading this because a number looks 100x wrong, the bug is
+   * almost certainly a *render* site treating a stored minor-unit amount as major — not here.
+   */
   const parsePriceToNumber = (formattedPrice: string): number => {
     // Remove all spaces (thousand separators in French format)
     const numericString = formattedPrice.replace(/\s/g, "");
@@ -839,14 +904,17 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
     }
 
     try {
-      // Calculate charge info before processing
+      // Calculate charge info before processing.
+      //
+      // MAJOR units throughout, matching `parsePriceToNumber` and the price box — a percentage
+      // of an amount is scale-invariant, so the arithmetic is the same either way; what matters
+      // is that this and the earnings line below agree on which scale they are on. Story 144.7.
       const chargeCalc = await platformApi.getPublicConfig();
       if (chargeCalc.data) {
-        const priceNum = parsePriceToNumber(price);
+        const priceMajorUnits = parsePriceToNumber(price);
         const serviceCharge =
-          (priceNum * chargeCalc.data.serviceChargePercentage) / 100;
-        const receivedAmt = priceNum - serviceCharge;
-        setReceivedAmount(receivedAmt);
+          (priceMajorUnits * chargeCalc.data.serviceChargePercentage) / 100;
+        setReceivedAmount(priceMajorUnits - serviceCharge);
       }
 
       // Check if user is already logged in
@@ -988,7 +1056,9 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
         recipientEmails: isPublicSales ? [] : recipientEmails,
         recipients: isPublicSales ? [] : recipients,
         title: transferTitle,
-        price: isFreeTransfer ? 0 : parsePriceToNumber(price),
+        // MAJOR units. The backend scales this to the minor units the gateway charges in — one
+        // conversion, server-side, using the exponent it already owns (story 144.7).
+        priceMajorUnits: isFreeTransfer ? 0 : parsePriceToNumber(price),
         currency: currency,
         paymentRequired: isFreeTransfer ? false : undefined,
         message: message || undefined,
@@ -1004,6 +1074,11 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
         wallpaperKey,
         coverKey,
         isPublicSales: isPublicSales ? true : undefined,
+        // Story 134.4. Omitted entirely for an ordinary transfer so the request body is
+        // byte-identical to before this story (AC8). This is the only createTransfer call site in
+        // the frontend — `handleReuseTransfer` above calls reuseTransfer, which the backend
+        // refuses outright for stream transfers (AC7), so it deliberately sends nothing here.
+        deliveryMode: isStreamOnly ? "stream" : undefined,
       });
 
       if (transferResponse.error) {
@@ -1583,11 +1658,18 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                     <p className="text-sm font-bold text-[#171717] dark:text-[oklch(0.91_0_0)]">
                       {t("addFiles")}
                     </p>
-                    <p className="text-xs text-gray-500">
-                      {isTestMode
-                        ? t("blockSendTestSub")
-                        : `${t("upTo")} ${formatBytes(maxUploadSize)}`}
-                    </p>
+                    {isTestMode ? (
+                      <p className="text-xs text-gray-500">
+                        {t("blockSendTestSub")}
+                      </p>
+                    ) : (
+                      <>
+                        <p className="text-xs text-gray-500">{`${t("upTo")} ${formatBytes(maxUploadSize)}`}</p>
+                        <p className="text-[11px] text-gray-400 mt-0.5">
+                          {t("upToWithSignup")}
+                        </p>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -1617,6 +1699,22 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
               >
                 {t("dropFilesHere")}
               </p>
+
+              {/* Sign up to get paid prompt (only in real-send mode) */}
+              {!isTestMode && (
+                <p className="text-xs text-[#171717] dark:text-[oklch(0.91_0_0)] mb-3 text-center">
+                  {t("toSetPriceTitle")}{" "}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      window.dispatchEvent(new CustomEvent("open-auth-signup"))
+                    }
+                    className="underline font-semibold hover:opacity-70 transition-opacity"
+                  >
+                    {t("toSetPriceCta")}
+                  </button>
+                </p>
+              )}
 
               {/* Test/Real mode toggle link */}
               <p className="text-xs text-gray-400 mb-6 text-center">
@@ -1864,7 +1962,19 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                       {formErrors.price}
                     </p>
                   )}
-                  {/* Service Charge — single-line inline */}
+                  {/*
+                    Service Charge — single-line inline.
+
+                    Story 144.7, AC1. This is the number the creator decides her price on, and it
+                    was a lie by a factor of one hundred for as long as the typed value reached
+                    the database unscaled: she was promised "2,790 XOF" on a sale that credited
+                    her 27.90.
+
+                    It is honest now because both sides are MAJOR units — `parsePriceToNumber`
+                    returns what she typed, `receivedAmount` is derived from it in the same scale,
+                    and `formatCurrencyAmount` takes major units. The conversion to the minor
+                    units the gateway charges in happens once, server-side. Do NOT divide here.
+                  */}
                   {price && parsePriceToNumber(price) > 0 && (
                     <p className="text-xs text-[#171717] dark:text-[oklch(0.91_0_0)] mt-3">
                       {t.rich("earningsInline", {
@@ -2019,6 +2129,11 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                       checked={isPublicSales}
                       onChange={(checked) => {
                         setIsPublicSales(checked);
+                        // Stream-only requires public sales (backend AC5). Leaving it on here
+                        // would make the panel send a combination the backend refuses with a 400.
+                        if (!checked) {
+                          setIsStreamOnly(false);
+                        }
                         if (checked && isFreeTransfer) {
                           setIsFreeTransfer(false);
                           setPrice(savedPriceRef.current);
@@ -2032,6 +2147,44 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                         }
                       }}
                       label={t("publicSalesToggle")}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Stream-Only Delivery Toggle — Story 134.4.
+                  Shown when the creator's tier carries the streamDelivery feature AND public
+                  sales is on (stream-only means nothing on a private recipient transfer).
+                  Disabled unless every selected file is video, with the reason stated in text and
+                  wired to the switch via aria-describedby so it is announced rather than conveyed
+                  by the greyed-out state alone. */}
+              {canUseStreamDelivery && isPublicSales && (
+                <div className="rounded border border-neutral-200 dark:border-border p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm text-[#171717] dark:text-[oklch(0.91_0_0)]">
+                        {t("streamOnlyToggle")}
+                      </p>
+                      <p className="text-xs text-neutral-500 dark:text-[oklch(0.65_0_0)] mt-0.5">
+                        {t("streamOnlyDescription")}
+                      </p>
+                      {!allSelectedFilesAreVideo && (
+                        <p
+                          id="stream-only-reason"
+                          className="text-xs text-[#F59E0B] mt-1.5"
+                        >
+                          {t("streamOnlyVideoRequired")}
+                        </p>
+                      )}
+                    </div>
+                    <Toggle
+                      checked={isStreamOnly}
+                      disabled={!allSelectedFilesAreVideo}
+                      onChange={(checked) => setIsStreamOnly(checked)}
+                      label={t("streamOnlyToggle")}
+                      aria-describedby={
+                        !allSelectedFilesAreVideo ? "stream-only-reason" : undefined
+                      }
                     />
                   </div>
                 </div>

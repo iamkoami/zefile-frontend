@@ -18,6 +18,7 @@ import {
 import ReportIssueButton from "@/components/shared/ReportIssueButton";
 import { useTranslations, useLocale } from "next-intl";
 import { TransferDto, transferApi } from "@/services/transfer-api";
+import { streamApi } from "@/services/stream-api";
 import { useDrawerStore, TransferRole } from "@/stores/drawer-store";
 import { copyTransferLink, buildDisplayUrl, copyToClipboard } from "@/utils/clipboard";
 import { toast } from "@/components/shared/Toast";
@@ -32,7 +33,7 @@ import { storageApi } from "@/services/storage-api";
 import { platformApi } from "@/services/platform-api";
 import LoadingPanel from "@/components/LoadingPanel";
 import VerifiedBadge from "@/components/shared/VerifiedBadge";
-import { formatCurrencyAmount } from "@/lib/currency";
+import { formatCurrencyAmount, formatCurrencyFromMinor } from "@/lib/currency";
 import { invoicesApi, InvoiceDto, VerifyDeliveryProofResponse } from "@/services/invoices-api";
 import DeliveryProofCard from "./DeliveryProofCard";
 
@@ -51,6 +52,10 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
 }) => {
   const t = useTranslations("transferDetails");
   const tPayment = useTranslations("payment");
+  // Story 134.7 — creator-facing packaging copy. Its own namespace rather than 135's buyer
+  // strings: different audience, and a shared namespace forks the first time one side needs
+  // different wording.
+  const tStream = useTranslations("streamPackaging");
   const locale = useLocale();
   const { pushView, popView, openPaymentFlow } = useDrawerStore();
 
@@ -364,6 +369,137 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
     }
   }, [currentTransfer?.id, currentTransfer?.isPublicSales, currentTransfer?.salesStats?.totalSales, role]);
 
+  // ── Stream packaging state (Story 134.7) ──────────────────────────────────────────
+  //
+  // `deliveryMode` and `streamStatus` have been on the wire since 134.2; the backend
+  // returns both to the OWNER deliberately unstripped. Until this story nothing read them.
+  const isStreamTransfer = currentTransfer?.deliveryMode === "stream";
+  const streamStatus = currentTransfer?.streamStatus ?? null;
+  // `pending` and `processing` are ONE creator-facing state (story D-render). The creator
+  // does not care whether a worker has picked the job up yet; they care whether the film is
+  // coming. Two words for one experience is two ways to write the copy wrong.
+  const isStreamPreparing =
+    isStreamTransfer && (streamStatus === "pending" || streamStatus === "processing");
+  const isStreamFailed = isStreamTransfer && streamStatus === "failed";
+
+  const [isRetryingPackaging, setIsRetryingPackaging] = useState(false);
+  const [pollingExhausted, setPollingExhausted] = useState(false);
+
+  /**
+   * Reset the packaging state when a DIFFERENT transfer is shown.
+   *
+   * Found in code review. `SideDrawer` mounts this panel as
+   * `<TransferDetailsPanel transfer={selectedTransfer} role={transferRole} />` with **no
+   * `key`**, so React reuses the same component instance when the creator opens another
+   * transfer. Without this, `pollingExhausted` survives: once one film hits the 10-minute
+   * poll cap, every stream transfer opened afterwards in the same drawer session starts
+   * exhausted and never auto-polls — AC2 silently broken for exactly the creator who has
+   * several films in flight at once.
+   *
+   * Done here rather than by adding a `key` upstream: a `key` would also throw away the
+   * panel's other state (title edits, password field, fetched sales stats) on every open,
+   * which is a bigger behavioural change to shared drawer infrastructure than this story
+   * should make.
+   */
+  useEffect(() => {
+    setPollingExhausted(false);
+    setIsRetryingPackaging(false);
+  }, [transfer?.id]);
+
+  /**
+   * Poll while packaging is in flight (story D2).
+   *
+   * Deliberately NOT `refreshTransferData()`: that also rewrites `titleValue` and
+   * `hasPassword` from the response, so polling through it would clobber a title the
+   * creator is halfway through typing, every ten seconds. This only advances the transfer.
+   *
+   * Polls `GET /transfers/:id` — owner-scoped, ownership-checked and UNCACHED. Never
+   * `GET /transfers/code/:shortCode`, which is cached 60s and would show a stale status
+   * long enough to look like a hung job.
+   */
+  useEffect(() => {
+    // Three gates, all load-bearing: a download transfer must never be polled (AC9), and a
+    // terminal status must stop the timer rather than re-arm it (AC2).
+    if (!isStreamPreparing || !transfer?.id || pollingExhausted) return;
+
+    let cancelled = false;
+    let polls = 0;
+    const MAX_POLLS = 60; // ~10 minutes at 10s. An unattended tab must not poll all day.
+
+    const interval = setInterval(async () => {
+      polls += 1;
+      if (polls > MAX_POLLS) {
+        clearInterval(interval);
+        if (!cancelled) setPollingExhausted(true);
+        return;
+      }
+      try {
+        const response = await transferApi.getTransferById(transfer.id);
+        // The unmount guard: a response landing after the panel closed must not setState.
+        if (cancelled || !response.data) return;
+        setCurrentTransfer(response.data);
+      } catch {
+        // A dropped poll is not worth surfacing — the next tick tries again, and the
+        // manual "check again" is always available.
+      }
+    }, 10_000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [isStreamPreparing, transfer?.id, pollingExhausted]);
+
+  /** Manual refresh, for after the poll cap and for the impatient. */
+  const handleCheckPackagingAgain = useCallback(async () => {
+    if (!transfer?.id) return;
+    const response = await transferApi.getTransferById(transfer.id);
+    if (response.data) {
+      setCurrentTransfer(response.data);
+      // Re-arm polling only if it is still worth polling.
+      if (response.data.streamStatus === "pending" || response.data.streamStatus === "processing") {
+        setPollingExhausted(false);
+      }
+    }
+  }, [transfer?.id]);
+
+  /**
+   * Retry a failed packaging job (AC3, AC4).
+   *
+   * Every refusal is surfaced. A retry button that appears to work and queues nothing is
+   * the precise failure this story exists to remove — and it is the shape of the defect
+   * 134.5 shipped and found only by running it.
+   */
+  const handleRetryPackaging = useCallback(async () => {
+    if (!transfer?.id || isRetryingPackaging) return;
+
+    setIsRetryingPackaging(true);
+    try {
+      const response = await streamApi.retryPackaging(transfer.id);
+
+      if (response.error) {
+        if (response.status === 409) {
+          toast.error(tStream("retryNotFailed"));
+        } else if (response.status === 429) {
+          toast.error(tStream("retryTooMany"));
+        } else {
+          toast.error(tStream("retryFailed"));
+        }
+        // Re-read either way: a 409 usually means the film moved on without us.
+        await handleCheckPackagingAgain();
+        return;
+      }
+
+      toast.success(tStream("retryQueued"));
+      setPollingExhausted(false);
+      await handleCheckPackagingAgain();
+    } catch {
+      toast.error(tStream("retryFailed"));
+    } finally {
+      setIsRetryingPackaging(false);
+    }
+  }, [transfer?.id, isRetryingPackaging, tStream, handleCheckPackagingAgain]);
+
   // Listen for refresh-transfer-data event
   useEffect(() => {
     const handleRefresh = (event: CustomEvent<{ transferId: string }>) => {
@@ -454,11 +590,18 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
     ],
   );
 
+  // Story 134.9 (D9, D7): a stream-only transfer never expires on the clock, so its creator
+  // must not see an expired or "expires soon" badge counting down to something that will not
+  // happen. The nominal date still exists on the row — it is simply not enforced — so the date
+  // line below renders `noExpiration` rather than a date for these transfers.
+  const isStreamOnly = currentTransfer?.deliveryMode === "stream";
+
   // Check expiry status
   const expiryStatus = useMemo((): {
     isExpired: boolean;
     isUrgent: boolean;
   } => {
+    if (isStreamOnly) return { isExpired: false, isUrgent: false };
     if (!expiryDateStr) return { isExpired: false, isUrgent: false };
     const now = new Date();
     const expiry = new Date(expiryDateStr);
@@ -469,7 +612,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
       isExpired: diffDays <= 0,
       isUrgent: diffDays > 0 && diffDays <= 3,
     };
-  }, [expiryDateStr]);
+  }, [expiryDateStr, isStreamOnly]);
 
   // Determine if WhatsApp reminder button should be shown
   const showWhatsAppReminder =
@@ -1179,6 +1322,87 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
           </p>
         </div>
 
+        {/*
+          Stream packaging state (Story 134.7).
+
+          Sits directly under the title and above everything else, because while a film is
+          preparing or has failed it is the most important true thing about this transfer.
+          Rendered ONLY for stream transfers that are not ready — a download transfer sees
+          nothing at all here (AC9), and `streamStatus` is null on every one of them.
+
+          Story 136.1's playback analytics land further down the panel, not here.
+        */}
+        {(isStreamPreparing || isStreamFailed) && (
+          <div
+            className="mb-8 border border-gray-200 dark:border-border rounded p-6"
+            // The state changes underneath a creator who is not looking at it (the poll
+            // flips preparing → ready). `polite` announces that without interrupting.
+            role="status"
+            aria-live="polite"
+          >
+            {isStreamPreparing && (
+              <div className="flex flex-col items-center text-center">
+                {/* P12 and CLAUDE.md's loading rules: LoadingPanel, never a spinner icon. */}
+                <LoadingPanel className="py-4" />
+                <h3 className="text-base font-semibold text-[#171717] dark:text-foreground mt-2">
+                  {tStream("preparingTitle")}
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-[oklch(0.65_0_0)] mt-2 max-w-md">
+                  {tStream("preparingBody")}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-[oklch(0.60_0_0)] mt-2 max-w-md">
+                  {tStream("preparingHint")}
+                </p>
+                {/* Only after the poll cap — before that the panel moves on its own and a
+                    button would invite pointless clicking. */}
+                {pollingExhausted && (
+                  <div className="mt-4">
+                    <p className="text-sm text-gray-600 dark:text-[oklch(0.65_0_0)] mb-2">
+                      {tStream("stillPreparing")}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleCheckPackagingAgain}
+                      className="min-h-[44px] px-5 py-2 border border-[#171717] dark:border-[oklch(0.40_0_0)] text-[#171717] dark:text-foreground text-sm font-medium rounded hover:bg-gray-50 dark:hover:bg-[oklch(0.25_0_0)] focus:outline-none focus:ring-2 focus:ring-[#5E53E0] focus:ring-offset-2 dark:focus:ring-offset-background"
+                    >
+                      {tStream("checkAgain")}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {isStreamFailed && (
+              <div className="flex flex-col items-center text-center">
+                <h3 className="text-base font-semibold text-[#171717] dark:text-foreground">
+                  {tStream("failedTitle")}
+                </h3>
+                {/*
+                  No reason is shown, deliberately (story D4). The packager echoes the AES
+                  content key into its own stderr — 134.5's code review proved it — and
+                  Cloudflare's error text is vendor-shaped and unactionable. The reason lives
+                  in `pm2 logs zefile-worker`. If a reason is ever surfaced here it must come
+                  from a closed set of ZeFile-authored codes, never forwarded text.
+                */}
+                <p className="text-sm text-gray-600 dark:text-[oklch(0.65_0_0)] mt-2 max-w-md">
+                  {tStream("failedBody")}
+                </p>
+                <button
+                  type="button"
+                  onClick={handleRetryPackaging}
+                  disabled={isRetryingPackaging}
+                  // 44px minimum touch target, visible focus ring, keyboard-activated by
+                  // being a real <button> rather than a styled div (AC10).
+                  className="mt-4 min-h-[44px] px-5 py-2 bg-[#87E64B] text-[#171717] text-sm font-medium rounded hover:bg-[#78d43f] focus:outline-none focus:ring-2 focus:ring-[#5E53E0] focus:ring-offset-2 dark:focus:ring-offset-background disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {/* Text change, not a spinner — CLAUDE.md's rule for button loading. */}
+                  {isRetryingPackaging ? tStream("retrying") : tStream("retry")}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Short link and actions row */}
         <div className="flex items-center justify-between gap-4 mb-4 border-t border-b border-gray-200 dark:border-border py-5">
           {/* Short link input with copy button */}
@@ -1336,7 +1560,7 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
               <p className="text-xs text-neutral-500 dark:text-[oklch(0.65_0_0)]" id="revenue-label">{t("revenue")}</p>
               <p className="text-lg font-semibold dark:text-[oklch(0.91_0_0)]" aria-labelledby="revenue-label">
                 {currentTransfer.salesStats
-                  ? formatCurrencyAmount(currentTransfer.salesStats.totalRevenueMinor, currentTransfer.salesStats.currency, locale)
+                  ? formatCurrencyFromMinor(currentTransfer.salesStats.totalRevenueMinor, currentTransfer.salesStats.currency, locale)
                   : formatCurrencyAmount(0, currentTransfer.currency || "XOF", locale)}
               </p>
             </div>
@@ -1399,7 +1623,11 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
                 />
               </div>
               <p className="text-sm text-gray-600 dark:text-[oklch(0.65_0_0)]">
-                {expiryDateStr ? formatDate(expiryDateStr) : t("noExpiration")}
+                {/* Story 134.9 — a stream-only film has a nominal date on the row that is never
+                    enforced (D9). Showing it would promise a deletion that will not happen. */}
+                {isStreamOnly || !expiryDateStr
+                  ? t("noExpiration")
+                  : formatDate(expiryDateStr)}
               </p>
             </div>
 
@@ -1410,7 +1638,9 @@ const TransferDetailsPanel: React.FC<TransferDetailsPanelProps> = ({
                   {t("price")}
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-[oklch(0.65_0_0)]">
-                  {formatCurrencyAmount(currentTransfer.price ?? 0, currentTransfer.currency || "XOF", locale)}
+                  {/* `Transfer.price` is MINOR units — story 144.7. `formatCurrencyAmount` takes
+                      MAJOR units and does not divide, so this rendered 100x the real price. */}
+                  {formatCurrencyFromMinor(currentTransfer.price ?? 0, currentTransfer.currency || "XOF", locale)}
                 </p>
               </div>
             )}

@@ -49,6 +49,10 @@ export default function MaintenancePage({
         style={{ animationDelay: "0s", animationDuration: "0.3s" }}
       >
         <div className="flex items-center gap-2">
+          {/* width/height are the artwork's intrinsic 371x90 viewBox, not the rendered
+              size — the class sets the height and lets the width follow. The previous
+              125x24 was a box shaped for the older logo, so the current artwork never
+              filled it. Height is unchanged at 24px. */}
           <Image
             src={
               timeOfDay === "night"
@@ -56,9 +60,9 @@ export default function MaintenancePage({
                 : "/zefile-logo.svg"
             }
             alt="ZeFile"
-            width={125}
-            height={24}
-            className="pt-1"
+            width={371}
+            height={90}
+            className="pt-1 h-6 w-auto"
             style={{ animation: "fadeIn 0.3s ease-out both" }}
           />
         </div>

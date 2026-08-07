@@ -31,7 +31,6 @@ export { blogApi, type BlogPostDto, type BlogListResponseDto, type SitemapSlugDt
 export {
   transferApi,
   type CreateTransferDto,
-  type CreateTransferWithFilesDto,
   type TransferDto,
   type UpdateTransferDto,
 } from './transfer-api';

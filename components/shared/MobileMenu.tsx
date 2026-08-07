@@ -154,19 +154,23 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
       {/* Header: Logo left, Close button right */}
       <div className="flex items-center justify-between px-6 h-16 border-b border-gray-200 dark:border-border flex-shrink-0">
         <Link href="/" onClick={onClose} className="flex items-center">
+          {/* width/height are the artwork's intrinsic 371x90 viewBox, not the rendered
+              size — the class sets the width and lets the height follow. The previous
+              120x33 was a box shaped for the older logo, so the current artwork never
+              filled it. Width is unchanged at 120px. */}
           <Image
             src="/zefile-logo.svg"
             alt={tCommon("logoAlt")}
-            width={120}
-            height={33}
-            className="dark:hidden"
+            width={371}
+            height={90}
+            className="w-[120px] h-auto dark:hidden"
           />
           <Image
             src="/zefile-logo-white.svg"
             alt={tCommon("logoAlt")}
-            width={120}
-            height={33}
-            className="hidden dark:block"
+            width={371}
+            height={90}
+            className="w-[120px] h-auto hidden dark:block"
           />
         </Link>
         <button

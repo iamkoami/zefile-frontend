@@ -29,8 +29,13 @@ async function fetchTransferMeta(shortCode: string): Promise<TransferMeta | null
   return null;
 }
 
-function formatPrice(price: number, currency: string): string {
-  if (!price || price <= 0) return "";
+// `transfer.price` is MINOR units (story 144.7). This rendered it raw, so the share-card
+// description advertised 100x the real price to every social preview and search crawler.
+// Not `@/lib/currency` — this is a server-side metadata function and the helper there pulls in
+// the client-side exchange-rate module.
+function formatPrice(priceMinorUnits: number, currency: string): string {
+  if (!priceMinorUnits || priceMinorUnits <= 0) return "";
+  const price = priceMinorUnits / 100;
   if (currency === "XOF") return `${price.toLocaleString("fr-FR")} Fr CFA`;
   return `${price.toLocaleString()} ${currency}`;
 }

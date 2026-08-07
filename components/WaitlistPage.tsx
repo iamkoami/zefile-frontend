@@ -96,19 +96,23 @@ export default function WaitlistPage() {
           style={{ animation: "fadeIn 0.3s ease-out both" }}
         >
           <div className="flex items-center gap-2">
+            {/* width/height are the artwork's intrinsic 371x90 viewBox, not the rendered
+                size — the class sets the height and lets the width follow. The previous
+                125x24 was a box shaped for the older logo, so the current artwork never
+                filled it. Height is unchanged at 24px. */}
             <Image
               src="/zefile-logo.svg"
-              className="pt-1 dark:hidden"
+              className="pt-1 h-6 w-auto dark:hidden"
               alt="ZeFile"
-              width={125}
-              height={24}
+              width={371}
+              height={90}
             />
             <Image
               src="/zefile-logo-white.svg"
-              className="pt-1 hidden dark:block"
+              className="pt-1 h-6 w-auto hidden dark:block"
               alt="ZeFile"
-              width={125}
-              height={24}
+              width={371}
+              height={90}
             />
           </div>
           <div className="flex items-center gap-3">

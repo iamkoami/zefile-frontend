@@ -33,6 +33,9 @@ const TransferItem: React.FC<TransferItemProps> = ({
   onSelectionChange,
 }) => {
   const t = useTranslations('transferItem');
+  // Story 134.7 — shared with TransferDetailsPanel so the list marker and the panel cannot
+  // drift into describing the same state with different words.
+  const tStream = useTranslations('streamPackaging');
   const locale = useLocale();
   const [isHovered, setIsHovered] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
@@ -81,9 +84,16 @@ const TransferItem: React.FC<TransferItemProps> = ({
   // Get created date (backend uses createdAt, some places use createdDate)
   const createdDateStr = transfer.createdAt || transfer.createdDate;
 
+  // Story 134.9 (D9, D7) — a stream-only film never expires on the clock. Declared here,
+  // above the expiry helpers, because both of them must be gated by it; the 134.7 marker
+  // below reuses this same constant.
+  const isStreamTransfer = transfer.deliveryMode === 'stream';
+
   // Calculate days until expiry
   const getDaysUntilExpiry = (): { text: string; isUrgent: boolean } => {
-    if (!expiryDateStr) {
+    // Story 134.9 — the nominal date is on the row but is never enforced (D9). Counting down
+    // to it would show "Expired" in red on a film that is still on sale.
+    if (isStreamTransfer || !expiryDateStr) {
       return { text: t('noExpiration'), isUrgent: false };
     }
 
@@ -108,8 +118,19 @@ const TransferItem: React.FC<TransferItemProps> = ({
   };
 
   const expiryInfo = getDaysUntilExpiry();
+  // Story 134.9 — the DATE half is skipped for stream transfers; the STATUS half is not.
+  // An `expired` or `cancelled` stream transfer is genuinely gone (an admin action, or
+  // 136.4's wind-down) and must still read that way here, including hiding the preview
+  // action below. Exempt the clock, never the state.
   const isExpired = transfer.status === 'expired' || transfer.status === 'cancelled' ||
-    (expiryDateStr ? new Date(expiryDateStr).getTime() <= Date.now() : false);
+    (!isStreamTransfer && expiryDateStr ? new Date(expiryDateStr).getTime() <= Date.now() : false);
+
+  // Story 134.7 — stream packaging markers. `pending` and `processing` are one
+  // creator-facing state; a download transfer matches neither, because deliveryMode gates
+  // both (its streamStatus is null by design).
+  const isStreamPreparing =
+    isStreamTransfer && (transfer.streamStatus === 'pending' || transfer.streamStatus === 'processing');
+  const isStreamFailed = isStreamTransfer && transfer.streamStatus === 'failed';
   const downloadStatus = (transfer.downloadCount || 0) > 0 ? t('downloaded') : t('notDownloaded');
   const versionCount = transfer.versionCount || 1;
 
@@ -202,6 +223,27 @@ const TransferItem: React.FC<TransferItemProps> = ({
               isActive ? 'opacity-100 bg-gray-700 text-gray-300' : 'opacity-0'
             }`}>
               {t('expired')}
+            </span>
+          )}
+          {/*
+            Stream packaging marker (Story 134.7). A creator scanning the list can see which
+            film is still being prepared or needs attention without opening each one.
+
+            Marker only, no action: the retry lives in TransferDetailsPanel, because this row
+            already uses its click for navigation and has no room for a second target.
+
+            Both conditions are required. `streamStatus` is null on every download transfer,
+            so a bare status check would mark nothing — but a bare `!== 'ready'` check would
+            mark EVERY download transfer in the list.
+          */}
+          {isStreamPreparing && (
+            <span className="text-xs px-2 py-0.5 rounded-full flex-shrink-0 bg-gray-100 text-gray-600 dark:bg-[oklch(0.25_0_0)] dark:text-[oklch(0.75_0_0)]">
+              {tStream('listPreparing')}
+            </span>
+          )}
+          {isStreamFailed && (
+            <span className="text-xs px-2 py-0.5 rounded-full flex-shrink-0 bg-[#FEF3C7] text-[#92400E] dark:bg-[oklch(0.30_0.06_75)] dark:text-[oklch(0.85_0.10_75)]">
+              {tStream('listFailed')}
             </span>
           )}
         </div>

@@ -79,6 +79,18 @@ function DownloadRedirect() {
 
           trackingParams.set('z_ts', searchParams?.get('z_ts') || Math.floor(now / 1000).toString());
 
+          // Story 143.1 — carry the payment reference through this hop.
+          // The buyer receipt links to `/{prefix}{shortCode}?ref={reference}`
+          // (sale-sessions.service.ts, sendSaleEmailsAsync). This redirect used to rebuild the
+          // query string from the z_* tracking params alone, so `ref` was silently dropped here
+          // and the sale page — which claims a download token from it — never saw it. That made
+          // the receipt link, the one recovery path a paying buyer is guaranteed to have, a dead
+          // end. `reference`/`trxref` are forwarded too, since gateways return under those names.
+          for (const key of ['ref', 'reference', 'trxref']) {
+            const value = searchParams?.get(key);
+            if (value) trackingParams.set(key, value);
+          }
+
           // Redirect to full landing page URL
           router.replace(`/downloads/${transfer.id}/${shortCodeWithPrefix}?${trackingParams.toString()}`);
         } else {

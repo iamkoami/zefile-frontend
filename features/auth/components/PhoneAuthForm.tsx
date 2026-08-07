@@ -280,7 +280,7 @@ const PhoneAuthForm: React.FC<PhoneAuthFormProps> = ({
                   type="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
-                  className="ze-phone-input w-full font-bold border-none outline-none focus:outline-none bg-transparent text-gray-900 dark:text-[oklch(0.91_0_0)] pb-4"
+                  className="ze-phone-input w-full font-bold border-none outline-none focus:outline-none bg-transparent text-gray-900 dark:text-[oklch(0.91_0_0)] pb-4 placeholder:opacity-25"
                   placeholder="90 90 90 90"
                   maxLength={10}
                   style={{

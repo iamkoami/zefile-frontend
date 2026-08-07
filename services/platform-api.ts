@@ -17,6 +17,52 @@ export interface PlatformFee {
 }
 
 /**
+ * Story 144.3 — the payment methods that can carry their own processing rate.
+ *
+ * Mirrors the backend's `ProcessingFeeMethod` (`src/modules/platform-config/processing-fee-method.ts`).
+ * Deliberately narrower than the checkout's own method list: `bank` and `qr` are valid Paystack
+ * channels but no adapter offers them, and the quote endpoint 400s on anything outside this set
+ * rather than silently answering with the card rate.
+ */
+export type ProcessingFeeMethod = "mobile_money" | "card" | "bank_transfer" | "ussd";
+
+/**
+ * Story 135.1 — the buyer's pass-through processing surcharge for one country + method.
+ * All amounts are minor units. `price + processingFee === total` always holds, so a caller
+ * renders the breakdown without doing arithmetic of its own.
+ */
+export interface ProcessingFeeQuote {
+  countryCode: string;
+  /**
+   * Story 144.3 — bank transfer and USSD now carry their own rate namespace and are quoted as
+   * themselves. Until then the panel collapsed them to "card" to mirror a backend that could not
+   * express them.
+   */
+  paymentMethod: ProcessingFeeMethod;
+  feePercent: number;
+  currency: string;
+  priceMinorUnits: number;
+  processingFeeMinorUnits: number;
+  totalMinorUnits: number;
+  /**
+   * Non-null when the buyer's gateway cannot charge `currency` natively and the payment path
+   * converts before charging — Togo, Benin and Senegal route to Startbutton, which does not
+   * support XOF. When set, `totalMinorUnits` is NOT what the buyer is charged; this is.
+   */
+  settlement: {
+    currency: string;
+    amountMinorUnits: number;
+    /**
+     * Story 144.1 — server-formatted in the SETTLEMENT currency, by the same function the payment
+     * initialize response uses. Render this rather than dividing by 100 yourself. Optional so an
+     * older API is tolerated.
+     */
+    displayAmount?: string;
+    fxRate: number;
+  } | null;
+}
+
+/**
  * Transfer limits per tier
  */
 export interface TransferLimits {
@@ -174,6 +220,14 @@ export interface UserPlatformConfig {
   isFirstPaidTransferUsed?: boolean;
   minimumTransferPriceNGN: number;
   canCreateFreeTransfers: boolean;
+  /**
+   * Story 134.4 — may this creator publish a transfer as stream-only?
+   *
+   * Resolved server-side from the `streamDelivery` tier feature, NOT from a tier comparison, so
+   * an admin granting the feature to another tier makes the toggle appear with no deploy.
+   * Presentation only: the backend gate in StreamEligibilityService is the guarantee (P11).
+   */
+  canUseStreamDelivery?: boolean;
 }
 
 export class PlatformApi {
@@ -204,6 +258,32 @@ export class PlatformApi {
    */
   async getAllFees(): Promise<ApiResponse<{ fees: PlatformFee[] }>> {
     return apiClient.get<{ fees: PlatformFee[] }>('/public/config/fees');
+  }
+
+  /**
+   * Story 135.1 (D3) — quote the processing surcharge a buyer will pay, without starting a payment.
+   *
+   * The sale page cannot show an exact surcharge: the rate depends on country AND payment method
+   * (2.0%-4.6%), and neither is known until checkout. This is what lets SaleCheckoutPanel show the
+   * real total before the gateway is called — which it never did before, so a card buyer was shown
+   * no surcharge by ZeFile at any point.
+   *
+   * The backend computes through the same two calls the payment path uses, so the total returned
+   * here is the amount that will actually be charged. Never re-derive it on the client.
+   */
+  async getProcessingFeeQuote(params: {
+    amountMinorUnits: number;
+    paymentMethod: ProcessingFeeMethod;
+    countryCode?: string;
+    currency?: string;
+  }): Promise<ApiResponse<ProcessingFeeQuote>> {
+    const query = new URLSearchParams({
+      amountMinorUnits: String(params.amountMinorUnits),
+      paymentMethod: params.paymentMethod,
+    });
+    if (params.countryCode) query.set("countryCode", params.countryCode);
+    if (params.currency) query.set("currency", params.currency);
+    return apiClient.get<ProcessingFeeQuote>(`/public/config/processing-fee?${query.toString()}`);
   }
 
   /**

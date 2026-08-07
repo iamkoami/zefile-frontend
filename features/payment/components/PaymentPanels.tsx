@@ -34,6 +34,7 @@ import { trackPaymentMethodSelected, trackPaymentSubmitted } from "@/lib/posthog
 import { Turnstile } from '@marsidev/react-turnstile';
 import { useTurnstile } from "@/hooks/useTurnstile";
 import { setCaptchaToken } from "@/services/api-client";
+import { minorToMajorUnits } from "@/lib/currency";
 
 // Supported countries for payment — methods are fetched from API per country
 const PAYMENT_COUNTRIES = [
@@ -342,14 +343,6 @@ export function PaymentMethodPanel() {
       const fileSize = Number(file.fileSize) || Number(file.size) || 0;
       return acc + fileSize;
     }, 0);
-  };
-
-  const formatPrice = (price: number, currency?: string): string => {
-    const majorUnits = price / 100;
-    if (currency === "XOF") {
-      return `${majorUnits.toLocaleString()} XOF`;
-    }
-    return `${majorUnits.toLocaleString()} ${currency || ""}`;
   };
 
   if (!transfer) {
@@ -1013,7 +1006,8 @@ export function PaymentPromptPanel() {
   };
 
   const formatAmount = (amount: number, currency?: string): string => {
-    const majorUnits = amount / 100;
+    // Story 144.7 — shared helper, not a hand-rolled `/ 100`.
+    const majorUnits = minorToMajorUnits(amount, currency || "XOF");
     const symbol = getCurrencySymbol(currency);
     if (currency === "XOF") {
       return `${majorUnits.toLocaleString()} ${symbol}`;
@@ -1651,7 +1645,8 @@ export function PaymentProcessingPanel() {
   };
 
   const formatAmount = (amount: number, currency?: string): string => {
-    const majorUnits = amount / 100;
+    // Story 144.7 — shared helper, not a hand-rolled `/ 100`.
+    const majorUnits = minorToMajorUnits(amount, currency || "XOF");
     const symbol = getCurrencySymbol(currency);
     if (currency === "XOF") {
       return `${majorUnits.toLocaleString()} ${symbol}`;
@@ -1817,7 +1812,8 @@ export function PaymentSuccessPanel() {
   };
 
   const formatAmount = (amount: number, currency?: string): string => {
-    const majorUnits = amount / 100;
+    // Story 144.7 — shared helper, not a hand-rolled `/ 100`.
+    const majorUnits = minorToMajorUnits(amount, currency || "XOF");
     const symbol = getCurrencySymbol(currency);
     if (currency === "XOF") {
       return `${majorUnits.toLocaleString()} ${symbol}`;

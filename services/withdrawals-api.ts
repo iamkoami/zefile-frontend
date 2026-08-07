@@ -24,9 +24,36 @@ export enum WithdrawalStatus {
 export interface BalanceResponse {
   availableMinorUnits: number;
   pendingMinorUnits: number;
+  /** Earnings still inside the buyer refund window, held out of the withdrawable balance (Story 133-2) */
+  reservedMinorUnits: number;
+  /**
+   * Lifetime net earnings gross of withdrawals (settled + reserved). Use this rather
+   * than summing available + pending + reserved, which under-reports by every
+   * completed payout. Optional until every deployed API version returns it.
+   */
+  totalEarnedMinorUnits?: number;
+  /** Days buyer-funded earnings stay on hold before becoming withdrawable */
+  payoutHoldDays?: number;
   currency: string;
   availableFormatted: string;
   pendingFormatted: string;
+  reservedFormatted: string;
+  totalEarnedFormatted?: string;
+
+  // --- Payout gate status (Story 137.3) ---
+  // Advisory only. The backend refuses payouts server-side at every entry point regardless of
+  // what the UI does with these; they exist so a creator learns about a block on the screen
+  // showing their money rather than from a 403 after filling in an amount.
+  // All optional: the frontend and backend deploy independently.
+
+  /** True when a payout request would currently be refused pending identity verification. */
+  payoutsBlocked?: boolean;
+  /** The creator's identity verification status as the payout gate resolved it. */
+  kycStatus?: "not_required" | "required" | "pending" | "verified" | "rejected";
+  /** Machine-readable block reason. Branch on this, never on a message string. */
+  payoutBlockCode?: "PAYOUT_KYC_REQUIRED" | "PAYOUT_KYC_PENDING" | "PAYOUT_KYC_REJECTED";
+  /** Verification deadline, when one is recorded. Present before and after it expires. */
+  gracePeriodEnds?: string;
 }
 
 /**

@@ -195,11 +195,16 @@ const Footer: React.FC = () => {
           <div className="flex flex-col md:flex-row items-center justify-between gap-6 mt-8 py-8">
             {/* Logo */}
             <Link href="/" className="inline-block">
+              {/* width/height are the artwork's intrinsic 371x90 viewBox, not the rendered
+                  size — the class sets the width and lets the height follow. The previous
+                  90x28 was a box shaped for the older logo, so the current artwork never
+                  filled it. Width is unchanged at 90px. */}
               <Image
                 src="/zefile-logo-white.svg"
                 alt={tCommon("logoAlt")}
-                width={90}
-                height={28}
+                width={371}
+                height={90}
+                className="w-[90px] h-auto"
               />
             </Link>
 

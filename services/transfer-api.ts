@@ -11,7 +11,17 @@ export interface CreateTransferDto {
   recipientEmails: string[]; // Always passed; empty array when isPublicSales is true
   recipients?: TransferRecipient[]; // Unified recipients (email + whatsapp) — Epic 124
   title: string; // Required by backend
+  /**
+   * LEGACY — MINOR units. Do not use for new code; send `priceMajorUnits` instead.
+   * Sending both is rejected by the backend: they are different scales (story 144.7).
+   */
   price?: number;
+  /**
+   * MAJOR units, as typed by a person — 3000 means 3,000 CFA.
+   * The backend owns the exponent and scales this to minor units. The frontend never needs a
+   * currency-exponent list for input, which is deliberate (story 144.8).
+   */
+  priceMajorUnits?: number;
   currency?: string;
   message?: string;
   /** Access control mode: private (default), password, or public */
@@ -26,10 +36,12 @@ export interface CreateTransferDto {
   paymentRequired?: boolean;
   /** Public sales mode — transfer is available for purchase by anyone */
   isPublicSales?: boolean;
-}
-
-export interface CreateTransferWithFilesDto extends CreateTransferDto {
-  files: File[];
+  /**
+   * Story 134.4 — delivery mode. 'stream' means buyers watch the film and never receive the
+   * file. Requires public sales mode, a tier with the streamDelivery feature, and video-only
+   * files; the backend refuses any other combination. Set at creation and never flipped.
+   */
+  deliveryMode?: 'download' | 'stream';
 }
 
 export interface SenderBrandingDto {
@@ -121,6 +133,23 @@ export interface TransferDto {
     totalRevenueMinor: number;
     currency: string;
   };
+  /**
+   * How the files reach the recipient (Story 134.2). 'stream' transfers refuse every
+   * download route and play encrypted segments instead.
+   *
+   * Story 134.7: both this and `streamStatus` have been on the wire since 134.2 — the
+   * backend returns them to the OWNER deliberately unstripped — and were simply not
+   * declared here, so TypeScript hid data the browser already had.
+   */
+  deliveryMode?: 'download' | 'stream';
+  /**
+   * Packaging lifecycle of a stream transfer's media (Story 134.2, rendered by 134.7).
+   *
+   * Null/absent on every download transfer — they never await packaging, so 'pending'
+   * would be a lie. Always test `deliveryMode === 'stream'` alongside this; a bare
+   * `streamStatus !== 'ready'` is true for every download transfer in the system.
+   */
+  streamStatus?: 'pending' | 'processing' | 'ready' | 'failed' | null;
 }
 
 export interface UpdateTransferDto {
@@ -422,40 +451,6 @@ export class TransferApi {
   }
 
   /**
-   * Create transfer with file uploads
-   */
-  async createTransferWithFiles(
-    data: CreateTransferWithFilesDto,
-    onProgress?: (progress: number) => void
-  ): Promise<ApiResponse<TransferDto>> {
-    const formData = new FormData();
-
-    // Add transfer data
-    formData.append('senderId', data.senderId);
-    // Send recipientEmails as JSON string for FormData
-    formData.append('recipientEmails', JSON.stringify(data.recipientEmails));
-    // Epic 124 dual-write: send unified recipients alongside legacy recipientEmails
-    if (data.recipients) {
-      formData.append('recipients', JSON.stringify(data.recipients));
-    }
-    // Title is required by backend - ensure it's always present
-    formData.append('title', data.title || 'Untitled Transfer');
-    if (data.price) formData.append('price', data.price.toString());
-    if (data.currency) formData.append('currency', data.currency);
-    if (data.message) formData.append('message', data.message);
-    if (data.password) formData.append('password', data.password);
-    if (data.expiryDate) formData.append('expiryDate', data.expiryDate);
-    if (data.maxDownloads) formData.append('maxDownloads', data.maxDownloads.toString());
-
-    // Add files
-    data.files.forEach((file) => {
-      formData.append('files', file);
-    });
-
-    return apiClient.upload<TransferDto>('/transfers/with-files', formData, onProgress);
-  }
-
-  /**
    * Get all transfers
    */
   async getAllTransfers(): Promise<ApiResponse<TransferDto[]>> {
@@ -538,17 +533,25 @@ export class TransferApi {
   }
 
   /**
-   * Check if a buyer has already purchased a public sale transfer
+   * Check whether the signed-in user has already purchased a public sale transfer.
+   *
+   * Requires authentication and answers only for the caller's own email, which the
+   * backend reads from the JWT — it no longer accepts an email, so it cannot be used
+   * to probe whether someone else bought a transfer. Signed-out buyers should use
+   * recoverPurchase() instead, which proves ownership by OTP.
    */
-  async checkPurchase(shortCode: string, email: string): Promise<ApiResponse<{ hasPurchase: boolean }>> {
+  async checkPurchase(shortCode: string): Promise<ApiResponse<{ hasPurchase: boolean }>> {
     return apiClient.post<{ hasPurchase: boolean }>(
       `/transfers/${shortCode}/buy/check`,
-      { email },
+      {},
     );
   }
 
   /**
-   * Recover a previous purchase by sending OTP to buyer's email
+   * Recover a previous purchase by sending OTP to buyer's email.
+   *
+   * Always reports otpSent: true — a code only actually arrives if the email has a
+   * purchase, so the response cannot be used to test whether it does.
    */
   async recoverPurchase(shortCode: string, email: string): Promise<ApiResponse<{ otpSent: boolean }>> {
     return apiClient.post<{ otpSent: boolean }>(

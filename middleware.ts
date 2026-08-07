@@ -126,6 +126,84 @@ function parseAcceptLanguage(header: string | null): 'en' | 'fr' {
 }
 
 /**
+ * Countries where ZeFile has a real payment rail. Must stay in sync with
+ * SUPPORTED_COUNTRIES / REGIONAL_PRICING in services/subscription-api.ts and
+ * with the options the CurrencySwitcher offers.
+ */
+const GEO_SUPPORTED_COUNTRIES = new Set(['NG', 'GH', 'KE', 'CI', 'TG', 'BJ']);
+
+/** Client-readable (not HttpOnly) — the Zustand currency store reads it on hydrate. */
+export const GEO_COUNTRY_COOKIE = 'zefile_geo_country';
+
+/**
+ * Resolve the visitor's country from Cloudflare's CF-IPCountry header.
+ *
+ * Returns null when there is nothing trustworthy to say — no header at all
+ * (local dev, or any origin not behind Cloudflare), 'XX' (Cloudflare could not
+ * determine it) or 'T1' (Tor exit node). Callers must treat null as "don't
+ * touch the cookie" rather than "International", so a missing header never
+ * overwrites a good value from an earlier request.
+ *
+ * A supported country returns its own code; anywhere else returns 'DEFAULT',
+ * because International/USD is the honest answer for a country we cannot
+ * charge in local currency.
+ */
+function resolveGeoCountry(request: NextRequest): string | null {
+  const header = request.headers.get('cf-ipcountry');
+  if (!header) return null;
+  const code = header.toUpperCase();
+  if (code === 'XX' || code === 'T1') return null;
+  return GEO_SUPPORTED_COUNTRIES.has(code) ? code : 'DEFAULT';
+}
+
+/**
+ * Attach the geo country cookie, mirroring the NEXT_LOCALE pattern above: only
+ * Set-Cookie when the value actually changes, so steady-state responses stay
+ * edge-cacheable.
+ *
+ * Returns true when a cookie was written. The caller MUST then make that single
+ * response uncacheable via `geoCacheControl()` — see the note there for why Vary
+ * cannot be relied on to do it.
+ *
+ * This never writes localStorage — an explicit choice in the CurrencySwitcher
+ * always outranks geo, and the store enforces that on hydrate.
+ */
+function applyGeoCountryCookie(request: NextRequest, response: NextResponse): boolean {
+  const geo = resolveGeoCountry(request);
+  if (!geo) return false;
+  if (request.cookies.get(GEO_COUNTRY_COOKIE)?.value === geo) return false;
+  response.cookies.set(GEO_COUNTRY_COOKIE, geo, {
+    path: '/',
+    // Shorter than NEXT_LOCALE's year: where someone is can change, and a stale
+    // country is worse than re-detecting it.
+    maxAge: 30 * 24 * 60 * 60,
+    sameSite: 'lax',
+  });
+  return true;
+}
+
+/**
+ * Cache-Control for a response that may carry the geo cookie.
+ *
+ * A response containing a country-specific Set-Cookie must never be reusable by
+ * anyone else, or a shared cache could hand one country's cookie to every
+ * cookie-less visitor behind it. The usual guard for that is `Vary`, and this
+ * middleware does set `CF-IPCountry` there — but that header does NOT survive to
+ * the client on Cloudflare Pages. Verified on demo.zefile.io: the response
+ * arrives with Next.js's own `vary: RSC, Next-Router-State-Tree, …,
+ * accept-encoding`, while `Content-Language` from this same block does survive.
+ * The adapter overwrites Vary after middleware runs, so Vary is kept as
+ * belt-and-braces and the real guarantee is made here instead.
+ *
+ * Marking only the cookie-setting response private costs one uncacheable
+ * request per visitor per 30 days; every subsequent response takes the normal
+ * cacheable path because no Set-Cookie is emitted once the value matches.
+ */
+function geoCacheControl(geoCookieSet: boolean, cacheable: string): string {
+  return geoCookieSet ? 'private, no-store' : cacheable;
+}
+
+/**
  * Middleware handles:
  * 1. Short link redirects (/z-{code} → /downloads?code=z-{code})
  * 2. Content-Security-Policy with per-request nonce
@@ -135,13 +213,32 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Case-insensitive redirect for app routes. /@handle (creator profiles) and
-  // /z-AbC (short links) legitimately use mixed case. Files with extensions
-  // (favicon, og-image) keep their case so a typo 404s normally.
+  // short codes legitimately use mixed case. Files with extensions (favicon,
+  // og-image) keep their case so a typo 404s normally.
+  //
+  // Short codes are CASE-SENSITIVE: the DB stores "HkGXm2GHhB" and looks it up
+  // with `=`, so lowercasing the path turns a working transfer into a 404
+  // ("This transfer has vanished into thin air"). The old guard only matched
+  // /z-AbC at the ROOT, which missed every route that carries the code in a
+  // later segment — /downloads/<uuid>/z-AbC, /r/AbC, /review/AbC — i.e. the
+  // canonical download URL the short link ultimately redirects to. Matching on
+  // the "z-" prefix alone is also not enough, because /review/<code> and
+  // /r/<code> can carry a bare code with no prefix.
+  const SHORT_CODE_PREFIX = process.env.NEXT_PUBLIC_SHORT_CODE_PREFIX || 'z-';
+  const CODE_BEARING_ROUTES = ['/downloads/', '/r/', '/review/'];
+  const carriesShortCode =
+    CODE_BEARING_ROUTES.some((p) => pathname.startsWith(p)) ||
+    pathname
+      .split('/')
+      .some((seg) =>
+        seg.toLowerCase().startsWith(SHORT_CODE_PREFIX.toLowerCase())
+      );
+
   const hasExtension = pathname.includes('.') && !pathname.startsWith('/fr/');
   if (
     !hasExtension &&
     !pathname.startsWith('/@') &&
-    !/^\/z-/.test(pathname) &&
+    !carriesShortCode &&
     pathname !== pathname.toLowerCase()
   ) {
     const url = request.nextUrl.clone();
@@ -272,9 +369,10 @@ export async function middleware(request: NextRequest) {
     response.headers.set('X-Frame-Options', 'DENY');
     response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
     response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
-    response.headers.set('Vary', 'Accept-Language, Cookie');
+    const geoCookieSet = applyGeoCountryCookie(request, response);
+    response.headers.set('Vary', 'Accept-Language, Cookie, CF-IPCountry');
     response.headers.set('Content-Language', 'fr');
-    response.headers.set('Cache-Control', cacheControl);
+    response.headers.set('Cache-Control', geoCacheControl(geoCookieSet, cacheControl));
     response.headers.delete('X-Powered-By');
     return response;
   }
@@ -305,9 +403,13 @@ export async function middleware(request: NextRequest) {
       response.headers.set('X-Frame-Options', 'DENY');
       response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
       response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
-      response.headers.set('Vary', 'Accept-Language, Cookie');
+      const geoCookieSet = applyGeoCountryCookie(request, response);
+      response.headers.set('Vary', 'Accept-Language, Cookie, CF-IPCountry');
       response.headers.set('Content-Language', detectedLocale);
-      response.headers.set('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=60');
+      response.headers.set(
+        'Cache-Control',
+        geoCacheControl(geoCookieSet, 'public, s-maxage=30, stale-while-revalidate=60'),
+      );
       response.headers.delete('X-Powered-By');
       return response;
     }
@@ -361,9 +463,15 @@ export async function middleware(request: NextRequest) {
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   // X-XSS-Protection intentionally removed — deprecated header, CSP covers this.
 
+  // Currency follows the visitor's country, resolved from Cloudflare's edge.
+  // When this writes a cookie the response is forced private below — see
+  // geoCacheControl() for why Vary alone cannot carry that guarantee here.
+  const geoCookieSet = applyGeoCountryCookie(request, response);
+
   // SEO: Signal language negotiation to search engines and CDN caches.
-  // Content varies by Accept-Language (i18n fallback) and Cookie (NEXT_LOCALE).
-  response.headers.set('Vary', 'Accept-Language, Cookie');
+  // Content varies by Accept-Language (i18n fallback) and Cookie (NEXT_LOCALE);
+  // the geo cookie above additionally varies the response by CF-IPCountry.
+  response.headers.set('Vary', 'Accept-Language, Cookie, CF-IPCountry');
 
   // SEO: Set Content-Language based on detected locale (cookie > Accept-Language > default)
   const localeCookie = request.cookies.get('NEXT_LOCALE')?.value;
@@ -372,7 +480,10 @@ export async function middleware(request: NextRequest) {
 
   // Cache-control for HTML pages — prevent stale content from heuristic caching
   // (Cloudflare Pages _headers only applies to static files, not dynamic routes)
-  response.headers.set('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
+  response.headers.set(
+    'Cache-Control',
+    geoCacheControl(geoCookieSet, 'public, s-maxage=3600, stale-while-revalidate=86400'),
+  );
 
   // Remove server technology fingerprint
   response.headers.delete('X-Powered-By');

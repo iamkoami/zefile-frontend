@@ -14,7 +14,16 @@ import {
 } from "iconoir-react";
 import { useTranslations } from "next-intl";
 import { PhoneNumberInput } from "@/features/payment/components/PhoneNumberInput";
-import { paymentApi, type PaymentMethodInfo } from "@/services/payment-api";
+import {
+  paymentApi,
+  type PaymentMethodInfo,
+  type InitializePaymentV2Response,
+} from "@/services/payment-api";
+import {
+  platformApi,
+  type ProcessingFeeQuote,
+  type ProcessingFeeMethod,
+} from "@/services/platform-api";
 import type { MobileMoneyProvider } from "@/features/payment/components/PaymentMethodSelector";
 import type { CountryCode } from "libphonenumber-js";
 import { toast } from "@/components/shared/Toast";
@@ -22,6 +31,13 @@ import { safePaymentRedirect } from "@/utils/security";
 import { Turnstile } from '@marsidev/react-turnstile';
 import { useTurnstile } from "@/hooks/useTurnstile";
 import { setCaptchaToken } from "@/services/api-client";
+import { useCurrencyStore } from "@/stores/currency-store";
+import {
+  convertCurrency,
+  formatCurrencyAmount,
+  formatCurrencyFromMinor,
+  type CurrencyCode,
+} from "@/lib/currency";
 
 // Supported countries for payment — matches download page DOWNLOAD_PAYMENT_COUNTRIES
 const PAYMENT_COUNTRIES = [
@@ -37,11 +53,49 @@ const PAYMENT_COUNTRIES = [
 interface SaleCheckoutPanelProps {
   transferId: string;
   transferCurrency: string;
+  /**
+   * Story 135.1 (D3) — the film's price in minor units, needed to quote the processing surcharge
+   * before the gateway is called. Optional so the panel degrades to its previous behaviour rather
+   * than breaking if a caller does not supply it.
+   */
+  transferPriceMinorUnits?: number;
   buyerEmail: string;
   onBack: () => void;
-  onPaymentInitiated: (reference: string, isMobileMoney: boolean) => void;
+  /**
+   * Story 144.1 — `payment` is the AUTHORITATIVE initialize response, and callers must render money
+   * from it rather than from the fee quote they already hold.
+   *
+   * The quote is re-fetched asynchronously whenever the buyer changes country, the effect does not
+   * clear the previous quote while that request is in flight, and the Pay button is not gated on it
+   * settling. So a buyer who switches from Togo to Côte d'Ivoire and pays quickly can initialize
+   * against the NEW country while the quote in state still describes the OLD one — a total and a
+   * settlement line that have nothing to do with what was charged. Passing the response closes that
+   * race by construction. Found at cross-model review.
+   */
+  onPaymentInitiated: (
+    reference: string,
+    isMobileMoney: boolean,
+    payment?: InitializePaymentV2Response,
+  ) => void;
   /** Optional: parent's Turnstile getToken to avoid duplicate widgets on same page. */
   getCaptchaToken?: () => Promise<string | null>;
+  /**
+   * Story 134.8 — the film stopped being sellable between page load and checkout.
+   *
+   * The backend answers 409 `STREAM_NOT_READY`. A toast alone would leave the buyer sitting on a
+   * checkout form for something that is not on sale, so the parent takes them back to the sale
+   * page, where the prepared-state block explains it.
+   */
+  onStreamNotReady?: () => void;
+  /**
+   * Story 135.1 — publishes the fee quote so the sibling TransferSummaryCard can render the SAME
+   * numbers from the SAME fetch. Without this the two panels disagreed on screen: the summary
+   * showed a display-currency conversion ($8.26) while this panel showed the real charge
+   * (5,208.34 Fr CFA).
+   *
+   * Must be a stable reference (a `useState` setter). It is called from inside the quote effect.
+   */
+  onQuoteChange?: (quote: ProcessingFeeQuote | null) => void;
 }
 
 /**
@@ -51,12 +105,16 @@ interface SaleCheckoutPanelProps {
 export function SaleCheckoutPanel({
   transferId,
   transferCurrency,
+  transferPriceMinorUnits,
   buyerEmail,
   onBack,
   onPaymentInitiated,
   getCaptchaToken,
+  onStreamNotReady,
+  onQuoteChange,
 }: SaleCheckoutPanelProps) {
   const t = useTranslations("payment");
+  const tStreamSale = useTranslations("streamSale");
   // Use parent's token getter if provided (avoids duplicate Turnstile widgets on same page)
   const ownTurnstile = useTurnstile();
   const getTurnstileToken = getCaptchaToken || ownTurnstile.getToken;
@@ -105,6 +163,116 @@ export function SaleCheckoutPanel({
     }
   }, [selectedCountry.code, selectedCountry.phoneCode]);
 
+  /**
+   * Story 135.1 (D3, AC4) — quote the processing surcharge as soon as country AND method are known.
+   *
+   * Before this, the panel showed no fee at all. A mobile-money buyer met the surcharge on the
+   * `payment-prompt` screen, AFTER initializePayment had created a Transaction; a card buyer was
+   * redirected to Paystack and never saw it inside ZeFile at all. Fee-model principle 1 says the
+   * buyer sees the full total before paying, so it belongs here — the last screen before the money.
+   *
+   * The quote endpoint is read-only: no Transaction, no velocity write, no gateway call. The total
+   * it returns is computed through the same service calls the payment path uses, so it equals the
+   * amount charged to the minor unit.
+   */
+  const [feeQuote, setFeeQuote] = useState<ProcessingFeeQuote | null>(null);
+
+  /**
+   * Which rate the backend will actually apply.
+   *
+   * Story 135.1 collapsed everything that was not mobile money to `"card"` here, deliberately,
+   * because `PaymentService.initializePayment` did the same and the one rule this panel must obey
+   * is that the quote equals the charge. **Story 144.3 removed that narrowing on both sides at
+   * once**, so this now sends the method the buyer actually picked.
+   *
+   * `handlePay` below still sends `paymentMethod: "card"` with the real method on
+   * `preferredChannel` — that is the payment DTO's shape, not a pricing decision — and the backend
+   * resolves the fee method from the channel.
+   *
+   * The number on screen does not move yet: `PROCESSING_FEES` has no `{country}.bank_transfer` or
+   * `.ussd` row, so `getProcessingFeeRate` falls through its chain to the same card rate as before.
+   * What changes is that the rate is now *reachable*: seeding a row is a config edit rather than a
+   * deploy. Whether the card rate is the RIGHT rate for these rails is a commercial question,
+   * gated on real gateway costs (story 144.3, gate G1).
+   *
+   * The `QUOTABLE_METHODS` guard is belt-and-braces, not a live path: `PaymentMethodInfo["type"]`
+   * is exactly this union on both sides, so `selectedMethod.type` cannot currently fall through.
+   * It is here because the backend now **400s** on anything outside the set (`bank`, `qr`), and a
+   * 400 silently removes the buyer's fee breakdown — so if an adapter ever offers a new method,
+   * this degrades to the card quote instead of showing no total at all.
+   */
+  const QUOTABLE_METHODS: ProcessingFeeMethod[] = ["mobile_money", "card", "bank_transfer", "ussd"];
+  const quoteMethod: ProcessingFeeMethod | null = !selectedMethod
+    ? null
+    : QUOTABLE_METHODS.includes(selectedMethod.type as ProcessingFeeMethod)
+      ? (selectedMethod.type as ProcessingFeeMethod)
+      : "card";
+
+  useEffect(() => {
+    if (!quoteMethod || !transferPriceMinorUnits || transferPriceMinorUnits <= 0) {
+      setFeeQuote(null);
+      onQuoteChange?.(null);
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      const response = await platformApi.getProcessingFeeQuote({
+        amountMinorUnits: transferPriceMinorUnits,
+        paymentMethod: quoteMethod,
+        countryCode: selectedCountry.code === "INTL" ? undefined : selectedCountry.code,
+        // The gateway may not support this currency for this country, in which case the payment
+        // path converts and charges the converted amount. Send it so the quote can say so.
+        currency: transferCurrency,
+      });
+      if (cancelled) return;
+      // A failed quote must never block checkout — degrade to the previous behaviour (no breakdown)
+      // rather than stranding a buyer who is ready to pay.
+      const quote = response.error ? null : (response.data ?? null);
+      setFeeQuote(quote);
+      onQuoteChange?.(quote);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+    // `transferCurrency` belongs here: the quote is currency-specific, so a currency change must
+    // re-quote rather than leave a stale settlement block on screen.
+  }, [quoteMethod, transferPriceMinorUnits, selectedCountry.code, transferCurrency, onQuoteChange]);
+
+  /**
+   * Story 135.1 — formats through the SHARED `formatCurrencyAmount`, the same helper
+   * TransferSummaryCard uses, so the two panels on this screen cannot disagree.
+   *
+   * A hand-rolled `${minor / 100} Fr CFA` was rendering "5,208.34 Fr CFA" beside the card's
+   * "5,208 XOF" for the same purchase — different symbol AND different precision. The shared
+   * helper also knows XOF is a zero-decimal currency, so it stops quoting buyers a fractional
+   * franc that cannot be paid.
+   */
+  // Story 144.7 — the shared minor-unit formatter, not a hand-rolled `/ 100`.
+  const formatMinor = (minorUnits: number) =>
+    formatCurrencyFromMinor(minorUnits, transferCurrency as CurrencyCode);
+
+  /**
+   * Story 135.1 — the buyer's own-currency reference beneath the authoritative total.
+   *
+   * The amount debited is in `transferCurrency`, so that is the headline. But an international
+   * buyer reading "5,208.34 Fr CFA" has no way to judge what she is spending, which is its own
+   * failure of fee-model principle 1 — a total you cannot interpret is not a total you can consent
+   * to. "≈" because this uses approximate client-side rates, never the gateway's.
+   */
+  const { pricing } = useCurrencyStore();
+  const displayCurrency = pricing.currency as CurrencyCode;
+  const approxInDisplayCurrency = (minorUnits: number): string | null => {
+    if (!transferCurrency || transferCurrency === displayCurrency) return null;
+    const converted = convertCurrency(
+      minorUnits / 100,
+      transferCurrency as CurrencyCode,
+      displayCurrency,
+    );
+    return `≈ ${formatCurrencyAmount(converted, displayCurrency)}`;
+  };
+
   const momoMethods = useMemo(
     () => paymentMethods.filter((m) => m.type === "mobile_money"),
     [paymentMethods],
@@ -128,6 +296,28 @@ export function SaleCheckoutPanel({
   );
 
   const getProviderIconPath = (icon: string): string => `/icons/payment/${icon}.svg`;
+
+  /**
+   * Story 134.8 — surface a payment-init failure.
+   *
+   * Discriminates on `error.code`, NOT on the 409 status: `/v2/payments/initialize` already
+   * answers 409 for "a pending payment already exists", which is a different situation with
+   * different advice. `ApiError.code` is populated by api-client.ts:333 for every failed request.
+   *
+   * ⚠ Do NOT "simplify" this by adding `case 409:` to getErrorKey() in api-client.ts — that maps
+   * a bare STATUS platform-wide and would rewrite the pending-payment 409 for every caller of
+   * every endpoint.
+   *
+   * The backend's `message` is English-only, so the stream case renders our own localised copy.
+   */
+  const reportPaymentError = (error: { message?: string; code?: string }) => {
+    if (error.code === "STREAM_NOT_READY") {
+      toast.error(tStreamSale("notReady"));
+      onStreamNotReady?.();
+      return;
+    }
+    toast.error(error.message || t("paymentInitFailed"));
+  };
 
   const handlePay = async () => {
     if (!selectedMethod) return;
@@ -153,12 +343,12 @@ export function SaleCheckoutPanel({
         });
 
         if (response.error) {
-          toast.error(response.error.message || t("paymentInitFailed"));
+          reportPaymentError(response.error);
           return;
         }
 
         if (response.data) {
-          onPaymentInitiated(response.data.reference, true);
+          onPaymentInitiated(response.data.reference, true, response.data);
         }
       } else if (selectedMethod.type === "card") {
         setCaptchaToken(await getTurnstileToken());
@@ -171,12 +361,12 @@ export function SaleCheckoutPanel({
         });
 
         if (response.error) {
-          toast.error(response.error.message || t("paymentInitFailed"));
+          reportPaymentError(response.error);
           return;
         }
 
         if (response.data?.authorizationUrl) {
-          onPaymentInitiated(response.data.reference, false);
+          onPaymentInitiated(response.data.reference, false, response.data);
           safePaymentRedirect(response.data.authorizationUrl);
         }
       } else {
@@ -200,12 +390,12 @@ export function SaleCheckoutPanel({
         });
 
         if (response.error) {
-          toast.error(response.error.message || t("paymentInitFailed"));
+          reportPaymentError(response.error);
           return;
         }
 
         if (response.data?.authorizationUrl) {
-          onPaymentInitiated(response.data.reference, false);
+          onPaymentInitiated(response.data.reference, false, response.data);
           safePaymentRedirect(response.data.authorizationUrl);
         }
       }
@@ -426,6 +616,72 @@ export function SaleCheckoutPanel({
           </div>
         )}
       </div>
+
+      {/* Story 135.1 (D3, AC4) — the exact total, before the gateway.
+          Same three lines and the same labels the `payment-prompt` screen already uses, so a buyer
+          who reaches that screen sees a number she has already been shown rather than a new one.
+          `aria-live` because the total changes when she switches country or method, and a screen
+          reader user must hear that the amount moved. */}
+      {/* Rendered whenever a quote exists, including a 0% rate (review, Low). Gating on
+          `processingFeeMinorUnits > 0` made the whole breakdown — price included — disappear if an
+          admin ever configured a zero or out-of-range rate, which is the opposite of AC4's
+          "price, processing fee and total are shown". A 0 fee line is honest; no line is not. */}
+      {feeQuote && (
+        <div
+          className="bg-gray-50 dark:bg-[oklch(0.24_0_0)] rounded p-4 mb-4 text-sm"
+          role="status"
+          aria-live="polite"
+        >
+          <div className="flex justify-between items-center mb-1">
+            <span className="text-gray-600 dark:text-[oklch(0.65_0_0)]">{t("filePrice")}</span>
+            <span className="font-medium text-[#171717] dark:text-[oklch(0.91_0_0)]">
+              {formatMinor(feeQuote.priceMinorUnits)}
+            </span>
+          </div>
+          <div className="flex justify-between items-center mb-1">
+            <span className="text-gray-500 dark:text-[oklch(0.65_0_0)]">
+              {feeQuote.feePercent
+                ? t("processingFee", {
+                    percent: feeQuote.feePercent.toFixed(feeQuote.feePercent % 1 === 0 ? 0 : 2),
+                  })
+                : t("processingFeeGeneric")}
+            </span>
+            <span className="font-medium text-[#171717] dark:text-[oklch(0.91_0_0)]">
+              {formatMinor(feeQuote.processingFeeMinorUnits)}
+            </span>
+          </div>
+          <div className="flex justify-between items-center pt-2 border-t border-gray-200 dark:border-[oklch(0.30_0_0)]">
+            <span className="text-gray-600 dark:text-[oklch(0.65_0_0)] font-bold">
+              {t("totalCharged")}
+            </span>
+            <span className="flex flex-col items-end">
+              <span className="font-bold text-[#171717] dark:text-[oklch(0.91_0_0)]">
+                {formatMinor(feeQuote.totalMinorUnits)}
+              </span>
+              {approxInDisplayCurrency(feeQuote.totalMinorUnits) && (
+                <span className="text-xs font-normal text-gray-500 dark:text-[oklch(0.60_0_0)]">
+                  {approxInDisplayCurrency(feeQuote.totalMinorUnits)}
+                </span>
+              )}
+            </span>
+          </div>
+          {/* The buyer's gateway cannot charge this currency, so the payment path converts and
+              charges the converted amount. Without this line the total above is a number she will
+              never be charged — the Critical found at review, which hits Togo, Benin and Senegal,
+              three of the markets ZeFile is built for. */}
+          {feeQuote.settlement && (
+            <p className="text-xs text-gray-500 dark:text-[oklch(0.60_0_0)] mt-2">
+              {t("chargedAs", {
+                // Story 144.1 — prefer the backend's formatting; the local `/100` is only right
+                // while every currency the gateway settles in is two-decimal.
+                amount:
+                  feeQuote.settlement.displayAmount ??
+                  `${(feeQuote.settlement.amountMinorUnits / 100).toLocaleString()} ${feeQuote.settlement.currency}`,
+              })}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Action Buttons */}
       <div className="flex gap-3 mb-4">

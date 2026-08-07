@@ -5,6 +5,330 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.65.1] - 2026-08-06
+
+### Removed
+
+- **An unused upload method that pointed at a route the backend no longer has.** It sent a whole transfer — details and files together — in a single request, which is how uploads worked before the current chunked flow replaced them. No screen had called it since, but it stayed in the API client, and the README presented it as *the* way to upload a file. Anyone following that example would have written code against a route that skipped the minimum price, stored prices at one hundredth of their value, and recorded no platform fee. The method, its type, and its export are gone. (`services/transfer-api.ts`, `services/index.ts`)
+
+### Changed
+
+- **The README's upload example now shows how uploading actually works.** Three steps — create the transfer, send the files in chunks, then finalize, which is what notifies the sender and recipients — checked against the real function signatures rather than written from memory. It also notes that the amount a person types goes in as a plain amount, with the server doing the conversion, so an example can no longer imply a price one hundredth of what was meant. (`README.md`)
+
+## [1.65.0] - 2026-08-05
+
+### Changed
+
+- **The checkout now asks about the payment method the buyer actually chose.** When a buyer picked bank transfer or USSD, the fee breakdown was worked out as though they had chosen a card — deliberately so, because that is what the charge itself did, and the one rule this panel must never break is that the total shown matches the total charged. Both sides have now been corrected together, so the breakdown describes the method in front of the buyer. **The figure on screen does not change**: no rate has been set for either method yet, so both still resolve to the card rate exactly as before. What changes is that correcting them later becomes a settings change rather than a code release. (`features/payment/components/SaleCheckoutPanel.tsx`, `services/platform-api.ts`)
+
+## [1.64.0] - 2026-08-04
+
+### Fixed
+
+- **The earnings line under the price box overstated what a creator would be paid, by a factor of a hundred.** It worked out her share from the number she had typed, while the service stored that number as a count of centimes — so a creator asking three thousand francs was told she would receive two thousand seven hundred and ninety, against the twenty-seven francs and ninety centimes that would actually reach her. The figure now describes the money she will be credited. (`features/home/components/UploadPanel.tsx`)
+- **The smallest price the form would accept was a hundredth of the intended one.** The minimum is held as a sum in whole francs and was compared against a typed price the service counted in centimes. Both sides of that comparison are now on the same footing, and the form accepts and refuses exactly the same prices the service does, so a price is never taken here and rejected there. The same fault, and the same fix, on the budget field when commissioning work. (`features/home/components/UploadPanel.tsx`, `features/file-request/components/FileRequestPanel.tsx`)
+- **Several screens showed stored amounts a hundred times too large.** Money is kept by the service in the smallest unit a currency has, but a number of screens handed those amounts to a formatter that expects whole francs and does no conversion. The price and the sales total in the transfer drawer, the amount on a delivery receipt, the price advertised on the link preview that social sites and search engines read, the price on the button a buyer pays from, and every revenue figure in the analytics panel — the headline, the chart, the period total and each row — were all affected. All of them now convert before they display. (`features/transfer/components/TransferDetailsPanel.tsx`, `features/transfer/components/DeliveryProofCard.tsx`, `features/analytics/components/AnalyticsPanel.tsx`, `app/downloads/[transferId]/[shortCode]/layout.tsx`, `app/downloads/[transferId]/[shortCode]/page.tsx`)
+
+### Changed
+
+- **The price and the budget are now sent as the person wrote them**, and the service converts. Nothing in the browser needs to know how finely a currency is counted, which is the point: the same list kept in two places is the kind of thing that drifts. (`features/home/components/UploadPanel.tsx`, `features/file-request/components/FileRequestPanel.tsx`, `services/transfer-api.ts`, `services/file-request-api.ts`)
+- **The conversion between stored amounts and readable ones lives in one place.** Five separate copies of it had grown up across the payment screens, the download page and the checkout, each written out by hand. They now share a single pair of helpers, and one leftover function that nothing called at all has been removed. (`lib/currency.ts`, `features/payment/components/PaymentPanels.tsx`, `features/payment/components/SaleCheckoutPanel.tsx`, `features/transfer/components/TransferPreviewPanel.tsx`)
+
+## [1.63.2] - 2026-08-03
+
+### Fixed
+
+- **A buyer waiting on a mobile money prompt was shown no price at all.** On a public sale, the screen that asks you to approve the payment on your phone is handed only the payment's reference — never the price, the fee or the total — so its money breakdown rendered an empty "Amount" row beside an otherwise complete summary. It now carries the figures from the payment that was actually created, rather than from the estimate shown a moment earlier, which could still be describing the previous country if the buyer changed it just before paying. (`app/downloads/[transferId]/[shortCode]/page.tsx`, `features/payment/components/SaleCheckoutPanel.tsx`)
+- **Where a purchase is converted before it is charged, only one of the two panels said so.** Buyers in Togo, Benin and Senegal are charged in another currency, and the summary card showed the converted amount only when a processing fee also happened to be present — so on a sale with no fee, the panel on the left disclosed the conversion and the card on the right did not, for the same purchase. The line is no longer tied to the fee. (`components/shared/TransferSummaryCard.tsx`, `app/downloads/[transferId]/[shortCode]/page.tsx`)
+- **Amounts on the payment screen were converted twice over.** The summary beside a payment in progress showed the total in whichever currency the viewer had selected for browsing, using approximate rates, while the panel next to it showed the currency actually being charged — two different figures for one purchase. The charged currency is now the headline on that screen, with the viewer's own currency beneath it as a clearly marked approximation, matching the checkout. (`app/downloads/[transferId]/[shortCode]/page.tsx`)
+
+### Changed
+
+- Converted amounts are now displayed exactly as the server formats them, instead of being divided by a hundred on the page. That division is only correct for currencies that have a smaller unit, and several of the ones ZeFile handles do not. (`components/shared/TransferSummaryCard.tsx`, `features/payment/components/SaleCheckoutPanel.tsx`, `services/payment-api.ts`, `services/platform-api.ts`)
+- Prices on the payment screen are formatted by the same shared helper as the rest of the checkout, so a CFA amount reads the same way there as it does on the invoice and in the emails. (`app/downloads/[transferId]/[shortCode]/page.tsx`)
+
+## [1.63.1] - 2026-08-02
+
+### Fixed
+
+- **A buyer who had paid could still be refused their download, by three separate routes.** Mobile money never leaves the page — it waits and checks — so it never reached the step that exchanges a settled payment for the permission to download, and its success button asked for the file the ordinary way, which a paid sale does not accept. The receipt email links back with the payment reference under one name and the page only read the two others, so the single recovery link every paying buyer is guaranteed to have was ignored, and the short-link hop in front of it dropped the parameter on the way past in any case. All three names are now read, the parameter survives the redirect, and both ways back — waiting on the page, or returning from the payment provider — ask for the download the same way instead of by two separate pieces of code, only one of which was ever exercised. Permission is granted by a message from the payment provider that can arrive a moment after the payment itself, so the page now waits through that gap and tells the difference between "not ready yet" and "no such sale", rather than showing someone who has just paid that their purchase expired. (`app/downloads/[transferId]/[shortCode]/page.tsx`, `app/downloads/page.tsx`)
+- **A download button that did nothing when pressed.** On a paid sale the button appeared as soon as the payment succeeded, but the permission it needs can arrive slightly later; pressed in that window it returned silently. It is now disabled until the download is genuinely ready and says what it is waiting for. The waiting message deliberately does not offer to buy again — this buyer has already paid, and inviting a second payment is the failure the rest of this work exists to prevent. (`app/downloads/[transferId]/[shortCode]/page.tsx`)
+- **The page a payment provider returns to verified against an address that no longer exists.** It posted to a first-generation endpoint removed long ago, so the request failed, and every buyer who came back that way was shown the failure page although their payment had succeeded. That page is reached more often than it appears: a payment started without an explicit, approved return address falls back to it. Three further faults in the same request — no security token, a response shape the API does not send, and a comparison against differently-cased text — are fixed by routing it through the shared payment client, which also means a wrong address stops the build rather than reaching a buyer. A payment still in progress when the checks run out is no longer called failed: the page says so and offers to check again, which previously required reloading. (`app/payment/processing/page.tsx`)
+
+## [1.63.0] - 2026-08-02
+
+### Added
+
+- **A stream-only sale page now says what the buyer is actually getting.** The page offered a title, a file count and a green button, and mentioned nowhere that the film could never be downloaded. Buyers in these markets learn video from WhatsApp, where you download it and then it is yours — offline, permanently — and stream-only inverts that expectation rather than merely failing to meet it. Four plain sentences now sit above the email field: you watch it here and there is no download, access lasts as long as the film is published and the creator's subscription does not affect it, buying it and not watching is not refundable but a failure on our side is, and a payment fee is added at checkout. What the page deliberately does **not** say is anything about access ending — that mechanism ships later, and describing it now would be a promise with nothing behind it. (`app/downloads/[transferId]/[shortCode]/page.tsx`)
+- **The free trailer plays on the page instead of in a side panel.** The 20-second preview opened the drawer, a surface meant for signed-in creators — and one that would have left the free trailer and the purchased film in two different places once playback ships. It now plays where the buyer is reading, from a watermarked clip fetched at view time, and it does not download a single byte until play is pressed. Mobile data costs real money here; a trailer that helps itself to it before being asked is not a preview, it is a charge. (`app/downloads/[transferId]/[shortCode]/page.tsx`)
+- **The checkout shows the total before the pay button, not after.** Price, payment fee and total now appear once a country and a payment method are chosen — including for card, bank transfer and USSD, none of which previously showed a fee anywhere. Where the buyer's provider settles in a different currency, the panel says so and names the amount. (`features/payment/components/SaleCheckoutPanel.tsx`)
+
+### Fixed
+
+- **Two totals in two currencies on the same screen.** The summary card converted the price into whichever currency the header was set to, using approximate rates, while the checkout showed the real amount — so one purchase read `$8.26` in one panel and `5,208.34 Fr CFA` in the other, with the less reliable of the two rendered larger and closer to the pay button. Both panels now read from the same quote and the same formatter. The amount that will be debited leads; the viewer's own currency sits beneath it, clearly marked as an approximation, because a total an international buyer cannot interpret is not one they can agree to. (`components/shared/TransferSummaryCard.tsx`, `features/payment/components/SaleCheckoutPanel.tsx`)
+
+## [1.62.0] - 2026-08-01
+
+### Fixed
+
+- **A sold film is no longer shown to its buyer as expired.** The public download page decides expiry in the browser, comparing the transfer's date against the clock rather than asking the server. With stream-only films now exempt from expiry on the backend, that comparison would still have shown a buyer the expired page for a film sitting intact in storage that the API would have served happily — no player, no purchase, no explanation, and the server never consulted. The date is now skipped for stream-only transfers. An explicitly expired **status** is still honoured exactly as before: the exemption is on the clock, never on the state, so a film revoked on purpose still reads as gone. (`app/downloads/[transferId]/[shortCode]/page.tsx`)
+- **A creator's own list no longer marks a live film as expired, or hides its preview.** Every row in the transfers list computed its own countdown from the same date, so a stream-only film older than its nominal window showed a red "Expired" badge beside the title and "Expired" as its metadata line — and, because the preview action was hidden on anything the row believed to be expired, the creator lost the ability to preview a film that was still on sale. Both now read the delivery mode. A cancelled or genuinely expired film still hides its preview, unchanged. (`features/transfer/components/TransferItem.tsx`)
+- **The transfer details panel no longer counts down to a date that will not arrive.** The expiry line and its status dot are driven by the same comparison, so a stream-only film showed an amber "expires soon" or a red expired indicator on the way to a deletion that no longer happens. It now shows that there is no expiry, reusing the wording the panel already had for transfers without one. (`features/transfer/components/TransferDetailsPanel.tsx`)
+
+## [1.61.0] - 2026-08-01
+
+### Added
+
+- **A film that is not ready to watch is no longer offered for sale.** The sale page now shows a prepared state instead of a buy button while a stream-only film is still being packaged, and the backend refuses the purchase in the same case, so the page and the API agree. The buy action is removed rather than greyed out, because a disabled call to action reads as a broken page. The price stays visible — it previously lived inside the buy button, so hiding the button hid the price and made a film look unavailable rather than imminent. Preparing, processing and failed all read as one state to a buyer: there is nothing they can do about a packaging failure, and naming it would hand a stranger the creator's operational trouble. Refreshing goes around the edge cache, so a buyer who has just heard from the creator is not told to wait another minute. (`app/downloads/[transferId]/[shortCode]/page.tsx`, `features/payment/components/SaleCheckoutPanel.tsx`, `i18n/messages/en.json`, `i18n/messages/fr.json`)
+
+### Fixed
+
+- **The purchase recovery message shows the buyer's email again.** A buyer recovering an earlier purchase saw a raw translation key where the confirmation should have been, in both languages. The message carries the email as a placeholder and the translator fills placeholders as it resolves the string, but the call site asked for the string first and tried to substitute afterwards — so it failed before the substitution could run and returned the key. Its sibling message had the same shape and is fixed too. (`app/downloads/[transferId]/[shortCode]/page.tsx`)
+
+## [1.60.1] - 2026-08-01
+
+### Fixed
+
+- **Clearer wording when a retry is refused.** The messages now say how long the wait actually is instead of promising a moment, and the retry-limit message explains that a film failing repeatedly is unlikely to be fixed by retrying it again. (`i18n/messages/en.json`, `i18n/messages/fr.json`)
+
+## [1.60.0] - 2026-08-01
+
+### Added
+
+- **A Pro creator can mark a video transfer as stream-only.** Story 134.4's interface, which had been sitting uncommitted while its backend already shipped — meaning the feature existed server-side and could not be reached by anyone. The toggle appears only when the creator's plan carries the streaming feature, public sales is on, and every selected file is video. Whether the plan carries it is answered by the server rather than by a hardcoded plan comparison, so granting streaming to another plan makes the toggle appear without a deploy. The interface is not the control: the backend refuses the same combinations independently. (`features/home/components/UploadPanel.tsx`)
+
+- **The creator can see a film being prepared, and retry it when preparation fails.** The first creator-facing surface for stream delivery. The state was already arriving in the browser and being discarded — the fields were simply never declared — so a film that failed preparation looked identical to one still in progress, with nothing to click. Preparing and queued are presented as a single "preparing" state, since the distinction is ours and not the creator's. Failure offers a retry; no technical reason is shown, because the underlying tooling writes decryption key material into its own error output. The view refreshes itself every ten seconds while preparation is in flight and stops as soon as it finishes, when the panel closes, or after ten minutes — and its refresh state resets between films, so one long preparation cannot silently stop the next film from updating. Copy is EN and FR. (`features/transfer/components/TransferDetailsPanel.tsx`, `features/transfer/components/TransferItem.tsx`)
+
+## [1.59.0] - 2026-07-31
+
+### Added
+
+- **Shaka Player, and a loader that keeps it out of the Cloudflare worker bundle.** Groundwork for streaming playback (Epic 135); nothing renders it yet — `StreamPlayer.tsx` arrives in Story 135.6 — so this ships as a dependency and a loading helper, stated here rather than left to be rediscovered as an orphan. Pinned to **5.1.17**, not the 5.1.4 the architecture recorded: 5.1.4 was already 13 patches behind its own line on the day it was written down. 5.2.x was deliberately not taken, because it disables HLS `sequenceMode` by default — a playback behaviour change on exactly the format this feature delivers — and there is no working player yet to debug that against. `next` is unchanged at 15.3.6; `@cloudflare/next-on-pages` requires `<= 15.5.2`, and an incidental bump during install breaks the deploy rather than the build. (`lib/stream/shaka-loader.ts`)
+- **The loader documents a requirement measured rather than assumed.** A dynamic `import()` inside a `'use client'` module is *not* enough to keep the library out of the edge bundle: the component is still server-rendered for the initial HTML, so webpack keeps the chunk in the server graph and `next-on-pages` copies it into the worker. Measured against a probe route — a plain client import produced a 1140 KB edge function carrying the whole player, while mounting through `next/dynamic` with `ssr: false` produced 376 KB with the library absent; an ordinary route's edge function is ~480 KB for scale. Both numbers are recorded at the top of the loader, so Story 135.6 inherits the constraint instead of rediscovering it against a hard worker size limit. The 748 KB client chunk is unaffected, which is where the library belongs. (`lib/stream/shaka-loader.ts`)
+
+## [1.58.3] - 2026-07-31
+
+### Fixed
+
+- **Five more places gave the logo a box built for the artwork it replaced.** v1.58.2 corrected the header; the maintenance page, the waitlist page, the footer, the mobile menu and the download page's "powered by" mark were all still declaring the old proportions. Four of them set no rendered size at all, so the declared box *was* the box — the artwork was fitted inside proportions that are not its own and never filled them, with the maintenance and waitlist pages furthest off at a box a quarter wider in proportion than the logo actually is. The fifth was already sized in CSS and only reserved the wrong space before loading. All now declare the artwork's own 371x90 viewBox and set one dimension in CSS, letting the other follow; the effective size is unchanged at every site (24px tall on maintenance and waitlist, 90px wide in the footer, 120px wide in the mobile menu, 14px tall on the download page). That accounts for all nine logo images in this repo — the two remaining fixed-dimension images in the header are avatars, square by design. (`components/MaintenancePage.tsx`, `components/WaitlistPage.tsx`, `components/shared/Footer.tsx`, `components/shared/MobileMenu.tsx`, `app/downloads/[transferId]/[shortCode]/page.tsx`)
+
+## [1.58.2] - 2026-07-31
+
+### Fixed
+
+- **The header drew the logo about 5% taller than it is.** Both dimensions were pinned in CSS at 130x33, a box built for the previous artwork; the current mark is 371x90, a slightly wider proportion, so forcing it into the old box stretched it vertically. Height is now automatic and only width is set, so the artwork keeps its own proportions, and the declared intrinsic dimensions are the real viewBox rather than the rendered size — those are what reserve space before the image loads, and they described artwork that is no longer there. The mark renders slightly smaller as a result, 100px wide rather than 130. (`components/shared/Header.tsx`)
+
+## [1.58.1] - 2026-07-31
+
+### Fixed
+
+- **The blocked-payout banner told creators a verification deadline had passed when they never had one.** `KycVerificationBanner` inferred expiry from the payout block code alone, but a block code says a payout was refused — it says nothing about whether there was ever a deadline to miss. That inference is already wrong today for a creator whose verification was rejected at the maximum number of attempts, which clears their deadline and leaves the gate refusing them with no date at all; the stricter gate policy now available in the admin panel (backend Story 137.5) would have made it the common case, since that policy refuses creators who were never asked to verify. The banner now requires a deadline before claiming one expired, and a refusal under the stricter policy carries no deadline, so the two halves are one mechanism rather than two guesses. (`components/shared/KycVerificationBanner.tsx`)
+- **"0 days remaining" was shown to creators who were never given a date.** Correcting the expiry inference exposed a fallback underneath it: with no deadline and no countdown, the copy fell through to a message that rendered a confident, invented number. The fallback is gone and the no-countdown case has its own line, which simply asks the creator to verify. It reads `kyc.verifyToWithdraw` — "Verify your identity to withdraw" / "Vérifiez votre identité pour retirer vos fonds" — a key that shipped in v1.58.0 and had nothing referencing it until now.
+
+## [1.58.0] - 2026-07-31
+
+### Changed
+
+- **The header and hero CTAs were the same words and the same action, 400px apart.** Both rendered `header.signupBold` + `signupSuffix` and both dispatched `open-auth-panel`, so the hero was structurally incapable of differing — editing the header silently edited the hero. The hero now reads its own `hero.getStartedButton` key (which already existed, unused, in both locales) and says **"Start getting paid"** / **"Commencez à être payé"**, finishing the sentence the headline above it starts instead of restarting with "Get Started". The header is unchanged. (`components/shared/HeroText.tsx`)
+- **The transfer landing page no longer pitches a signup while the recipient still has something to do.** A creator CTA in the preview, password, email, payment and ready states competed with "Pay and download" — the one action on that page that produces revenue — and duplicated the post-download state, which already makes the same pitch at the moment it lands ("Want to send files like this?"). The hero CTA now appears only in the unavailable state, where the link is dead and it competes with nothing. Free transfers are unaffected: the post-download pitch fires from the download action, not from payment. (`app/downloads/[transferId]/[shortCode]/page.tsx`)
+- The unavailable-state CTA now reads **"Start free on ZeFile"** / **"Commencer gratuitement sur ZeFile"**, reusing the wording the post-download state already uses, rather than introducing a third phrasing of the same idea.
+
+### Removed
+
+- **"Take a look before you pay." on the download card.** The spacer beneath it was conditional on the exact complement of the line's own condition, so it is now unconditional — otherwise unpaid paid transfers, the only case that ever showed the line, would have been left with no gap between the title and the file row. The orphaned `transferLanding.previewBeforeYouPay` key is deleted from both locales; `testResult.previewBeforeYouPay` stays, still used by the test-file simulation.
+
+### Fixed
+
+- **A branded transfer could show ZeFile marketing on a paying customer's link.** Custom branding is a Pro feature that swaps in `BrandedHeader` and already skips the post-download CTA via `!isBranded`, but the unavailable state had no such guard — an expired or cancelled branded transfer would have rendered "Start free on ZeFile" on a white-labelled page. The signup CTA is now suppressed for branded transfers in every state.
+
+## [1.57.2] - 2026-07-30
+
+### Fixed
+
+- **The geo cookie's cache guard did not actually exist.** A response carrying a country-specific `Set-Cookie` must never be reusable by anyone else, or a shared cache could hand one country's cookie to every cookie-less visitor behind it. That was guarded with `Vary: CF-IPCountry` — but the header does not survive to the client on Cloudflare Pages. Confirmed on `demo.zefile.io`: responses arrive with Next.js's own `vary: RSC, Next-Router-State-Tree, …, accept-encoding`, while `Content-Language` set in the same middleware block does survive, so the adapter overwrites `Vary` after middleware runs. The guarantee is now made by the response itself — when the geo cookie is written, that single response is marked `private, no-store`; every other response keeps the normal cacheable header. `Vary` is retained as belt-and-braces. This was latent rather than live, since Cloudflare currently returns `cf-cache-status: DYNAMIC` for these routes and caches nothing, but it would have opened the moment HTML edge caching was enabled. (`middleware.ts`)
+
+## [1.57.0] - 2026-07-30
+
+### Added
+
+- **Currency now follows where the visitor actually is.** There was no detection of any kind — `getStoredCountryCode()` read localStorage and fell back to International, so every first-time visitor saw USD wherever they were, including the West African creators the product is built for. Middleware now maps Cloudflare's `CF-IPCountry` to a supported country (or `DEFAULT` for anywhere ZeFile cannot charge in local currency) and writes a client-readable cookie that the currency store reads on hydrate. Resolution order is: explicit choice in localStorage, then geo, then International. (`middleware.ts`, `stores/currency-store.ts`, `services/subscription-api.ts`)
+- **An explicit choice is never overridden by geo.** `getStoredCountryCode()` returned `DEFAULT` both for "chose International" and for "never chose anything", which are not the same thing. `hasStoredCountryCode()` separates them, so someone who deliberately selects International is not re-detected back to their own country on every page load. Geo is deliberately not written back to localStorage — that would freeze a guess into a stated preference and stop it re-detecting after travel.
+- **Four more markets in the hero animation** — Ghana, Kenya, Togo and Benin join Nigeria and Côte d'Ivoire, each with its own currency, flag, dial code and mobile-money providers. (`components/shared/HeroProcessLoop.tsx`)
+- **A left-rail alignment variant for the hero**, where the trust strip, headline, subtitle and CTA all start on one shared axis instead of each line floating on its own centre. Overridable per-visit with `?hero=left` / `?hero=center` so both versions can be shown side by side. Left is the default pending the creator preference test. (`components/shared/HeroText.tsx`, `components/shared/CreatorsTrustStrip.tsx`)
+
+### Changed
+
+- **The hero animation's market is no longer derived from the UI language.** French forced Côte d'Ivoire/XOF and English forced Nigeria/NGN, so an Ivorian reading the site in English was shown Naira. It now follows the header's currency switcher.
+- **International shows no provider it cannot route to.** Outside the six supported countries the payment beat shows the generic Mobile Money / Card choice with no provider chips, and drops the flag and dial prefix entirely rather than inventing a `+1` that would claim a money rail that does not exist there.
+- Hero headline `text-4xl` → `text-3xl` and subtitle `text-lg` → `text-base`. At 1280 this takes the headline from three lines to two.
+- Updated logo assets — new wordmark and mark. (`public/zefile-logo.svg`, `public/zefile-logo-white.svg`, `public/zefile-logo.png`)
+- `CF-IPCountry` added to `Vary` on responses that set the geo cookie. Without it the cookie-less edge-cache bucket would hand one country's `Set-Cookie` to every other country's first-time visitor. The cookie is only re-sent when its value changes, mirroring the existing `NEXT_LOCALE` rule, so steady-state responses stay cacheable.
+
+### Fixed
+
+- **A recipient hitting a dead link was told their files were ready.** The transfer landing page rendered the hero with no guard on transfer state, so "Your files are ready." sat next to a card saying the transfer had vanished into thin air — on not-found, expired, cancelled and not-ready links alike. The hero now carries state-appropriate copy and its own call to action, distinct from the card's. (`app/downloads/[transferId]/[shortCode]/page.tsx`)
+- **"Mobile Money" was a hardcoded English string** in the hero animation, rendering untranslated for French visitors. It is now a translation key in both locales.
+- Togo's mobile-money providers corrected to Mixx by Yas and Moov Flooz — T-Money is the pre-rebrand name.
+
+## [1.56.7] - 2026-07-30
+
+### Fixed
+
+- **A blocked payout failed with no explanation and no way forward.** The payouts view had no awareness of identity verification at all, and the withdrawal panel rendered only the backend's raw English error string — the machine-readable reason arrived in the API client and was discarded. The payouts view now shows the block above the balance, driven by the balance response so it can never disagree with the server, and the withdrawal panel branches on the error code to show localised copy plus a route into verification. Every other error keeps the existing generic treatment. (`features/account/components/PayoutsPanel.tsx`, `features/account/components/WithdrawalRequestPanel.tsx`)
+- **Verification links from email appeared to go nowhere.** `?account=verification` was not in the deep-link allow-list, so the parameter was silently ignored — even though the account menu type already contained `verification` and the account panel already routed it. One missing string was the whole reason those links looked broken. `?account=payouts` is accepted for the same reason. (`features/home/components/HomeClient.tsx`)
+- **A creator who had merely crossed an earnings threshold was shown a red alarm.** A gate block on REQUIRED is factually "grace period expired", which selects the right wording but was also selecting red-alert styling — and REQUIRED is by far the most common block. Visual severity is now separate from the wording: pending reads blue, required amber, rejected red. The reassurance that the balance is untouched is rendered in neutral grey in every state, rather than inheriting the panel's alert colour and fighting the message it carries. (`components/shared/KycVerificationBanner.tsx`)
+- **A rejected creator was told to verify, which sends them back into the flow that just refused them.** Rejection was folded in with "verification required". It now has its own wording pointing at support, and no call to action, consistently across all three banner variants — previously each variant derived its own copy and only one had been corrected.
+- The reason a disabled withdraw button is disabled is now visible text referenced by `aria-describedby` rather than a `title` tooltip, which is unreliable for screen readers and invisible on touch.
+
+### Added
+
+- **The identity-verification notice now appears where a creator will actually see it.** `KycVerificationBanner` existed as a finished, localised, three-variant component that nothing in the app rendered. It is now shown on the payouts view, in the withdrawal flow, and at the top of the home page — so a creator learns that payouts are held before they attempt one, not after. The home-page placement is gated on being signed in, so no anonymous visitor triggers a verification-status request, and the component renders nothing for anyone who is verified or unaffected.
+- The banner accepts an optional payout-gate decision (`payoutBlockCode`, `gracePeriodEnds`, `footnote`) and renders from it instead of fetching status itself. This matters because the gate can refuse while a plain status read looks clean — above all on its fail-closed path, where it blocks precisely *because* the lookup failed. Left to its own fetch the banner would have rendered nothing at the exact moment it was most needed. Omit the props and every existing behaviour is unchanged.
+
+### Changed
+
+- New payout-block copy in English and French states plainly that the balance stays where it is and nothing is lost — the line that matters most to someone who has just discovered a payout will not arrive.
+
+## [1.56.6] - 2026-07-30
+
+### Fixed
+
+- **"Total earned" shrank every time a seller got paid.** The card summed `available + pending + reserved`, but `available` already has completed withdrawals netted out of it, so the lifetime figure dropped by the value of each payout. It now reads `totalEarnedMinorUnits` from the balance response, which the backend computes gross of withdrawals; the old sum stays as a fallback so the card still renders against an API version that predates the field. (`features/account/components/PayoutsPanel.tsx`)
+
+### Changed
+
+- The held-funds notice now tells sellers how long the hold actually is, using the `payoutHoldDays` field the balance response started returning, instead of only saying the funds release "when the window closes". New `payouts.reservedHintDays` copy in `en` and `fr` (idiomatic French, "vous"), with the existing generic wording kept for older API versions. (`i18n/messages/{en,fr}.json`)
+- The notice uses the documented warning colour (`#F59E0B`) rather than raw `amber-*` utilities, so it matches the rest of the design system in both light and dark mode. (`features/account/components/PayoutsPanel.tsx`)
+
+### Notes
+
+- Pairs with backend v1.57.6, which extends the payout reserve to file-request escrow earnings. Sellers with recent escrow releases will see those funds appear under the on-hold notice once that deploys — this banner is what explains it, so shipping the two together is preferable to shipping the backend alone.
+
+## [1.56.5] - 2026-07-30
+
+### Fixed
+
+- **The sale gateway no longer reveals whether an email has bought a transfer.** Entering an email called `checkPurchase` first and branched the UI on the answer, which meant the page surfaced an unauthenticated "did this person buy this?" oracle. Signed-out buyers now go straight to `recoverPurchase` and are shown the OTP box **and** the Buy button together, because neither we nor they should be told which applies — a code only arrives if a purchase actually exists. Copy is conditional so it never asserts ownership: new `publicSale.alreadyBought` and `publicSale.otpSentIfPurchased` keys in `en` and `fr`, used whenever ownership is unknown, with the existing `alreadyOwned`/`otpSent` wording kept for the signed-in case where it is known. (`app/downloads/[transferId]/[shortCode]/page.tsx`)
+- **`checkPurchase` no longer sends an email address.** The backend now reads it from the JWT, so the client argument is gone and the call is authenticated-only. The signed-in auto-detect path still uses it — that is the caller's own email and discloses nothing — while the signed-out path does not call it at all. (`services/transfer-api.ts`)
+
+### Notes
+
+- Requires zefile-backend **v1.57.5** or later. That release makes `POST /transfers/:shortCode/buy/check` authenticated and stops it accepting a body email, so the two must ship together: an older frontend against the new backend would get 401s on the signed-out path.
+
+## [1.56.4] - 2026-07-29
+
+### Changed
+
+- **Hero loop preview shows real artwork instead of a gradient.** The preview stage rendered an abstract CSS gradient as the stand-in for the creator's work; it now uses an image, which sells "this is somebody's actual deliverable" in a way a gradient never did. One per variant so the home page and the download page never show the same file: pink for `creator`, orange for `buyer`. Sources were downscaled 3840x2160 → 900x506 (~40 KB each) — the stage renders at roughly 296 CSS px, so the originals carried about 100x more pixels than the slot needs, on the homepage's critical path. (`components/shared/HeroProcessLoop.tsx`, `public/images/hero-preview-creator.jpg`, `public/images/hero-preview-buyer.jpg`)
+
+### Fixed
+
+- **"Payment complete" no longer sits flush against the bottom of the sheet.** The confirmation block used `marginTop`/`marginBottom`, but neither the beat wrapper nor the `ResizeObserver`-measured content div establishes a block formatting context, so both margins **collapsed out** and never reached the height the sheet is sized from — leaving only the 22px card padding on each side. It read as bottom-tight because a text baseline sits closer to an edge than a 60px circle does. Both are now padding, which cannot collapse and therefore counts toward the measured height. Most visible in the `buyer` variant, where the block is the first child and so had no effective top margin either. (`components/shared/HeroProcessLoop.tsx`)
+
+### Notes
+
+- On this component, outer spacing must use **padding, not margin**. The sheet's auto-height is derived from a measured element, so any collapsing margin is silently discarded.
+
+## [1.56.3] - 2026-07-29
+
+### Fixed
+
+- **The header tier now refreshes after an in-session plan change.** `Header` has always listened for a `subscription-changed` event to refetch the tier badge, but **nothing in the codebase ever dispatched it** — so upgrading, cancelling, resuming, starting a trial or toggling auto-renew left the header (and the cached subscription) showing the old plan until a full reload. Added `notifySubscriptionChanged()`, wired into every point where the plan actually changes: the direct mutations (`cancel`, `resume`, `change-tier`, `downgrade/cancel`, `trial/start`, `auto-renew`) on success, and the checkout payment poll the moment it reports `SUCCESS` — which is when a paid upgrade truly lands. The poll announces once per payment reference, since callers poll on an interval and re-announcing would make every listener refetch on each tick. Invalidation runs before the dispatch, because listeners refetch synchronously and would otherwise read the stale record they were being told to replace. (`services/subscription-api.ts`)
+
+## [1.56.2] - 2026-07-29
+
+### Fixed
+
+- **`GET /subscriptions/current` no longer fans out into 429s.** Nine components fetch the endpoint independently on mount — `Header`, `RenewalNotificationBanner`, and seven account/subscription panels — with no shared cache, so opening the drawer or moving between panels fired the same request several times over. Its budget is 60/min, which was being exhausted in normal use. The failure was silent but wrong: on a 429 `Header` falls back to the `free` tier, so a paying user is shown a free-tier UI. `getCurrentSubscription()` now shares one in-flight request between concurrent callers and reuses the result for 15s — comfortably under `subscription-store`'s 60s poll interval, so polling still refreshes. Failures are never cached (caching a 429 would pin every consumer to the free fallback for the whole TTL), and login/logout plus the global store reset invalidate it. Fixed at the service layer so all callers benefit without touching nine components; `{ force: true }` is available for read-your-own-write. (`services/subscription-api.ts`)
+
+### Notes
+
+- `subscription-store` already owns a single shared subscription state, but those nine call sites bypass it. Routing them through the store is the better long-term fix; the service-layer de-duplication is the low-risk version.
+- Nothing in the codebase dispatches the `subscription-changed` event, so `Header`'s listener for it is currently dead code — meaning the header tier is not refreshed after an in-session plan change. Left as-is here, but worth wiring up.
+
+## [1.56.1] - 2026-07-29
+
+### Fixed
+
+- **Short codes are no longer lowercased, which 404'd every mixed-case transfer.** Short codes are case-sensitive — the DB stores `HkGXm2GHhB` and `findByShortCode` looks it up with `=` — but the case-insensitive redirect added for SEO only exempted `/z-AbC` at the **root**. Any route carrying the code in a later segment was 308'd to a code that cannot exist: `/downloads/<uuid>/z-HkGXm2GHhB`, `/r/AbC`, `/review/AbC`. The short link itself survived (because `/z-CODE` redirects to `/downloads?code=…` and query strings are not lowercased), so the failure surfaced one hop later on the canonical download URL as "This transfer has vanished into thin air" — on a perfectly valid transfer. Every transfer whose code contains an uppercase letter was affected, which is the large majority. Exempting the `z-` prefix alone is insufficient, since `/review/<code>` and `/r/<code>` can carry a bare code with no prefix, so the code-bearing route families are exempted too. Marketing routes still lowercase, preserving the original SEO behaviour (`/About` → `/about`). (`middleware.ts`)
+- **Buyer hero no longer repeats a line already on the page.** `downloadHero.subtitlePaid` opened with the same sentence as `transferLanding.previewBeforeYouPay` ("Take a look before you pay."), which the download card renders a few lines below — so the buyer read it twice on one screen. The hero now carries the guarantee ("Your originals unlock the moment payment clears.") while the card keeps the instruction. (`i18n/messages/en.json`, `i18n/messages/fr.json`)
+
+## [1.56.0] - 2026-07-29
+
+### Added
+
+- **Animated hero process loop (`HeroProcessLoop`).** A looping product tour that *shows* the delivery flow instead of describing it, replacing the paper-plane Lottie in the hero. Ported from the Claude Design project "ZeFile Pitch Deck" (`hero-loop.jsx`): one soft white sheet on transparent ground — no shell, no outline, no browser chrome, no rotation, auto height (chrome and tilt were tried in the design and rejected, as they made the loop read as a second upload widget). Two variants share the component: `creator` (home, 40s — upload, price, link, preview, pay, download) and `buyer` (download page, 20.5s — preview, pay, download). Beats crossfade rather than cut: content fades out, the sheet resizes under a `ResizeObserver`-driven CSS transition while nothing is visible, then the new beat fades in — fading fully to zero so two layouts never superimpose, which lets the sheet keep `overflow: visible` for the dragged-file ghost. Decorative (`aria-hidden`, `pointer-events: none`), pauses off-screen and on tab switch, honours `prefers-reduced-motion`, throttled to 30fps. Desktop-only from `lg`, scaling 0.72/0.85/1.0 across `lg`/`xl`/`2xl` to reach the design's native 340px. (`components/shared/HeroProcessLoop.tsx`, `features/home/components/HomeClient.tsx`, `app/downloads/[transferId]/[shortCode]/page.tsx`, `i18n/messages/en.json`, `i18n/messages/fr.json`)
+- **Buyer-facing hero on the download page (`downloadHero`).** The download page previously rendered the creator hero, so a recipient deciding whether to pay a stranger was told to "send your work" and "get paid" — the wrong side of the transaction. It now has its own copy, and because that page also serves free transfers, the subtitle is conditional on price: paid recipients get "Take a look before you pay. They unlock the moment payment clears.", free recipients get "Have a look, then download." — so nobody is warned about a charge that isn't coming. Idiomatic EN + FR ("vous"). (`app/downloads/[transferId]/[shortCode]/page.tsx`, `i18n/messages/en.json`, `i18n/messages/fr.json`)
+- **`HeroText` props `copy` and `reserveRightGutter`.** `copy` overrides the headline/subtitle for non-creator audiences; `reserveRightGutter` pins the headline into the gap between the upload panel and the loop's column so it wraps instead of running underneath. Both are opt-in, leaving the review page and `/downloads` redirect shim unaffected. (`components/shared/HeroText.tsx`)
+
+### Changed
+
+- **Hero copy no longer narrates the process.** The old subtitle ("Drop in your files, set a price, share the link. Your client previews, pays, then downloads…") was a caption for the six beats the animation now performs, spending the page's most valuable text on redundancy. It is replaced with the positioning the hero was missing — mobile money in the first fold, per the messaging guidelines: *"Send your work. Get paid before they download." / "Your client pays with Mobile Money, card, or bank transfer." / "No credit card required."* Headline also changed from "the moment they download" to "**before** they download", which is what the product actually does — download is gated on payment. (`i18n/messages/en.json`, `i18n/messages/fr.json`)
+
+### Notes
+
+- `PaperPlaneAnimation` is intentionally untouched and still used by the review page and the `/downloads` redirect shim.
+- Deliberate deviations from the design source: copy lives in next-intl rather than inline ternaries; the platform fee is read from `PlatformConfigs` instead of being hardcoded to 7%; the voice guide is applied (no ellipsis, fees framed as "you keep"); the short link uses the brand domain rather than `NEXT_PUBLIC_SHORT_LINK_DOMAIN`, which renders `localhost:3000` in dev; and French formats money as "25 000 CFA" with the symbol after the amount.
+
+## [1.55.0] - 2026-07-01
+
+### Added
+
+- **Reserved (on-hold) funds surfaced to sellers (Story 133-2, AC3).** Pairs with the backend payout-reserve policy: earnings still inside the buyer refund window are held out of the withdrawable balance. `BalanceResponse` now carries `reservedMinorUnits` / `reservedFormatted`, and `PayoutsPanel` shows a reassuring, on-brand banner whenever funds are on hold — explaining why and that they release automatically — with idiomatic EN + FR copy ("vous"). (`services/withdrawals-api.ts`, `features/account/components/PayoutsPanel.tsx`, `i18n/messages/en.json`, `i18n/messages/fr.json`)
+
+### Fixed
+
+- **"Total earned" no longer undercounts held funds.** The payouts summary now adds the reserved amount alongside available and pending; once the reserve shipped, reserved earnings were excluded from the displayed total. (`features/account/components/PayoutsPanel.tsx`)
+
+## [1.54.4] - 2026-07-01
+
+### Added
+
+- **Graceful handling of strict paid-download email verification (HIGH-2).** Pairs with the backend `PAID_DOWNLOAD_STRICT_EMAIL_OTP` gate. When a paid download is refused for lack of a proven email (`401 { code: 'EMAIL_VERIFICATION_REQUIRED' }`, e.g. an expired session), the download page now routes the buyer back through the email OTP step and returns them to the paid download screen once re-verified — instead of showing a dead-end download error. Applies to both the ZIP (`handleDownload`) and per-file (`PerFileDownloadList`) paths via a shared `routeToEmailVerification()` helper, and adds `transferLanding.verifyEmailToDownload` copy (EN/FR). (`app/downloads/[transferId]/[shortCode]/page.tsx`, `features/transfer/components/PerFileDownloadList.tsx`, `i18n/messages/en.json`, `i18n/messages/fr.json`)
+
+## [1.54.3] - 2026-07-01
+
+### Fixed
+
+- **Paid per-file downloads for non-logged-in buyers.** The backend download endpoint now enforces the payment gate, so a buyer on the public download page must supply their payer email (as the ZIP download already does). Threaded `customerEmail` through `PerFileDownloadList` into the download request and added the optional `email` field to `PresignedUrlRequestDto`. Without this, per-file downloads of paid transfers would fail for recipients who are not signed in. (`features/transfer/components/PerFileDownloadList.tsx`, `services/storage-api.ts`, `app/downloads/[transferId]/[shortCode]/page.tsx`)
+
+## [1.54.2] - 2026-05-15
+
+### Fixed
+
+- **SideDrawer no longer leaks into the accessibility tree when closed.** The "Transfers" SideDrawer panel was always rendered in the DOM (slid off via `translate-x-full`), which meant screen readers and keyboard users saw a phantom modal on every initial page load. Added `inert={!isOpen}` (React 19 boolean attribute) to the panel — removes it from the focus + a11y tree when closed while preserving the existing slide animation. Also made `aria-modal` conditional on `isOpen` and added `aria-hidden={!isOpen}` for older AT compatibility. Verified: `dialog "Transfers" modal` no longer appears in the accessibility-tree snapshot when the drawer is closed. (`features/drawer/components/SideDrawer.tsx`)
+- **Earnings calculator now reflects the pass-through PSP fee model.** The Pricing-page calculator previously framed all fees as deducted from the creator's earnings (creator absorbs everything), which contradicted the BP claim of pass-through processing fees (Stripe-style buyer surcharge). Added `processingFeePercent` per country (4% for NGN/GHS/KES, 3.5% for XOF, per the BP processing-fee rates of 2.95-4.6%) and a new "Buyer pays" line at the top of the breakdown showing `price / (1 - processing_rate)` with subtitle `"includes ~{amount} processing fee (~{percent}%, passed through)"`. Worked example: NGN 10,000 on Basic 7% now reads "Buyer pays 10,417 ₦ (incl. ~417 ₦ processing) → Your price 10,000 → -700 platform fee → -50 payout fee → You earn 9,250 ₦". Story now matches the BP. (`features/subscription/components/TransactionFeesSection.tsx`)
+
+### Changed
+
+- **"Request files" tab renamed to "Receive files".** The previous "Send files" / "Request files" tab labels created cognitive overlap with the "Add files" action button inside the active Send tab — three similar verbs in close proximity. "Receive files" is now parallel to "Send files" and reads as the inverse flow (clients send to me) rather than an active request action. EN: "Request files" → "Receive files". FR (idiomatic): "Demander des fichiers" → "Recevoir des fichiers". (`i18n/messages/en.json`, `i18n/messages/fr.json`)
+
+### Added
+
+- `i18n/messages/en.json` + `fr.json` — new `subscriptions.calcBuyerPays` and `subscriptions.calcIncludesProcessing` keys (with `{amount}` + `{percent}` interpolation).
+
+### Notes
+
+- These three fixes resolve P1 #4, P1 #5, and P2 #7 from the Day-Zero onboarding walkthrough findings (`zefile-backend/_bmad-output/planning-artifacts/zefile-day-zero-walkthrough-findings.md`). Total effort ~2 hours per the walkthrough estimate. The remaining items in the walkthrough findings are either out-of-scope by founder decision (P1 #6 dedupe language switcher, P2 #8 surface tier limit on homepage) or require a real human / Android phone (the end-to-end paid-transfer flow walkthrough).
+
+## [1.54.1] - 2026-05-15
+
+### Fixed
+
+- **Homepage upload widget no longer contradicts the "5 GB free" marketing claim.** The anonymous upload widget previously displayed only `"Up to 2 GB"`, which clashed with the hero copy and FAQ promising "Send files up to 5 GB free." It now shows a two-line hint: `"Up to 2 GB"` + `"5 GB with a free account"` — communicating the anonymous-vs-Basic-tier gating without changing the underlying 2 GB anonymous cap. (`features/home/components/UploadPanel.tsx`)
+- **Signup placeholder typo fixed.** Email field placeholder changed from `"cemail@gmail.com"` (read as a typo of "email" and could be mistaken for pre-filled content) to `"yourname@gmail.com"`. (`features/auth/components/EmailAuthForm.tsx`)
+- **Signup placeholder visual hierarchy.** Email + Phone form placeholders previously inherited the input's full bold weight at the same large size, making the placeholder hint visually competitive with real typed content. Added `placeholder:opacity-25` so the placeholder reads as a clearly ghosted hint while preserving the input's bold + large clamp(2.5rem, 6vw, 5rem) font for typed text — same height, same weight, ghosted via opacity alone. (`features/auth/components/EmailAuthForm.tsx`, `features/auth/components/PhoneAuthForm.tsx`)
+
+### Added
+
+- **Wedge-aligned signup guidance under the anonymous upload widget.** New copy line `"Want to set a price and get paid? Sign up free."` (FR: `"Envie de fixer un prix et d'être payé ? Inscrivez-vous, c'est gratuit."`) appears above the existing `"Just exploring?"` text, only in real-send mode (not test mode). The `"Sign up free."` button dispatches a `CustomEvent("open-auth-signup")` which `Header.tsx` listens for via a new `useEffect`, opening the AuthPanel in signup mode. Uses the established cross-component CustomEvent pattern documented in CLAUDE.md (no new global store needed). (`features/home/components/UploadPanel.tsx`, `components/shared/Header.tsx`)
+- `i18n/messages/en.json` + `fr.json` — new `upload.upToWithSignup`, `upload.toSetPriceTitle`, `upload.toSetPriceCta` keys (FR is idiomatic, not literal translation).
+
+### Notes
+
+- These three P0 fixes resolve the friction points identified in the Day-Zero onboarding walkthrough (`zefile-backend/_bmad-output/planning-artifacts/zefile-day-zero-walkthrough-findings.md`). Total effort to clear the P0 list was ~1.5 hours per the walkthrough estimate.
+- Verified end-to-end on `localhost:3000`: clicking the new "Sign up free." button correctly opens the signup modal, and the modal's email field shows the new `"yourname@gmail.com"` placeholder at the proper ghosted-hint visual treatment.
+
 ## [1.54.0] - 2026-05-05
 
 ### Added

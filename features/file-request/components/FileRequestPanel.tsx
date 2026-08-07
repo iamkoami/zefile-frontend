@@ -252,7 +252,13 @@ function RequestForm({ t, onStepChange }: { t: ReturnType<typeof useTranslations
     }
   }, [selectedCountry]);
 
-  // Minimum budget converted to selected currency
+  /**
+   * The minimum budget, in MAJOR units — the scale the budget box is denominated in, so the
+   * comparison is like-for-like (story 144.7, AC2, D3).
+   *
+   * This used to be compared against a raw typed value the backend read as MINOR units, which
+   * enforced a floor one hundredth of the intended one.
+   */
   const minimumBudget = useMemo(() => {
     if (currency === "NGN") return minimumPriceNGN;
     return Math.ceil(convertCurrency(minimumPriceNGN, "NGN", currency));
@@ -348,7 +354,14 @@ function RequestForm({ t, onStepChange }: { t: ReturnType<typeof useTranslations
       const dto: CreateFileRequestDto = {
         title: title.trim(),
         description: description.trim() || undefined,
-        budgetMinorUnits: Math.round(Number(budget)),
+        // MAJOR units, as typed. The backend scales it through the same
+        // `resolvePriceMinorUnits` the transfer price goes through, so the escrow path and the
+        // transfer path cannot drift apart (story 144.7, D3).
+        //
+        // This used to send the raw typed number as `budgetMinorUnits` — a field whose own name
+        // asserted a contract the form did not honour — so a requester typing 5,000 CFA escrowed
+        // 50.00 CFA. Do not scale here.
+        budgetMajorUnits: Math.round(Number(budget)),
         currency,
         creativeEmail: creativeEmail.trim().toLowerCase(),
         deadline: deadline || undefined,

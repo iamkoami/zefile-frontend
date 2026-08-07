@@ -28,8 +28,16 @@ interface PerFileDownloadListProps {
   sessionToken?: string;
   /** Optional version ID if viewing a specific version */
   versionId?: string;
+  /** Buyer email — required to unlock per-file downloads on paid transfers when not logged in */
+  email?: string;
   /** Return to the normal bundle-download flow */
   onBackToBundle: () => void;
+  /**
+   * Story 133-1 (HIGH-2): called when the backend refuses a self-asserted email for a paid
+   * download in strict mode ({ code: 'EMAIL_VERIFICATION_REQUIRED' }). The page routes the user
+   * back through the email OTP step. When provided, the row is not marked as a generic error.
+   */
+  onEmailVerificationRequired?: () => void;
 }
 
 type RowState =
@@ -54,7 +62,9 @@ export default function PerFileDownloadList({
   password,
   sessionToken,
   versionId,
+  email,
   onBackToBundle,
+  onEmailVerificationRequired,
 }: PerFileDownloadListProps) {
   const t = useTranslations("transferLanding");
   const [rowStates, setRowStates] = useState<Record<string, RowState>>({});
@@ -73,7 +83,16 @@ export default function PerFileDownloadList({
         password,
         sessionToken,
         versionId,
+        email,
       });
+
+      // Strict-mode paid downloads require a proven email; route back to the OTP step instead
+      // of surfacing a dead-end row error (Story 133-1 / HIGH-2).
+      if (response.error?.code === "EMAIL_VERIFICATION_REQUIRED" && onEmailVerificationRequired) {
+        updateRow(file.id, { kind: "idle" });
+        onEmailVerificationRequired();
+        return;
+      }
 
       const signed = response.data?.urls?.[0];
       if (response.error || !signed?.url) {

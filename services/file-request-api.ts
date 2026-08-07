@@ -3,7 +3,10 @@ import { apiClient, ApiResponse } from "./api-client";
 export interface CreateFileRequestDto {
   title: string;
   description?: string;
-  budgetMinorUnits: number;
+  /** LEGACY — MINOR units. Prefer `budgetMajorUnits`; sending both is rejected (story 144.7). */
+  budgetMinorUnits?: number;
+  /** MAJOR units, as typed — 5000 means 5,000 CFA. The backend scales it. */
+  budgetMajorUnits?: number;
   currency: string;
   creativeEmail: string;
   deadline?: string;

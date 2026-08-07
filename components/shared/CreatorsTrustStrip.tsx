@@ -6,6 +6,12 @@ import { platformApi, FeaturedCreator } from "@/services/platform-api";
 
 interface CreatorsTrustStripProps {
   timeOfDay?: "day" | "evening" | "night";
+  /**
+   * Which edge the avatars and caption sit on. Follows the hero's alignment —
+   * a centered strip above left-aligned copy is the half-migrated look that
+   * reads as a layout bug rather than a choice.
+   */
+  align?: "center" | "left";
 }
 
 /**
@@ -24,6 +30,7 @@ function getCreatorLink(creator: FeaturedCreator): string | null {
 
 const CreatorsTrustStrip: React.FC<CreatorsTrustStripProps> = ({
   timeOfDay = "day",
+  align = "center",
 }) => {
   const t = useTranslations("featuredCreators");
   const [creators, setCreators] = useState<FeaturedCreator[]>([]);
@@ -47,7 +54,11 @@ const CreatorsTrustStrip: React.FC<CreatorsTrustStripProps> = ({
   const isNight = timeOfDay === "night";
 
   return (
-    <div className="flex flex-col items-center gap-4">
+    <div
+      className={`flex flex-col gap-4 ${
+        align === "left" ? "items-start" : "items-center"
+      }`}
+    >
       {/* Overlapping avatars row */}
       <div className="flex -space-x-3 pointer-events-auto">
         {displayCreators.map((creator, i) => {
