@@ -61,7 +61,7 @@ import { authApi } from "@/services/auth-api";
 import { toast } from "@/components/shared/Toast";
 import { safePaymentRedirect } from "@/utils/security";
 import { getCurrentUserEmail, getCurrentUserName } from "@/utils/auth";
-import type { MobileMoneyProvider } from "@/features/payment/components/PaymentMethodSelector";
+import type { MobileMoneyProvider } from "@/features/payment/types";
 import { PhoneNumberInput } from "@/features/payment/components/PhoneNumberInput";
 import type { CountryCode } from "libphonenumber-js";
 import usePaymentStatus from "@/hooks/usePaymentStatus";

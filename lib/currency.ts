@@ -353,27 +353,6 @@ export interface DisplayCurrencyOptions {
 }
 
 /**
- * {@link formatPrice} for a MINOR-unit amount — converts to the display currency and returns
- * "Free" for zero.
- *
- * `formatPrice` takes MAJOR units and does not divide. Every site that handed it a
- * `*MinorUnits` field was rendering 100x the real figure; this is the pairing that stops that.
- */
-export function formatPriceFromMinor(
-  minorUnits: number,
-  originalCurrency: CurrencyCode | string,
-  displayCurrency: CurrencyCode | string,
-  options: DisplayCurrencyOptions
-): string {
-  return formatPrice(
-    minorToMajorUnits(minorUnits, originalCurrency),
-    originalCurrency,
-    displayCurrency,
-    options
-  );
-}
-
-/**
  * Convert and format amount from original currency to display currency
  * @param amount - The original amount
  * @param originalCurrency - The original currency code
@@ -398,48 +377,4 @@ export function formatInDisplayCurrency(
 
   const convertedAmount = convertCurrency(amount, originalCurrency, displayCurrency);
   return formatCurrencyAmount(convertedAmount, displayCurrency, options.locale);
-}
-
-/**
- * Format price for display (with "Free" for zero amounts)
- * Uses the selected display currency with conversion
- */
-export function formatPrice(
-  price: number,
-  originalCurrency: CurrencyCode | string,
-  displayCurrency: CurrencyCode | string,
-  options: DisplayCurrencyOptions
-): string {
-  if (price === 0) return options.freeLabel ?? "Free";
-  return formatInDisplayCurrency(price, originalCurrency, displayCurrency, options);
-}
-
-/**
- * Format price with original currency shown in parentheses
- * Example: "$45.00 (30,000 XOF)"
- */
-export function formatPriceWithOriginal(
-  price: number,
-  originalCurrency: CurrencyCode | string,
-  displayCurrency: CurrencyCode | string,
-  options: DisplayCurrencyOptions
-): string {
-  if (price === 0) return options.freeLabel ?? "Free";
-
-  const displayAmount = formatInDisplayCurrency(
-    price,
-    originalCurrency,
-    displayCurrency,
-    options
-  );
-
-  // If same currency, don't show original
-  if (originalCurrency === displayCurrency) {
-    return displayAmount;
-  }
-
-  // Show original in parentheses
-  const originalAmount = formatCurrencyAmount(price, originalCurrency, options.locale);
-
-  return `${displayAmount} (${originalAmount})`;
 }

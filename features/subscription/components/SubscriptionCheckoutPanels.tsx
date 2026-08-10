@@ -35,7 +35,7 @@ import {
 } from "@/services/subscription-api";
 import { SubscriptionSummaryCard } from "@/components/shared/SubscriptionSummaryCard";
 import { toast } from "@/components/shared/Toast";
-import type { MobileMoneyProvider } from "@/features/payment/components/PaymentMethodSelector";
+import type { MobileMoneyProvider } from "@/features/payment/types";
 import type { CountryCode } from "libphonenumber-js";
 import { authApi } from "@/services/auth-api";
 import { usePollEligibility } from "@/hooks/usePollEligibility";

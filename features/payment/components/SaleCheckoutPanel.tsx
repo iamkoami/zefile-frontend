@@ -24,7 +24,7 @@ import {
   type ProcessingFeeQuote,
   type ProcessingFeeMethod,
 } from "@/services/platform-api";
-import type { MobileMoneyProvider } from "@/features/payment/components/PaymentMethodSelector";
+import type { MobileMoneyProvider } from "@/features/payment/types";
 import type { CountryCode } from "libphonenumber-js";
 import { toast } from "@/components/shared/Toast";
 import { safePaymentRedirect } from "@/utils/security";

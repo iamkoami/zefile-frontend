@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getLocale } from "next-intl/server";
 import { toIntlLocale } from "@/lib/locale";
+import { CURRENCY_SYMBOLS, type CurrencyCode } from "@/lib/currency";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 const SHORT_LINK_DOMAIN = process.env.NEXT_PUBLIC_SHORT_LINK_DOMAIN || "zefile.co";
@@ -32,9 +33,11 @@ async function fetchTransferMeta(shortCode: string): Promise<TransferMeta | null
 
 // `transfer.price` is MINOR units (story 144.7). This rendered it raw, so the share-card
 // description advertised 100x the real price to every social preview and search crawler.
-// Not `@/lib/currency` — this is a server-side metadata function and the helper there pulls in
-// the client-side exchange-rate module. `@/lib/locale` has no such dependency, so the locale
-// mapping IS shared even though the formatting is not.
+// The FORMATTING is deliberately local — `@/lib/currency`'s formatters are for client components.
+// But the two things that must not fork are shared: the locale mapping from `@/lib/locale`, and
+// the currency symbol from `CURRENCY_SYMBOLS`. That import is safe here despite the older warning
+// on this comment: `lib/currency` has no top-level side effects, its exchange-rate fetch only runs
+// when a function is called, and nothing on this path calls one.
 //
 // Story 144.15 — this used to pin `"fr-FR"` for XOF and fall back to a bare `toLocaleString()`
 // for everything else, so an English reader saw French grouping on a CFA price while a French
@@ -48,8 +51,11 @@ function formatPrice(
   if (!priceMinorUnits || priceMinorUnits <= 0) return "";
   const price = priceMinorUnits / 100;
   const formatted = price.toLocaleString(toIntlLocale(locale));
-  if (currency === "XOF") return `${formatted} Fr CFA`;
-  return `${formatted} ${currency}`;
+  // Story 144.15 — was `Fr CFA` hardcoded for XOF, the last place in the app still using that
+  // second label. The share card a buyer sees in WhatsApp now names the currency the same way the
+  // checkout screen does.
+  const symbol = CURRENCY_SYMBOLS[currency as CurrencyCode] || currency;
+  return `${formatted} ${symbol}`;
 }
 
 export async function generateMetadata({

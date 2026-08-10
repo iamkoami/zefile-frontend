@@ -31,7 +31,7 @@ import {
 } from "@/services/subscription-api";
 import { toast } from "@/components/shared/Toast";
 import { platformApi } from "@/services/platform-api";
-import type { MobileMoneyProvider } from "@/features/payment/components/PaymentMethodSelector";
+import type { MobileMoneyProvider } from "@/features/payment/types";
 import type { CountryCode } from "libphonenumber-js";
 import { authApi } from "@/services/auth-api";
 import { safePaymentRedirect } from "@/utils/security";

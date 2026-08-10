@@ -23,7 +23,7 @@ import { PhoneNumberInput } from "@/features/payment/components/PhoneNumberInput
 import { paymentApi, type PaymentMethodInfo } from "@/services/payment-api";
 import { toast } from "@/components/shared/Toast";
 import { TransferSummaryCard } from "@/components/shared/TransferSummaryCard";
-import type { MobileMoneyProvider } from "@/features/payment/components/PaymentMethodSelector";
+import type { MobileMoneyProvider } from "@/features/payment/types";
 import type { CountryCode } from "libphonenumber-js";
 import usePaymentStatus from "@/hooks/usePaymentStatus";
 import { useCurrencyStore } from "@/stores/currency-store";
