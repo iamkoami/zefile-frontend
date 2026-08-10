@@ -5,6 +5,20 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.65.5] - 2026-08-10
+
+### Fixed
+
+- **French visitors were shown prices written the English way, where the comma means the opposite thing.** A five-thousand-franc film read `5,151.99 XOF` on a French screen. In French, the comma is the decimal mark — so that price can be read as five francs and change, on the screen where someone decides whether to pay. It now reads `5 151,99 XOF` in French and `5,151.99 XOF` in English, checked in a browser in both languages. This got riskier with the previous release, not safer: that one restored the last two digits of the price, and those are exactly the digits a French reader misreads. (`lib/currency.ts`, `lib/locale.ts`, and every screen that shows an amount)
+- **Payment screens followed the visitor's computer language instead of the site's.** Someone reading the site in French on an English laptop saw English formatting; someone reading it in English on a French laptop saw French formatting — and, because different parts of the same screen worked differently, could see both at once for the same purchase. Two people looking at the same page could honestly disagree about what it said, which is why nobody had reported it. Every amount now follows the language chosen on the site, and nothing else. (`features/payment/`, `app/payment/success/`, `app/deliver/`)
+- **Dates stayed in English on French screens.** The transfer summary read "Envoyé le August 4, 2026" — a French sentence with an English date in the middle of it. Now "Envoyé le 4 août 2026". (`components/shared/TransferSummaryCard.tsx`)
+
+### Changed
+
+- **CFA francs are called the same thing everywhere now.** Some screens said `Fr CFA` and others said `XOF`, occasionally within inches of each other on the same payment screen for the same purchase. Four copies of the same currency list were behind this, and two of them had quietly drifted and lost South African rand along the way. All four are gone; there is one list now, so the labels cannot disagree again. (`features/payment/components/PaymentPanels.tsx`, `app/payment/success/page.tsx`)
+- **Amounts show the same number of decimal places wherever they appear.** A price of 1,000.10 could show as `1,000.1` in one panel and `1,000.10` in the panel beside it. Affected roughly one amount in ten — any price ending in a round number of centimes. (`lib/currency.ts`)
+- **The link preview for a paid transfer no longer prices everything in French.** Share a paid transfer and the preview card that appears in WhatsApp or on social media formatted the price in French regardless of who was reading. It now follows the reader's language. (`app/downloads/[transferId]/[shortCode]/layout.tsx`)
+
 ## [1.65.4] - 2026-08-10
 
 ### Removed
