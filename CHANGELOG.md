@@ -5,6 +5,16 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.65.2] - 2026-08-10
+
+### Added
+
+- **The build that actually publishes this site is now checked on every push.** The automated checks built the site one way; the publishing service builds it another. Those two had never been compared, and the admin app just spent months proving why that matters — seventeen consecutive failed publishes there, every one of them invisible to checks that stayed green the whole time. This site does not have that fault, and was confirmed clean before this change. The new check is what keeps it that way: it builds exactly the way the publishing service does, on a clean machine, so a break shows up before anyone merges. (`.github/workflows/ci.yml`)
+
+### Changed
+
+- **The build step will no longer quietly download a missing tool.** It used to fetch anything it could not find locally, which works fine on a laptop that already has a copy and is exactly how the admin app's breakage stayed hidden — the command "worked" for everyone who ran it and had never once worked on a clean machine. It now refuses to fetch and stops with the name of what is missing. (`package.json`)
+
 ## [1.65.1] - 2026-08-06
 
 ### Removed
