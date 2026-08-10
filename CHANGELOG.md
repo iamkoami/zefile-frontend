@@ -5,6 +5,12 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.65.7] - 2026-08-10
+
+### Fixed
+
+- **Dates across the whole app followed the visitor's computer instead of the language they picked.** Twenty-five places — subscription and billing screens, account settings, file requests, payment screens, the support chat — showed dates in whatever language the visitor's device happened to be set to, regardless of whether they were reading the site in English or French. So a French visitor on an English laptop got "Envoyé le August 4, 2026": a French sentence with an English date sitting in the middle of it. It also meant two people reading the same page in the same language could see different dates, which is why nobody had ever reported it. Dates now follow the language chosen on the site, the same way prices already do since the previous two releases. (`features/subscription/`, `features/account/`, `features/file-request/`, `features/payment/`, `components/shared/`, `app/deliver/`, `app/review/`, `app/payment/success/`)
+
 ## [1.65.6] - 2026-08-10
 
 ### Changed
