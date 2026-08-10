@@ -234,19 +234,6 @@ class WithdrawalsApi {
   }
 
   /**
-   * Format amount from minor units
-   */
-  formatAmount(minorUnits: number, currency: string): string {
-    const amount = minorUnits / 100;
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(amount);
-  }
-
-  /**
    * Get status display config
    */
   getStatusConfig(status: WithdrawalStatus) {
