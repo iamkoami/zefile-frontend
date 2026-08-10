@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:cloudflare": "npx @cloudflare/next-on-pages",
+    "build:cloudflare": "npx --no-install @cloudflare/next-on-pages",
     "start": "next start",
     "lint": "next lint",
     "deploy:cloudflare": "wrangler pages deploy .vercel/output/static",

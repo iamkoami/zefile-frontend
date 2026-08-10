@@ -27,6 +27,33 @@ jobs:
       - name: Build
         run: npm run build
 
+  # Builds the way Cloudflare Pages builds, on a clean machine.
+  #
+  # `npm run build` above is NOT a substitute. zefile-admin ran 17 consecutive
+  # failed Pages deployments while its equivalent job stayed green, because the
+  # failure was in `build:cloudflare` and in dependency resolution, not in
+  # Next.js. This repo does not have that defect today (story 144.33) — this job
+  # is what keeps that true. Do not remove it without replacing the signal.
+  cloudflare-build:
+    name: Cloudflare Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+
+      - name: Upgrade npm
+        run: npm install -g npm@11
+
+      - run: npm ci
+
+      - name: Build for Cloudflare Pages
+        run: npm run build:cloudflare
+
   lint:
     name: Lint
     runs-on: ubuntu-latest
