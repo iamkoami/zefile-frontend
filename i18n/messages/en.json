@@ -2460,36 +2460,6 @@
     "errorImageOnly": "Only image files are allowed",
     "errorFileTooLarge": "File size exceeds 5MB limit"
   },
-  "adminNotifications": {
-    "title": "Notifications",
-    "unreadOf": "{unread} unread of {total} total",
-    "markAllRead": "Mark all as read",
-    "filters": "Filters",
-    "allPriorities": "All priorities",
-    "all": "All",
-    "unread": "Unread",
-    "read": "Read",
-    "clearFilters": "Clear filters",
-    "noNotifications": "No notifications",
-    "allCaughtUp": "You're all caught up!",
-    "pageOf": "Page {page} of {totalPages}",
-    "priority": {
-      "urgent": "Urgent",
-      "high": "High",
-      "medium": "Medium",
-      "low": "Low"
-    },
-    "types": {
-      "KYC_SUBMITTED": "KYC Submitted",
-      "KYC_REQUIRES_REVIEW": "KYC Review Required",
-      "DISPUTE_CREATED": "New Dispute",
-      "DISPUTE_ESCALATED": "Dispute Escalated",
-      "PAYMENT_FAILED": "Payment Failed",
-      "SUSPICIOUS_ACTIVITY": "Suspicious Activity",
-      "CONFIG_CHANGE_PENDING": "Config Change Pending",
-      "SYSTEM_ALERT": "System Alert"
-    }
-  },
   "payoutMethods": {
     "title": "Payout Methods",
     "subtitle": "Manage your bank accounts and mobile money for receiving payments",
