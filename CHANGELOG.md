@@ -5,6 +5,17 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.65.6] - 2026-08-10
+
+### Changed
+
+- **CFA francs are now called the same thing on every screen, including the last three that disagreed.** The previous release unified most of them; three were left. The screen shown when a payment fails, the withdrawal screen a creator confirms a payout from, and the link preview that appears when a paid transfer is shared all still said `Fr CFA` while everything else said `XOF`. All three now read from the same list, so there is no longer anywhere in the app that can name this currency differently. The link preview also stopped formatting its price the French way for every reader regardless of language. (`app/payment/failed/`, `features/account/components/WithdrawalRequestPanel.tsx`, `app/downloads/[transferId]/[shortCode]/layout.tsx`)
+
+### Removed
+
+- **Three payment screens that nothing could open.** A payment status card, a mobile-money waiting prompt and a payment-method chooser — around 1,600 lines including their tests. Nothing in the app linked to any of them; the real payment flow uses a different set of screens entirely. This is the fourth time this year that finished, tested-looking code has turned out to be reachable by nobody, so it goes rather than sits there looking maintained. One piece of them was genuinely in use — a small definition listing the mobile-money networks, which five live screens depend on — and that was moved somewhere sensible before the rest was removed. (`features/payment/components/`)
+- **Three money-formatting helpers no screen called.** They were the only place a zero price would have been written as the English word "Free" rather than the reader's own language, which is why the previous release could not demonstrate that fix working: there was no screen it could happen on. The one helper of that family that is actually used keeps the behaviour. (`lib/currency.ts`)
+
 ## [1.65.5] - 2026-08-10
 
 ### Fixed
