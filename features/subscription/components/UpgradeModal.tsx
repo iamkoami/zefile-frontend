@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { toIntlLocale } from '@/lib/locale';
 import { Xmark, CreditCard, SmartphoneDevice } from 'iconoir-react';
 import {
   SubscriptionTier,
@@ -30,6 +31,7 @@ export function UpgradeModal({
   onConfirm,
 }: UpgradeModalProps) {
   const t = useTranslations('subscription');
+  const locale = useLocale();
   const [isLoading, setIsLoading] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState<'card' | 'mobile_money'>('mobile_money');
 
@@ -93,7 +95,7 @@ export function UpgradeModal({
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">{t('nextBillingDate')}</span>
               <span className="font-medium text-[#171717]">
-                {nextBillingDate.toLocaleDateString()}
+                {nextBillingDate.toLocaleDateString(toIntlLocale(locale))}
               </span>
             </div>
           </div>

@@ -9,6 +9,7 @@ import React, {
 } from "react";
 import { SortUp, SortDown, SendDiagonal, Download, HandCash, GitFork, NavArrowRight } from "iconoir-react";
 import { useLocale, useTranslations } from "next-intl";
+import { toIntlLocale } from "@/lib/locale";
 import LoadingPanel from "@/components/LoadingPanel";
 import { transferApi, TransferDto } from "@/services/transfer-api";
 import { paymentApi } from "@/services/payment-api";
@@ -137,7 +138,7 @@ const RequestItem: React.FC<{
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
-    return date.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+    return date.toLocaleDateString(toIntlLocale(locale), { day: "numeric", month: "short", year: "numeric" });
   };
 
   return (

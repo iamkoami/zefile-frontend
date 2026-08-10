@@ -4,6 +4,7 @@ export const runtime = "edge";
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
+import { toIntlLocale } from "@/lib/locale";
 import { GitFork, CheckCircle, Clock } from "iconoir-react";
 import {
   fileRequestApi,
@@ -276,7 +277,7 @@ export default function ReviewPage() {
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return "";
-    return new Date(dateStr).toLocaleDateString(undefined, {
+    return new Date(dateStr).toLocaleDateString(toIntlLocale(locale), {
       day: "numeric",
       month: "long",
       year: "numeric",
@@ -297,8 +298,7 @@ export default function ReviewPage() {
                   </p>
                   <span className="text-xs text-gray-400">
                     {latestDelivery.createdAt &&
-                      new Date(latestDelivery.createdAt).toLocaleDateString(
-                        undefined,
+                      new Date(latestDelivery.createdAt).toLocaleDateString(toIntlLocale(locale),
                         {
                           day: "numeric",
                           month: "short",

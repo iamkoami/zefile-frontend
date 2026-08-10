@@ -5,6 +5,7 @@ export const runtime = 'edge';
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
+import { toIntlLocale } from '@/lib/locale';
 import { formatCurrencyFromMinor } from '@/lib/currency';
 import { Download, PageEdit, ArrowDown } from 'iconoir-react';
 import Header from '@/components/shared/Header';
@@ -74,7 +75,7 @@ export default function PaymentSuccessPage() {
   const formatDate = (dateStr?: string): string => {
     if (!dateStr) return '';
     const date = new Date(dateStr);
-    return date.toLocaleDateString(undefined, {
+    return date.toLocaleDateString(toIntlLocale(locale), {
       day: 'numeric',
       month: 'long',
       year: 'numeric',

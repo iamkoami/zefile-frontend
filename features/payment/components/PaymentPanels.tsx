@@ -18,6 +18,7 @@ import {
 } from "iconoir-react";
 import LoadingPanel from "@/components/LoadingPanel";
 import { useLocale, useTranslations } from "next-intl";
+import { toIntlLocale } from "@/lib/locale";
 import { useDrawerStore } from "@/stores/drawer-store";
 import { PhoneNumberInput } from "@/features/payment/components/PhoneNumberInput";
 import { paymentApi, type PaymentMethodInfo } from "@/services/payment-api";
@@ -1798,7 +1799,7 @@ export function PaymentSuccessPanel() {
 
   const formatDate = (date?: Date): string => {
     if (!date) return "";
-    return new Date(date).toLocaleDateString(undefined, {
+    return new Date(date).toLocaleDateString(toIntlLocale(locale), {
       year: "numeric",
       month: "short",
       day: "numeric",

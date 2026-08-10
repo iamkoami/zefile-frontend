@@ -16,7 +16,8 @@ import {
 } from "iconoir-react";
 import { TierDetailsSummary } from "./TierDetailsSummary";
 import LoadingPanel from "@/components/LoadingPanel";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { toIntlLocale } from "@/lib/locale";
 import Image from "next/image";
 import { useDrawerStore, PaymentMethodInfo } from "@/stores/drawer-store";
 import { useCurrencyStore, COUNTRY_CONFIG, ALL_COUNTRY_CODES } from "@/stores/currency-store";
@@ -63,6 +64,7 @@ type CheckoutStep =
  */
 export function SubscriptionCheckoutPanel() {
   const t = useTranslations("payment");
+  const locale = useLocale();
   const tSub = useTranslations("subscriptions");
   const { payload, popView, closeDrawer, setPaymentMethod, resetPaymentFlow } =
     useDrawerStore();
@@ -560,7 +562,7 @@ export function SubscriptionCheckoutPanel() {
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600 dark:text-[oklch(0.75_0_0)]">{tSub("nextBillingDate")}</span>
                 <span className="font-medium text-[#171717] dark:text-[oklch(0.91_0_0)]">
-                  {nextBillingDate.toLocaleDateString(undefined, {
+                  {nextBillingDate.toLocaleDateString(toIntlLocale(locale), {
                     year: "numeric",
                     month: "short",
                     day: "numeric",

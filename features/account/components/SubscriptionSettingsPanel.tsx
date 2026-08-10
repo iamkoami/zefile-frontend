@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useLocale, useTranslations } from "next-intl";
+import { toIntlLocale } from "@/lib/locale";
 import {
   CreditCard,
   SmartphoneDevice,
@@ -80,7 +81,7 @@ const SubscriptionSettingsPanel: React.FC = () => {
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return "-";
-    return new Date(dateStr).toLocaleDateString(undefined, {
+    return new Date(dateStr).toLocaleDateString(toIntlLocale(locale), {
       year: "numeric",
       month: "long",
       day: "numeric",
@@ -319,7 +320,7 @@ const RenewalHistorySection: React.FC = () => {
   };
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString(undefined, {
+    return new Date(dateStr).toLocaleDateString(toIntlLocale(locale), {
       year: "numeric",
       month: "short",
       day: "numeric",

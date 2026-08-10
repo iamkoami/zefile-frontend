@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback } from "react";
 import { useLocale, useTranslations } from "next-intl";
+import { toIntlLocale } from "@/lib/locale";
 import { GitFork, Clock, Download, Eye, Link as LinkIcon, Trash } from "iconoir-react";
 import type { FileRequestDto } from "@/services/file-request-api";
 import { fileRequestApi } from "@/services/file-request-api";
@@ -87,7 +88,7 @@ const RequestDetailsPanel: React.FC<RequestDetailsPanelProps> = ({
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return "-";
     const date = new Date(dateStr);
-    return date.toLocaleDateString(undefined, {
+    return date.toLocaleDateString(toIntlLocale(locale), {
       day: "numeric",
       month: "long",
       year: "numeric",
@@ -97,7 +98,7 @@ const RequestDetailsPanel: React.FC<RequestDetailsPanelProps> = ({
   const formatDateTime = (dateStr: string | null) => {
     if (!dateStr) return "-";
     const date = new Date(dateStr);
-    return date.toLocaleDateString(undefined, {
+    return date.toLocaleDateString(toIntlLocale(locale), {
       day: "numeric",
       month: "short",
       year: "numeric",

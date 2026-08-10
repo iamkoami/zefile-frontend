@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { toIntlLocale } from '@/lib/locale';
 import { Eye, Download, Globe, SmartphoneDevice, Computer, Tv, StatsReport } from 'iconoir-react';
 import {
   analyticsApi,
@@ -23,6 +24,7 @@ const TransferInsightsSection: React.FC<TransferInsightsSectionProps> = ({
   transferId,
 }) => {
   const t = useTranslations('transferInsights');
+  const locale = useLocale();
   const [insights, setInsights] = useState<TransferInsights | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -53,7 +55,7 @@ const TransferInsightsSection: React.FC<TransferInsightsSectionProps> = ({
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString(undefined, {
+    return date.toLocaleDateString(toIntlLocale(locale), {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',

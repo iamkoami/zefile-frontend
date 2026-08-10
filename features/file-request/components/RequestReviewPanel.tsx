@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback } from "react";
 import { useLocale, useTranslations } from "next-intl";
+import { toIntlLocale } from "@/lib/locale";
 import { CheckCircle } from "iconoir-react";
 import type { FileRequestDto } from "@/services/file-request-api";
 import { fileRequestApi } from "@/services/file-request-api";
@@ -45,7 +46,7 @@ const RequestReviewPanel: React.FC<RequestReviewPanelProps> = ({
   const formatDateTime = (dateStr: string | null) => {
     if (!dateStr) return "-";
     const date = new Date(dateStr);
-    return date.toLocaleDateString(undefined, {
+    return date.toLocaleDateString(toIntlLocale(locale), {
       day: "numeric",
       month: "short",
       year: "numeric",
@@ -270,7 +271,7 @@ const RequestReviewPanel: React.FC<RequestReviewPanelProps> = ({
           <span className="font-bold text-[#171717]">{formattedBudget}</span>
           {request.deadline && (
             <span className="text-gray-500">
-              {new Date(request.deadline).toLocaleDateString(undefined, {
+              {new Date(request.deadline).toLocaleDateString(toIntlLocale(locale), {
                 day: "numeric",
                 month: "long",
                 year: "numeric",

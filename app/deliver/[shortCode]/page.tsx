@@ -320,7 +320,7 @@ export default function DeliverPage() {
                 {t("formDeadline")}
               </span>
               <span className="text-sm font-medium text-[#171717] dark:text-[oklch(0.91_0_0)]">
-                {new Date(request.deadline).toLocaleDateString(undefined, {
+                {new Date(request.deadline).toLocaleDateString(toIntlLocale(locale), {
                   year: "numeric",
                   month: "long",
                   day: "numeric",

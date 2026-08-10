@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { toIntlLocale } from '@/lib/locale';
 import { Xmark, WarningTriangle, NavArrowDown } from 'iconoir-react';
 import { SubscriptionTier } from '@/services/subscription-api';
 
@@ -29,12 +30,13 @@ export function DowngradeWarningModal({
   onConfirm,
 }: DowngradeWarningModalProps) {
   const t = useTranslations('subscription');
+  const locale = useLocale();
   const [isLoading, setIsLoading] = useState(false);
 
   if (!isOpen) return null;
 
   const formatDate = (date: Date) => {
-    return date.toLocaleDateString(undefined, {
+    return date.toLocaleDateString(toIntlLocale(locale), {
       month: 'long',
       day: 'numeric',
       year: 'numeric',
