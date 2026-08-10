@@ -17,7 +17,7 @@ import {
   Globe,
 } from "iconoir-react";
 import LoadingPanel from "@/components/LoadingPanel";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useDrawerStore } from "@/stores/drawer-store";
 import { PhoneNumberInput } from "@/features/payment/components/PhoneNumberInput";
 import { paymentApi, type PaymentMethodInfo } from "@/services/payment-api";
@@ -34,7 +34,7 @@ import { trackPaymentMethodSelected, trackPaymentSubmitted } from "@/lib/posthog
 import { Turnstile } from '@marsidev/react-turnstile';
 import { useTurnstile } from "@/hooks/useTurnstile";
 import { setCaptchaToken } from "@/services/api-client";
-import { minorToMajorUnits } from "@/lib/currency";
+import { formatCurrencyFromMinor } from "@/lib/currency";
 
 // Supported countries for payment — methods are fetched from API per country
 const PAYMENT_COUNTRIES = [
@@ -900,6 +900,7 @@ export function PaymentPhonePanel() {
 
 export function PaymentPromptPanel() {
   const t = useTranslations("payment");
+  const locale = useLocale();
   const {
     selectedTransfer,
     payload,
@@ -991,29 +992,19 @@ export function PaymentPromptPanel() {
     closeDrawer();
   };
 
-  const getCurrencySymbol = (currency?: string): string => {
-    const symbols: Record<string, string> = {
-      XOF: "Fr CFA",
-      NGN: "₦",
-      GHS: "₵",
-      KES: "KSh",
-      ZAR: "R",
-      USD: "$",
-      EUR: "€",
-      GBP: "£",
-    };
-    return symbols[currency || "XOF"] || currency || "";
-  };
-
-  const formatAmount = (amount: number, currency?: string): string => {
-    // Story 144.7 — shared helper, not a hand-rolled `/ 100`.
-    const majorUnits = minorToMajorUnits(amount, currency || "XOF");
-    const symbol = getCurrencySymbol(currency);
-    if (currency === "XOF") {
-      return `${majorUnits.toLocaleString()} ${symbol}`;
-    }
-    return `${symbol}${majorUnits.toLocaleString()}`;
-  };
+  // Story 144.7 — shared helper, not a hand-rolled `/ 100`.
+  // Story 144.15, found at cross-model review — this panel carried its OWN currency-symbol map
+  // (XOF: "Fr CFA") and its own unbounded `toLocaleString`, while rendering a `TransferSummaryCard`
+  // in the same column that formats through `lib/currency`. One purchase therefore showed
+  // "5 151,99 Fr CFA" and "5 151,99 XOF" inches apart, and any amount whose cents end in a multiple
+  // of ten disagreed on digits too ("1,000.1" beside "1,000.10").
+  //
+  // Three near-identical copies of that map lived in this file, and TWO OF THEM HAD ALREADY LOST
+  // `ZAR: "R"` — so those panels rendered a bare "ZAR" while the third rendered "R". That is the
+  // same silent fork 144.12 found in the admin repo, and it is the argument for deleting a
+  // duplicated table rather than correcting it. One helper, one symbol set, one digit rule.
+  const formatAmount = (amount: number, currency?: string): string =>
+    formatCurrencyFromMinor(amount, currency || "XOF", locale);
 
   const getProviderName = (provider?: string): string => {
     const names: Record<string, string> = {
@@ -1463,6 +1454,7 @@ export function CardPaymentPanel() {
 
 export function PaymentProcessingPanel() {
   const t = useTranslations("payment");
+  const locale = useLocale();
   const {
     selectedTransfer,
     payload,
@@ -1631,28 +1623,19 @@ export function PaymentProcessingPanel() {
     );
   }
 
-  const getCurrencySymbol = (currency?: string): string => {
-    const symbols: Record<string, string> = {
-      XOF: "Fr CFA",
-      NGN: "₦",
-      GHS: "₵",
-      KES: "KSh",
-      USD: "$",
-      EUR: "€",
-      GBP: "£",
-    };
-    return symbols[currency || "XOF"] || currency || "";
-  };
-
-  const formatAmount = (amount: number, currency?: string): string => {
-    // Story 144.7 — shared helper, not a hand-rolled `/ 100`.
-    const majorUnits = minorToMajorUnits(amount, currency || "XOF");
-    const symbol = getCurrencySymbol(currency);
-    if (currency === "XOF") {
-      return `${majorUnits.toLocaleString()} ${symbol}`;
-    }
-    return `${symbol}${majorUnits.toLocaleString()}`;
-  };
+  // Story 144.7 — shared helper, not a hand-rolled `/ 100`.
+  // Story 144.15, found at cross-model review — this panel carried its OWN currency-symbol map
+  // (XOF: "Fr CFA") and its own unbounded `toLocaleString`, while rendering a `TransferSummaryCard`
+  // in the same column that formats through `lib/currency`. One purchase therefore showed
+  // "5 151,99 Fr CFA" and "5 151,99 XOF" inches apart, and any amount whose cents end in a multiple
+  // of ten disagreed on digits too ("1,000.1" beside "1,000.10").
+  //
+  // Three near-identical copies of that map lived in this file, and TWO OF THEM HAD ALREADY LOST
+  // `ZAR: "R"` — so those panels rendered a bare "ZAR" while the third rendered "R". That is the
+  // same silent fork 144.12 found in the admin repo, and it is the argument for deleting a
+  // duplicated table rather than correcting it. One helper, one symbol set, one digit rule.
+  const formatAmount = (amount: number, currency?: string): string =>
+    formatCurrencyFromMinor(amount, currency || "XOF", locale);
 
   const calculateTotalSize = (): number => {
     if (!transfer?.files) return 0;
@@ -1764,6 +1747,7 @@ export function PaymentProcessingPanel() {
 
 export function PaymentSuccessPanel() {
   const t = useTranslations("payment");
+  const locale = useLocale();
   const { selectedTransfer, payload, clearBackNavigation } = useDrawerStore();
 
   const transfer = selectedTransfer;
@@ -1798,28 +1782,19 @@ export function PaymentSuccessPanel() {
     );
   }
 
-  const getCurrencySymbol = (currency?: string): string => {
-    const symbols: Record<string, string> = {
-      XOF: "Fr CFA",
-      NGN: "₦",
-      GHS: "₵",
-      KES: "KSh",
-      USD: "$",
-      EUR: "€",
-      GBP: "£",
-    };
-    return symbols[currency || "XOF"] || currency || "";
-  };
-
-  const formatAmount = (amount: number, currency?: string): string => {
-    // Story 144.7 — shared helper, not a hand-rolled `/ 100`.
-    const majorUnits = minorToMajorUnits(amount, currency || "XOF");
-    const symbol = getCurrencySymbol(currency);
-    if (currency === "XOF") {
-      return `${majorUnits.toLocaleString()} ${symbol}`;
-    }
-    return `${symbol}${majorUnits.toLocaleString()}`;
-  };
+  // Story 144.7 — shared helper, not a hand-rolled `/ 100`.
+  // Story 144.15, found at cross-model review — this panel carried its OWN currency-symbol map
+  // (XOF: "Fr CFA") and its own unbounded `toLocaleString`, while rendering a `TransferSummaryCard`
+  // in the same column that formats through `lib/currency`. One purchase therefore showed
+  // "5 151,99 Fr CFA" and "5 151,99 XOF" inches apart, and any amount whose cents end in a multiple
+  // of ten disagreed on digits too ("1,000.1" beside "1,000.10").
+  //
+  // Three near-identical copies of that map lived in this file, and TWO OF THEM HAD ALREADY LOST
+  // `ZAR: "R"` — so those panels rendered a bare "ZAR" while the third rendered "R". That is the
+  // same silent fork 144.12 found in the admin repo, and it is the argument for deleting a
+  // duplicated table rather than correcting it. One helper, one symbol set, one digit rule.
+  const formatAmount = (amount: number, currency?: string): string =>
+    formatCurrencyFromMinor(amount, currency || "XOF", locale);
 
   const formatDate = (date?: Date): string => {
     if (!date) return "";

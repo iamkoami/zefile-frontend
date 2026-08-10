@@ -4,7 +4,8 @@ export const runtime = 'edge';
 
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { formatCurrencyFromMinor } from '@/lib/currency';
 import { Download, PageEdit, ArrowDown } from 'iconoir-react';
 import Header from '@/components/shared/Header';
 import LoadingFullscreen from '@/components/LoadingFullscreen';
@@ -16,6 +17,7 @@ import { toast } from '@/components/shared/Toast';
 export default function PaymentSuccessPage() {
   const searchParams = useSearchParams();
   const t = useTranslations('payment');
+  const locale = useLocale();
   const tLanding = useTranslations('transferLanding');
   const [reference, setReference] = useState<string>('');
   const [transfer, setTransfer] = useState<TransferDto | null>(null);
@@ -55,28 +57,11 @@ export default function PaymentSuccessPage() {
     loadPaymentDetails();
   }, [searchParams]);
 
-  const getCurrencySymbol = (currency?: string): string => {
-    const symbols: Record<string, string> = {
-      XOF: 'Fr CFA',
-      NGN: '₦',
-      GHS: '₵',
-      KES: 'KSh',
-      ZAR: 'R',
-      USD: '$',
-      EUR: '€',
-      GBP: '£',
-    };
-    return symbols[currency || 'XOF'] || currency || '';
-  };
-
-  const formatAmount = (amount: number, currency?: string): string => {
-    const majorUnits = amount / 100;
-    const symbol = getCurrencySymbol(currency);
-    if (currency === 'XOF') {
-      return `${majorUnits.toLocaleString()} ${symbol}`;
-    }
-    return `${symbol}${majorUnits.toLocaleString()}`;
-  };
+  // Story 144.15, at cross-model review — a fourth copy of the same local symbol map lived here,
+  // reading XOF as 'Fr CFA' with unbounded fraction digits, on the screen a buyer lands on right
+  // after paying. It now formats exactly like every other money surface in the app.
+  const formatAmount = (amount: number, currency?: string): string =>
+    formatCurrencyFromMinor(amount, currency || 'XOF', locale);
 
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 B';

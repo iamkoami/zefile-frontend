@@ -18,7 +18,7 @@ import React, {
 } from "react";
 import StepIndicator from "@/components/shared/StepIndicator";
 import { useParams, useSearchParams } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
   Lock,
   SmartphoneDevice,
@@ -91,9 +91,7 @@ import {
   AnalyticsEventType,
 } from "@/lib/posthog";
 import {
-  formatCurrencyAmount,
   formatCurrencyFromMinor,
-  minorToMajorUnits,
   type CurrencyCode,
 } from "@/lib/currency";
 
@@ -109,8 +107,14 @@ import {
  */
 // Story 144.7 — the shared helper, not a hand-rolled `/ 100`. Four copies of this conversion
 // existed across the app; the exponent now lives in one place.
-const formatMinor = (minorUnits: number, currency?: string): string =>
-  formatCurrencyFromMinor(minorUnits, (currency || "XOF") as CurrencyCode);
+// Story 144.15 — `locale` is threaded rather than defaulted. This helper is module-level so it
+// cannot call `useLocale()` itself; every caller is inside the component and passes it.
+const formatMinor = (
+  minorUnits: number,
+  currency: string | undefined,
+  locale: string,
+): string =>
+  formatCurrencyFromMinor(minorUnits, (currency || "XOF") as CurrencyCode, locale);
 
 // Helper to extract sender email from senderId
 const getSenderEmail = (transfer: TransferDto): string | undefined => {
@@ -270,6 +274,7 @@ export default function TransferLandingPage() {
   }>();
 
   const searchParams = useSearchParams();
+  const locale = useLocale();
   const t = useTranslations("transferLanding");
   const tPayment = useTranslations("payment");
   const tNotFound = useTranslations("notFound");
@@ -2761,7 +2766,7 @@ export default function TransferLandingPage() {
                         </span>
                         <span className="font-medium text-[#171717] dark:text-[oklch(0.91_0_0)]">
                           {paymentAmount
-                            ? formatMinor(paymentAmount, transfer?.currency)
+                            ? formatMinor(paymentAmount, transfer?.currency, locale)
                             : ""}
                         </span>
                       </div>
@@ -2776,7 +2781,7 @@ export default function TransferLandingPage() {
                             : tPayment("processingFeeGeneric")}
                         </span>
                         <span className="font-medium text-[#171717] dark:text-[oklch(0.91_0_0)]">
-                          {formatMinor(processingFee, transfer?.currency)}
+                          {formatMinor(processingFee, transfer?.currency, locale)}
                         </span>
                       </div>
                       <div className="flex justify-between items-center pt-1 border-t border-gray-200 dark:border-[oklch(0.30_0_0)]">
@@ -2784,7 +2789,7 @@ export default function TransferLandingPage() {
                           {tPayment("totalCharged")}
                         </span>
                         <span className="font-bold text-[#171717] dark:text-[oklch(0.91_0_0)]">
-                          {formatMinor(totalAmountCharged, transfer?.currency)}
+                          {formatMinor(totalAmountCharged, transfer?.currency, locale)}
                         </span>
                       </div>
                     </>
@@ -2794,7 +2799,7 @@ export default function TransferLandingPage() {
                         {tPayment("amount")}
                       </span>
                       <span className="font-bold text-[#171717] dark:text-[oklch(0.91_0_0)]">
-                        {paymentAmount ? formatMinor(paymentAmount, transfer?.currency) : ""}
+                        {paymentAmount ? formatMinor(paymentAmount, transfer?.currency, locale) : ""}
                       </span>
                     </div>
                   )}
@@ -2807,10 +2812,16 @@ export default function TransferLandingPage() {
                       and a converted payment with no surcharge still converts. */}
                   {paymentSettlement && (
                     <p className="text-xs text-gray-500 dark:text-[oklch(0.60_0_0)] pt-1">
+                      {/* Story 144.15 — shared formatter, not a bare `toLocaleString()`, which
+                          resolves to the browser's locale rather than the app's. */}
                       {tPayment("chargedAs", {
                         amount:
                           paymentSettlement.displayAmount ??
-                          `${(paymentSettlement.amountMinorUnits / 100).toLocaleString()} ${paymentSettlement.currency}`,
+                          formatMinor(
+                            paymentSettlement.amountMinorUnits,
+                            paymentSettlement.currency,
+                            locale,
+                          ),
                       })}
                     </p>
                   )}
@@ -3398,11 +3409,14 @@ export default function TransferLandingPage() {
       transfer.price && transfer.price > 0 && !transfer.isPaid;
     // `transfer.price` is MINOR units (story 144.7). This rendered it raw, so the pay button on
     // the buyer's preview screen quoted 100x what the gateway would actually charge.
-    const formatPrice = (priceMinorUnits: number, currency: string) => {
-      const price = minorToMajorUnits(priceMinorUnits, currency);
-      if (currency === "XOF") return `${price.toLocaleString()} Fr CFA`;
-      return `${price.toLocaleString()} ${currency}`;
-    };
+    //
+    // Story 144.15 — this is now the shared formatter rather than a local one. Two consequences,
+    // both deliberate: the amount follows the app's locale instead of the browser's, and XOF
+    // renders as "XOF" rather than "Fr CFA", which is what `TransferSummaryCard` beside it has
+    // always said. One currency with two labels on one page is the disagreement the shared helper
+    // exists to end.
+    const formatPrice = (priceMinorUnits: number, currency: string) =>
+      formatMinor(priceMinorUnits, currency, locale);
 
     return (
       <div className="min-h-screen bg-white dark:bg-[oklch(0.19_0_0)]">
@@ -3554,8 +3568,10 @@ export default function TransferLandingPage() {
   // Ready to download state (free transfer or paid)
   // ──── Public Sale: Preview + Buy ─────────────────────────────────────
   if (pageState === "sale-preview" && transfer) {
+    // Story 144.15 — shared formatter. Same two deliberate consequences as the `formatPrice`
+    // above: app locale instead of browser locale, and "XOF" instead of "Fr CFA".
     const priceDisplay = transfer.price
-      ? `${(transfer.price / 100).toLocaleString()} ${transfer.currency === "XOF" ? "Fr CFA" : transfer.currency || ""}`
+      ? formatMinor(transfer.price, transfer.currency, locale)
       : "";
 
     return (

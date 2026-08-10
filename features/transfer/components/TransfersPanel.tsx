@@ -8,7 +8,7 @@ import React, {
   useRef,
 } from "react";
 import { SortUp, SortDown, SendDiagonal, Download, HandCash, GitFork, NavArrowRight } from "iconoir-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import LoadingPanel from "@/components/LoadingPanel";
 import { transferApi, TransferDto } from "@/services/transfer-api";
 import { paymentApi } from "@/services/payment-api";
@@ -125,13 +125,14 @@ const RequestItem: React.FC<{
   const [isHovered, setIsHovered] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const isActive = isHovered || isFocused;
+  const locale = useLocale();
 
   const user = authApi.getStoredUser();
   const isClient = request._role === "client" || request.clientEmail === user?.email;
   const isTerminal = request.status === "expired" || request.status === "cancelled" || request.status === "refunded" || request.status === "completed";
   const statusColor = REQUEST_STATUS_COLORS[request.status] || "bg-gray-100 text-gray-600";
   const budgetMajor = request.budgetMinorUnits / 100;
-  const formattedBudget = formatCurrencyAmount(budgetMajor, request.currency as CurrencyCode);
+  const formattedBudget = formatCurrencyAmount(budgetMajor, request.currency as CurrencyCode, locale);
   const counterpartyEmail = isClient ? request.creativeEmail : request.clientEmail;
 
   const formatDate = (dateStr: string) => {

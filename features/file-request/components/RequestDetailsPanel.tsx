@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { GitFork, Clock, Download, Eye, Link as LinkIcon, Trash } from "iconoir-react";
 import type { FileRequestDto } from "@/services/file-request-api";
 import { fileRequestApi } from "@/services/file-request-api";
@@ -34,6 +34,7 @@ const RequestDetailsPanel: React.FC<RequestDetailsPanelProps> = ({
   request,
 }) => {
   const t = useTranslations("transfers");
+  const locale = useLocale();
   const tReq = useTranslations("fileRequests");
   const tDetails = useTranslations("transferDetails");
   const { pushView } = useDrawerStore();
@@ -46,6 +47,7 @@ const RequestDetailsPanel: React.FC<RequestDetailsPanelProps> = ({
   const formattedBudget = formatCurrencyAmount(
     budgetMajor,
     request.currency as CurrencyCode,
+    locale,
   );
 
   const isApprovedOrCompleted =

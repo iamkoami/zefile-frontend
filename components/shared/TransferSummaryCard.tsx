@@ -1,13 +1,15 @@
 "use client";
 
 import { GitPullRequest } from "iconoir-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useCurrencyStore } from "@/stores/currency-store";
 import {
   convertCurrency,
   formatCurrencyAmount,
+  formatCurrencyFromMinor,
   type CurrencyCode,
 } from "@/lib/currency";
+import { toIntlLocale } from "@/lib/locale";
 
 export interface TransferSummaryCardProps {
   title: string;
@@ -78,6 +80,7 @@ export function TransferSummaryCard({
   settlementDisplayAmount,
 }: TransferSummaryCardProps) {
   const t = useTranslations("payment");
+  const locale = useLocale();
   const { pricing } = useCurrencyStore();
   const displayCurrency = pricing.currency as CurrencyCode;
 
@@ -97,7 +100,7 @@ export function TransferSummaryCard({
     // buyer's card is debited the transfer's own currency, and this card was rendering "$8.26"
     // beside a checkout panel reading "5,208.34 Fr CFA" for the same purchase.
     if (useChargeCurrency) {
-      return formatCurrencyAmount(majorUnits, originalCurrency as CurrencyCode);
+      return formatCurrencyAmount(majorUnits, originalCurrency as CurrencyCode, locale);
     }
 
     // Convert to display currency if different
@@ -107,11 +110,11 @@ export function TransferSummaryCard({
         originalCurrency as CurrencyCode,
         displayCurrency,
       );
-      return formatCurrencyAmount(convertedAmount, displayCurrency);
+      return formatCurrencyAmount(convertedAmount, displayCurrency, locale);
     }
 
     // Same currency, just format
-    return formatCurrencyAmount(majorUnits, originalCurrency as CurrencyCode);
+    return formatCurrencyAmount(majorUnits, originalCurrency as CurrencyCode, locale);
   };
 
   /**
@@ -132,7 +135,7 @@ export function TransferSummaryCard({
       originalCurrency as CurrencyCode,
       displayCurrency,
     );
-    return `≈ ${formatCurrencyAmount(converted, displayCurrency)}`;
+    return `≈ ${formatCurrencyAmount(converted, displayCurrency, locale)}`;
   };
 
   const formatFileSize = (bytes: number): string => {
@@ -143,10 +146,14 @@ export function TransferSummaryCard({
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
   };
 
+  // Story 144.15 — `undefined` here is NOT "the app's locale", it is the RUNTIME's, so this card
+  // rendered "Envoyé le August 4, 2026" on a French screen: French sentence, English date, one
+  // line. Seen in the browser during this story's walkthrough, on the same card whose amount was
+  // being fixed two rows above.
   const formatDate = (dateStr?: string): string => {
     if (!dateStr) return "";
     const date = new Date(dateStr);
-    return date.toLocaleDateString(undefined, {
+    return date.toLocaleDateString(toIntlLocale(locale), {
       day: "numeric",
       month: "long",
       year: "numeric",
@@ -293,10 +300,20 @@ export function TransferSummaryCard({
       */}
       {settlementCurrency && settlementAmountMinorUnits != null && (
         <p className="text-xs text-gray-500 dark:text-[oklch(0.60_0_0)] pt-2">
+          {/*
+            Story 144.15 — the shared minor-unit formatter, not a hand-rolled `/ 100` with a bare
+            `toLocaleString()`. A bare call resolves to the BROWSER's locale, not the app's, so this
+            line could render `5 151,99` beneath a total reading `5,151.99` for the same purchase
+            — the two-conventions-on-one-screen failure this card was already fixed once to avoid.
+          */}
           {t("chargedAs", {
             amount:
               settlementDisplayAmount ??
-              `${(settlementAmountMinorUnits / 100).toLocaleString()} ${settlementCurrency}`,
+              formatCurrencyFromMinor(
+                settlementAmountMinorUnits,
+                settlementCurrency,
+                locale,
+              ),
           })}
         </p>
       )}

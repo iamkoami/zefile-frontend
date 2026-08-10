@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { toIntlLocale } from '@/lib/locale';
 import { CheckCircle, XmarkCircle, WarningCircle, Xmark, Refresh, Clock } from 'iconoir-react';
 import Image from 'next/image';
 import { MobileMoneyProvider } from './PaymentMethodSelector';
@@ -74,6 +75,7 @@ export function MobileMoneyPrompt({
   onCancel,
 }: MobileMoneyPromptProps) {
   const t = useTranslations('payment');
+  const locale = useLocale();
   const [mounted, setMounted] = useState(false);
   const [status, setStatus] = useState<PaymentStatus>('initiating');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -92,7 +94,9 @@ export function MobileMoneyPrompt({
   // Format amount for display
   const formatAmount = (amountValue: number, symbol: string): string => {
     const majorUnits = amountValue / 100;
-    return `${symbol}${majorUnits.toLocaleString()}`;
+    // Story 144.15 — the app's locale, not the browser's. Symbol handling left alone:
+    // it arrives as an argument, so the shared helper would change where it comes from.
+    return `${symbol}${majorUnits.toLocaleString(toIntlLocale(locale))}`;
   };
 
   // Get provider icon path

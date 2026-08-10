@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
   CreditCard,
   SmartphoneDevice,
@@ -29,6 +29,7 @@ import { toast } from "@/components/shared/Toast";
  */
 const SubscriptionSettingsPanel: React.FC = () => {
   const t = useTranslations("subscriptionSettings");
+  const locale = useLocale();
   const { currency: displayCurrency } = useCurrentCurrency();
   const [status, setStatus] = useState<AutoRenewStatusDto | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -97,7 +98,7 @@ const SubscriptionSettingsPanel: React.FC = () => {
       originalCurrency,
       displayCurrency,
     );
-    return formatCurrencyAmount(converted, displayCurrency);
+    return formatCurrencyAmount(converted, displayCurrency, locale);
   };
 
   if (isLoading) {
@@ -276,6 +277,7 @@ const SubscriptionSettingsPanel: React.FC = () => {
  */
 const RenewalHistorySection: React.FC = () => {
   const t = useTranslations("subscriptionSettings");
+  const locale = useLocale();
   const { currency: displayCurrency } = useCurrentCurrency();
   const [isExpanded, setIsExpanded] = useState(false);
   const [history, setHistory] = useState<RenewalAttemptDto[]>([]);
@@ -292,7 +294,7 @@ const RenewalHistorySection: React.FC = () => {
       originalCurrency,
       displayCurrency,
     );
-    return formatCurrencyAmount(converted, displayCurrency);
+    return formatCurrencyAmount(converted, displayCurrency, locale);
   };
 
   const loadHistory = async () => {

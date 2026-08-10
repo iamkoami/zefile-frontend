@@ -3,7 +3,7 @@ export const runtime = "edge";
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { GitFork, CheckCircle, Clock } from "iconoir-react";
 import {
   fileRequestApi,
@@ -47,6 +47,7 @@ function ContentPanelBackground({
 export default function ReviewPage() {
   const { shortCode } = useParams<{ shortCode: string }>();
   const t = useTranslations("fileRequests");
+  const locale = useLocale();
   const { timeOfDay, isHydrated } = useTimeOfDay();
   const [request, setRequest] = useState<FileRequestDto | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -263,6 +264,7 @@ export default function ReviewPage() {
   const formattedBudget = formatCurrencyAmount(
     budgetMajor,
     request.currency as CurrencyCode,
+    locale,
   );
   const revisionsRemaining =
     (request.maxRevisions ?? 0) - (request.revisionCount ?? 0);

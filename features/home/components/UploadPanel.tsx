@@ -12,7 +12,7 @@ import {
   Clock,
   ShieldCheck,
 } from "iconoir-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
   getFileInputAccept,
   validateFiles,
@@ -122,6 +122,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
   isFirstPaidTransferUsed = true,
 }) => {
   const t = useTranslations("upload");
+  const locale = useLocale();
   const tCurrency = useTranslations("currency");
   const tOptions = useTranslations("transferOptions");
 
@@ -808,7 +809,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
         errors.price = t("priceRequired");
       } else if (parsePriceToNumber(price) < minimumPriceInCurrency) {
         errors.price = t("priceBelowMinimum", {
-          amount: formatCurrencyAmount(minimumPriceInCurrency, currency),
+          amount: formatCurrencyAmount(minimumPriceInCurrency, currency, locale),
         });
       }
     }
@@ -1947,6 +1948,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                           amount: formatCurrencyAmount(
                             minimumPriceInCurrency,
                             currency,
+                            locale,
                           ),
                         })}
                         className={`ze-form-input ${
@@ -1984,6 +1986,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                             : parsePriceToNumber(price) *
                                 (1 - serviceChargePercentage / 100),
                           currency,
+                          locale,
                         ),
                         percentage: serviceChargePercentage,
                         b: (chunks) => (

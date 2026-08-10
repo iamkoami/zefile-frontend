@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Xmark, CreditCard, SmartphoneDevice } from 'iconoir-react';
 import LoadingPanel from '@/components/LoadingPanel';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { toIntlLocale } from '@/lib/locale';
 import Image from 'next/image';
 
 /**
@@ -71,6 +72,7 @@ export function PaymentMethodSelector({
   showAutoRenewalInfo = false,
 }: PaymentMethodSelectorProps) {
   const t = useTranslations('payment');
+  const locale = useLocale();
   const [mounted, setMounted] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
   const [mobileMoneyProviders, setMobileMoneyProviders] = useState<MobileMoneyProviderInfo[]>([]);
@@ -239,7 +241,9 @@ export function PaymentMethodSelector({
   const formatAmount = (amountValue: number, symbol: string): string => {
     // Amount is in minor units, convert to major units
     const majorUnits = amountValue / 100;
-    return `${symbol}${majorUnits.toLocaleString()}`;
+    // Story 144.15 — the app's locale, not the browser's. Symbol handling left alone:
+    // it arrives as an argument, so the shared helper would change where it comes from.
+    return `${symbol}${majorUnits.toLocaleString(toIntlLocale(locale))}`;
   };
 
   /**
