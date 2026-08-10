@@ -5,6 +5,12 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.65.4] - 2026-08-10
+
+### Removed
+
+- **The last block of admin translations, which nothing could reach.** A review of the previous release went looking for whatever the previous cleanup had missed and found one more: text for an admin notification centre, in both languages, referenced nowhere in the app. It came from the same commit as the admin screens removed in 1.65.3, and it survived that pass because the sweep had looked for text belonging to the screens being deleted — this block belonged to no screen at all. The check is now the right one: does any part of the app actually ask for this text. Nothing admin-related is left in the translation files, which is correct, because this app has no admin area. (`i18n/messages/en.json`, `i18n/messages/fr.json`)
+
 ## [1.65.3] - 2026-08-10
 
 ### Removed
