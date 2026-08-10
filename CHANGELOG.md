@@ -5,6 +5,14 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.65.3] - 2026-08-10
+
+### Removed
+
+- **An entire admin panel that was sitting in the customer app, connected to nothing.** Four admin screens — payout settings, the refunds queue, the transactions list and the withdrawals queue — plus a refund request form and the three API clients behind them. All of it finished, all of it written against real endpoints, and none of it reachable: this app has no admin area at all, and nothing has ever linked to any of these screens. They arrived together in one commit in January and had been dead ever since. Around 4,000 lines gone, with no change to anything anyone can see. Admin work belongs in the separate admin app, which is where it lives. (`features/admin/`, `features/refunds/`, `services/admin-transactions-api.ts`, `services/admin-payouts-api.ts`, `services/refunds-api.ts`)
+- **Six blocks of translations that nothing could display.** Each one belonged to a screen removed above, so they were text no visitor could ever reach, in two languages, sitting in the file translators work from. One of them existed only in English and was the reason the two language files had drifted apart — they now hold exactly the same set of sections, in the same order. (`i18n/messages/en.json`, `i18n/messages/fr.json`)
+- **A money-formatting helper that no screen called.** It lived on the withdrawals API client and would have shown every currency with two decimal places and English number formatting — wrong for CFA francs on both counts. Nothing used it: the payouts and withdrawal screens each format their own amounts. Leaving a broken formatter in place makes it look maintained, and a fixed bug in code nothing runs is indistinguishable from a fixed bug in code that ships. The rest of that client is untouched and still in use. (`services/withdrawals-api.ts`)
+
 ## [1.65.2] - 2026-08-10
 
 ### Added
