@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { toIntlLocale } from '@/lib/locale';
 import { CreditCard, SmartphoneDevice, Calendar, WarningCircle } from 'iconoir-react';
 import LoadingPanel from '@/components/LoadingPanel';
 import ConfirmationModal from '@/components/shared/ConfirmationModal';
@@ -39,6 +40,7 @@ interface ScheduledDowngrade {
 
 export function BillingSettingsPanel() {
   const t = useTranslations('billing');
+  const locale = useLocale();
 
   const [billing, setBilling] = useState<BillingInfo | null>(null);
   const [scheduledDowngrade, setScheduledDowngrade] = useState<ScheduledDowngrade | null>(null);
@@ -132,7 +134,7 @@ export function BillingSettingsPanel() {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString(undefined, {
+    return new Date(dateString).toLocaleDateString(toIntlLocale(locale), {
       year: 'numeric',
       month: 'long',
       day: 'numeric',

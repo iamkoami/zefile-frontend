@@ -3,7 +3,8 @@ export const runtime = "edge";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useParams } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { toIntlLocale } from "@/lib/locale";
 import {
   fileRequestApi,
   PublicFileRequestDto,
@@ -16,6 +17,7 @@ import ToastContainer from "@/components/shared/Toast";
 export default function DeliverPage() {
   const { shortCode } = useParams<{ shortCode: string }>();
   const t = useTranslations("fileRequests");
+  const locale = useLocale();
   const [request, setRequest] = useState<PublicFileRequestDto | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -129,8 +131,10 @@ export default function DeliverPage() {
     );
   }
 
+  // Story 144.15 — the app's locale, not the browser's. Symbol left as the raw currency code,
+  // which is what this screen has always shown.
   const formatBudget = (amount: number, curr: string) => {
-    return `${amount.toLocaleString()} ${curr}`;
+    return `${amount.toLocaleString(toIntlLocale(locale))} ${curr}`;
   };
 
   const renderContent = () => {
@@ -316,7 +320,7 @@ export default function DeliverPage() {
                 {t("formDeadline")}
               </span>
               <span className="text-sm font-medium text-[#171717] dark:text-[oklch(0.91_0_0)]">
-                {new Date(request.deadline).toLocaleDateString(undefined, {
+                {new Date(request.deadline).toLocaleDateString(toIntlLocale(locale), {
                   year: "numeric",
                   month: "long",
                   day: "numeric",

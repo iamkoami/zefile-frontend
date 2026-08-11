@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { toIntlLocale } from '@/lib/locale';
 import Toggle from '@/components/shared/Toggle';
 import { usersApi, DataConsentResponse, LegalConsentStatus } from '@/services/users-api';
 import { getAnalyticsConsent, saveConsent } from '@/components/shared/CookieConsentBanner';
@@ -9,6 +10,7 @@ import { toast } from '@/components/shared/Toast';
 
 const DataPrivacySection: React.FC = () => {
   const t = useTranslations('account');
+  const locale = useLocale();
   const [consent, setConsent] = useState<DataConsentResponse | null>(null);
   const [legalConsent, setLegalConsent] = useState<LegalConsentStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -99,7 +101,7 @@ const DataPrivacySection: React.FC = () => {
   const formatConsentDate = (date: Date | string | undefined | null): string => {
     if (!date) return '';
     const dateObj = typeof date === 'string' ? new Date(date) : date;
-    return dateObj.toLocaleDateString(undefined, {
+    return dateObj.toLocaleDateString(toIntlLocale(locale), {
       year: 'numeric',
       month: 'long',
       day: 'numeric',

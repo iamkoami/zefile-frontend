@@ -302,7 +302,7 @@ const PayoutsPanel: React.FC = () => {
       originalCurrency,
       displayCurrency,
     );
-    return formatCurrencyAmount(converted, displayCurrency);
+    return formatCurrencyAmount(converted, displayCurrency, locale);
   };
 
   // Format date

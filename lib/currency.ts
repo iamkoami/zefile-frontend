@@ -3,6 +3,8 @@
  * Provides live exchange rate fetching and currency conversion
  */
 
+import { toIntlLocale } from "./locale";
+
 /**
  * Supported currency codes
  */
@@ -222,21 +224,40 @@ export function currencyFractionDigits(amount: number): 0 | 2 {
 }
 
 /**
- * Format amount with currency symbol
- * @param amount - The amount to format
+ * Format amount with currency symbol.
+ *
+ * ── `locale` IS REQUIRED, AND THAT IS THE POINT (story 144.15) ─────────────────────────
+ *
+ * It used to default to `'en-US'`, and most call sites never passed one. So with the site in
+ * French, a 515199-minor transfer rendered **`5,151.99 XOF`** — comma thousands, dot decimal.
+ * A French reader parses `,` as the DECIMAL mark, so that total can be read as five point one
+ * five one, on the screen where she authorises the debit. Correct French is `5 151,99`.
+ *
+ * Story 144.12 made that **worse** rather than better: the subunit it restored is exactly the
+ * digit group a French reader misreads.
+ *
+ * **The default is not coming back.** This repo has no frontend test layer and is not getting one,
+ * so `tsc` is the only thing that can enforce a rule here. A required parameter is the type-level
+ * form of the same argument 144.12 used to delete the per-currency list rather than correct it:
+ * a convention that can be silently skipped will be, and a compiler error cannot be.
+ *
+ * Pass `useLocale()` from `next-intl` in client components, or the value `getLocale()` resolves in
+ * server ones. Do not pass a literal. Do not reintroduce a default.
+ *
+ * @param amount - The amount to format, in MAJOR units
  * @param currency - The currency code
- * @param locale - The locale for formatting (default: 'en-US')
+ * @param locale - The active app locale ('en' | 'fr' | a full BCP-47 tag). Required.
  * @returns Formatted currency string
  */
 export function formatCurrencyAmount(
   amount: number,
   currency: CurrencyCode | string,
-  locale: string = 'en-US'
+  locale: string
 ): string {
   const symbol = CURRENCY_SYMBOLS[currency as CurrencyCode] || currency;
 
   const digits = currencyFractionDigits(amount);
-  const formattedAmount = amount.toLocaleString(locale, {
+  const formattedAmount = amount.toLocaleString(toIntlLocale(locale), {
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
   });
@@ -302,24 +323,33 @@ export function minorToMajorUnits(minorUnits: number, _currency?: CurrencyCode |
 export function formatCurrencyFromMinor(
   minorUnits: number,
   currency: CurrencyCode | string,
-  locale: string = "en-US"
+  locale: string
 ): string {
   return formatCurrencyAmount(minorToMajorUnits(minorUnits, currency), currency, locale);
 }
 
 /**
- * {@link formatPrice} for a MINOR-unit amount — converts to the display currency and returns
- * "Free" for zero.
+ * Options for the display-currency family below.
  *
- * `formatPrice` takes MAJOR units and does not divide. Every site that handed it a
- * `*MinorUnits` field was rendering 100x the real figure; this is the pairing that stops that.
+ * `locale` is required for the reason spelled out on {@link formatCurrencyAmount}. `freeLabel` is
+ * optional and defaults to English — see {@link formatInDisplayCurrency}.
  */
-export function formatPriceFromMinor(
-  minorUnits: number,
-  originalCurrency: CurrencyCode | string,
-  displayCurrency: CurrencyCode | string
-): string {
-  return formatPrice(minorToMajorUnits(minorUnits, originalCurrency), originalCurrency, displayCurrency);
+export interface DisplayCurrencyOptions {
+  /** The active app locale. Required — never a literal, never omitted. */
+  locale: string;
+  /** If true (default), a zero amount renders as {@link DisplayCurrencyOptions.freeLabel}. */
+  showFreeForZero?: boolean;
+  /**
+   * The word for a zero price, in the reader's language. Pass `t("free")`.
+   *
+   * Story 144.15: this used to be the hardcoded literal `"Free"` in three places in this file,
+   * so the helper whose whole job is rendering money correctly handed a French buyer an English
+   * word — while `fr.json` had carried `"free": "Gratuit"` the entire time. A formatter has no
+   * business owning a translated string; the caller has the `next-intl` context, so the caller
+   * supplies it. The English default exists only so a non-React caller is not forced to invent a
+   * translation layer.
+   */
+  freeLabel?: string;
 }
 
 /**
@@ -335,53 +365,16 @@ export function formatInDisplayCurrency(
   amount: number,
   originalCurrency: CurrencyCode | string,
   displayCurrency: CurrencyCode | string,
-  options?: { showFreeForZero?: boolean }
+  options: DisplayCurrencyOptions
 ): string {
-  const showFreeForZero = options?.showFreeForZero ?? true;
+  const showFreeForZero = options.showFreeForZero ?? true;
 
   if (amount === 0) {
-    if (showFreeForZero) return "Free";
+    if (showFreeForZero) return options.freeLabel ?? "Free";
     // Return formatted zero in display currency
-    return formatCurrencyAmount(0, displayCurrency);
+    return formatCurrencyAmount(0, displayCurrency, options.locale);
   }
 
   const convertedAmount = convertCurrency(amount, originalCurrency, displayCurrency);
-  return formatCurrencyAmount(convertedAmount, displayCurrency);
-}
-
-/**
- * Format price for display (with "Free" for zero amounts)
- * Uses the selected display currency with conversion
- */
-export function formatPrice(
-  price: number,
-  originalCurrency: CurrencyCode | string,
-  displayCurrency: CurrencyCode | string
-): string {
-  if (price === 0) return "Free";
-  return formatInDisplayCurrency(price, originalCurrency, displayCurrency);
-}
-
-/**
- * Format price with original currency shown in parentheses
- * Example: "$45.00 (30,000 XOF)"
- */
-export function formatPriceWithOriginal(
-  price: number,
-  originalCurrency: CurrencyCode | string,
-  displayCurrency: CurrencyCode | string
-): string {
-  if (price === 0) return "Free";
-
-  const displayAmount = formatInDisplayCurrency(price, originalCurrency, displayCurrency);
-
-  // If same currency, don't show original
-  if (originalCurrency === displayCurrency) {
-    return displayAmount;
-  }
-
-  // Show original in parentheses
-  const originalAmount = formatCurrencyAmount(price, originalCurrency);
-
-  return `${displayAmount} (${originalAmount})`;
+  return formatCurrencyAmount(convertedAmount, displayCurrency, options.locale);
 }

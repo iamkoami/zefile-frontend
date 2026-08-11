@@ -825,13 +825,13 @@ const TransferPreviewPanel: React.FC<TransferPreviewPanelProps> = ({
           sourceCurrency,
           displayCurrency,
         );
-        return formatCurrencyAmount(convertedAmount, displayCurrency);
+        return formatCurrencyAmount(convertedAmount, displayCurrency, locale);
       }
 
       // Same currency, just format
-      return formatCurrencyAmount(majorUnits, sourceCurrency);
+      return formatCurrencyAmount(majorUnits, sourceCurrency, locale);
     },
-    [displayCurrency],
+    [displayCurrency, locale],
   );
 
   // Open payment flow in drawer (replaces modal)

@@ -2,7 +2,8 @@
 
 import React from 'react';
 import { Xmark, WarningCircle, CreditCard, Refresh } from 'iconoir-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { toIntlLocale } from '@/lib/locale';
 
 /**
  * Payment error codes from Paystack and their mapping
@@ -41,13 +42,21 @@ export function PaymentFailureCard({
   onChangeMethod,
 }: PaymentFailureCardProps) {
   const t = useTranslations('payment');
+  const locale = useLocale();
 
+  // Story 144.15 — a bare `toLocaleString()` resolves to the BROWSER's locale, not the app's,
+  // so this amount could render `5 151,99` while the summary card beside it read `5,151.99`.
+  // Deliberately NOT routed through `formatCurrencyFromMinor`: this component is handed its
+  // `currencySymbol` by its parent, and adopting the shared helper would take the symbol from
+  // CURRENCY_SYMBOLS instead. That is a change this story cannot verify in a browser — reaching
+  // this screen needs a real gateway payment — so only the locale is fixed here.
   const formatAmount = (amt: number): string => {
     const majorUnits = amt / 100;
+    const formatted = majorUnits.toLocaleString(toIntlLocale(locale));
     if (currency === 'XOF') {
-      return `${majorUnits.toLocaleString()} ${currencySymbol}`;
+      return `${formatted} ${currencySymbol}`;
     }
-    return `${currencySymbol}${majorUnits.toLocaleString()}`;
+    return `${currencySymbol}${formatted}`;
   };
 
   /**

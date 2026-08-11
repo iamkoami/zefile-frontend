@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { toIntlLocale } from "@/lib/locale";
 import {
   EditPencil,
   Lock,
@@ -387,6 +388,7 @@ const AvatarSection: React.FC<{
  */
 const ProfileSection: React.FC<ProfileSectionProps> = ({ user, onUpdate }) => {
   const t = useTranslations("account");
+  const locale = useLocale();
   const [editingField, setEditingField] = useState<EditableFieldType | null>(
     null,
   );
@@ -521,7 +523,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, onUpdate }) => {
     if (!date) return "";
     const d = new Date(date);
     if (isNaN(d.getTime())) return "";
-    return d.toLocaleDateString(undefined, {
+    return d.toLocaleDateString(toIntlLocale(locale), {
       year: "numeric",
       month: "long",
       day: "numeric",

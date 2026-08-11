@@ -12,7 +12,7 @@ import {
   Bank,
   Hashtag,
 } from "iconoir-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { PhoneNumberInput } from "@/features/payment/components/PhoneNumberInput";
 import {
   paymentApi,
@@ -24,7 +24,7 @@ import {
   type ProcessingFeeQuote,
   type ProcessingFeeMethod,
 } from "@/services/platform-api";
-import type { MobileMoneyProvider } from "@/features/payment/components/PaymentMethodSelector";
+import type { MobileMoneyProvider } from "@/features/payment/types";
 import type { CountryCode } from "libphonenumber-js";
 import { toast } from "@/components/shared/Toast";
 import { safePaymentRedirect } from "@/utils/security";
@@ -115,6 +115,7 @@ export function SaleCheckoutPanel({
 }: SaleCheckoutPanelProps) {
   const t = useTranslations("payment");
   const tStreamSale = useTranslations("streamSale");
+  const locale = useLocale();
   // Use parent's token getter if provided (avoids duplicate Turnstile widgets on same page)
   const ownTurnstile = useTurnstile();
   const getTurnstileToken = getCaptchaToken || ownTurnstile.getToken;
@@ -251,7 +252,7 @@ export function SaleCheckoutPanel({
    */
   // Story 144.7 — the shared minor-unit formatter, not a hand-rolled `/ 100`.
   const formatMinor = (minorUnits: number) =>
-    formatCurrencyFromMinor(minorUnits, transferCurrency as CurrencyCode);
+    formatCurrencyFromMinor(minorUnits, transferCurrency as CurrencyCode, locale);
 
   /**
    * Story 135.1 — the buyer's own-currency reference beneath the authoritative total.
@@ -270,7 +271,7 @@ export function SaleCheckoutPanel({
       transferCurrency as CurrencyCode,
       displayCurrency,
     );
-    return `≈ ${formatCurrencyAmount(converted, displayCurrency)}`;
+    return `≈ ${formatCurrencyAmount(converted, displayCurrency, locale)}`;
   };
 
   const momoMethods = useMemo(
@@ -672,11 +673,18 @@ export function SaleCheckoutPanel({
           {feeQuote.settlement && (
             <p className="text-xs text-gray-500 dark:text-[oklch(0.60_0_0)] mt-2">
               {t("chargedAs", {
-                // Story 144.1 — prefer the backend's formatting; the local `/100` is only right
+                // Story 144.1 — prefer the backend's formatting; the local fallback is only right
                 // while every currency the gateway settles in is two-decimal.
+                // Story 144.15 — the fallback goes through the shared formatter. A bare
+                // `toLocaleString()` resolves to the BROWSER's locale rather than the app's, so
+                // this line could disagree with the total two rows above it for the same purchase.
                 amount:
                   feeQuote.settlement.displayAmount ??
-                  `${(feeQuote.settlement.amountMinorUnits / 100).toLocaleString()} ${feeQuote.settlement.currency}`,
+                  formatCurrencyFromMinor(
+                    feeQuote.settlement.amountMinorUnits,
+                    feeQuote.settlement.currency,
+                    locale,
+                  ),
               })}
             </p>
           )}

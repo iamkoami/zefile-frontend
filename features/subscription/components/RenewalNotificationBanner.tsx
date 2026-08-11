@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { toIntlLocale } from '@/lib/locale';
 import { Calendar, InfoCircle } from 'iconoir-react';
 import { subscriptionApi, UserSubscription } from '@/services/subscription-api';
 import { authApi } from '@/services/auth-api';
@@ -34,6 +35,7 @@ export function RenewalNotificationBanner({
   onManageBilling,
 }: RenewalNotificationBannerProps) {
   const t = useTranslations('billing');
+  const locale = useLocale();
   const [subscription, setSubscription] = useState<UserSubscription | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [daysUntilRenewal, setDaysUntilRenewal] = useState<number | null>(null);
@@ -85,7 +87,7 @@ export function RenewalNotificationBanner({
 
   const isUrgent = daysUntilRenewal <= 2;
   const isToday = daysUntilRenewal <= 1;
-  const renewalDate = new Date(subscription.currentPeriodEnd).toLocaleDateString();
+  const renewalDate = new Date(subscription.currentPeriodEnd).toLocaleDateString(toIntlLocale(locale));
 
   // Banner variant - full-width notification
   if (variant === 'banner') {

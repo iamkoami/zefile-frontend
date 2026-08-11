@@ -1,6 +1,7 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { toIntlLocale } from '@/lib/locale';
 import { ArrowUpRight } from 'iconoir-react';
 import { SubscriptionTier, getTierLimits } from '@/services/subscription-api';
 
@@ -20,6 +21,7 @@ export function UsageCard({
   onUpgrade,
 }: UsageCardProps) {
   const t = useTranslations('subscription');
+  const locale = useLocale();
   const limits = getTierLimits(tier);
 
   // Convert bytes to GB
@@ -42,7 +44,7 @@ export function UsageCard({
   const showUpgradePrompt = storagePercentage >= 90 || (transferLimit !== -1 && transferPercentage >= 90);
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString(undefined, {
+    return new Date(dateStr).toLocaleDateString(toIntlLocale(locale), {
       month: 'short',
       day: 'numeric',
     });

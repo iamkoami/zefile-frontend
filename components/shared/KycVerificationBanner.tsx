@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { toIntlLocale } from '@/lib/locale';
 import { WarningCircle, Shield } from 'iconoir-react';
 import { kycApi, KycStatusResponse } from '@/services/kyc-api';
 
@@ -60,6 +61,7 @@ export function KycVerificationBanner({
   footnote,
 }: KycVerificationBannerProps) {
   const t = useTranslations('kyc');
+  const locale = useLocale();
   const [kycStatus, setKycStatus] = useState<KycStatusResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -157,7 +159,7 @@ export function KycVerificationBanner({
   // Get deadline date string
   const effectiveGraceEnds = isGateDriven ? gracePeriodEnds : kycStatus!.gracePeriodEnds;
   const deadlineDate = effectiveGraceEnds
-    ? new Date(effectiveGraceEnds).toLocaleDateString()
+    ? new Date(effectiveGraceEnds).toLocaleDateString(toIntlLocale(locale))
     : null;
 
   const daysRemaining = isGateDriven ? undefined : kycStatus!.daysRemaining;

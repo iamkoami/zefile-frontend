@@ -3,7 +3,8 @@ export const runtime = "edge";
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { toIntlLocale } from "@/lib/locale";
 import { GitFork, CheckCircle, Clock } from "iconoir-react";
 import {
   fileRequestApi,
@@ -47,6 +48,7 @@ function ContentPanelBackground({
 export default function ReviewPage() {
   const { shortCode } = useParams<{ shortCode: string }>();
   const t = useTranslations("fileRequests");
+  const locale = useLocale();
   const { timeOfDay, isHydrated } = useTimeOfDay();
   const [request, setRequest] = useState<FileRequestDto | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -263,6 +265,7 @@ export default function ReviewPage() {
   const formattedBudget = formatCurrencyAmount(
     budgetMajor,
     request.currency as CurrencyCode,
+    locale,
   );
   const revisionsRemaining =
     (request.maxRevisions ?? 0) - (request.revisionCount ?? 0);
@@ -274,7 +277,7 @@ export default function ReviewPage() {
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return "";
-    return new Date(dateStr).toLocaleDateString(undefined, {
+    return new Date(dateStr).toLocaleDateString(toIntlLocale(locale), {
       day: "numeric",
       month: "long",
       year: "numeric",
@@ -295,8 +298,7 @@ export default function ReviewPage() {
                   </p>
                   <span className="text-xs text-gray-400">
                     {latestDelivery.createdAt &&
-                      new Date(latestDelivery.createdAt).toLocaleDateString(
-                        undefined,
+                      new Date(latestDelivery.createdAt).toLocaleDateString(toIntlLocale(locale),
                         {
                           day: "numeric",
                           month: "short",

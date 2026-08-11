@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { ArrowRight, InfoCircle, Clock, CheckCircle, Xmark } from "iconoir-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { toIntlLocale } from "@/lib/locale";
 import { useDrawerStore } from "@/stores/drawer-store";
 import { useCurrencyStore } from "@/stores/currency-store";
 import {
@@ -20,6 +21,7 @@ import { authApi } from "@/services/auth-api";
  */
 export function UpgradePreviewPanel() {
   const t = useTranslations("subscriptions");
+  const locale = useLocale();
   const tPayment = useTranslations("payment");
   const {
     payload,
@@ -298,7 +300,7 @@ export function UpgradePreviewPanel() {
                 <>
                   {" "}
                   {t("nextBillingOn", {
-                    date: new Date(preview.newPeriodEnd).toLocaleDateString(undefined, {
+                    date: new Date(preview.newPeriodEnd).toLocaleDateString(toIntlLocale(locale), {
                       year: "numeric",
                       month: "long",
                       day: "numeric",

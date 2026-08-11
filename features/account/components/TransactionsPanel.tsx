@@ -206,7 +206,7 @@ const TransactionsPanel: React.FC = () => {
       originalCurrency,
       displayCurrency,
     );
-    return formatCurrencyAmount(converted, displayCurrency);
+    return formatCurrencyAmount(converted, displayCurrency, locale);
   };
 
   // Format date
@@ -347,7 +347,7 @@ const TransactionsPanel: React.FC = () => {
         <div className="flex items-center gap-2 text-gray-600 dark:text-[oklch(0.75_0_0)]">
           <span>{t("availableBalance")}:</span>
           <span className="font-bold text-[#171717] dark:text-[oklch(0.91_0_0)]">
-            {formatCurrencyAmount(totalBalance, displayCurrency)}
+            {formatCurrencyAmount(totalBalance, displayCurrency, locale)}
           </span>
         </div>
       </div>

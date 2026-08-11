@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useMemo, useEffect, useCallback } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useDrawerStore } from "@/stores/drawer-store";
 import {
   fileRequestApi,
@@ -121,6 +121,7 @@ function FreeTierState({ t }: { t: ReturnType<typeof useTranslations> }) {
 }
 
 function RequestForm({ t, onStepChange }: { t: ReturnType<typeof useTranslations>; onStepChange?: (step: "info" | "checkout") => void }) {
+  const locale = useLocale();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [budget, setBudget] = useState("");
@@ -309,7 +310,7 @@ function RequestForm({ t, onStepChange }: { t: ReturnType<typeof useTranslations
     if (budget && isNaN(budgetNum)) newErrors.budget = t("budgetInvalid");
     if (budgetNum > 0 && budgetNum < minimumBudget) {
       newErrors.budget = t("budgetBelowMinimum", {
-        amount: formatCurrencyAmount(minimumBudget, currency),
+        amount: formatCurrencyAmount(minimumBudget, currency, locale),
       });
     }
     if (!creativeEmail.trim())
@@ -608,7 +609,7 @@ function RequestForm({ t, onStepChange }: { t: ReturnType<typeof useTranslations
                   setErrors((prev) => ({ ...prev, budget: "" }));
                 }}
                 placeholder={t("budgetMin", {
-                  amount: formatCurrencyAmount(minimumBudget, currency),
+                  amount: formatCurrencyAmount(minimumBudget, currency, locale),
                 })}
                 className={`ze-form-input ${errors.budget ? "border-red-500" : ""}`}
                 inputMode="numeric"
