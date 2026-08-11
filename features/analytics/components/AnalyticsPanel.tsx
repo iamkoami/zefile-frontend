@@ -291,7 +291,7 @@ const AnalyticsPanel: React.FC = () => {
               revenueMajor(overview.totalRevenueDelta.value, overview.currency),
               overview.currency,
               globalCurrency,
-              { showFreeForZero: false },
+              { locale, showFreeForZero: false },
             )}
             delta={
               period !== "all" ? deltaInfo(overview.totalRevenueDelta) : null
@@ -386,7 +386,7 @@ const AnalyticsPanel: React.FC = () => {
                   revenueMajor(amount, overview?.currency ?? globalCurrency),
                   overview?.currency ?? globalCurrency,
                   globalCurrency,
-                  { showFreeForZero: false },
+                  { locale, showFreeForZero: false },
                 )
               }
             />
@@ -395,7 +395,7 @@ const AnalyticsPanel: React.FC = () => {
                 revenueMajor(trends.totals.revenue, overview?.currency ?? globalCurrency),
                 overview?.currency ?? globalCurrency,
                 globalCurrency,
-                { showFreeForZero: false },
+                { locale, showFreeForZero: false },
               )}{" "}
               {t("totalForPeriod")}
             </p>
@@ -463,6 +463,7 @@ const AnalyticsPanel: React.FC = () => {
                         revenueMajor(tr.revenue, tr.currency),
                         tr.currency,
                         globalCurrency,
+                        { locale },
                       )}
                     </span>
                   )}

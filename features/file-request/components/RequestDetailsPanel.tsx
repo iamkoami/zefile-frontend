@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { toIntlLocale } from "@/lib/locale";
 import { GitFork, Clock, Download, Eye, Link as LinkIcon, Trash } from "iconoir-react";
 import type { FileRequestDto } from "@/services/file-request-api";
 import { fileRequestApi } from "@/services/file-request-api";
@@ -34,6 +35,7 @@ const RequestDetailsPanel: React.FC<RequestDetailsPanelProps> = ({
   request,
 }) => {
   const t = useTranslations("transfers");
+  const locale = useLocale();
   const tReq = useTranslations("fileRequests");
   const tDetails = useTranslations("transferDetails");
   const { pushView } = useDrawerStore();
@@ -46,6 +48,7 @@ const RequestDetailsPanel: React.FC<RequestDetailsPanelProps> = ({
   const formattedBudget = formatCurrencyAmount(
     budgetMajor,
     request.currency as CurrencyCode,
+    locale,
   );
 
   const isApprovedOrCompleted =
@@ -85,7 +88,7 @@ const RequestDetailsPanel: React.FC<RequestDetailsPanelProps> = ({
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return "-";
     const date = new Date(dateStr);
-    return date.toLocaleDateString(undefined, {
+    return date.toLocaleDateString(toIntlLocale(locale), {
       day: "numeric",
       month: "long",
       year: "numeric",
@@ -95,7 +98,7 @@ const RequestDetailsPanel: React.FC<RequestDetailsPanelProps> = ({
   const formatDateTime = (dateStr: string | null) => {
     if (!dateStr) return "-";
     const date = new Date(dateStr);
-    return date.toLocaleDateString(undefined, {
+    return date.toLocaleDateString(toIntlLocale(locale), {
       day: "numeric",
       month: "short",
       year: "numeric",

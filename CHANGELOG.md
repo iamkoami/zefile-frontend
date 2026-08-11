@@ -5,6 +5,61 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.65.7] - 2026-08-10
+
+### Fixed
+
+- **Dates across the whole app followed the visitor's computer instead of the language they picked.** Twenty-five places — subscription and billing screens, account settings, file requests, payment screens, the support chat — showed dates in whatever language the visitor's device happened to be set to, regardless of whether they were reading the site in English or French. So a French visitor on an English laptop got "Envoyé le August 4, 2026": a French sentence with an English date sitting in the middle of it. It also meant two people reading the same page in the same language could see different dates, which is why nobody had ever reported it. Dates now follow the language chosen on the site, the same way prices already do since the previous two releases. (`features/subscription/`, `features/account/`, `features/file-request/`, `features/payment/`, `components/shared/`, `app/deliver/`, `app/review/`, `app/payment/success/`)
+
+## [1.65.6] - 2026-08-10
+
+### Changed
+
+- **CFA francs are now called the same thing on every screen, including the last three that disagreed.** The previous release unified most of them; three were left. The screen shown when a payment fails, the withdrawal screen a creator confirms a payout from, and the link preview that appears when a paid transfer is shared all still said `Fr CFA` while everything else said `XOF`. All three now read from the same list, so there is no longer anywhere in the app that can name this currency differently. The link preview also stopped formatting its price the French way for every reader regardless of language. (`app/payment/failed/`, `features/account/components/WithdrawalRequestPanel.tsx`, `app/downloads/[transferId]/[shortCode]/layout.tsx`)
+
+### Removed
+
+- **Three payment screens that nothing could open.** A payment status card, a mobile-money waiting prompt and a payment-method chooser — around 1,600 lines including their tests. Nothing in the app linked to any of them; the real payment flow uses a different set of screens entirely. This is the fourth time this year that finished, tested-looking code has turned out to be reachable by nobody, so it goes rather than sits there looking maintained. One piece of them was genuinely in use — a small definition listing the mobile-money networks, which five live screens depend on — and that was moved somewhere sensible before the rest was removed. (`features/payment/components/`)
+- **Three money-formatting helpers no screen called.** They were the only place a zero price would have been written as the English word "Free" rather than the reader's own language, which is why the previous release could not demonstrate that fix working: there was no screen it could happen on. The one helper of that family that is actually used keeps the behaviour. (`lib/currency.ts`)
+
+## [1.65.5] - 2026-08-10
+
+### Fixed
+
+- **French visitors were shown prices written the English way, where the comma means the opposite thing.** A five-thousand-franc film read `5,151.99 XOF` on a French screen. In French, the comma is the decimal mark — so that price can be read as five francs and change, on the screen where someone decides whether to pay. It now reads `5 151,99 XOF` in French and `5,151.99 XOF` in English, checked in a browser in both languages. This got riskier with the previous release, not safer: that one restored the last two digits of the price, and those are exactly the digits a French reader misreads. (`lib/currency.ts`, `lib/locale.ts`, and every screen that shows an amount)
+- **Payment screens followed the visitor's computer language instead of the site's.** Someone reading the site in French on an English laptop saw English formatting; someone reading it in English on a French laptop saw French formatting — and, because different parts of the same screen worked differently, could see both at once for the same purchase. Two people looking at the same page could honestly disagree about what it said, which is why nobody had reported it. Every amount now follows the language chosen on the site, and nothing else. (`features/payment/`, `app/payment/success/`, `app/deliver/`)
+- **Dates stayed in English on French screens.** The transfer summary read "Envoyé le August 4, 2026" — a French sentence with an English date in the middle of it. Now "Envoyé le 4 août 2026". (`components/shared/TransferSummaryCard.tsx`)
+
+### Changed
+
+- **CFA francs are called the same thing everywhere now.** Some screens said `Fr CFA` and others said `XOF`, occasionally within inches of each other on the same payment screen for the same purchase. Four copies of the same currency list were behind this, and two of them had quietly drifted and lost South African rand along the way. All four are gone; there is one list now, so the labels cannot disagree again. (`features/payment/components/PaymentPanels.tsx`, `app/payment/success/page.tsx`)
+- **Amounts show the same number of decimal places wherever they appear.** A price of 1,000.10 could show as `1,000.1` in one panel and `1,000.10` in the panel beside it. Affected roughly one amount in ten — any price ending in a round number of centimes. (`lib/currency.ts`)
+- **The link preview for a paid transfer no longer prices everything in French.** Share a paid transfer and the preview card that appears in WhatsApp or on social media formatted the price in French regardless of who was reading. It now follows the reader's language. (`app/downloads/[transferId]/[shortCode]/layout.tsx`)
+
+## [1.65.4] - 2026-08-10
+
+### Removed
+
+- **The last block of admin translations, which nothing could reach.** A review of the previous release went looking for whatever the previous cleanup had missed and found one more: text for an admin notification centre, in both languages, referenced nowhere in the app. It came from the same commit as the admin screens removed in 1.65.3, and it survived that pass because the sweep had looked for text belonging to the screens being deleted — this block belonged to no screen at all. The check is now the right one: does any part of the app actually ask for this text. Nothing admin-related is left in the translation files, which is correct, because this app has no admin area. (`i18n/messages/en.json`, `i18n/messages/fr.json`)
+
+## [1.65.3] - 2026-08-10
+
+### Removed
+
+- **An entire admin panel that was sitting in the customer app, connected to nothing.** Four admin screens — payout settings, the refunds queue, the transactions list and the withdrawals queue — plus a refund request form and the three API clients behind them. All of it finished, all of it written against real endpoints, and none of it reachable: this app has no admin area at all, and nothing has ever linked to any of these screens. They arrived together in one commit in January and had been dead ever since. Around 4,000 lines gone, with no change to anything anyone can see. Admin work belongs in the separate admin app, which is where it lives. (`features/admin/`, `features/refunds/`, `services/admin-transactions-api.ts`, `services/admin-payouts-api.ts`, `services/refunds-api.ts`)
+- **Six blocks of translations that nothing could display.** Each one belonged to a screen removed above, so they were text no visitor could ever reach, in two languages, sitting in the file translators work from. One of them existed only in English and was the reason the two language files had drifted apart — they now hold exactly the same set of sections, in the same order. (`i18n/messages/en.json`, `i18n/messages/fr.json`)
+- **A money-formatting helper that no screen called.** It lived on the withdrawals API client and would have shown every currency with two decimal places and English number formatting — wrong for CFA francs on both counts. Nothing used it: the payouts and withdrawal screens each format their own amounts. Leaving a broken formatter in place makes it look maintained, and a fixed bug in code nothing runs is indistinguishable from a fixed bug in code that ships. The rest of that client is untouched and still in use. (`services/withdrawals-api.ts`)
+
+## [1.65.2] - 2026-08-10
+
+### Added
+
+- **The build that actually publishes this site is now checked on every push.** The automated checks built the site one way; the publishing service builds it another. Those two had never been compared, and the admin app just spent months proving why that matters — seventeen consecutive failed publishes there, every one of them invisible to checks that stayed green the whole time. This site does not have that fault, and was confirmed clean before this change. The new check is what keeps it that way: it builds exactly the way the publishing service does, on a clean machine, so a break shows up before anyone merges. (`.github/workflows/ci.yml`)
+
+### Changed
+
+- **The build step will no longer quietly download a missing tool.** It used to fetch anything it could not find locally, which works fine on a laptop that already has a copy and is exactly how the admin app's breakage stayed hidden — the command "worked" for everyone who ran it and had never once worked on a clean machine. It now refuses to fetch and stops with the name of what is missing. (`package.json`)
+
 ## [1.65.1] - 2026-08-06
 
 ### Removed

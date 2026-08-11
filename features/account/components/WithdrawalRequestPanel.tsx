@@ -24,7 +24,7 @@ import {
 import LoadingPanel from "@/components/LoadingPanel";
 import KycVerificationBanner from "@/components/shared/KycVerificationBanner";
 import { useDrawerStore } from "@/stores/drawer-store";
-import { currencyFractionDigits } from "@/lib/currency";
+import { formatCurrencyFromMinor } from "@/lib/currency";
 
 // Provider icon component - uses SVG icons from /public/icons/payment/
 const ProviderIcon: React.FC<{ provider: string; size?: "sm" | "md" }> = ({
@@ -190,36 +190,19 @@ const WithdrawalRequestPanel: React.FC<WithdrawalRequestPanelProps> = ({
     return () => clearTimeout(debounce);
   }, [amount, selectedMethod]);
 
-  // Format currency
+  // Story 144.12 (review follow-up) reimplemented `formatCurrencyFromMinor` here by hand, because
+  // this panel was not a caller of it and the caller-inventory sweep did not reach it. The reason
+  // it needed the logic still holds — a bare `toLocaleString` defaults to a MAXIMUM of three
+  // fraction digits and a minimum of zero, so a fee of 5151.90 rendered "5,151.9" on the screen a
+  // creator confirms a payout from.
+  //
+  // Story 144.15 — it is now the shared helper rather than a copy of it. The hand-rolled version
+  // carried its own symbol map reading XOF as "Fr CFA" (the app says "XOF" everywhere else) and its
+  // own locale ternary. Same digits, same rule, one implementation.
   const formatAmount = (
     minorUnits: number,
     currency: string = "XOF",
-  ): string => {
-    const symbols: Record<string, string> = {
-      XOF: "Fr CFA",
-      NGN: "₦",
-      GHS: "₵",
-      KES: "KSh",
-      ZAR: "R",
-      USD: "$",
-    };
-    const symbol = symbols[currency] || currency;
-    // Story 144.12 (review follow-up). A bare `toLocaleString` defaults to a MAXIMUM of three
-    // fraction digits and a minimum of zero, so a withdrawal fee of 5151.90 rendered "5,151.9" and
-    // one of 5151.999 rendered "5,151.999" — a lone decimal and a third decimal, on the screen a
-    // creator confirms a payout from. Same rule as `formatCurrencyAmount`: zero decimals, or
-    // exactly two. This panel is not a caller of that function, which is why the story's original
-    // caller-inventory sweep did not reach it.
-    const major = minorUnits / 100;
-    const digits = currencyFractionDigits(major);
-    const formatted = major.toLocaleString(locale === "fr" ? "fr-FR" : "en-US", {
-      minimumFractionDigits: digits,
-      maximumFractionDigits: digits,
-    });
-    return currency === "XOF"
-      ? `${formatted} ${symbol}`
-      : `${symbol}${formatted}`;
-  };
+  ): string => formatCurrencyFromMinor(minorUnits, currency, locale);
 
   // Validate form
   const isFormValid = useMemo(() => {

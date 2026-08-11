@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { toIntlLocale } from "@/lib/locale";
 import { useRouter } from "next/navigation";
 import { WarningTriangle, Trash, Xmark } from "iconoir-react";
 import { usersApi, DeletionStatusResponse } from "@/services/users-api";
@@ -24,6 +25,7 @@ import { useDrawerStore } from "@/stores/drawer-store";
  */
 const DangerZoneSection: React.FC = () => {
   const t = useTranslations("account");
+  const locale = useLocale();
   const router = useRouter();
   const { closeDrawer } = useDrawerStore();
 
@@ -123,7 +125,7 @@ const DangerZoneSection: React.FC = () => {
   const formatDate = (date: Date | string | undefined): string => {
     if (!date) return "";
     const d = new Date(date);
-    return d.toLocaleDateString(undefined, {
+    return d.toLocaleDateString(toIntlLocale(locale), {
       year: "numeric",
       month: "long",
       day: "numeric",

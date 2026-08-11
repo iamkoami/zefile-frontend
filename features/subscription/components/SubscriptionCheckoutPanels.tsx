@@ -18,7 +18,8 @@ import {
 } from "iconoir-react";
 import Image from "next/image";
 import LoadingPanel from "@/components/LoadingPanel";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { toIntlLocale } from "@/lib/locale";
 import { useDrawerStore } from "@/stores/drawer-store";
 import {
   useCurrencyStore,
@@ -35,7 +36,7 @@ import {
 } from "@/services/subscription-api";
 import { SubscriptionSummaryCard } from "@/components/shared/SubscriptionSummaryCard";
 import { toast } from "@/components/shared/Toast";
-import type { MobileMoneyProvider } from "@/features/payment/components/PaymentMethodSelector";
+import type { MobileMoneyProvider } from "@/features/payment/types";
 import type { CountryCode } from "libphonenumber-js";
 import { authApi } from "@/services/auth-api";
 import { usePollEligibility } from "@/hooks/usePollEligibility";
@@ -239,6 +240,7 @@ export function SubscriptionCountryPanel() {
 
 export function SubscriptionMethodPanel() {
   const t = useTranslations("payment");
+  const locale = useLocale();
   const tSub = useTranslations("subscriptions");
   const {
     payload,
@@ -364,7 +366,7 @@ export function SubscriptionMethodPanel() {
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">{tSub("nextBillingDate")}</span>
             <span className="font-medium text-[#171717]">
-              {nextBillingDate.toLocaleDateString(undefined, {
+              {nextBillingDate.toLocaleDateString(toIntlLocale(locale), {
                 year: "numeric",
                 month: "short",
                 day: "numeric",

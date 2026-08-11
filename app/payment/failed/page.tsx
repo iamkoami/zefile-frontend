@@ -6,6 +6,7 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import Header from '@/components/shared/Header';
+import { CURRENCY_SYMBOLS, type CurrencyCode } from '@/lib/currency';
 import LoadingFullscreen from '@/components/LoadingFullscreen';
 import { PaymentFailureCard, PaymentErrorCode } from '@/features/payment/components/PaymentFailureCard';
 import { paymentApi, PaymentStatusV2Response } from '@/services/payment-api';
@@ -142,16 +143,9 @@ export default function PaymentFailedPage() {
   );
 }
 
+// Story 144.15 — the SHARED symbol map, not a local copy. This function feeds
+// `PaymentFailureCard`'s `currencySymbol` prop, and its own copy read XOF as 'Fr CFA' while every
+// other money surface in the app said 'XOF'. It was the last live source of that second label.
 function getCurrencySymbol(currency?: string): string {
-  const symbols: Record<string, string> = {
-    XOF: 'Fr CFA',
-    NGN: '₦',
-    GHS: '₵',
-    KES: 'KSh',
-    ZAR: 'R',
-    USD: '$',
-    EUR: '€',
-    GBP: '£',
-  };
-  return symbols[currency || 'XOF'] || currency || '';
+  return CURRENCY_SYMBOLS[(currency || 'XOF') as CurrencyCode] || currency || '';
 }

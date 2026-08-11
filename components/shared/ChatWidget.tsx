@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { toIntlLocale } from "@/lib/locale";
 import {
   Xmark,
   SendDiagonal,
@@ -37,9 +38,13 @@ interface StarterOption {
 
 // ─── Helpers ───────────────────────────────────────────────────
 
+// Story 144.15 — `locale` is threaded as a parameter for the same reason `t` already is: this is a
+// module-level helper, so it cannot call `useLocale()` itself. Its final branch used to fall back to
+// a bare `toLocaleDateString()`, which resolves to the BROWSER's locale rather than the app's.
 function getRelativeTime(
   dateStr: string,
   t: ReturnType<typeof useTranslations>,
+  locale: string,
 ): string {
   const now = Date.now();
   const date = new Date(dateStr).getTime();
@@ -50,7 +55,7 @@ function getRelativeTime(
   if (diffMin < 60) return t("minutesAgo", { count: diffMin });
   const diffHours = Math.floor(diffMin / 60);
   if (diffHours < 24) return t("hoursAgo", { count: diffHours });
-  return new Date(dateStr).toLocaleDateString();
+  return new Date(dateStr).toLocaleDateString(toIntlLocale(locale));
 }
 
 /** Basic markdown: **bold**, *italic*, `code`, [link](url) */
@@ -252,6 +257,7 @@ function ChatMessageBubble({
   onFeedback: (messageId: string, type: "up" | "down") => void;
 }) {
   const t = useTranslations("support");
+  const locale = useLocale();
   const isUser = message.senderType === "user";
   const isSystem = message.senderType === "system";
   const isAi = message.senderType === "ai";
@@ -290,7 +296,7 @@ function ChatMessageBubble({
             isUser ? "text-[#171717]/50" : "text-gray-400 dark:text-gray-500"
           }`}
         >
-          {getRelativeTime(message.createdAt, t)}
+          {getRelativeTime(message.createdAt, t, locale)}
         </div>
         {isAi && !message.id.startsWith("temp-") && (
           <MessageFeedback
