@@ -5,6 +5,19 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.66.0] - 2026-08-13
+
+### Added
+
+- **Someone buying a film is now asked to confirm their email before the buy button appears.** Only for films — buying a file to download stays anonymous and that screen is unchanged, down to the same wording and layout it had before. The ask is deliberately framed as what the buyer gets rather than as a check on them: confirm your address and the film follows you to any device you sign in from. It is one sentence, it appears once, and it does not mention security or verification, because being made to feel suspected at the moment you are about to pay is its own kind of failure. (`app/downloads/[transferId]/[shortCode]/page.tsx`, `i18n/messages/`)
+- **If a session expires between confirming and paying, the buyer is taken back to the code step rather than left on a checkout that cannot work.** (`features/payment/components/SaleCheckoutPanel.tsx`)
+
+### Fixed
+
+- **The button under the six-digit code did nothing when clicked.** The code is displayed as "123 456" so it can be read back easily, and the form was quietly refusing to submit because of that space — no request, no error message, nothing. Anyone who pressed Enter never saw it, which is why it survived every check. The same fault still exists on two older code screens elsewhere in the app and has been written up separately rather than fixed quietly alongside this. (`app/downloads/[transferId]/[shortCode]/page.tsx`)
+- **A screen reader announced "code sent to" with no address, before any code had been sent.** The code step was hidden visually but still present for anyone not using their eyes to read the page. It is now genuinely absent until a code has actually been sent.
+- **A wrong or expired code was explained in English to people reading the site in French.** The message came straight from the server, which only speaks English. The app now writes its own wording in the reader's language, and keeps "that code did not work" and "that code has expired" as two different messages, because they ask the reader to do two different things.
+
 ## [1.65.7] - 2026-08-10
 
 ### Fixed
