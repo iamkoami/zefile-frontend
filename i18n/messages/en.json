@@ -594,6 +594,7 @@
     "resendOtpIn": "You can resend in 30 seconds",
     "otpResent": "Verification code resent",
     "invalidOtp": "That code didn't work. Try again.",
+    "otpExpired": "That code expired. Ask for a fresh one.",
     "changeEmail": "Change email",
     "moreFiles": "more files",
     "plusFiles": "+{count} {count, plural, one {file} other {files}}",
@@ -3278,6 +3279,17 @@
     "termsRefund": "Bought it and never watched it? That one's not refundable. But if we can't play it for you, you get your money back.",
     "termsFee": "A payment fee is added depending on how you pay. You'll see the exact total before you pay.",
     "trailerLabel": "Free preview",
-    "trailerUnavailable": "The preview isn't ready yet. Check back in a few minutes."
+    "trailerUnavailable": "The preview isn't ready yet. Check back in a few minutes.",
+    "identityTitle": "One quick step before you buy",
+    "identityReason": "Confirm your email and your film follows you to any device you sign in from.",
+    "identityEmailPlaceholder": "Your email address",
+    "identitySendCode": "Send my code",
+    "identityChangeEmail": "Use a different email",
+    "identityCodeSent": "Code sent to {email}. It's good for the next few minutes.",
+    "identityCodeLabel": "Six-digit code",
+    "identityConfirm": "Confirm and continue",
+    "identityResend": "Send it again",
+    "identityResendIn": "You can ask for a new code in {seconds}s",
+    "identityRequired": "Confirm your email again and you can carry on with the payment."
   }
 }

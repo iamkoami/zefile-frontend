@@ -594,6 +594,7 @@
     "resendOtpIn": "Vous pouvez renvoyer dans 30 secondes",
     "otpResent": "Code de vérification renvoyé",
     "invalidOtp": "Ce code ne fonctionne pas. Réessayez.",
+    "otpExpired": "Ce code a expiré. Demandez-en un nouveau.",
     "changeEmail": "Changer d'e-mail",
     "moreFiles": "fichiers supplémentaires",
     "plusFiles": "+{count} {count, plural, one {fichier} other {fichiers}}",
@@ -3278,6 +3279,17 @@
     "termsRefund": "Vous l'avez acheté sans jamais le regarder ? Ce n'est pas remboursable. En revanche, si la lecture ne marche pas de notre côté, vous êtes remboursé.",
     "termsFee": "Des frais de paiement s'ajoutent selon le moyen que vous choisissez. Le montant exact s'affiche avant le paiement.",
     "trailerLabel": "Aperçu gratuit",
-    "trailerUnavailable": "L'aperçu n'est pas encore prêt. Revenez dans quelques minutes."
+    "trailerUnavailable": "L'aperçu n'est pas encore prêt. Revenez dans quelques minutes.",
+    "identityTitle": "Une étape rapide avant l'achat",
+    "identityReason": "Confirmez votre e-mail : le film vous suit ensuite sur tous les appareils où vous vous connectez.",
+    "identityEmailPlaceholder": "Votre adresse e-mail",
+    "identitySendCode": "Envoyer mon code",
+    "identityChangeEmail": "Utiliser une autre adresse",
+    "identityCodeSent": "Code envoyé à {email}. Il reste valable quelques minutes.",
+    "identityCodeLabel": "Code à six chiffres",
+    "identityConfirm": "Confirmer et continuer",
+    "identityResend": "Renvoyer le code",
+    "identityResendIn": "Nouveau code possible dans {seconds} s",
+    "identityRequired": "Confirmez à nouveau votre e-mail pour poursuivre le paiement."
   }
 }

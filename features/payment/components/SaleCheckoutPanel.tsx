@@ -88,6 +88,15 @@ interface SaleCheckoutPanelProps {
    */
   onStreamNotReady?: () => void;
   /**
+   * Story 135.2 — the buyer reached checkout without a session the backend accepts.
+   *
+   * The backend answers 401 `STREAM_IDENTITY_REQUIRED`. Reachable even though the sale page now
+   * gates the Buy button on being signed in: a session can expire while the buyer sits on this
+   * form, and the page's own gate is UX rather than enforcement. A toast alone would strand them
+   * on a checkout that cannot succeed, so the parent returns them to the verification step.
+   */
+  onIdentityRequired?: () => void;
+  /**
    * Story 135.1 — publishes the fee quote so the sibling TransferSummaryCard can render the SAME
    * numbers from the SAME fetch. Without this the two panels disagreed on screen: the summary
    * showed a display-currency conversion ($8.26) while this panel showed the real charge
@@ -111,6 +120,7 @@ export function SaleCheckoutPanel({
   onPaymentInitiated,
   getCaptchaToken,
   onStreamNotReady,
+  onIdentityRequired,
   onQuoteChange,
 }: SaleCheckoutPanelProps) {
   const t = useTranslations("payment");
@@ -315,6 +325,17 @@ export function SaleCheckoutPanel({
     if (error.code === "STREAM_NOT_READY") {
       toast.error(tStreamSale("notReady"));
       onStreamNotReady?.();
+      return;
+    }
+    /**
+     * Story 135.2 — discriminates on `error.code`, NEVER on the 401 status, for the same reason
+     * the 409 above does not: a bare status mapping in api-client's getErrorKey() would rewrite
+     * every unrelated 401 in the product, so an expired JWT anywhere would start telling the
+     * user to confirm their email for a film.
+     */
+    if (error.code === "STREAM_IDENTITY_REQUIRED") {
+      toast.error(tStreamSale("identityRequired"));
+      onIdentityRequired?.();
       return;
     }
     toast.error(error.message || t("paymentInitFailed"));
