@@ -125,6 +125,40 @@ const getSenderEmail = (transfer: TransferDto): string | undefined => {
   return undefined;
 };
 
+/**
+ * Every OTP refusal the backend can answer with, mapped to a key in the `transferLanding`
+ * namespace so the buyer reads it in their own language.
+ *
+ * ── Why this is a table and not a ternary ────────────────────────────────────────────
+ * Story 135.2 built a French identity step and localised the two failures that happened to
+ * carry a `code` (`INVALID_OTP`, `OTP_EXPIRED`). The other four were bare-string throws, so
+ * they fell through to `response.error.message` and answered a fully French page in ENGLISH —
+ * including the max-attempts refusal that 135.2's own AC7 names by hand. Its review added the
+ * missing codes backend-side; this table is the half that reaches the buyer.
+ *
+ * A table rather than a chain because the failure mode is a MISSING entry, and a missing entry
+ * in a table is visible. Anything unmapped still falls back to the backend message, which is
+ * degraded-but-honest rather than blank.
+ *
+ * ── Keyed on `code`, NEVER on the status ─────────────────────────────────────────────
+ * The same discipline 134.8 wrote down for the stream refusals. A bare 401/429 mapping in
+ * api-client's getErrorKey() would rewrite every unrelated 401 in the product.
+ *
+ * `RATE_LIMITED` is deliberately absent: it is the one refusal whose copy needs a NUMBER, so
+ * it is handled at its call site where `retryAfterSeconds` is in scope.
+ */
+const OTP_ERROR_KEY_BY_CODE: Record<string, string> = {
+  INVALID_OTP: "invalidOtp",
+  OTP_EXPIRED: "otpExpired",
+  OTP_NOT_FOUND: "otpNotFound",
+  OTP_MAX_ATTEMPTS: "otpMaxAttempts",
+  OTP_VERIFY_FAILED: "otpVerifyFailed",
+  OTP_SEND_FAILED: "otpSendFailed",
+  OTP_REQUEST_FAILED: "otpRequestFailed",
+  ACCOUNT_SUSPENDED: "accountSuspended",
+  ACCOUNT_LOCKED: "accountLocked",
+};
+
 // Tracking params interface (from documentation)
 interface TrackingParams {
   z_exp: string | null; // Expiration timestamp (Unix)
@@ -1197,6 +1231,35 @@ export default function TransferLandingPage() {
     [],
   );
 
+  /**
+   * Turn an auth-API error into copy the buyer can read in their own language.
+   *
+   * Story 135.2 code review. The backend's messages are English-only by design (ADR-API-12:
+   * clients branch on `code`, never on `message`), so printing one is a bug wherever the page
+   * is French — which, for the buyer identity step 135.2 added, is half the audience.
+   *
+   * `RATE_LIMITED` is handled here rather than in the table because it is the one refusal whose
+   * copy needs a NUMBER, and the number arrives beside the code as `retryAfterSeconds`. Reading
+   * it back out of the English prose would be a contract nobody knows they are breaking while
+   * editing that prose.
+   *
+   * The fallback is the backend message, not a generic string: degraded-but-specific beats
+   * polished-but-useless when a new code appears before this table learns about it.
+   */
+  const localizeOtpError = (error: {
+    code?: string;
+    message?: string;
+    retryAfterSeconds?: number;
+  }): string => {
+    if (error.code === "RATE_LIMITED") {
+      return typeof error.retryAfterSeconds === "number"
+        ? t("otpRateLimitedIn", { seconds: error.retryAfterSeconds })
+        : t("otpRateLimited");
+    }
+    const key = error.code ? OTP_ERROR_KEY_BY_CODE[error.code] : undefined;
+    return key ? t(key) : error.message || t("error");
+  };
+
   // Handle email confirmation - requests OTP
   const handleEmailConfirm = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1227,9 +1290,30 @@ export default function TransferLandingPage() {
        * every buyer of a film offered for sale to the public. The identity step would have been
        * unreachable and would have looked like a backend bug.
        *
-       * This cannot affect non-public-sales transfers: it is gated on `isPublicSales`, and the
-       * recipient check below is untouched for them. Selling to the public and restricting to
-       * named recipients are different product concepts; a public sale is open by definition.
+       * ── This stays scoped to `isPublicSales`, NOT to stream. Do not narrow it. ──────────
+       * A code review narrowed this to `isPublicSales && deliveryMode === 'stream'`, reasoning
+       * that AC6 requires download public sales to be untouched and that they never reach this
+       * handler anyway. The G3 reviewer disproved the second half, and the narrowing was
+       * reverted. The path is REAL, and it is a paid buyer being locked out of what they bought:
+       *
+       *   `assertDownloadAuthorized` (storage.controller.ts:1512) is called UNCONDITIONALLY by
+       *   POST /storage/download/url (:648). It self-guards on `price > 0` only — never on
+       *   `isPublicSales` — and a public sale always has a price. So with
+       *   PAID_DOWNLOAD_STRICT_EMAIL_OTP=true and no JWT it throws EMAIL_VERIFICATION_REQUIRED,
+       *   which `maybeHandleEmailVerificationRequired` turns into `routeToEmailVerification()`,
+       *   which lands the buyer in the `email` page state — i.e. HERE.
+       *
+       *   At that point `isEmailAuthorized` refuses them, because public-sales transfers carry
+       *   `access_control = 'private'` and a buyer is on no recipient list. Verified against a
+       *   live row: QahQZ83drQ is download / private / public-sales / paid.
+       *
+       * Dormant only because the flag is `false` today (Joi default, and both .env files). It is
+       * explicitly waiting on frontend graceful handling before it flips — and this branch IS
+       * that handling. Narrowing it re-arms the trap for whoever turns the flag on.
+       *
+       * The general rule, which is what the delivery-mode version got wrong: a PUBLIC SALE has
+       * no recipient allow-list to be on, and that is equally true of a download sale. The skip
+       * belongs to "is this a sale?", never to "which delivery mode?".
        */
       if (!transfer.isPublicSales && !(await isEmailAuthorized(customerEmail))) {
         setError(t("unauthorized"));
@@ -1245,7 +1329,16 @@ export default function TransferLandingPage() {
       const response = await authApi.requestOTP({ email: customerEmail });
 
       if (response.error) {
-        toast.error(response.error.message || t("error"));
+        /**
+         * Story 135.2 code review — localise the EMAIL step too.
+         *
+         * 135.2 localised the code step one function below and left this line printing the
+         * backend's English message: a French buyer who hit the resend cooldown, the rate
+         * limit, or a Brevo send failure read English on a fully French page. That is the same
+         * defect 135.2 recorded as its own third finding, one form earlier in the flow.
+         */
+        setError(localizeOtpError(response.error));
+        setEmailSubmitted(false);
         setIsLoading(false);
         return;
       }
@@ -1293,15 +1386,16 @@ export default function TransferLandingPage() {
          * "that one expired, get a fresh one" call for different actions from the buyer.
          *
          * Keyed on `code`, never on the 401 status — the same discipline 134.8 wrote down for
-         * the stream refusals. The "too many wrong tries" case carries no code today (it throws
-         * a bare string), so it correctly falls through to the message.
+         * the stream refusals.
+         *
+         * Story 135.2 code review — this covered `INVALID_OTP` and `OTP_EXPIRED` only, so the
+         * remaining four refusals (max attempts, no code stored, verify failure, and the
+         * account states) still printed English on a French page. AC7 names the max-attempts
+         * case explicitly. All of them now carry a code; see OTP_ERROR_KEY_BY_CODE.
          */
-        const otpErrorKey =
-          response.error.code === "OTP_EXPIRED"
-            ? "otpExpired"
-            : response.error.code === "INVALID_OTP"
-              ? "invalidOtp"
-              : null;
+        const otpErrorKey = response.error.code
+          ? OTP_ERROR_KEY_BY_CODE[response.error.code]
+          : undefined;
         setError(
           otpErrorKey ? t(otpErrorKey) : response.error.message || t("invalidOtp"),
         );
@@ -1313,6 +1407,11 @@ export default function TransferLandingPage() {
       // Log recipient access (skip for public transfers per AC4 - Story 27.4)
       // Story 135.2 — and skip it for a public SALE too: a buyer is not a recipient of anything,
       // and recording them as one would put strangers into the sender's recipient-access log.
+      //
+      // Scoped to `isPublicSales`, not to stream, for the same reason as the authorization check
+      // above — see that comment. A code review narrowed both to the stream case and G3 reverted
+      // both: a download public-sales buyer genuinely reaches this handler once
+      // PAID_DOWNLOAD_STRICT_EMAIL_OTP is on, and they are no more a recipient than a film buyer.
       if (transfer?.accessControl !== "public" && !transfer?.isPublicSales) {
         try {
           await transferApi.logRecipientAccess(shortCode, customerEmail);
@@ -1405,7 +1504,10 @@ export default function TransferLandingPage() {
       const response = await authApi.requestOTP({ email: customerEmail });
 
       if (response.error) {
-        toast.error(response.error.message || t("error"));
+        // Story 135.2 code review — the resend control is named by AC7 ("the resend control
+        // respects the existing cooldown"), and the cooldown refusal is precisely the one that
+        // used to answer a French buyer in English, seconds and all.
+        toast.error(localizeOtpError(response.error));
       } else {
         toast.success(t("otpResent"));
         setCanResendOtp(false);
@@ -3980,6 +4082,22 @@ export default function TransferLandingPage() {
                         </button>
                       )}
                     </form>
+
+                    {/* Story 135.2 code review — the EMAIL step needs its own error surface.
+                        Every failure here (resend cooldown, rate limit, blocked address, send
+                        failure) was toasted with the backend's English text, and the only
+                        inline error slot on this block lives inside the code section, which is
+                        not rendered until a code has been sent. So a buyer who pressed "Send my
+                        code" and was refused saw the button un-press and nothing else.
+
+                        Its own aria-live region rather than reusing the one below, because that
+                        one is unmounted at this point in the flow — a live region has to be in
+                        the DOM before its content changes to be announced at all. */}
+                    <div aria-live="polite">
+                      {!emailSubmitted && error && (
+                        <p className="text-sm text-red-500 dark:text-red-400 mt-2">{error}</p>
+                      )}
+                    </div>
 
                     {emailSubmitted && (
                       <button

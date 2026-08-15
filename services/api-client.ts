@@ -23,6 +23,18 @@ export interface ApiError {
   code?: string;
   /** Translation key for known error types (e.g. "errors.tooManyRequests"). Use with t() in components. */
   errorKey?: string;
+  /**
+   * Seconds the caller must wait before retrying, when the backend knows the number.
+   *
+   * Story 135.2 code review. A cooldown refusal is the one refusal whose LOCALISED copy needs a
+   * value, and the value only existed inside the English message ("Give it 12s, then try
+   * again."). Parsing it back out of that prose would make the copy a contract — so it travels
+   * as a field beside `code`, and a client that wants "réessayez dans 12 s" can build it.
+   *
+   * Only `auth.requestOTP`'s cooldown sets it today. Absent everywhere else, which callers must
+   * tolerate: fall back to copy that names no number.
+   */
+  retryAfterSeconds?: number;
 }
 
 /**
@@ -331,6 +343,10 @@ export class ApiClient {
             statusCode: response.status,
             error: responseData?.error,
             code: responseData?.code,
+            retryAfterSeconds:
+              typeof responseData?.retryAfterSeconds === "number"
+                ? responseData.retryAfterSeconds
+                : undefined,
             errorKey: getErrorKey(response.status, Array.isArray(responseData?.message) ? responseData.message[0] : responseData?.message),
           },
           status: response.status,
