@@ -5,6 +5,14 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.66.1] - 2026-08-15
+
+### Fixed
+
+- **The wrong-code message was translated; most of the others were not.** The previous release fixed the two failures people hit most often when confirming their email to buy a film, and left four behind. Running out of attempts, asking for a code when none was waiting, and the app failing to check a code at all were all still explained in English to someone reading in French — as was every way that asking for a code in the first place can be refused. All of them now read in the language the visitor chose. "You have tried too many times" and "that code did not work" stay separate messages, because one asks you to start again with a fresh code and the other asks you to retype the one you have.
+- **Pressing "Send my code" and being turned down showed nothing at all.** The button un-pressed and the page sat there. The only place this screen could show a message was inside the code box, which does not exist until a code has actually been sent — so every refusal at the email step was invisible, including the common one where you have asked for codes too quickly. There is now a message under the button, and it is announced to anyone using a screen reader rather than only painted on screen.
+- **"Wait a moment, then ask again" can now name the number of seconds in French.** The count previously lived inside the English sentence, so translating it meant losing it.
+
 ## [1.66.0] - 2026-08-13
 
 ### Added
