@@ -338,6 +338,29 @@ export function SaleCheckoutPanel({
       onIdentityRequired?.();
       return;
     }
+    /**
+     * Story 135.3 — the buyer already owns this film, so the backend refused a second charge.
+     *
+     * `toast.success`, deliberately, where its two siblings use `toast.error`. Nothing failed:
+     * this person was one tap from paying twice and we stopped it. The epic names "I paid but it
+     * is asking me to pay again" as the most damaging defect this feature could ship, and a red
+     * error toast at this exact moment is how a buyer concludes their money is in question.
+     *
+     * Same `error.code` discrimination as above, and for the same reason — this route ALREADY
+     * answers 409 for "a pending payment already exists", which is a different situation with
+     * different advice. Keying on the bare status would conflate them, and adding `case 409:` to
+     * getErrorKey() in api-client.ts would rewrite that pending-payment 409 for every caller of
+     * every endpoint.
+     *
+     * No retry, and no callback: there is nothing to retry, and moving this buyer to a
+     * "you already own this — watch it here" surface is story 135.11's job, not this one's.
+     * A callback nothing consumes would be exactly the dead surface the Reachability Gate exists
+     * to prevent.
+     */
+    if (error.code === "STREAM_ALREADY_PURCHASED") {
+      toast.success(tStreamSale("alreadyPurchased"));
+      return;
+    }
     toast.error(error.message || t("paymentInitFailed"));
   };
 

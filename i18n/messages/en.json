@@ -3299,6 +3299,9 @@
     "identityConfirm": "Confirm and continue",
     "identityResend": "Send it again",
     "identityResendIn": "You can ask for a new code in {seconds}s",
-    "identityRequired": "Confirm your email again and you can carry on with the payment."
+    "identityRequired": "Confirm your email again and you can carry on with the payment.",
+    "purchasedTitle": "The film is yours.",
+    "purchasedBody": "It opens right here on this page, for as long as the film's published.",
+    "alreadyPurchased": "You already own this film. No need to pay for it twice."
   }
 }

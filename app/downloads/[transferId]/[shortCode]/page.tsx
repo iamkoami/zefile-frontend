@@ -23,6 +23,7 @@ import {
   Lock,
   SmartphoneDevice,
   CreditCard,
+  CheckCircle,
   Download,
   Xmark,
   Eye,
@@ -4535,39 +4536,62 @@ export default function TransferLandingPage() {
               }}
             >
               <div className="ze-upload-panel text-center">
+                {/*
+                  Story 135.3 (AC5, D6) — the first second of ownership must not be a lie.
+                  Before this branch existed, a buyer who had just paid for a STREAM film was
+                  shown a download icon, "your download is ready", and a green button wired to
+                  handleSaleDownload — which calls POST /storage/download/zip/token. All six
+                  download mint points carry @StreamGuarded and refuse every non-sender on a
+                  stream transfer, so that button 403'd every time. 134.3 was working exactly as
+                  designed; the screen was the defect.
+
+                  So for a stream transfer this state confirms ACCESS and offers no download.
+                  It also does NOT render a Watch control: 135.6 owns the player, and a button
+                  that goes nowhere is the same lie in a different costume.
+                */}
                 <div className="flex flex-col items-center mb-6">
                   <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-                    <Download className="w-8 h-8 text-green-600 dark:text-green-400" />
+                    {isStreamTransfer ? (
+                      <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
+                    ) : (
+                      <Download className="w-8 h-8 text-green-600 dark:text-green-400" />
+                    )}
                   </div>
                 </div>
                 <h1 className="text-xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-2">
-                  {tSale("paymentConfirmed")}
+                  {isStreamTransfer
+                    ? tStreamSale("purchasedTitle")
+                    : tSale("paymentConfirmed")}
                 </h1>
                 <p className="text-sm text-gray-500 dark:text-[oklch(0.65_0_0)] mb-6">
-                  {tSale("downloadReady")}
+                  {isStreamTransfer
+                    ? tStreamSale("purchasedBody")
+                    : tSale("downloadReady")}
                 </p>
 
-                <button
-                  onClick={handleSaleDownload}
-                  disabled={isDownloading}
-                  className="w-full px-6 py-3.5 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  style={
-                    isBranded && activeBranding?.primaryColor
-                      ? {
-                          backgroundColor: activeBranding.primaryColor,
-                          color:
-                            activeBranding.buttonTextColor ||
-                            activeBranding.textColor ||
-                            "#171717",
-                        }
-                      : undefined
-                  }
-                >
-                  <Download className="w-5 h-5" />
-                  {isDownloading
-                    ? t("preparingDownload")
-                    : t("downloadAllFiles")}
-                </button>
+                {!isStreamTransfer && (
+                  <button
+                    onClick={handleSaleDownload}
+                    disabled={isDownloading}
+                    className="w-full px-6 py-3.5 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    style={
+                      isBranded && activeBranding?.primaryColor
+                        ? {
+                            backgroundColor: activeBranding.primaryColor,
+                            color:
+                              activeBranding.buttonTextColor ||
+                              activeBranding.textColor ||
+                              "#171717",
+                          }
+                        : undefined
+                    }
+                  >
+                    <Download className="w-5 h-5" />
+                    {isDownloading
+                      ? t("preparingDownload")
+                      : t("downloadAllFiles")}
+                  </button>
+                )}
 
                 {/* Creator Strip -- shows when sender has a public profile (hidden on public sales) */}
                 {transfer.senderProfile && !transfer.isPublicSales && (

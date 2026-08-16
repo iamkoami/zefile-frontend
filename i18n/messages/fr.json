@@ -3299,6 +3299,9 @@
     "identityConfirm": "Confirmer et continuer",
     "identityResend": "Renvoyer le code",
     "identityResendIn": "Nouveau code possible dans {seconds} s",
-    "identityRequired": "Confirmez à nouveau votre e-mail pour poursuivre le paiement."
+    "identityRequired": "Confirmez à nouveau votre e-mail pour poursuivre le paiement.",
+    "purchasedTitle": "Le film est à vous.",
+    "purchasedBody": "Il s'ouvre ici même, tant que le film reste en ligne.",
+    "alreadyPurchased": "Vous avez déjà ce film. Inutile de le payer une seconde fois."
   }
 }
