@@ -2880,10 +2880,23 @@ export default function TransferLandingPage() {
             >
               <div className="ze-upload-panel" style={{ maxWidth: "400px" }}>
                 {/* Status Icon */}
+                {/*
+                  Story 135.3 — this screen is the SECOND post-payment surface, and the one a
+                  public-sale buyer paying by MOBILE MONEY actually lands on:
+                  `handleSalePaymentInitiated` sends mobile money to `payment-prompt` and only
+                  card/redirect to `sale-processing` → `sale-ready`. Fixing `sale-ready` alone left
+                  the story's own Finding 2 live on the dominant rail in ZeFile's primary market.
+                  Caught at code review, after a browser walkthrough that had exercised only the
+                  `?reference=` redirect path. Both surfaces must branch, or neither is fixed.
+                */}
                 <div className="flex justify-center mb-4">
                   {isSuccess ? (
                     <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-                      <Download className="w-8 h-8 text-green-600 dark:text-green-400" />
+                      {isStreamTransfer ? (
+                        <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
+                      ) : (
+                        <Download className="w-8 h-8 text-green-600 dark:text-green-400" />
+                      )}
                     </div>
                   ) : isFailed ? (
                     <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
@@ -2903,10 +2916,14 @@ export default function TransferLandingPage() {
                   {isSuccess ? (
                     <>
                       <h1 className="text-xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-2">
-                        {tPayment("paymentSuccessful")}
+                        {isStreamTransfer
+                          ? tStreamSale("purchasedTitle")
+                          : tPayment("paymentSuccessful")}
                       </h1>
                       <p className="text-sm text-gray-600 dark:text-[oklch(0.65_0_0)]">
-                        {t("readyToDownload")}
+                        {isStreamTransfer
+                          ? tStreamSale("purchasedBody")
+                          : t("readyToDownload")}
                       </p>
                     </>
                   ) : isFailed ? (
@@ -3034,7 +3051,15 @@ export default function TransferLandingPage() {
 
                 {/* Actions */}
                 <div className="space-y-2">
-                  {isSuccess && (
+                  {/*
+                    Story 135.3 — a stream buyer gets NO download action here, for the same reason
+                    they get none on `sale-ready`: every download mint point carries @StreamGuarded
+                    and 403s a non-sender on a stream transfer, so the button below cannot succeed.
+                    The token-claim progress lines go with it — they narrate a download that is
+                    never going to be offered, and "preparing your download" on a film you can only
+                    stream is the same false promise in smaller type.
+                  */}
+                  {isSuccess && !isStreamTransfer && (
                     <>
                       {/*
                         Story 143.1 — on a public sale the token is claimed asynchronously after

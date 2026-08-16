@@ -3301,7 +3301,7 @@
     "identityResendIn": "Nouveau code possible dans {seconds} s",
     "identityRequired": "Confirmez à nouveau votre e-mail pour poursuivre le paiement.",
     "purchasedTitle": "Le film est à vous.",
-    "purchasedBody": "Il s'ouvre ici même, tant que le film reste en ligne.",
+    "purchasedBody": "Il est à vous tant que le film reste en ligne — et c'est ici que vous le regarderez.",
     "alreadyPurchased": "Vous avez déjà ce film. Inutile de le payer une seconde fois."
   }
 }
