@@ -4662,30 +4662,70 @@ export default function TransferLandingPage() {
                 pointerEvents: "none",
               }}
             >
+              {/*
+                Story 135.3 — this screen is reachable by a STREAM buyer, and its download-sale
+                copy is actively harmful to one.
+
+                It is reached whenever the post-payment token claim fails, including the ordinary
+                case of reopening a receipt link after the single-use token has been consumed. For
+                a download sale "this link expired, buy again" is correct advice. For a stream
+                buyer it is wrong three times over: there is no download link, they still own the
+                film (the entitlement never expires — D1/D3), and the button would send them back
+                into a checkout that now answers 409 STREAM_ALREADY_PURCHASED — an action that
+                cannot succeed.
+
+                It is also the precise phrasing the epic names as the most damaging defect this
+                feature could ship: "I paid but it is asking me to pay again"
+                (epics-stream-delivery.md:929-932). Story 143.1 had already identified
+                `downloadExpiredHint` as a double-charge invitation and avoided it in the
+                payment-prompt block — but nobody gated the screen that actually renders it.
+
+                Caught at G3 round 2. The earlier sweep looked for DOWNLOAD affordances and missed
+                this one because it is a PURCHASE affordance.
+
+                135.11 owns the full returning-buyer surface; this is the bounded, honest version:
+                say they own it, offer no purchase.
+              */}
               <div className="ze-upload-panel text-center">
                 <div className="flex flex-col items-center mb-6">
-                  <div className="w-16 h-16 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center">
-                    <WarningCircle className="w-8 h-8 text-yellow-600 dark:text-yellow-400" />
+                  <div
+                    className={`w-16 h-16 rounded-full flex items-center justify-center ${
+                      isStreamTransfer
+                        ? "bg-green-100 dark:bg-green-900/30"
+                        : "bg-yellow-100 dark:bg-yellow-900/30"
+                    }`}
+                  >
+                    {isStreamTransfer ? (
+                      <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
+                    ) : (
+                      <WarningCircle className="w-8 h-8 text-yellow-600 dark:text-yellow-400" />
+                    )}
                   </div>
                 </div>
                 <h1 className="text-xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-2">
-                  {tSale("downloadExpired")}
+                  {isStreamTransfer
+                    ? tStreamSale("purchasedTitle")
+                    : tSale("downloadExpired")}
                 </h1>
                 <p className="text-sm text-gray-500 dark:text-[oklch(0.65_0_0)] mb-6">
-                  {tSale("downloadExpiredHint")}
+                  {isStreamTransfer
+                    ? tStreamSale("purchasedBody")
+                    : tSale("downloadExpiredHint")}
                 </p>
 
-                <button
-                  onClick={() => {
-                    setSaleDownloadToken(null);
-                    saleVerifyAttemptedRef.current = false;
-                    setPageState("sale-preview");
-                  }}
-                  className="w-full px-6 py-3.5 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors flex items-center justify-center gap-2"
-                >
-                  <CreditCard className="w-5 h-5" />
-                  {tSale("buyAgain")}
-                </button>
+                {!isStreamTransfer && (
+                  <button
+                    onClick={() => {
+                      setSaleDownloadToken(null);
+                      saleVerifyAttemptedRef.current = false;
+                      setPageState("sale-preview");
+                    }}
+                    className="w-full px-6 py-3.5 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors flex items-center justify-center gap-2"
+                  >
+                    <CreditCard className="w-5 h-5" />
+                    {tSale("buyAgain")}
+                  </button>
+                )}
               </div>
             </div>
           </div>
