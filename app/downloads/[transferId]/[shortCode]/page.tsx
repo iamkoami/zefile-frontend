@@ -95,6 +95,29 @@ import {
   formatCurrencyFromMinor,
   type CurrencyCode,
 } from "@/lib/currency";
+import dynamic from "next/dynamic";
+
+/**
+ * Story 135.6 — the paid film player.
+ *
+ * ⚠ `ssr: false` IS THE DEPLOY-SAFETY LINE, NOT A PREFERENCE, AND IT MUST STAY HERE.
+ *
+ * A `'use client'` component is still server-rendered for the initial HTML, so webpack keeps its
+ * imports in the SERVER graph and `@cloudflare/next-on-pages` copies 748 KB of Shaka Player into
+ * the edge worker bundle — which has a hard size limit and cannot run the library anyway.
+ * Measured by story 134.1 against a probe route with `npm run build:cloudflare`:
+ *
+ *     plain 'use client' import   →  probe.func.js = 1140 KB, Shaka in _worker.js
+ *     next/dynamic ssr: false     →  probe.func.js =  376 KB, Shaka absent
+ *
+ * `npm run build` passes either way. This is the class of failure `.claude/CLAUDE.md` records
+ * for Cloudflare Pages: the build is green and the deploy dies silently. A static import here,
+ * or dropping `ssr: false`, breaks the deploy without breaking anything a developer would see.
+ */
+const StreamPlayer = dynamic(
+  () => import("@/features/transfer/components/StreamPlayer"),
+  { ssr: false },
+);
 
 /**
  * Story 144.1 — the same shared formatter `SaleCheckoutPanel` and `TransferSummaryCard` use, so
@@ -2241,6 +2264,20 @@ export default function TransferLandingPage() {
   // comes from POST /storage/preview/url, which for video returns the watermarked 20s clip.
   const streamTrailerFile = useMemo(
     () => (transfer?.files ?? []).find((file) => !!file.previewClipUrl) ?? null,
+    [transfer],
+  );
+
+  /**
+   * Story 135.6 — the film itself, for the player.
+   *
+   * The FIRST file, not the one with a trailer clip: `previewClipUrl` is absent on any film over
+   * the 2 GB preview ceiling, which a feature film clears easily, so keying on it would leave the
+   * biggest films unplayable. A stream transfer holds exactly one film — `POST /stream/sessions`
+   * answers 400 ("this transfer holds more than one film") rather than guessing — so `[0]` is not
+   * a choice among several, it is the only one.
+   */
+  const streamFilmFile = useMemo(
+    () => (transfer?.files ?? [])[0] ?? null,
     [transfer],
   );
   const [trailerUrl, setTrailerUrl] = useState<string | null>(null);
@@ -4573,6 +4610,17 @@ export default function TransferLandingPage() {
                   So for a stream transfer this state confirms ACCESS and offers no download.
                   It also does NOT render a Watch control: 135.6 owns the player, and a button
                   that goes nowhere is the same lie in a different costume.
+
+                  Story 135.6 — the player now lands here, below the confirmation. Still no Watch
+                  BUTTON: the film is present, not one click away. `epics-stream-delivery.md:216-220`
+                  settles the surface ("a public buyer is never inside" the SideDrawer) and this
+                  page already holds the transfer, the predicates and the branding, so there is no
+                  `/watch/...` route and no second public buyer surface to secure.
+
+                  ⚠ THIS IS THE ONLY THING IN THE REPOSITORY THAT IMPORTS `StreamPlayer`. Remove
+                  the branch below and the component is an orphan that passes lint, types and every
+                  static check perfectly — the fourth entry in the Reachability Gate table in
+                  `.claude/CLAUDE.md`.
                 */}
                 <div className="flex flex-col items-center mb-6">
                   <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
@@ -4593,6 +4641,15 @@ export default function TransferLandingPage() {
                     ? tStreamSale("purchasedBody")
                     : tSale("downloadReady")}
                 </p>
+
+                {isStreamTransfer && streamFilmFile && (
+                  <div className="mb-6 text-left">
+                    <StreamPlayer
+                      transferId={transfer.id}
+                      fileId={streamFilmFile.id}
+                    />
+                  </div>
+                )}
 
                 {!isStreamTransfer && (
                   <button

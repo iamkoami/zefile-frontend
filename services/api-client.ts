@@ -35,6 +35,19 @@ export interface ApiError {
    * tolerate: fall back to copy that names no number.
    */
   retryAfterSeconds?: number;
+  /**
+   * How many of something the caller is allowed, when a refusal is a CAP rather than an error.
+   *
+   * Same reasoning as `retryAfterSeconds` above, and added by story 135.6 for the same class of
+   * bug: `POST /stream/sessions` answers its device-limit 429 with `limit` beside the code so the
+   * player can write "you can watch on 2 devices at a time" without hardcoding 2 — and the cap is
+   * DB-configurable, so a hardcoded 2 would quietly start lying the day it changes. Without this
+   * field the number existed only inside the English message, and parsing it back out of prose
+   * would make that copy a contract.
+   *
+   * Only `POST /stream/sessions`'s STREAM_DEVICE_LIMIT sets it today. Absent everywhere else.
+   */
+  limit?: number;
 }
 
 /**
@@ -347,6 +360,7 @@ export class ApiClient {
               typeof responseData?.retryAfterSeconds === "number"
                 ? responseData.retryAfterSeconds
                 : undefined,
+            limit: typeof responseData?.limit === "number" ? responseData.limit : undefined,
             errorKey: getErrorKey(response.status, Array.isArray(responseData?.message) ? responseData.message[0] : responseData?.message),
           },
           status: response.status,
