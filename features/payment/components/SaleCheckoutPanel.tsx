@@ -88,6 +88,15 @@ interface SaleCheckoutPanelProps {
    */
   onStreamNotReady?: () => void;
   /**
+   * Story 135.2 — the buyer reached checkout without a session the backend accepts.
+   *
+   * The backend answers 401 `STREAM_IDENTITY_REQUIRED`. Reachable even though the sale page now
+   * gates the Buy button on being signed in: a session can expire while the buyer sits on this
+   * form, and the page's own gate is UX rather than enforcement. A toast alone would strand them
+   * on a checkout that cannot succeed, so the parent returns them to the verification step.
+   */
+  onIdentityRequired?: () => void;
+  /**
    * Story 135.1 — publishes the fee quote so the sibling TransferSummaryCard can render the SAME
    * numbers from the SAME fetch. Without this the two panels disagreed on screen: the summary
    * showed a display-currency conversion ($8.26) while this panel showed the real charge
@@ -111,6 +120,7 @@ export function SaleCheckoutPanel({
   onPaymentInitiated,
   getCaptchaToken,
   onStreamNotReady,
+  onIdentityRequired,
   onQuoteChange,
 }: SaleCheckoutPanelProps) {
   const t = useTranslations("payment");
@@ -315,6 +325,40 @@ export function SaleCheckoutPanel({
     if (error.code === "STREAM_NOT_READY") {
       toast.error(tStreamSale("notReady"));
       onStreamNotReady?.();
+      return;
+    }
+    /**
+     * Story 135.2 — discriminates on `error.code`, NEVER on the 401 status, for the same reason
+     * the 409 above does not: a bare status mapping in api-client's getErrorKey() would rewrite
+     * every unrelated 401 in the product, so an expired JWT anywhere would start telling the
+     * user to confirm their email for a film.
+     */
+    if (error.code === "STREAM_IDENTITY_REQUIRED") {
+      toast.error(tStreamSale("identityRequired"));
+      onIdentityRequired?.();
+      return;
+    }
+    /**
+     * Story 135.3 — the buyer already owns this film, so the backend refused a second charge.
+     *
+     * `toast.success`, deliberately, where its two siblings use `toast.error`. Nothing failed:
+     * this person was one tap from paying twice and we stopped it. The epic names "I paid but it
+     * is asking me to pay again" as the most damaging defect this feature could ship, and a red
+     * error toast at this exact moment is how a buyer concludes their money is in question.
+     *
+     * Same `error.code` discrimination as above, and for the same reason — this route ALREADY
+     * answers 409 for "a pending payment already exists", which is a different situation with
+     * different advice. Keying on the bare status would conflate them, and adding `case 409:` to
+     * getErrorKey() in api-client.ts would rewrite that pending-payment 409 for every caller of
+     * every endpoint.
+     *
+     * No retry, and no callback: there is nothing to retry, and moving this buyer to a
+     * "you already own this — watch it here" surface is story 135.11's job, not this one's.
+     * A callback nothing consumes would be exactly the dead surface the Reachability Gate exists
+     * to prevent.
+     */
+    if (error.code === "STREAM_ALREADY_PURCHASED") {
+      toast.success(tStreamSale("alreadyPurchased"));
       return;
     }
     toast.error(error.message || t("paymentInitFailed"));
