@@ -54,6 +54,51 @@ jobs:
       - name: Build for Cloudflare Pages
         run: npm run build:cloudflare
 
+  # Runs the real middleware over HTTP and asserts that mixed-case short codes
+  # survive routing.
+  #
+  # Nothing else in this repository can catch this class. The guard in
+  # middleware.ts has now failed twice — once missing every route carrying the
+  # code in a later segment (2026-07-29), once missing the `/fr` prefix and the
+  # `/deliver` family entirely (story 145.12). Both times types, lint,
+  # `next build` and `build:cloudflare` were all green, and the broken page
+  # served **HTTP 200** with "this transfer has vanished" copy, so status-code
+  # monitoring saw nothing either.
+  #
+  # The script contains CONTROL rows that must still be lowercased. Do not
+  # delete them "because they aren't the bug" — they are what distinguishes a
+  # fix from disabling case normalisation across the whole French site.
+  routing-guard:
+    name: Routing Guard
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+
+      - name: Upgrade npm
+        run: npm install -g npm@11
+
+      - run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      # No backend is reachable here. That is fine and deliberate: the casing
+      # redirect is decided from the path alone, before any lookup, and
+      # fetchPlatformStatus() fails open when NEXT_PUBLIC_API_URL is unset.
+      - name: Start server
+        run: npm start &
+
+      # The script waits for the port itself and aborts if it never opens, so a
+      # dead server fails the job instead of passing it vacuously.
+      - name: Assert short codes survive routing
+        run: ./scripts/check-route-casing.sh
+
   lint:
     name: Lint
     runs-on: ubuntu-latest
