@@ -5,6 +5,12 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.67.2] - 2026-08-17
+
+### Changed
+
+- The check added in 1.67.1 can now tell the difference between "this link kept its capital letters" and "nothing is checking this link at all". It was possible to switch the routing rules off for one kind of link and still have the check report everything fine — because a page nobody is checking never fails a check. It now confirms the rules actually ran on each kind of link, rather than only that nothing went wrong. Found during review of 1.67.1. (`scripts/check-route-casing.sh`)
+
 ## [1.67.1] - 2026-08-17
 
 ### Fixed
