@@ -5,6 +5,19 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.67.0] - 2026-08-17
+
+### Added
+
+- **The film you paid for now plays on the page.** Until now, buying a film took you to a screen that confirmed the purchase and then offered you nothing to watch — the film was yours and there was nowhere to see it. The player sits on that same page, below the confirmation, and starts on its own without sending you anywhere else. There is no "Watch" button to press, because the film is there rather than one click away. (`features/transfer/components/StreamPlayer.tsx`, `app/downloads/[transferId]/[shortCode]/page.tsx`)
+- **A quality setting, for anyone paying for their own data.** You can cap how sharp the picture is, and the choice sticks for the rest of your visit. It only appears when the film actually offers more than one quality, so it is never a control that does nothing. Playback deliberately starts at a lower quality and climbs, so the film begins quickly on a slow connection instead of stalling while it tries for the best possible picture first.
+- **The player says what is happening, instead of showing a frozen frame.** If the film pauses to catch up, it says so after a couple of seconds; if it is still struggling fifteen seconds later, it stops implying it will sort itself out and offers you a retry. If the same purchase is already playing on the maximum number of devices, it tells you that, and how long until you can try again. Every one of these is read aloud to anyone using a screen reader rather than only drawn on screen, and every one is written in both English and French.
+- **Buying a file to download is completely unchanged.** Same screen, same button, same wording. The player only appears for films.
+
+### Changed
+
+- Downloads and previews of purchased films are fetched rather than embedded, so the page's security policy now needs to know where they come from. Deployments using Cloudflare Stream must set `NEXT_PUBLIC_CLOUDFLARE_STREAM_ORIGIN` to the matching `https://customer-<subdomain>.cloudflarestream.com`; without it playback stops at a black frame with a single message in the browser console and nothing else reports a problem. Self-hosted delivery needs no new setting.
+
 ## [1.66.1] - 2026-08-15
 
 ### Fixed
