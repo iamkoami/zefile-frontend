@@ -173,6 +173,49 @@ assert_lowercased() {
   esac
 }
 
+# ---------------------------------------------------------------------------
+# assert_middleware_covers <path> <description>
+#
+#   POSITIVE proof that the middleware actually EXECUTED on this path, by
+#   requiring the Content-Security-Policy header it sets on every response it
+#   handles.
+#
+#   Why this exists — found at G3 review, and it is the subtle one.
+#
+#   Every assertion above is an ABSENCE check ("was not lowercased"), and a
+#   route the middleware never runs on passes all of them perfectly. Narrowing
+#   `config.matcher` to drop ONE family — a one-line regex edit, on the exact
+#   file this project has now broken twice — silently removes casing
+#   protection, these security headers AND the platform-status gate from that
+#   family, and the guard reported 12/12 green.
+#
+#   Reproduced before this was added: excluding only `deliver` from the matcher
+#   left `/deliver/*` with no CSP header at all and the suite still exited 0.
+#   The three CONTROL rows could not catch it because they are all `/About`-ish
+#   paths — none of them belongs to the excluded family.
+#
+#   The compound case (dropping `/fr/*` too) WAS already caught, because `/fr`
+#   has no physical `app/fr/` route and its controls 404 instead of 308. That
+#   near-miss is precisely why the single-family case needs its own assertion:
+#   the cheaper mistake was the undetected one.
+# ---------------------------------------------------------------------------
+assert_middleware_covers() {
+  local path="$1" desc="$2"
+  local headers
+  headers="$(curl -s -o /dev/null -D - --max-time 30 "$BASE_URL$path" 2>/dev/null)"
+
+  if printf '%s' "$headers" | grep -qi '^content-security-policy:'; then
+    printf '  ok    %-58s middleware ran\n' "$path"
+    PASS=$((PASS + 1))
+  else
+    printf '  FAIL  %-58s NO Content-Security-Policy header\n' "$path"
+    printf '        middleware did not run here — check config.matcher. This route\n'
+    printf '        has lost casing protection AND its security headers: %s\n' "$desc"
+    FAILED_ROWS+=("$path — middleware not executing (no CSP header): $desc")
+    FAIL=$((FAIL + 1))
+  fi
+}
+
 # ===========================================================================
 
 wait_for_server
@@ -211,6 +254,14 @@ printf '\nAC3 — CONTROLS: case normalisation still works everywhere else\n'
 assert_lowercased "/About"      "plain English app route"
 assert_lowercased "/fr/About"   "French app route — the row that catches an over-broad fix"
 assert_lowercased "/fr/Pricing" "French app route, second sample"
+
+printf '\nAC5 — COVERAGE: the middleware actually runs on every code-bearing family\n'
+assert_middleware_covers "/downloads/$UUID/$CODE" "EN download page"
+assert_middleware_covers "/r/$CODE"               "EN short-review route"
+assert_middleware_covers "/review/$CODE"          "EN review page"
+assert_middleware_covers "/deliver/$CODE"         "file-request delivery page"
+assert_middleware_covers "/fr/downloads/$UUID/$CODE" "FR download page"
+assert_middleware_covers "/fr/deliver/$CODE"      "FR file-request delivery page"
 
 printf '\n---------------------------------------------------------------\n'
 if [ "$FAIL" -eq 0 ]; then
