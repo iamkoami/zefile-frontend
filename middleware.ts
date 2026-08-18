@@ -74,6 +74,30 @@ function buildCsp(nonce: string): string {
   // Not exposed in img-src/media-src (thumbnails & previews route through API/CDN).
   const wasabiEndpoint = process.env.NEXT_PUBLIC_WASABI_ENDPOINT || 'https://s3.eu-central-1.wasabisys.com';
 
+  // ── Story 135.6 — the film player's manifest and segment origin ──────────────────────────
+  //
+  // ⚠ SHAKA'S FETCHES ARE GOVERNED BY `connect-src`, NOT `media-src`, AND THAT IS THE TRAP.
+  //
+  // Shaka does not put the manifest or the segments in a `src` attribute. It FETCHES them (XHR /
+  // fetch) and appends the bytes to a `MediaSource`. So `media-src` covers only the blob: URL of
+  // the MediaSource object assigned to the <video> element — which `media-src blob:` above
+  // already allows — while every actual byte of the film is a `connect-src` decision.
+  //
+  // The failure mode is silent from the buyer's seat and invisible to every static check: a
+  // correct player, a correct credential and correct segments produce a BLACK FRAME and one
+  // console CSP violation.
+  //
+  // Under the SELF-HOSTED provider the manifest is `{BACKEND_URL}/stream/hls/{fileId}/master.m3u8`
+  // and the segments sit under the same path, so `apiUrl` in connect-src already covers them and
+  // nothing new is needed. Under CLOUDFLARE the manifest comes from
+  // `https://{subdomain}.cloudflarestream.com/...`, which appears in NO directive at all — hence
+  // this variable. It must be the same subdomain as the backend's
+  // CLOUDFLARE_STREAM_CUSTOMER_SUBDOMAIN, e.g. `https://customer-abc123.cloudflarestream.com`.
+  //
+  // Deliberately an exact origin and never `https:`. Widening to a scheme would let any host on
+  // the internet feed bytes into the player, which is a materially worse trade than an env var.
+  const streamOrigin = process.env.NEXT_PUBLIC_CLOUDFLARE_STREAM_ORIGIN || '';
+
   // Deduplicate PostHog domains (posthogHost may overlap with hardcoded ingest endpoints)
   const posthogDomains = [...new Set([
     posthogHost,
@@ -92,8 +116,12 @@ function buildCsp(nonce: string): string {
     // Investigated in Epic 46-11: no viable alternative without breaking the UI.
     `style-src 'self' 'unsafe-inline'`,
     `img-src 'self' data: blob: ${apiUrl}${cdnUrl ? ` ${cdnUrl}` : ''}`,
-    `media-src 'self' blob: ${apiUrl}${cdnUrl ? ` ${cdnUrl}` : ''}`,
-    `connect-src 'self' ${apiUrl} ${wasabiEndpoint} ${posthogDomains} https://*.ingest.us.sentry.io https://*.ingest.de.sentry.io https://www.google.com`,
+    // `streamOrigin` in media-src too: Cloudflare Stream falls back to native HLS on Safari/iOS,
+    // where the manifest URL goes straight into the <video> element's src and never touches
+    // MediaSource. That path is a media-src decision, and omitting it would leave the player
+    // working everywhere except the platform most likely to take the fallback.
+    `media-src 'self' blob: ${apiUrl}${cdnUrl ? ` ${cdnUrl}` : ''}${streamOrigin ? ` ${streamOrigin}` : ''}`,
+    `connect-src 'self' ${apiUrl} ${wasabiEndpoint} ${posthogDomains} https://*.ingest.us.sentry.io https://*.ingest.de.sentry.io https://www.google.com${streamOrigin ? ` ${streamOrigin}` : ''}`,
     `font-src 'self'`,
     `frame-src ${apiUrl} https://checkout.paystack.com https://checkout.startbutton.africa https://app.startbutton.io https://www.google.com https://challenges.cloudflare.com`,
     `worker-src 'self' blob:`,

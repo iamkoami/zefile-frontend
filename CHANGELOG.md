@@ -5,6 +5,57 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.67.2] - 2026-08-17
+
+### Changed
+
+- The check added in 1.67.1 can now tell the difference between "this link kept its capital letters" and "nothing is checking this link at all". It was possible to switch the routing rules off for one kind of link and still have the check report everything fine — because a page nobody is checking never fails a check. It now confirms the rules actually ran on each kind of link, rather than only that nothing went wrong. Found during review of 1.67.1. (`scripts/check-route-casing.sh`)
+
+## [1.67.1] - 2026-08-17
+
+### Fixed
+
+- **French download links work again.** Opening a transfer from a `/fr` link told you the transfer had vanished, even when it was sitting right there. The address was being tidied into lowercase on the way through, and short codes care about capital letters — so `jT6Qx4VLRQ` was arriving as `jt6qx4vlrq`, which matches nothing. Practically every code has a capital letter in it, so this affected practically every French link, for as long as `/fr` has existed. Links themselves never changed and nothing was lost; the ones you already sent now open. (`middleware.ts`)
+- **File request links work again too, in both languages.** The same tidying hit `/deliver` links — the ones you send when you are asking someone else for files — in English as well as French. Anyone who followed one saw "request not found" instead of your request. (`middleware.ts`)
+
+### Added
+
+- A check that runs on every push and refuses to let this come back. It loads the real site and confirms that links carrying a code keep their capital letters, while ordinary pages still tidy theirs. That second half matters as much as the first: it is what stops a future fix from quietly switching off address tidying across the whole French site. (`scripts/check-route-casing.sh`, `.github/workflows/ci.yml`)
+
+## [1.67.0] - 2026-08-17
+
+### Added
+
+- **The film you paid for now plays on the page.** Until now, buying a film took you to a screen that confirmed the purchase and then offered you nothing to watch — the film was yours and there was nowhere to see it. The player sits on that same page, below the confirmation, and starts on its own without sending you anywhere else. There is no "Watch" button to press, because the film is there rather than one click away. (`features/transfer/components/StreamPlayer.tsx`, `app/downloads/[transferId]/[shortCode]/page.tsx`)
+- **A quality setting, for anyone paying for their own data.** You can cap how sharp the picture is, and the choice sticks for the rest of your visit. It only appears when the film actually offers more than one quality, so it is never a control that does nothing. Playback deliberately starts at a lower quality and climbs, so the film begins quickly on a slow connection instead of stalling while it tries for the best possible picture first.
+- **The player says what is happening, instead of showing a frozen frame.** If the film pauses to catch up, it says so after a couple of seconds; if it is still struggling fifteen seconds later, it stops implying it will sort itself out and offers you a retry. If the same purchase is already playing on the maximum number of devices, it tells you that, and how long until you can try again. Every one of these is read aloud to anyone using a screen reader rather than only drawn on screen, and every one is written in both English and French.
+- **Buying a file to download is completely unchanged.** Same screen, same button, same wording. The player only appears for films.
+
+### Changed
+
+- Downloads and previews of purchased films are fetched rather than embedded, so the page's security policy now needs to know where they come from. Deployments using Cloudflare Stream must set `NEXT_PUBLIC_CLOUDFLARE_STREAM_ORIGIN` to the matching `https://customer-<subdomain>.cloudflarestream.com`; without it playback stops at a black frame with a single message in the browser console and nothing else reports a problem. Self-hosted delivery needs no new setting.
+
+## [1.66.1] - 2026-08-15
+
+### Fixed
+
+- **The wrong-code message was translated; most of the others were not.** The previous release fixed the two failures people hit most often when confirming their email to buy a film, and left four behind. Running out of attempts, asking for a code when none was waiting, and the app failing to check a code at all were all still explained in English to someone reading in French — as was every way that asking for a code in the first place can be refused. All of them now read in the language the visitor chose. "You have tried too many times" and "that code did not work" stay separate messages, because one asks you to start again with a fresh code and the other asks you to retype the one you have.
+- **Pressing "Send my code" and being turned down showed nothing at all.** The button un-pressed and the page sat there. The only place this screen could show a message was inside the code box, which does not exist until a code has actually been sent — so every refusal at the email step was invisible, including the common one where you have asked for codes too quickly. There is now a message under the button, and it is announced to anyone using a screen reader rather than only painted on screen.
+- **"Wait a moment, then ask again" can now name the number of seconds in French.** The count previously lived inside the English sentence, so translating it meant losing it.
+
+## [1.66.0] - 2026-08-13
+
+### Added
+
+- **Someone buying a film is now asked to confirm their email before the buy button appears.** Only for films — buying a file to download stays anonymous and that screen is unchanged, down to the same wording and layout it had before. The ask is deliberately framed as what the buyer gets rather than as a check on them: confirm your address and the film follows you to any device you sign in from. It is one sentence, it appears once, and it does not mention security or verification, because being made to feel suspected at the moment you are about to pay is its own kind of failure. (`app/downloads/[transferId]/[shortCode]/page.tsx`, `i18n/messages/`)
+- **If a session expires between confirming and paying, the buyer is taken back to the code step rather than left on a checkout that cannot work.** (`features/payment/components/SaleCheckoutPanel.tsx`)
+
+### Fixed
+
+- **The button under the six-digit code did nothing when clicked.** The code is displayed as "123 456" so it can be read back easily, and the form was quietly refusing to submit because of that space — no request, no error message, nothing. Anyone who pressed Enter never saw it, which is why it survived every check. The same fault still exists on two older code screens elsewhere in the app and has been written up separately rather than fixed quietly alongside this. (`app/downloads/[transferId]/[shortCode]/page.tsx`)
+- **A screen reader announced "code sent to" with no address, before any code had been sent.** The code step was hidden visually but still present for anyone not using their eyes to read the page. It is now genuinely absent until a code has actually been sent.
+- **A wrong or expired code was explained in English to people reading the site in French.** The message came straight from the server, which only speaks English. The app now writes its own wording in the reader's language, and keeps "that code did not work" and "that code has expired" as two different messages, because they ask the reader to do two different things.
+
 ## [1.65.8] - 2026-08-18
 
 Hotfix. Applied directly to production ahead of the unreleased work sitting on staging.

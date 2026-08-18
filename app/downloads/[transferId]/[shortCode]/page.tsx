@@ -23,6 +23,7 @@ import {
   Lock,
   SmartphoneDevice,
   CreditCard,
+  CheckCircle,
   Download,
   Xmark,
   Eye,
@@ -94,6 +95,29 @@ import {
   formatCurrencyFromMinor,
   type CurrencyCode,
 } from "@/lib/currency";
+import dynamic from "next/dynamic";
+
+/**
+ * Story 135.6 — the paid film player.
+ *
+ * ⚠ `ssr: false` IS THE DEPLOY-SAFETY LINE, NOT A PREFERENCE, AND IT MUST STAY HERE.
+ *
+ * A `'use client'` component is still server-rendered for the initial HTML, so webpack keeps its
+ * imports in the SERVER graph and `@cloudflare/next-on-pages` copies 748 KB of Shaka Player into
+ * the edge worker bundle — which has a hard size limit and cannot run the library anyway.
+ * Measured by story 134.1 against a probe route with `npm run build:cloudflare`:
+ *
+ *     plain 'use client' import   →  probe.func.js = 1140 KB, Shaka in _worker.js
+ *     next/dynamic ssr: false     →  probe.func.js =  376 KB, Shaka absent
+ *
+ * `npm run build` passes either way. This is the class of failure `.claude/CLAUDE.md` records
+ * for Cloudflare Pages: the build is green and the deploy dies silently. A static import here,
+ * or dropping `ssr: false`, breaks the deploy without breaking anything a developer would see.
+ */
+const StreamPlayer = dynamic(
+  () => import("@/features/transfer/components/StreamPlayer"),
+  { ssr: false },
+);
 
 /**
  * Story 144.1 — the same shared formatter `SaleCheckoutPanel` and `TransferSummaryCard` use, so
@@ -123,6 +147,40 @@ const getSenderEmail = (transfer: TransferDto): string | undefined => {
     return transfer.senderId.email;
   }
   return undefined;
+};
+
+/**
+ * Every OTP refusal the backend can answer with, mapped to a key in the `transferLanding`
+ * namespace so the buyer reads it in their own language.
+ *
+ * ── Why this is a table and not a ternary ────────────────────────────────────────────
+ * Story 135.2 built a French identity step and localised the two failures that happened to
+ * carry a `code` (`INVALID_OTP`, `OTP_EXPIRED`). The other four were bare-string throws, so
+ * they fell through to `response.error.message` and answered a fully French page in ENGLISH —
+ * including the max-attempts refusal that 135.2's own AC7 names by hand. Its review added the
+ * missing codes backend-side; this table is the half that reaches the buyer.
+ *
+ * A table rather than a chain because the failure mode is a MISSING entry, and a missing entry
+ * in a table is visible. Anything unmapped still falls back to the backend message, which is
+ * degraded-but-honest rather than blank.
+ *
+ * ── Keyed on `code`, NEVER on the status ─────────────────────────────────────────────
+ * The same discipline 134.8 wrote down for the stream refusals. A bare 401/429 mapping in
+ * api-client's getErrorKey() would rewrite every unrelated 401 in the product.
+ *
+ * `RATE_LIMITED` is deliberately absent: it is the one refusal whose copy needs a NUMBER, so
+ * it is handled at its call site where `retryAfterSeconds` is in scope.
+ */
+const OTP_ERROR_KEY_BY_CODE: Record<string, string> = {
+  INVALID_OTP: "invalidOtp",
+  OTP_EXPIRED: "otpExpired",
+  OTP_NOT_FOUND: "otpNotFound",
+  OTP_MAX_ATTEMPTS: "otpMaxAttempts",
+  OTP_VERIFY_FAILED: "otpVerifyFailed",
+  OTP_SEND_FAILED: "otpSendFailed",
+  OTP_REQUEST_FAILED: "otpRequestFailed",
+  ACCOUNT_SUSPENDED: "accountSuspended",
+  ACCOUNT_LOCKED: "accountLocked",
 };
 
 // Tracking params interface (from documentation)
@@ -788,9 +846,17 @@ export default function TransferLandingPage() {
             }
           });
 
-          // Public sales mode: skip OTP, show preview + buy button
+          // Public sales mode: show preview + buy button.
+          //
+          // Story 135.2 — a DOWNLOAD sale still skips OTP entirely and is unchanged (AC6). A
+          // STREAM sale does not: SD-FR4 requires a verified buyer before payment, because an
+          // unverified email cannot bind a decryption key (135.4), support a concurrency limit
+          // (135.5), or make a forensic watermark name anybody (135.7). The identity step is
+          // rendered inline on this same preview below, so 135.1's terms and trailer are not
+          // displaced by it.
           if (response.data.isPublicSales) {
             setPageState("sale-preview");
+            const isStreamSalePage = response.data.deliveryMode === "stream";
             // Auto-detect purchase for logged-in users
             // Signed-in only: the backend answers this from the JWT, for the
             // caller's own email, so it discloses nothing about anyone else.
@@ -801,6 +867,31 @@ export default function TransferLandingPage() {
                 if (checkRes.data?.hasPurchase) {
                   setSaleHasPurchase(true);
                   setSaleEmailChecked(true);
+
+                  /**
+                   * Story 135.2, Finding 7 / AC9 — DO NOT auto-fire recovery on a stream page.
+                   *
+                   * This branch was effectively unreachable on a stream sale before this story,
+                   * because a stream buyer was anonymous and `getCurrentUserEmail()` was empty.
+                   * Signing the buyer in makes it fire on EVERY reload for every returning
+                   * buyer: an unrequested OTP email, plus a code field asking for something
+                   * their live session already makes unnecessary.
+                   *
+                   * The UX specification names that exact shape as the most damaging defect the
+                   * feature could ship (ux-design-stream-playback.md:753-757) — a returning
+                   * buyer "must not be asked to re-verify if her session is alive".
+                   *
+                   * Recovery is also the WRONG flow here on its own terms: it returns a DOWNLOAD
+                   * token, and a stream transfer has nothing to download.
+                   *
+                   * This is a SUPPRESSION, not the returning-buyer experience. The access
+                   * banner, resume position and "you already own this" surface are Story 135.11.
+                   * Do not build them here. The download branch below is untouched (AC9).
+                   */
+                  if (isStreamSalePage) {
+                    return;
+                  }
+
                   // Auto-send OTP for logged-in users with existing purchase
                   transferApi.recoverPurchase(response.data!.shortCode, loggedInEmail).then((recoverRes) => {
                     if (recoverRes.data?.otpSent) {
@@ -1164,6 +1255,35 @@ export default function TransferLandingPage() {
     [],
   );
 
+  /**
+   * Turn an auth-API error into copy the buyer can read in their own language.
+   *
+   * Story 135.2 code review. The backend's messages are English-only by design (ADR-API-12:
+   * clients branch on `code`, never on `message`), so printing one is a bug wherever the page
+   * is French — which, for the buyer identity step 135.2 added, is half the audience.
+   *
+   * `RATE_LIMITED` is handled here rather than in the table because it is the one refusal whose
+   * copy needs a NUMBER, and the number arrives beside the code as `retryAfterSeconds`. Reading
+   * it back out of the English prose would be a contract nobody knows they are breaking while
+   * editing that prose.
+   *
+   * The fallback is the backend message, not a generic string: degraded-but-specific beats
+   * polished-but-useless when a new code appears before this table learns about it.
+   */
+  const localizeOtpError = (error: {
+    code?: string;
+    message?: string;
+    retryAfterSeconds?: number;
+  }): string => {
+    if (error.code === "RATE_LIMITED") {
+      return typeof error.retryAfterSeconds === "number"
+        ? t("otpRateLimitedIn", { seconds: error.retryAfterSeconds })
+        : t("otpRateLimited");
+    }
+    const key = error.code ? OTP_ERROR_KEY_BY_CODE[error.code] : undefined;
+    return key ? t(key) : error.message || t("error");
+  };
+
   // Handle email confirmation - requests OTP
   const handleEmailConfirm = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1184,7 +1304,42 @@ export default function TransferLandingPage() {
 
     try {
       // Check if email is authorized to access this transfer (server-side)
-      if (!(await isEmailAuthorized(customerEmail))) {
+      /**
+       * Story 135.2 — a PUBLIC SALE has no recipient allow-list to be on.
+       *
+       * VERIFIED AGAINST REAL ROWS, not assumed: public-sales transfers in this database carry
+       * `access_control = 'private'` (all three stream fixtures do). `isEmailAuthorized()` only
+       * short-circuits on `'public'`, so without this branch it would call
+       * `verifyRecipientAccess` and refuse EVERY buyer who is not a listed recipient — which is
+       * every buyer of a film offered for sale to the public. The identity step would have been
+       * unreachable and would have looked like a backend bug.
+       *
+       * ── This stays scoped to `isPublicSales`, NOT to stream. Do not narrow it. ──────────
+       * A code review narrowed this to `isPublicSales && deliveryMode === 'stream'`, reasoning
+       * that AC6 requires download public sales to be untouched and that they never reach this
+       * handler anyway. The G3 reviewer disproved the second half, and the narrowing was
+       * reverted. The path is REAL, and it is a paid buyer being locked out of what they bought:
+       *
+       *   `assertDownloadAuthorized` (storage.controller.ts:1512) is called UNCONDITIONALLY by
+       *   POST /storage/download/url (:648). It self-guards on `price > 0` only — never on
+       *   `isPublicSales` — and a public sale always has a price. So with
+       *   PAID_DOWNLOAD_STRICT_EMAIL_OTP=true and no JWT it throws EMAIL_VERIFICATION_REQUIRED,
+       *   which `maybeHandleEmailVerificationRequired` turns into `routeToEmailVerification()`,
+       *   which lands the buyer in the `email` page state — i.e. HERE.
+       *
+       *   At that point `isEmailAuthorized` refuses them, because public-sales transfers carry
+       *   `access_control = 'private'` and a buyer is on no recipient list. Verified against a
+       *   live row: QahQZ83drQ is download / private / public-sales / paid.
+       *
+       * Dormant only because the flag is `false` today (Joi default, and both .env files). It is
+       * explicitly waiting on frontend graceful handling before it flips — and this branch IS
+       * that handling. Narrowing it re-arms the trap for whoever turns the flag on.
+       *
+       * The general rule, which is what the delivery-mode version got wrong: a PUBLIC SALE has
+       * no recipient allow-list to be on, and that is equally true of a download sale. The skip
+       * belongs to "is this a sale?", never to "which delivery mode?".
+       */
+      if (!transfer.isPublicSales && !(await isEmailAuthorized(customerEmail))) {
         setError(t("unauthorized"));
         setIsLoading(false);
         return;
@@ -1198,7 +1353,16 @@ export default function TransferLandingPage() {
       const response = await authApi.requestOTP({ email: customerEmail });
 
       if (response.error) {
-        toast.error(response.error.message || t("error"));
+        /**
+         * Story 135.2 code review — localise the EMAIL step too.
+         *
+         * 135.2 localised the code step one function below and left this line printing the
+         * backend's English message: a French buyer who hit the resend cooldown, the rate
+         * limit, or a Brevo send failure read English on a fully French page. That is the same
+         * defect 135.2 recorded as its own third finding, one form earlier in the flow.
+         */
+        setError(localizeOtpError(response.error));
+        setEmailSubmitted(false);
         setIsLoading(false);
         return;
       }
@@ -1234,14 +1398,45 @@ export default function TransferLandingPage() {
       });
 
       if (response.error) {
-        setError(response.error.message || t("invalidOtp"));
+        /**
+         * Story 135.2 (AC7, AC8) — render OUR localised copy, keyed on the machine-readable
+         * `code`, instead of printing the backend's message.
+         *
+         * The backend's messages are ENGLISH-ONLY, and this line printed them verbatim: a
+         * French buyer who mistyped a code was answered "That code didn't work. Try again." on
+         * an otherwise fully French page. Observed live before this change, not inferred.
+         *
+         * `INVALID_OTP` and `OTP_EXPIRED` must stay DISTINCT (AC7): "wrong code, try again" and
+         * "that one expired, get a fresh one" call for different actions from the buyer.
+         *
+         * Keyed on `code`, never on the 401 status — the same discipline 134.8 wrote down for
+         * the stream refusals.
+         *
+         * Story 135.2 code review — this covered `INVALID_OTP` and `OTP_EXPIRED` only, so the
+         * remaining four refusals (max attempts, no code stored, verify failure, and the
+         * account states) still printed English on a French page. AC7 names the max-attempts
+         * case explicitly. All of them now carry a code; see OTP_ERROR_KEY_BY_CODE.
+         */
+        const otpErrorKey = response.error.code
+          ? OTP_ERROR_KEY_BY_CODE[response.error.code]
+          : undefined;
+        setError(
+          otpErrorKey ? t(otpErrorKey) : response.error.message || t("invalidOtp"),
+        );
         setIsLoading(false);
         return;
       }
 
       // User is now logged in (account created if new)
       // Log recipient access (skip for public transfers per AC4 - Story 27.4)
-      if (transfer?.accessControl !== "public") {
+      // Story 135.2 — and skip it for a public SALE too: a buyer is not a recipient of anything,
+      // and recording them as one would put strangers into the sender's recipient-access log.
+      //
+      // Scoped to `isPublicSales`, not to stream, for the same reason as the authorization check
+      // above — see that comment. A code review narrowed both to the stream case and G3 reverted
+      // both: a download public-sales buyer genuinely reaches this handler once
+      // PAID_DOWNLOAD_STRICT_EMAIL_OTP is on, and they are no more a recipient than a film buyer.
+      if (transfer?.accessControl !== "public" && !transfer?.isPublicSales) {
         try {
           await transferApi.logRecipientAccess(shortCode, customerEmail);
         } catch {
@@ -1268,6 +1463,29 @@ export default function TransferLandingPage() {
         setReturnToPaymentAfterVerify(false);
         setRecipientEmail(customerEmail || null);
         setPageState("payment-prompt");
+        return;
+      }
+
+      /**
+       * Story 135.2 (AC1) — a STREAM buyer has just proved who they are, and belongs back on the
+       * sale page with the Buy button now live. Not "ready", which is the download screen, and
+       * not the preview drawer: there is nothing to download and nothing to open.
+       *
+       * Same early-return shape as the strict-mode branch directly above — this reuses the one
+       * identity OTP flow rather than adding a third handler to this page (D6).
+       *
+       * `setIsAuthenticated(true)` is REQUIRED here. The auth effect that owns that state runs
+       * once on mount with `[]` deps (page.tsx:433), so it will not observe the tokens
+       * `verifyOTP` just stored. Without this line the buyer verifies successfully and the Buy
+       * button stays hidden — a dead end, and the exact failure AC5 exists to catch.
+       */
+      const isStreamSale = transfer?.isPublicSales && transfer?.deliveryMode === "stream";
+      if (isStreamSale) {
+        setIsAuthenticated(true);
+        setSaleBuyerEmail(customerEmail);
+        setEmailSubmitted(false);
+        setOtpValue("");
+        setPageState("sale-preview");
         return;
       }
 
@@ -1310,7 +1528,10 @@ export default function TransferLandingPage() {
       const response = await authApi.requestOTP({ email: customerEmail });
 
       if (response.error) {
-        toast.error(response.error.message || t("error"));
+        // Story 135.2 code review — the resend control is named by AC7 ("the resend control
+        // respects the existing cooldown"), and the cooldown refusal is precisely the one that
+        // used to answer a French buyer in English, seconds and all.
+        toast.error(localizeOtpError(response.error));
       } else {
         toast.success(t("otpResent"));
         setCanResendOtp(false);
@@ -2045,6 +2266,20 @@ export default function TransferLandingPage() {
     () => (transfer?.files ?? []).find((file) => !!file.previewClipUrl) ?? null,
     [transfer],
   );
+
+  /**
+   * Story 135.6 — the film itself, for the player.
+   *
+   * The FIRST file, not the one with a trailer clip: `previewClipUrl` is absent on any film over
+   * the 2 GB preview ceiling, which a feature film clears easily, so keying on it would leave the
+   * biggest films unplayable. A stream transfer holds exactly one film — `POST /stream/sessions`
+   * answers 400 ("this transfer holds more than one film") rather than guessing — so `[0]` is not
+   * a choice among several, it is the only one.
+   */
+  const streamFilmFile = useMemo(
+    () => (transfer?.files ?? [])[0] ?? null,
+    [transfer],
+  );
   const [trailerUrl, setTrailerUrl] = useState<string | null>(null);
   const [trailerFailed, setTrailerFailed] = useState(false);
 
@@ -2682,10 +2917,23 @@ export default function TransferLandingPage() {
             >
               <div className="ze-upload-panel" style={{ maxWidth: "400px" }}>
                 {/* Status Icon */}
+                {/*
+                  Story 135.3 — this screen is the SECOND post-payment surface, and the one a
+                  public-sale buyer paying by MOBILE MONEY actually lands on:
+                  `handleSalePaymentInitiated` sends mobile money to `payment-prompt` and only
+                  card/redirect to `sale-processing` → `sale-ready`. Fixing `sale-ready` alone left
+                  the story's own Finding 2 live on the dominant rail in ZeFile's primary market.
+                  Caught at code review, after a browser walkthrough that had exercised only the
+                  `?reference=` redirect path. Both surfaces must branch, or neither is fixed.
+                */}
                 <div className="flex justify-center mb-4">
                   {isSuccess ? (
                     <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-                      <Download className="w-8 h-8 text-green-600 dark:text-green-400" />
+                      {isStreamTransfer ? (
+                        <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
+                      ) : (
+                        <Download className="w-8 h-8 text-green-600 dark:text-green-400" />
+                      )}
                     </div>
                   ) : isFailed ? (
                     <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
@@ -2705,10 +2953,14 @@ export default function TransferLandingPage() {
                   {isSuccess ? (
                     <>
                       <h1 className="text-xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-2">
-                        {tPayment("paymentSuccessful")}
+                        {isStreamTransfer
+                          ? tStreamSale("purchasedTitle")
+                          : tPayment("paymentSuccessful")}
                       </h1>
                       <p className="text-sm text-gray-600 dark:text-[oklch(0.65_0_0)]">
-                        {t("readyToDownload")}
+                        {isStreamTransfer
+                          ? tStreamSale("purchasedBody")
+                          : t("readyToDownload")}
                       </p>
                     </>
                   ) : isFailed ? (
@@ -2836,7 +3088,15 @@ export default function TransferLandingPage() {
 
                 {/* Actions */}
                 <div className="space-y-2">
-                  {isSuccess && (
+                  {/*
+                    Story 135.3 — a stream buyer gets NO download action here, for the same reason
+                    they get none on `sale-ready`: every download mint point carries @StreamGuarded
+                    and 403s a non-sender on a stream transfer, so the button below cannot succeed.
+                    The token-claim progress lines go with it — they narrate a download that is
+                    never going to be offered, and "preparing your download" on a film you can only
+                    stream is the same false promise in smaller type.
+                  */}
+                  {isSuccess && !isStreamTransfer && (
                     <>
                       {/*
                         Story 143.1 — on a public sale the token is claimed asynchronously after
@@ -3820,8 +4080,195 @@ export default function TransferLandingPage() {
                   </button>
                 )}
 
-                {/* Email Gateway */}
-                {!isAuthenticated && (
+                {/* Story 135.2 — the buyer identity gate (SD-FR4, AC1, D6).
+                    ══════════════════════════════════════════════════════════════════════════
+                    ⚠ THIS IS NOT THE BOX BELOW IT. Read this before changing either.
+
+                    This block is the IDENTITY flow: authApi.requestOTP / verifyOTP, which finds
+                    or creates a `Users` row and issues a real session. The box below is the
+                    RECOVERY flow: /buy/recover, which returns a DOWNLOAD TOKEN, creates no user,
+                    issues no session, and only sends anything at all to someone who has ALREADY
+                    paid. They look nearly identical on screen and are not interchangeable —
+                    merging them would satisfy a demo and none of this story's acceptance
+                    criteria (Finding 1).
+
+                    Recovery is also meaningless on a stream transfer: there is nothing to
+                    download. So for a stream sale this block REPLACES it rather than joining it,
+                    and the download sale below is untouched (AC6).
+
+                    Reuses `handleEmailConfirm` / `handleOtpVerify` — the same handlers the
+                    `email` page state uses — rather than adding a third OTP handler to this page.
+                    No `StreamGatePanel`: the UX spec places that component next to the PLAYER,
+                    for re-establishing an expired session mid-playback, and neither the player
+                    (135.6) nor the watermark (135.7) exists yet (D6).
+
+                    Hidden while the film is being prepared: 134.8 already hides the Buy button
+                    then, and asking someone to confirm their email for a film they cannot buy
+                    either way is a request with no payoff. */}
+                {!isAuthenticated && isStreamTransfer && !isStreamNotReady && (
+                  <div className="mb-4 border border-gray-200 dark:border-[oklch(0.30_0_0)] rounded p-5">
+                    <p className="font-semibold text-[#171717] dark:text-[oklch(0.91_0_0)] text-sm mb-1">
+                      {tStreamSale("identityTitle")}
+                    </p>
+                    {/* One sentence, stated as a benefit. NOT "verify your identity" and not
+                        "for security reasons" — ux-design-stream-playback.md:208 names framing
+                        verification as suspicion of the buyer as the failure mode at exactly
+                        this step. */}
+                    <p className="text-sm text-gray-600 dark:text-[oklch(0.65_0_0)] mb-3">
+                      {tStreamSale("identityReason")}
+                    </p>
+
+                    <form onSubmit={handleEmailConfirm}>
+                      <input
+                        type="email"
+                        value={customerEmail}
+                        onChange={(e) =>
+                          !emailSubmitted && setCustomerEmail(e.target.value)
+                        }
+                        placeholder={tStreamSale("identityEmailPlaceholder")}
+                        aria-label={tStreamSale("identityEmailPlaceholder")}
+                        readOnly={emailSubmitted}
+                        required
+                        className={`w-full px-4 py-3 border rounded text-sm focus:outline-none transition-all duration-300 ${
+                          emailSubmitted
+                            ? "border-[#87E64B] bg-[#87E64B]/5 text-[#171717] dark:text-[oklch(0.91_0_0)] cursor-default"
+                            : "border-gray-200 dark:border-[oklch(0.30_0_0)] text-[#171717] dark:text-[oklch(0.91_0_0)] dark:bg-[oklch(0.22_0_0)] placeholder:text-gray-400 dark:placeholder:text-[oklch(0.45_0_0)] focus:ring-2 focus:ring-[#171717] dark:focus:ring-[#5E53E0] focus:border-transparent"
+                        }`}
+                      />
+                      {!emailSubmitted && (
+                        <button
+                          type="submit"
+                          disabled={isLoading || !customerEmail.trim()}
+                          className="w-full mt-3 px-6 py-3.5 min-h-[44px] bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-[#171717] dark:focus-visible:ring-[#5E53E0]"
+                        >
+                          {isLoading ? tPayment("processing") : tStreamSale("identitySendCode")}
+                        </button>
+                      )}
+                    </form>
+
+                    {/* Story 135.2 code review — the EMAIL step needs its own error surface.
+                        Every failure here (resend cooldown, rate limit, blocked address, send
+                        failure) was toasted with the backend's English text, and the only
+                        inline error slot on this block lives inside the code section, which is
+                        not rendered until a code has been sent. So a buyer who pressed "Send my
+                        code" and was refused saw the button un-press and nothing else.
+
+                        Its own aria-live region rather than reusing the one below, because that
+                        one is unmounted at this point in the flow — a live region has to be in
+                        the DOM before its content changes to be announced at all. */}
+                    <div aria-live="polite">
+                      {!emailSubmitted && error && (
+                        <p className="text-sm text-red-500 dark:text-red-400 mt-2">{error}</p>
+                      )}
+                    </div>
+
+                    {emailSubmitted && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEmailSubmitted(false);
+                          setOtpValue("");
+                          setError("");
+                        }}
+                        className="text-xs text-[#171717] dark:text-[oklch(0.91_0_0)] underline font-medium mt-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#171717] dark:focus-visible:ring-[#5E53E0]"
+                      >
+                        {tStreamSale("identityChangeEmail")}
+                      </button>
+                    )}
+
+                    {/* aria-live so the wrong-code and expired-code messages are ANNOUNCED, not
+                        just painted — the code step is exactly where a screen-reader user has no
+                        other signal that anything happened (cross-cutting criteria). */}
+                    <div
+                      aria-live="polite"
+                      className={`transition-all duration-300 ease-out overflow-hidden ${
+                        emailSubmitted ? "max-h-[420px] opacity-100 mt-4" : "max-h-0 opacity-0"
+                      }`}
+                    >
+                      {/* CONDITIONALLY RENDERED, not merely collapsed. `max-h-0 opacity-0` hides
+                          this visually but leaves every node in the accessibility tree, so a
+                          screen-reader user met "Code sent to ." — with an empty email — and a
+                          resend countdown reading 0s, before any code had been requested. Caught
+                          by reading the a11y snapshot of the live page, not the diff. */}
+                      {emailSubmitted && (
+                        <>
+                      <p className="text-sm text-gray-600 dark:text-[oklch(0.65_0_0)] mb-2">
+                        {/* ICU placeholders resolve INSIDE t(); calling t() bare and then
+                            .replace("{email}", …) throws before replace can run and renders the
+                            raw key on screen. That shipped once already on this page. */}
+                        {tStreamSale("identityCodeSent", { email: customerEmail })}
+                      </p>
+                      <form onSubmit={handleOtpVerify}>
+                        {/* Non-digits are stripped on change, which is what makes a PASTED code
+                            work: paste fires onChange, so "123 456" from a mail client lands as
+                            six digits rather than being rejected (cross-cutting criteria). */}
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          /* MUST allow the space. The value is displayed grouped as "123 456"
+                             for readability, and `pattern` is an HTML5 CONSTRAINT, not a hint —
+                             `[0-9]*` fails against the rendered value, so the browser silently
+                             refuses to submit the form and no request is ever made. Found live:
+                             the button enabled, the click landed, and `verify-otp` appeared in
+                             neither the network tab nor the API log. */
+                          pattern="[0-9 ]*"
+                          value={
+                            otpValue.length <= 3
+                              ? otpValue
+                              : `${otpValue.slice(0, 3)} ${otpValue.slice(3)}`
+                          }
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/\D/g, "");
+                            if (value.length <= 6) setOtpValue(value);
+                          }}
+                          placeholder="000 000"
+                          aria-label={tStreamSale("identityCodeLabel")}
+                          maxLength={7}
+                          required
+                          className="w-full px-4 py-3 border border-gray-200 dark:border-[oklch(0.30_0_0)] rounded text-[#171717] dark:text-[oklch(0.91_0_0)] dark:bg-[oklch(0.22_0_0)] text-center text-lg font-mono tracking-[0.4em] focus:outline-none focus:ring-2 focus:ring-[#171717] dark:focus:ring-[#5E53E0] focus:border-transparent"
+                        />
+                        {error && (
+                          <p className="text-sm text-red-500 dark:text-red-400 mt-2 text-center">
+                            {error}
+                          </p>
+                        )}
+                        <button
+                          type="submit"
+                          disabled={isLoading || otpValue.length !== 6}
+                          className="w-full mt-3 px-6 py-3.5 min-h-[44px] bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-[#171717] dark:focus-visible:ring-[#5E53E0]"
+                        >
+                          {isLoading ? tPayment("processing") : tStreamSale("identityConfirm")}
+                        </button>
+                      </form>
+                      <div className="text-center mt-3">
+                        {canResendOtp ? (
+                          <button
+                            type="button"
+                            onClick={handleResendOtp}
+                            disabled={isLoading}
+                            className="text-sm text-[#171717] dark:text-[oklch(0.91_0_0)] underline font-medium disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#171717] dark:focus-visible:ring-[#5E53E0]"
+                          >
+                            {tStreamSale("identityResend")}
+                          </button>
+                        ) : (
+                          <p className="text-sm text-gray-400 dark:text-[oklch(0.50_0_0)]">
+                            {tStreamSale("identityResendIn", {
+                              seconds: otpResendCountdown,
+                            })}
+                          </p>
+                        )}
+                      </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Email Gateway — the purchase-RECOVERY flow (see the warning above).
+                    Story 135.2: not rendered on a stream sale, where it would be a second email
+                    box offering a download token for a film that has nothing to download. Its
+                    behaviour on a download sale is byte-for-byte unchanged (AC6). */}
+                {!isAuthenticated && !isStreamTransfer && (
                   <div className="mb-4">
                     <div className="flex gap-2">
                       <input
@@ -3918,9 +4365,21 @@ export default function TransferLandingPage() {
                     a disabled button: a greyed-out green CTA reads as a broken page, and the
                     prepared-state block above already says what is happening. The backend refuses
                     the same case with 409 regardless of what this renders. */}
+                {/* Story 135.2 — a STREAM buyer must be signed in before this appears (AC1, AC5).
+                    `saleEmailChecked` is not enough for a stream sale: it is set by the RECOVERY
+                    flow, which proves nothing about identity and issues no session, so a Buy
+                    button gated on it would send a buyer to a checkout the backend answers 401.
+
+                    Deliberately not a disabled button — the identity block above is what a buyer
+                    does next, and a greyed-out green CTA beside it reads as a broken page. Same
+                    reasoning 134.8 recorded for the not-ready state.
+
+                    The download condition is left exactly as it was (AC6). */}
                 {!isStreamNotReady &&
-                ((saleEmailChecked && !saleHasPurchase) ||
-                  (isAuthenticated && !saleHasPurchase)) ? (
+                (isStreamTransfer
+                  ? isAuthenticated && !saleHasPurchase
+                  : (saleEmailChecked && !saleHasPurchase) ||
+                    (isAuthenticated && !saleHasPurchase)) ? (
                   <button
                     onClick={handleBuy}
                     disabled={isLoading}
@@ -4026,6 +4485,17 @@ export default function TransferLandingPage() {
                     setPageState("sale-preview");
                     void handleStreamReadinessRecheck();
                   }}
+                  /* Story 135.2 (AC5) — the backend refused for want of a verified buyer.
+                     Return them to the sale page with the identity block showing rather than
+                     toasting and stranding them on a checkout that cannot succeed. Clearing
+                     `isAuthenticated` is what makes that block render: the session the page
+                     believed in is one the backend just rejected. */
+                  onIdentityRequired={() => {
+                    setIsAuthenticated(false);
+                    setEmailSubmitted(false);
+                    setOtpValue("");
+                    setPageState("sale-preview");
+                  }}
                 />
               </div>
 
@@ -4128,39 +4598,82 @@ export default function TransferLandingPage() {
               }}
             >
               <div className="ze-upload-panel text-center">
+                {/*
+                  Story 135.3 (AC5, D6) — the first second of ownership must not be a lie.
+                  Before this branch existed, a buyer who had just paid for a STREAM film was
+                  shown a download icon, "your download is ready", and a green button wired to
+                  handleSaleDownload — which calls POST /storage/download/zip/token. All six
+                  download mint points carry @StreamGuarded and refuse every non-sender on a
+                  stream transfer, so that button 403'd every time. 134.3 was working exactly as
+                  designed; the screen was the defect.
+
+                  So for a stream transfer this state confirms ACCESS and offers no download.
+                  It also does NOT render a Watch control: 135.6 owns the player, and a button
+                  that goes nowhere is the same lie in a different costume.
+
+                  Story 135.6 — the player now lands here, below the confirmation. Still no Watch
+                  BUTTON: the film is present, not one click away. `epics-stream-delivery.md:216-220`
+                  settles the surface ("a public buyer is never inside" the SideDrawer) and this
+                  page already holds the transfer, the predicates and the branding, so there is no
+                  `/watch/...` route and no second public buyer surface to secure.
+
+                  ⚠ THIS IS THE ONLY THING IN THE REPOSITORY THAT IMPORTS `StreamPlayer`. Remove
+                  the branch below and the component is an orphan that passes lint, types and every
+                  static check perfectly — the fourth entry in the Reachability Gate table in
+                  `.claude/CLAUDE.md`.
+                */}
                 <div className="flex flex-col items-center mb-6">
                   <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-                    <Download className="w-8 h-8 text-green-600 dark:text-green-400" />
+                    {isStreamTransfer ? (
+                      <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
+                    ) : (
+                      <Download className="w-8 h-8 text-green-600 dark:text-green-400" />
+                    )}
                   </div>
                 </div>
                 <h1 className="text-xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-2">
-                  {tSale("paymentConfirmed")}
+                  {isStreamTransfer
+                    ? tStreamSale("purchasedTitle")
+                    : tSale("paymentConfirmed")}
                 </h1>
                 <p className="text-sm text-gray-500 dark:text-[oklch(0.65_0_0)] mb-6">
-                  {tSale("downloadReady")}
+                  {isStreamTransfer
+                    ? tStreamSale("purchasedBody")
+                    : tSale("downloadReady")}
                 </p>
 
-                <button
-                  onClick={handleSaleDownload}
-                  disabled={isDownloading}
-                  className="w-full px-6 py-3.5 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  style={
-                    isBranded && activeBranding?.primaryColor
-                      ? {
-                          backgroundColor: activeBranding.primaryColor,
-                          color:
-                            activeBranding.buttonTextColor ||
-                            activeBranding.textColor ||
-                            "#171717",
-                        }
-                      : undefined
-                  }
-                >
-                  <Download className="w-5 h-5" />
-                  {isDownloading
-                    ? t("preparingDownload")
-                    : t("downloadAllFiles")}
-                </button>
+                {isStreamTransfer && streamFilmFile && (
+                  <div className="mb-6 text-left">
+                    <StreamPlayer
+                      transferId={transfer.id}
+                      fileId={streamFilmFile.id}
+                    />
+                  </div>
+                )}
+
+                {!isStreamTransfer && (
+                  <button
+                    onClick={handleSaleDownload}
+                    disabled={isDownloading}
+                    className="w-full px-6 py-3.5 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    style={
+                      isBranded && activeBranding?.primaryColor
+                        ? {
+                            backgroundColor: activeBranding.primaryColor,
+                            color:
+                              activeBranding.buttonTextColor ||
+                              activeBranding.textColor ||
+                              "#171717",
+                          }
+                        : undefined
+                    }
+                  >
+                    <Download className="w-5 h-5" />
+                    {isDownloading
+                      ? t("preparingDownload")
+                      : t("downloadAllFiles")}
+                  </button>
+                )}
 
                 {/* Creator Strip -- shows when sender has a public profile (hidden on public sales) */}
                 {transfer.senderProfile && !transfer.isPublicSales && (
@@ -4206,30 +4719,70 @@ export default function TransferLandingPage() {
                 pointerEvents: "none",
               }}
             >
+              {/*
+                Story 135.3 — this screen is reachable by a STREAM buyer, and its download-sale
+                copy is actively harmful to one.
+
+                It is reached whenever the post-payment token claim fails, including the ordinary
+                case of reopening a receipt link after the single-use token has been consumed. For
+                a download sale "this link expired, buy again" is correct advice. For a stream
+                buyer it is wrong three times over: there is no download link, they still own the
+                film (the entitlement never expires — D1/D3), and the button would send them back
+                into a checkout that now answers 409 STREAM_ALREADY_PURCHASED — an action that
+                cannot succeed.
+
+                It is also the precise phrasing the epic names as the most damaging defect this
+                feature could ship: "I paid but it is asking me to pay again"
+                (epics-stream-delivery.md:929-932). Story 143.1 had already identified
+                `downloadExpiredHint` as a double-charge invitation and avoided it in the
+                payment-prompt block — but nobody gated the screen that actually renders it.
+
+                Caught at G3 round 2. The earlier sweep looked for DOWNLOAD affordances and missed
+                this one because it is a PURCHASE affordance.
+
+                135.11 owns the full returning-buyer surface; this is the bounded, honest version:
+                say they own it, offer no purchase.
+              */}
               <div className="ze-upload-panel text-center">
                 <div className="flex flex-col items-center mb-6">
-                  <div className="w-16 h-16 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center">
-                    <WarningCircle className="w-8 h-8 text-yellow-600 dark:text-yellow-400" />
+                  <div
+                    className={`w-16 h-16 rounded-full flex items-center justify-center ${
+                      isStreamTransfer
+                        ? "bg-green-100 dark:bg-green-900/30"
+                        : "bg-yellow-100 dark:bg-yellow-900/30"
+                    }`}
+                  >
+                    {isStreamTransfer ? (
+                      <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
+                    ) : (
+                      <WarningCircle className="w-8 h-8 text-yellow-600 dark:text-yellow-400" />
+                    )}
                   </div>
                 </div>
                 <h1 className="text-xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-2">
-                  {tSale("downloadExpired")}
+                  {isStreamTransfer
+                    ? tStreamSale("purchasedTitle")
+                    : tSale("downloadExpired")}
                 </h1>
                 <p className="text-sm text-gray-500 dark:text-[oklch(0.65_0_0)] mb-6">
-                  {tSale("downloadExpiredHint")}
+                  {isStreamTransfer
+                    ? tStreamSale("purchasedBody")
+                    : tSale("downloadExpiredHint")}
                 </p>
 
-                <button
-                  onClick={() => {
-                    setSaleDownloadToken(null);
-                    saleVerifyAttemptedRef.current = false;
-                    setPageState("sale-preview");
-                  }}
-                  className="w-full px-6 py-3.5 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors flex items-center justify-center gap-2"
-                >
-                  <CreditCard className="w-5 h-5" />
-                  {tSale("buyAgain")}
-                </button>
+                {!isStreamTransfer && (
+                  <button
+                    onClick={() => {
+                      setSaleDownloadToken(null);
+                      saleVerifyAttemptedRef.current = false;
+                      setPageState("sale-preview");
+                    }}
+                    className="w-full px-6 py-3.5 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors flex items-center justify-center gap-2"
+                  >
+                    <CreditCard className="w-5 h-5" />
+                    {tSale("buyAgain")}
+                  </button>
+                )}
               </div>
             </div>
           </div>
