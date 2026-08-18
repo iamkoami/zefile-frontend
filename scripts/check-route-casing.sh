@@ -198,6 +198,13 @@ assert_lowercased() {
 #   has no physical `app/fr/` route and its controls 404 instead of 308. That
 #   near-miss is precisely why the single-family case needs its own assertion:
 #   the cheaper mistake was the undetected one.
+#   ⚠ UNGUARDED INVARIANT (raised at G3, not a defect today): this assertion
+#   assumes a code-bearing route never returns a response WITHOUT a CSP header.
+#   That holds because all four page components are `"use client"` and cannot
+#   call App Router's server-side redirect() — verified. If one is ever made a
+#   server component that redirects, this row starts producing a FALSE RED with
+#   a misleading "check config.matcher" message. If you make that change, come
+#   here first.
 # ---------------------------------------------------------------------------
 assert_middleware_covers() {
   local path="$1" desc="$2"
@@ -235,33 +242,58 @@ if [ "${preflight%% *}" != "308" ]; then
 fi
 printf 'Preflight OK — middleware is live and redirecting.\n\n'
 
-printf 'AC1 — French paths carrying a short code must NOT be lowercased\n'
-assert_no_lowercase "/fr/downloads/$UUID/$CODE" "FR download page (the reported defect)"
-assert_no_lowercase "/fr/r/$CODE"               "FR short-review route"
-assert_no_lowercase "/fr/review/$CODE"          "FR review page"
+# ---------------------------------------------------------------------------
+# THE ROUTE TABLE — derived once, never hand-enumerated twice.
+#
+# Both the casing assertions and the coverage assertions are generated from
+# this ONE list crossed with the locale prefixes. That is deliberate and it is
+# the whole point of the structure.
+#
+# This guard has now been under-enumerated TWICE, both times by someone writing
+# out a list by hand:
+#   1. middleware.ts's own CODE_BEARING_ROUTES omitted `/deliver/` — the defect
+#      this script exists to catch (story 145.12).
+#   2. The FIRST version of the coverage assertions listed six paths and missed
+#      `/fr/r` and `/fr/review`. Caught at G3 by excluding `fr/review` from the
+#      matcher: the suite passed 18/18, exit 0, while `/fr/review/<code>` was a
+#      hard 404 for every French visitor. A fix for an incomplete list that was
+#      itself an incomplete list.
+#
+# So: add a family HERE, once, and every assertion type picks it up in both
+# locales automatically. Do not go back to writing paths out by hand.
+#
+# Must mirror CODE_BEARING_ROUTES in middleware.ts.
+FAMILIES=(
+  "/downloads/$UUID/$CODE|download page"
+  "/r/$CODE|short-review route"
+  "/review/$CODE|review page"
+  "/deliver/$CODE|file-request delivery page"
+)
+LOCALES=("|EN" "/fr|FR")
 
-printf '\nAC2 — /deliver carries a FileRequest code, in BOTH locales\n'
-assert_no_lowercase "/deliver/$CODE"            "file-request delivery page (EN)"
-assert_no_lowercase "/fr/deliver/$CODE"         "file-request delivery page (FR)"
-
-printf '\nAC4 — non-French code-bearing routes are unchanged\n'
-assert_no_lowercase "/downloads/$UUID/$CODE"    "EN download page"
-assert_no_lowercase "/r/$CODE"                  "EN short-review route"
-assert_no_lowercase "/review/$CODE"             "EN review page"
-assert_no_lowercase "/z-$CODE"                  "root short link keeps its z- prefixed code"
+printf 'AC1/AC2/AC4 — no code-bearing path, in any locale, may be lowercased\n'
+for fam in "${FAMILIES[@]}"; do
+  fpath="${fam%%|*}"; fdesc="${fam#*|}"
+  for loc in "${LOCALES[@]}"; do
+    prefix="${loc%%|*}"; lname="${loc#*|}"
+    assert_no_lowercase "${prefix}${fpath}" "${fdesc} (${lname})"
+  done
+done
+assert_no_lowercase "/z-$CODE" "root short link keeps its z- prefixed code"
 
 printf '\nAC3 — CONTROLS: case normalisation still works everywhere else\n'
 assert_lowercased "/About"      "plain English app route"
 assert_lowercased "/fr/About"   "French app route — the row that catches an over-broad fix"
 assert_lowercased "/fr/Pricing" "French app route, second sample"
 
-printf '\nAC5 — COVERAGE: the middleware actually runs on every code-bearing family\n'
-assert_middleware_covers "/downloads/$UUID/$CODE" "EN download page"
-assert_middleware_covers "/r/$CODE"               "EN short-review route"
-assert_middleware_covers "/review/$CODE"          "EN review page"
-assert_middleware_covers "/deliver/$CODE"         "file-request delivery page"
-assert_middleware_covers "/fr/downloads/$UUID/$CODE" "FR download page"
-assert_middleware_covers "/fr/deliver/$CODE"      "FR file-request delivery page"
+printf '\nAC5 — COVERAGE: the middleware actually runs on every family, in every locale\n'
+for fam in "${FAMILIES[@]}"; do
+  fpath="${fam%%|*}"; fdesc="${fam#*|}"
+  for loc in "${LOCALES[@]}"; do
+    prefix="${loc%%|*}"; lname="${loc#*|}"
+    assert_middleware_covers "${prefix}${fpath}" "${fdesc} (${lname})"
+  done
+done
 
 printf '\n---------------------------------------------------------------\n'
 if [ "$FAIL" -eq 0 ]; then
