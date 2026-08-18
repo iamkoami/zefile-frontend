@@ -5,6 +5,19 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.65.8] - 2026-08-18
+
+Hotfix. Applied directly to production ahead of the unreleased work sitting on staging.
+
+### Fixed
+
+- **French download links work again.** Opening a transfer from a `/fr` link told you the transfer had vanished, even when it was sitting right there. The address was being tidied into lowercase on the way through, and short codes care about capital letters — so `jT6Qx4VLRQ` was arriving as `jt6qx4vlrq`, which matches nothing. Practically every code has a capital letter in it, so this affected practically every French link, for as long as `/fr` has existed. Links themselves never changed and nothing was lost; the ones you already sent now open. (`middleware.ts`)
+- **File request links work again too, in both languages.** The same tidying hit `/deliver` links — the ones you send when you are asking someone else for files — in English as well as French. Anyone who followed one saw "request not found" instead of your request. (`middleware.ts`)
+
+### Added
+
+- A check that runs on every push and refuses to let this come back. It loads the real site and confirms that links carrying a code keep their capital letters, while ordinary pages still tidy theirs — and that the routing rules actually ran on each kind of link, since a page nobody is checking never fails a check. (`scripts/check-route-casing.sh`, `.github/workflows/ci.yml`)
+
 ## [1.65.7] - 2026-08-10
 
 ### Fixed
