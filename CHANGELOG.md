@@ -5,6 +5,12 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.67.3] - 2026-08-18
+
+### Changed
+
+- The link check from 1.67.2 now covers every kind of link in both languages, instead of six of the eight combinations. Two French ones were missing, so it was still possible to switch the routing rules off for French review links and have the check report everything fine. The list is now built automatically rather than written out by hand, which is what let entries go missing twice. Found during review. (`scripts/check-route-casing.sh`)
+
 ## [1.67.2] - 2026-08-17
 
 ### Changed
