@@ -225,9 +225,40 @@ export async function middleware(request: NextRequest) {
   // the "z-" prefix alone is also not enough, because /review/<code> and
   // /r/<code> can carry a bare code with no prefix.
   const SHORT_CODE_PREFIX = process.env.NEXT_PUBLIC_SHORT_CODE_PREFIX || 'z-';
-  const CODE_BEARING_ROUTES = ['/downloads/', '/r/', '/review/'];
+  //
+  // ⚠ EVERY ROUTE THAT CARRIES A SHORT CODE IN A PATH SEGMENT MUST BE LISTED HERE.
+  //
+  // `/deliver/` is served by the FileRequests table, not Transfers — which is why it was missed
+  // when this array was introduced (2026-07-29) even though the route had existed since
+  // 2026-03-05. It is not duplication: `file-requests.service.ts` looks its code up with
+  // `where: { shortCode }`, the same case-sensitive `=` match, from the same mixed-case alphabet.
+  // Adding a code-bearing route to the app without adding it here reintroduces a live 404 in
+  // BOTH locales — scripts/check-route-casing.sh is what catches that (story 145.12).
+  const CODE_BEARING_ROUTES = ['/downloads/', '/r/', '/review/', '/deliver/'];
+
+  // ⚠ THE `/fr` PREFIX MUST COME OFF BEFORE THIS TEST (story 145.12).
+  //
+  // The guard above was written for exactly the hazard it then missed on the one route family
+  // that PREFIXES the path. `/fr/downloads/<uuid>/jT6Qx4VLRQ` does not start with `/downloads/`,
+  // so `carriesShortCode` was false, the lowercasing redirect fired, and the code arrived as
+  // `jt6qx4vlrq` — which the DB looks up with `=` and does not find. Every French visitor opening
+  // any download or sale link whose code contains an uppercase letter got "Ce transfert s'est
+  // volatilisé", for as long as `/fr` has existed.
+  //
+  // The `z-` segment scan below did not save it: `/r/<code>` and `/review/<code>` carry bare
+  // codes, and `/downloads/<uuid>/<code>` codes are only prefixed when the link came from the
+  // short domain. A mixed-case bare code is the common case, not the edge one.
+  //
+  // Stripping `/fr` here rather than reusing the `normalizedPath` computed further down is
+  // deliberate: that one is built AFTER this redirect returns, so it cannot inform it.
+  const routePath = pathname.startsWith('/fr/')
+    ? pathname.slice(3)
+    : pathname === '/fr'
+      ? '/'
+      : pathname;
+
   const carriesShortCode =
-    CODE_BEARING_ROUTES.some((p) => pathname.startsWith(p)) ||
+    CODE_BEARING_ROUTES.some((p) => routePath.startsWith(p)) ||
     pathname
       .split('/')
       .some((seg) =>
