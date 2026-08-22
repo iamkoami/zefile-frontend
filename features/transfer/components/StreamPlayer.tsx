@@ -53,7 +53,10 @@ import {
   STREAM_ERROR_CODES,
   type StreamSessionResponse,
 } from "@/services/stream-api";
-import PlaybackStatePanel, { PlaybackState } from "./PlaybackStatePanel";
+import PlaybackStatePanel, {
+  PlaybackState,
+  PlaybackStateAnnouncer,
+} from "./PlaybackStatePanel";
 
 type ShakaNamespace = Awaited<ReturnType<typeof loadShaka>>;
 type ShakaPlayer = InstanceType<ShakaNamespace["Player"]>;
@@ -106,6 +109,23 @@ const CREDENTIAL_RETRY_COOLDOWN_MS = 10_000;
  * playback resumes, so a long film that renews successfully many times never approaches it.
  */
 const MAX_CONSECUTIVE_RENEWAL_FAILURES = 3;
+
+/**
+ * A codeless 429 from `POST /stream/sessions` retries ITSELF, and these bound it (G3 round 5).
+ *
+ * 135.5's Finding 3: two different 429s demand OPPOSITE client behaviour. `STREAM_DEVICE_LIMIT`
+ * means "stop your other device" and the buyer must act. A 429 with NO code is the transport
+ * rate limiter saying "slow down and come back" — and `stream-api.ts` documents exactly that.
+ * That distinction was carried faithfully from the backend and then dropped at the last step:
+ * `stateForSessionError` mapped the codeless one to a terminal `unavailable` panel, so the
+ * throttle the buyer had no part in became a wall they had to tap through.
+ *
+ * Bounded, because an unbounded auto-retry against a rate limiter is how a client becomes the
+ * outage. After the budget, the panel is still there and still honest.
+ */
+const MAX_THROTTLE_RETRIES = 2;
+const THROTTLE_RETRY_FALLBACK_SECONDS = 3;
+const MAX_THROTTLE_WAIT_SECONDS = 30;
 
 /** Per session, per film. D4: not a user preference, no backend field, no migration. */
 const qualityCapStorageKey = (transferId: string) => `zefile:stream-quality:${transferId}`;
@@ -240,6 +260,14 @@ export default function StreamPlayer({
   const renewalFailuresRef = useRef(0);
   /** Playback position at the last renewal, so progress since then can be detected. */
   const lastRenewalPositionRef = useRef(-1);
+  /**
+   * Where OUR OWN renewal reload asked the player to resume, so the `seeked` it causes is not
+   * mistaken for the buyer seeking (G3 round 5). See the `seeked` listener for the full story.
+   */
+  const programmaticSeekTargetRef = useRef<number | null>(null);
+  /** Automatic retries already spent against a codeless (transport) 429. */
+  const throttleRetriesRef = useRef(0);
+  const throttleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const unmountedRef = useRef(false);
 
   const [state, setState] = useState<PlaybackState | null>("starting");
@@ -356,6 +384,7 @@ export default function StreamPlayer({
       renewalFailuresRef.current = 0;
       renewalInFlightRef.current = false;
       lastRenewalPositionRef.current = -1;
+      programmaticSeekTargetRef.current = null;
 
       // 1. Take a device slot BEFORE touching the provider — but only if we do not already hold
       //    one. 135.5 resolves the manifest only after the lease, so a refused device costs no
@@ -377,6 +406,30 @@ export default function StreamPlayer({
           // Cleared so the retry button can try again; a refused acquisition must not be cached.
           inFlightSessions.delete(transferId);
           if (cancelled) return;
+
+          // ══ A CODELESS 429 IS THE TRANSPORT THROTTLE. IT RETRIES ITSELF. ═══════════════
+          //
+          // See `MAX_THROTTLE_RETRIES`. `stateForSessionError` still answers `unavailable` once
+          // the budget is spent, so nothing here can hide a persistent refusal — it only stops
+          // a two-second rate limit from being presented to the buyer as a dead end.
+          if (
+            !acquired.error?.code &&
+            acquired.error?.statusCode === 429 &&
+            throttleRetriesRef.current < MAX_THROTTLE_RETRIES
+          ) {
+            throttleRetriesRef.current += 1;
+            const waitSeconds = Math.min(
+              acquired.error?.retryAfterSeconds ?? THROTTLE_RETRY_FALLBACK_SECONDS,
+              MAX_THROTTLE_WAIT_SECONDS,
+            );
+            setState("starting");
+            throttleTimerRef.current = setTimeout(
+              () => setAttempt((n) => n + 1),
+              waitSeconds * 1000,
+            );
+            return;
+          }
+
           setState(stateForSessionError(acquired.error?.code, acquired.error?.statusCode));
           setDeviceLimit(acquired.error?.limit);
           setRetryAfterSeconds(acquired.error?.retryAfterSeconds);
@@ -612,8 +665,33 @@ export default function StreamPlayer({
             // the cookie refreshed, so plain `retryStreaming()` is enough there.
             const nextManifest = refreshed.data?.manifestUrl;
             if (nextManifest && nextManifest !== manifestUrl) {
+              const resumeFrom = videoRef.current?.currentTime ?? 0;
               manifestUrl = nextManifest;
-              await player?.load(nextManifest, videoRef.current?.currentTime ?? 0);
+
+              // ⚠ THIS RELOAD MUST NEVER REJECT SILENTLY — G3 round 5, the one High of that round.
+              //
+              // `player.load()` REJECTS on failure; the initial load below has always known that
+              // and catches it. This one did not, and it is reached from an `error` LISTENER, so
+              // the rejection escaped as an unhandled promise rejection: no `setState`, no panel,
+              // frozen frame. Worse than merely silent — `load()` unloads first, which fires
+              // `buffering: false`, which runs `clearBufferingTimers()`. So the reload ITSELF
+              // cancelled the 2 s/15 s stall timers that were the only remaining backstop. The
+              // buyer was left looking at a still frame with no message and no action, which is
+              // the precise failure AC3 exists to forbid.
+              //
+              // `failed` rather than `stalled`: its Retry re-runs the load effect, which re-fetches
+              // a fresh credential — the only recovery that can actually work when the newest
+              // manifest we could obtain is the thing that would not load. `stalled`'s Retry calls
+              // `retryStreaming()` on a player that has nothing loaded.
+              programmaticSeekTargetRef.current = resumeFrom;
+              try {
+                await player?.load(nextManifest, resumeFrom);
+              } catch {
+                programmaticSeekTargetRef.current = null;
+                if (cancelled) return;
+                clearBufferingTimers();
+                setState("failed");
+              }
               return;
             }
 
@@ -632,8 +710,17 @@ export default function StreamPlayer({
         }
       };
 
+      // The `.catch` is a BACKSTOP, not decoration (G3 round 5). `handlePlayerError` is async and
+      // fired from a listener, so ANY unguarded `await` inside it escapes as an unhandled
+      // rejection and strands the buyer on a frozen frame with no panel. Round 5 found exactly
+      // one such path; this closes the whole class rather than that one instance, so a future
+      // edit that adds an await cannot reopen it silently.
       player.addEventListener("error", (event) => {
-        void handlePlayerError((event as unknown as { detail: ShakaError }).detail);
+        handlePlayerError((event as unknown as { detail: ShakaError }).detail).catch(() => {
+          if (cancelled) return;
+          clearBufferingTimers();
+          setState("failed");
+        });
       });
 
       try {
@@ -668,6 +755,8 @@ export default function StreamPlayer({
       clearBufferingTimers();
       if (heartbeatTimerRef.current) clearInterval(heartbeatTimerRef.current);
       heartbeatTimerRef.current = null;
+      if (throttleTimerRef.current) clearTimeout(throttleTimerRef.current);
+      throttleTimerRef.current = null;
       playerRef.current = null;
       void player?.destroy();
     };
@@ -699,11 +788,28 @@ export default function StreamPlayer({
   //
   // NOT gated on `onPositionChange` — that callback is optional and the sale page does not pass
   // one, which would have left this listener unattached in exactly the shipping configuration.
+  //
+  // ⚠ IT MUST ALSO IGNORE THE SEEK THE RENEWAL ITSELF CAUSES — G3 round 5.
+  //
+  // Round 4 was right about the buyer rewinding and wrong about who else seeks. Under Cloudflare
+  // a renewal reloads with `player.load(nextManifest, currentTime)`, and resuming at a position
+  // IS a seek: `seeked` fired, the baseline was discarded, and the next renewal forgave
+  // unconditionally. So the give-up budget could never reach its limit on the Cloudflare path —
+  // which is the exact provider round 3 built it for ("credential 200, segments 403" is a
+  // rotating-manifest stream). Round 4's fix silently made round 3's fix inert.
+  //
+  // Matched on the TARGET rather than with a boolean flag, so a reload that fails — and therefore
+  // never fires `seeked` — cannot leave a flag set and swallow the buyer's next real rewind.
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
     const onSeeked = () => {
+      const target = programmaticSeekTargetRef.current;
+      if (target !== null && Math.abs(video.currentTime - target) < 0.5) {
+        programmaticSeekTargetRef.current = null;
+        return;
+      }
       lastRenewalPositionRef.current = -1;
     };
 
@@ -753,6 +859,12 @@ export default function StreamPlayer({
       return;
     }
 
+    // An explicit "start over" forgives the automatic-throttle budget as well; anything that
+    // would carry a past failure across a deliberate retry belongs here, for the same reason the
+    // load effect resets every piece of recovery state (G3 round 3).
+    throttleRetriesRef.current = 0;
+    if (throttleTimerRef.current) clearTimeout(throttleTimerRef.current);
+    throttleTimerRef.current = null;
     setDeviceLimit(undefined);
     setRetryAfterSeconds(undefined);
     setState("starting");
@@ -789,6 +901,19 @@ export default function StreamPlayer({
           // data charge they did not ask for, in markets where that matters.
           className="aspect-video w-full bg-black"
           aria-label={t("playerLabel")}
+        />
+
+        {/*
+          AC10 — mounted UNCONDITIONALLY and outside the `{state && …}` below, which is the whole
+          point (G3 round 5). The live region has to already exist for a screen reader to announce
+          the text that later arrives in it; when it lived inside the panel, region and content
+          appeared in the same commit and the announcement was routinely dropped. The panel is the
+          visible half; this is the spoken half, and it says the same sentence.
+        */}
+        <PlaybackStateAnnouncer
+          state={state}
+          deviceLimit={deviceLimit}
+          retryAfterSeconds={retryAfterSeconds}
         />
 
         {state && (
