@@ -69,16 +69,18 @@ export interface PlaybackStatePanelProps {
 /** States that are a normal part of watching, and so must not read as a failure. */
 const TRANSIENT: ReadonlySet<PlaybackState> = new Set(["starting", "buffering"]);
 
-export default function PlaybackStatePanel({
-  state,
-  deviceLimit,
-  retryAfterSeconds,
-  progress,
-  onRetry,
-}: PlaybackStatePanelProps) {
+/**
+ * The copy for one state, resolved once and used by BOTH the visible panel and the announcer.
+ *
+ * Extracted at G3 round 5 so the two cannot drift: an announcement that says something other
+ * than what is on screen is worse than no announcement at all.
+ */
+export function usePlaybackStateCopy(
+  state: PlaybackState,
+  deviceLimit?: number,
+  retryAfterSeconds?: number,
+): { title: string; message: string } {
   const t = useTranslations("streamSale");
-
-  const title = t(`player${capitalize(state)}Title`);
 
   // The device-limit body is the one message that needs a number, and it needs a DIFFERENT
   // sentence depending on whether the server told us how long to wait. 135.5 emits
@@ -93,26 +95,99 @@ export default function PlaybackStatePanel({
         : t("playerDeviceLimitBody", { limit: deviceLimit ?? 2 })
       : t(`player${capitalize(state)}Body`);
 
+  return { title: t(`player${capitalize(state)}Title`), message };
+}
+
+/**
+ * The ARIA live region for playback state (AC10) — PERMANENTLY MOUNTED, and that is the fix.
+ *
+ * ⚠ G3 round 5. This region used to live INSIDE `PlaybackStatePanel`, which `StreamPlayer`
+ * mounts and unmounts with `{state && …}`. A live region inserted into the DOM in the same
+ * commit as its content is the classic case assistive technology does not announce — the region
+ * has to be observed as empty BEFORE the text arrives for the mutation to register. So every
+ * state that appears after playback starts (buffering, stalled, deviceLimit, failed) was shown
+ * and, for many screen readers, never spoken. The attributes were right and the criterion was
+ * still unmet, which is why AC10 read as satisfied on inspection.
+ *
+ * It renders nothing visible. `StreamPlayer` mounts it unconditionally, next to the panel, so
+ * the region exists from the first paint and only ever has its TEXT replaced.
+ */
+export function PlaybackStateAnnouncer({
+  state,
+  deviceLimit,
+  retryAfterSeconds,
+}: {
+  state: PlaybackState | null;
+  deviceLimit?: number;
+  retryAfterSeconds?: number;
+}) {
+  return (
+    <div aria-live="polite" aria-atomic="true" className="sr-only">
+      {state ? (
+        <PlaybackStateAnnouncement
+          state={state}
+          deviceLimit={deviceLimit}
+          retryAfterSeconds={retryAfterSeconds}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function PlaybackStateAnnouncement({
+  state,
+  deviceLimit,
+  retryAfterSeconds,
+}: {
+  state: PlaybackState;
+  deviceLimit?: number;
+  retryAfterSeconds?: number;
+}) {
+  const { title, message } = usePlaybackStateCopy(state, deviceLimit, retryAfterSeconds);
+  return <>{`${title}. ${message}`}</>;
+}
+
+export default function PlaybackStatePanel({
+  state,
+  deviceLimit,
+  retryAfterSeconds,
+  progress,
+  onRetry,
+}: PlaybackStatePanelProps) {
+  const t = useTranslations("streamSale");
+  const { title, message } = usePlaybackStateCopy(state, deviceLimit, retryAfterSeconds);
+
   const isTransient = TRANSIENT.has(state);
+  /** Only a state that offers an action needs to intercept a click. See the container below. */
+  const isInteractive = Boolean(onRetry) && !isTransient;
 
   return (
     <div
-      className="absolute inset-0 z-20 flex items-center justify-center px-4 py-6"
+      // ⚠ `pointer-events-none` — G3 round 5, and it is not cosmetic.
+      //
+      // This container covers the ENTIRE video surface, including the browser's native transport
+      // controls (D7 — they are the buyer's only way to pause or seek). While it accepted clicks,
+      // every rebuffer longer than two seconds took the film's controls away from the buyer. On
+      // 3G — the market D14 exists for — that is most of the film. The buffering state is a
+      // message, not a modal, so it must not capture input; only a state that OFFERS an action
+      // re-enables pointer events, and only on the card, which never reaches the control bar.
+      className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center px-4 py-6"
       // Translucent so the buyer keeps the frame they were on — a black-out reads as a crash
       // even when the state is an ordinary two-second buffer.
       style={{ backgroundColor: "rgba(0, 0, 0, 0.72)" }}
     >
-      <div className="w-full max-w-sm rounded bg-[#171717] px-5 py-6 text-center shadow-lg">
+      <div
+        className={`w-full max-w-sm rounded bg-[#171717] px-5 py-6 text-center shadow-lg${
+          isInteractive ? " pointer-events-auto" : ""
+        }`}
+      >
         {/*
-          AC10 — the state is ANNOUNCED, not only shown.
-
-          `polite` rather than `assertive`: a two-second buffer interrupting a screen reader
-          mid-sentence would be its own defect, and none of these states is an emergency.
-          `aria-atomic` so the title and message are read as one sentence rather than as two
-          separate mutations. The region wraps both, so a state change replaces the whole
-          announcement rather than appending to it.
+          AC10 — the state is ANNOUNCED by `PlaybackStateAnnouncer`, which `StreamPlayer` keeps
+          mounted at all times. This block is the VISIBLE copy only and is deliberately NOT a
+          live region any more: a region that mounts with its content is not reliably announced,
+          and two regions carrying the same sentence would announce it twice. See the announcer.
         */}
-        <div aria-live="polite" aria-atomic="true">
+        <div>
           <p className="text-base font-bold leading-snug text-white">{title}</p>
           <p className="mt-2 text-sm leading-relaxed text-[#D4D4D4]">{message}</p>
         </div>

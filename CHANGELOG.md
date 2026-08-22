@@ -5,6 +5,16 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.67.4] - 2026-08-22
+
+### Fixed
+
+- **A film could freeze mid-watch with nothing on screen to tell you.** Access to a film is renewed quietly in the background while you watch. If that renewal failed, the player stopped on a still frame — no message, no button, nothing to press. The renewal was also switching off the very checks meant to notice a stuck film, so nothing caught it. It now tells you what happened and offers to start the film again, which fetches fresh access. (`features/transfer/components/StreamPlayer.tsx`)
+- **The player's controls came back during buffering.** While a film was catching up, the message covering the screen was also swallowing your taps, so play, pause and skip stopped responding — on a slow connection, for most of the film. The message is a message now, not a wall. Only the states that actually offer you a button take your tap. (`features/transfer/components/PlaybackStatePanel.tsx`)
+- **Screen readers now hear what the player is doing.** Buffering, waiting, device limit, playback trouble — all of it was on screen and correctly written, and almost none of it was ever read aloud, because the announcement appeared at the same instant as the space meant to hold it. That space now stays put, and the words arrive into it. (`features/transfer/components/PlaybackStatePanel.tsx`)
+- **A brief "one moment" no longer looks like a dead end.** When our servers ask a player to slow down for a few seconds, that used to land as "this film isn't available", which is neither true nor something you can do anything about. It now waits the few seconds it was asked to wait and picks up on its own. If something is genuinely wrong, you still get told. (`features/transfer/components/StreamPlayer.tsx`)
+- **A genuinely stuck film can give up and say so again.** A fix in 1.67.3 was quietly cancelling an earlier one, so the player could keep retrying a film that was never going to play instead of telling you and offering a way out. (`features/transfer/components/StreamPlayer.tsx`)
+
 ## [1.67.3] - 2026-08-18
 
 ### Changed
