@@ -4644,6 +4644,19 @@ export default function TransferLandingPage() {
 
                 {isStreamTransfer && streamFilmFile && (
                   <div className="mb-6 text-left">
+                    {/*
+                      Story 135.7, AC10/D7 — the watermark is explained ONCE, HERE, and nowhere
+                      else. `ux-design-stream-playback.md:509-517` is explicit that it is taught at
+                      purchase confirmation and NOT during playback: no tooltip, no dismissible
+                      callout, no overlay explaining the overlay. So this line lives above the
+                      player and there is deliberately nothing inside the player surface.
+
+                      It reads as a receipt, not a caution — the trap D7 names. Not "to prevent
+                      piracy", not "your activity is monitored".
+                    */}
+                    <p className="text-xs text-gray-500 dark:text-[oklch(0.65_0_0)] mb-3">
+                      {tStreamSale("purchasedWatermarkNote")}
+                    </p>
                     <StreamPlayer
                       transferId={transfer.id}
                       fileId={streamFilmFile.id}

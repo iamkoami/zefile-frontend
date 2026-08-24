@@ -5,6 +5,20 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.68.0] - 2026-08-24
+
+### Added
+
+- **Your email now appears on the film you bought.** A small mark sits in one corner of the picture with a shortened form of your address — enough that the film is clearly registered to you, not enough that someone glancing at your screen or a photo of it walks away with your email. It moves between the four corners as the film plays, so it cannot simply be cropped off the edge, and it never covers the play, pause or volume controls. It does not appear on the free trailer, and nobody who has not bought the film ever sees it. There is one line at the moment of purchase explaining it, and nothing interrupting you while you watch. (`features/transfer/components/StreamWatermarkOverlay.tsx`)
+
+### Fixed
+
+- **A film will no longer start playing before we know who is watching it.** The player now waits until it has confirmed your account with our servers, and takes one of your two viewing places only once it has. If that check fails because the connection hiccuped it tries again briefly; if it fails because the film genuinely is not yours, it stops and says so rather than retrying at you. (`features/transfer/components/StreamPlayer.tsx`)
+
+### Known limitation
+
+- **The mark is not visible in fullscreen, and that is a deliberate choice.** Going fullscreen hands the picture to the browser's own player, which draws only the film and nothing layered over it — so the mark is hidden until you come back out, then returns. It is there for anyone watching in the page. The only way to keep it would be to replace the fullscreen button you already know with one of ours, and we would rather not take a familiar control away from a film someone paid for.
+
 ## [1.67.4] - 2026-08-22
 
 ### Fixed

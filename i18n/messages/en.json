@@ -3302,6 +3302,7 @@
     "identityRequired": "Confirm your email again and you can carry on with the payment.",
     "purchasedTitle": "The film is yours.",
     "purchasedBody": "It's yours for as long as the film's published — and this page is where you'll watch it.",
+    "purchasedWatermarkNote": "Your email appears on the film — it's your copy.",
     "alreadyPurchased": "You already own this film. No need to pay for it twice.",
     "playerLabel": "Film player",
     "playerStartingTitle": "Getting your film ready",
