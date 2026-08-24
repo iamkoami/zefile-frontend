@@ -151,6 +151,15 @@ const MAX_IDENTITY_RETRIES = 2;
 const IDENTITY_RETRY_BASE_MS = 800;
 
 /** Per session, per film. D4: not a user preference, no backend field, no migration. */
+/**
+ * Minimum real time between two `STREAM_PROGRESS` emissions (story 135.8, G3 round 3 hazard).
+ *
+ * The 30-second cadence is measured in PLAYBACK time, which a seek resets — so on its own it puts
+ * no ceiling on how often a scrubbing buyer reports. This does, in wall time, and it is deliberately
+ * far below the cadence so ordinary viewing never touches it.
+ */
+const MIN_EMIT_SPACING_MS = 5_000;
+
 const qualityCapStorageKey = (transferId: string) => `zefile:stream-quality:${transferId}`;
 
 /**
@@ -976,6 +985,17 @@ export default function StreamPlayer({
     let startedSent = false;
     let completedSent = false;
     let lastProgressAt = -Infinity;
+    // ⚠ A WALL-CLOCK FLOOR, ADDED BECAUSE THE `seeked` RESET ABOVE CREATED A NEW HAZARD.
+    //
+    // The position cadence alone is unbounded under SCRUBBING: every `seeked` discards the
+    // baseline, so the next `timeupdate` emits — measured at 12 seeks producing 7 events, ~48/min
+    // sustained, against a budget of 60/min PER IP. Per-IP is the part that bites: an office or
+    // cyber café behind one NAT shares that counter, so ONE buyer dragging the scrubber could
+    // throttle everybody else's telemetry at the same address.
+    //
+    // 5 s bounds the worst case to ~12/min while leaving the 30 s cadence untouched (30 ≫ 5) and
+    // costing a rewind at most 5 s of delay before its landing position is recorded.
+    let lastEmitAtMs = -Infinity;
 
     const base = () => ({ transferId, fileId });
 
@@ -997,7 +1017,12 @@ export default function StreamPlayer({
       // past the stale baseline — measured at ~38 minutes of silence for a buyer at 2350 s who
       // rewinds to 60 s.
       if (seconds - lastProgressAt < STREAM_PROGRESS_INTERVAL_SECONDS) return;
+      // Two gates, and they bound different things: the one above is the SERVER's cadence contract
+      // in playback time, this one is a rate floor in real time. A seek resets the first and must
+      // not be able to bypass the second.
+      if (Date.now() - lastEmitAtMs < MIN_EMIT_SPACING_MS) return;
       lastProgressAt = seconds;
+      lastEmitAtMs = Date.now();
       void streamApi.recordEvent({
         ...base(),
         eventType: "STREAM_PROGRESS",
