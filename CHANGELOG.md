@@ -5,6 +5,19 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.70.0] - 2026-08-24
+
+### Added
+
+- **The player can now report what it saw.** The groundwork for picking a film up where you left off, and for settling a refund on whether the film actually played. It reports three things and nothing else — that a film started, that it is still going, and that it finished — and it says nothing about you beyond which film. If any of it fails, it fails silently: the film keeps playing and you never see an error about our record-keeping, because your film is the product and our bookkeeping is not. The player itself starts using this in a later release. (`services/stream-api.ts`)
+
+### Note on versioning
+
+- **1.69.0 was published in error and contains nothing.** A version bump ran twice against this
+  repository during the 1.70.0 release, producing an empty release between 1.68.0 and this one. The
+  tag is left in place rather than deleted — a published tag that someone may already have fetched
+  is worse removed than explained. There is no 1.69.0 content because there was never any.
+
 ## [1.68.0] - 2026-08-24
 
 ### Added
