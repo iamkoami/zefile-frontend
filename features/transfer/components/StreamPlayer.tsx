@@ -990,6 +990,12 @@ export default function StreamPlayer({
       // The cadence is the SERVER's contract, not a local preference — see the constant. Driven
       // off playback position rather than a wall clock so a paused film stops reporting, exactly
       // as the watermark cycle does.
+      //
+      // ⚠ THIS COMPARISON ASSUMES THE PLAYHEAD ONLY MOVES FORWARD, which is why `onSeeked` below
+      // exists. Without it a backward seek leaves `lastProgressAt` in the future, every subsequent
+      // delta is negative, and the film reports NOTHING until playback organically climbs back
+      // past the stale baseline — measured at ~38 minutes of silence for a buyer at 2350 s who
+      // rewinds to 60 s.
       if (seconds - lastProgressAt < STREAM_PROGRESS_INTERVAL_SECONDS) return;
       lastProgressAt = seconds;
       void streamApi.recordEvent({
@@ -1023,15 +1029,37 @@ export default function StreamPlayer({
       });
     };
 
+    // ⚠ A SEEK DISCARDS THE CADENCE BASELINE — G3 round 2, and the THIRD time this bug class has
+    // been fixed in this file.
+    //
+    // `lastRenewalPositionRef` two effects above learned it at 135.6's round 4 and its comment says
+    // why in plain text. This effect was written nine lines below that comment and did not apply
+    // the pattern. Reset rather than interpret: `-Infinity` makes the next `timeupdate` report
+    // immediately at the new position, which restarts the cadence AND records where the buyer
+    // actually landed — better for the resume reader than waiting 30 s to find out.
+    //
+    // ⚠ AND WHO ELSE SEEKS — round 5's lesson, answered rather than inherited. Under Cloudflare a
+    // credential renewal calls `player.load(url, currentTime)`, which fires `seeked` too. That is
+    // HARMLESS here, and the difference from round 5 is the point: there, discarding a baseline
+    // made a give-up budget unreachable; here it costs at most one extra STREAM_PROGRESS per
+    // renewal (hourly), carrying a real position, against a 60/min budget. So this listener is
+    // deliberately NOT filtered by `programmaticSeekTargetRef` — over-reporting costs nothing,
+    // under-reporting costs a silent film.
+    const onSeeked = () => {
+      lastProgressAt = -Infinity;
+    };
+
     video.addEventListener("playing", onPlaying);
     video.addEventListener("timeupdate", onTimeUpdate);
     video.addEventListener("ended", onEnded);
+    video.addEventListener("seeked", onSeeked);
     window.addEventListener("pagehide", onPageHide);
 
     return () => {
       video.removeEventListener("playing", onPlaying);
       video.removeEventListener("timeupdate", onTimeUpdate);
       video.removeEventListener("ended", onEnded);
+      video.removeEventListener("seeked", onSeeked);
       window.removeEventListener("pagehide", onPageHide);
     };
   }, [transferId, fileId, buyerEmail, attempt]);
