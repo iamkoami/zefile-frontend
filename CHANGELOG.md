@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Known limitation
 
-- **The mark is not visible in fullscreen.** Going fullscreen hands the picture to the browser's own player, which draws only the film and nothing layered over it — so the mark is hidden until you come back out. It is still there for anyone watching in the page. Fixing it would mean replacing the familiar fullscreen button with our own, which we are not willing to do to a film someone paid for, so this is being decided on rather than quietly patched.
+- **The mark is not visible in fullscreen, and that is a deliberate choice.** Going fullscreen hands the picture to the browser's own player, which draws only the film and nothing layered over it — so the mark is hidden until you come back out, then returns. It is there for anyone watching in the page. The only way to keep it would be to replace the fullscreen button you already know with one of ours, and we would rather not take a familiar control away from a film someone paid for.
 
 ## [1.67.4] - 2026-08-22
 
