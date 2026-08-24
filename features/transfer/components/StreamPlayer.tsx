@@ -48,6 +48,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { loadShaka } from "@/lib/stream/shaka-loader";
+import { authApi } from "@/services/auth-api";
 import {
   streamApi,
   STREAM_ERROR_CODES,
@@ -57,6 +58,7 @@ import PlaybackStatePanel, {
   PlaybackState,
   PlaybackStateAnnouncer,
 } from "./PlaybackStatePanel";
+import StreamWatermarkOverlay from "./StreamWatermarkOverlay";
 
 type ShakaNamespace = Awaited<ReturnType<typeof loadShaka>>;
 type ShakaPlayer = InstanceType<ShakaNamespace["Player"]>;
@@ -126,6 +128,26 @@ const MAX_CONSECUTIVE_RENEWAL_FAILURES = 3;
 const MAX_THROTTLE_RETRIES = 2;
 const THROTTLE_RETRY_FALLBACK_SECONDS = 3;
 const MAX_THROTTLE_WAIT_SECONDS = 30;
+
+/**
+ * Resolving the buyer's identity for the watermark (story 135.7, AC2, D2).
+ *
+ * ⚠ FAIL CLOSED, BUT DISTINGUISH THE FAILURE — the PO's "enterprise-grade" answer to this story's
+ * Q3, and the distinction is the whole decision.
+ *
+ * A **401/403** is a definitive denial: this buyer is not who the film is for, so refuse at once
+ * and do NOT retry. Retrying an authorization denial is an anti-pattern — it cannot succeed, and it
+ * turns one refusal into several.
+ *
+ * A **network error or 5xx** is transient: the buyer paid, and refusing her film over one dropped
+ * packet is the opposite anti-pattern. Bounded retry with backoff, then refuse.
+ *
+ * Either way there is NO window in which a film plays without attribution: the load effect below
+ * refuses to start until an email is in hand, so D2's fail-closed property holds in full. Bounded,
+ * for the same reason `MAX_THROTTLE_RETRIES` is bounded.
+ */
+const MAX_IDENTITY_RETRIES = 2;
+const IDENTITY_RETRY_BASE_MS = 800;
 
 /** Per session, per film. D4: not a user preference, no backend field, no migration. */
 const qualityCapStorageKey = (transferId: string) => `zefile:stream-quality:${transferId}`;
@@ -273,6 +295,24 @@ export default function StreamPlayer({
   const [state, setState] = useState<PlaybackState | null>("starting");
   const [deviceLimit, setDeviceLimit] = useState<number | undefined>();
   const [retryAfterSeconds, setRetryAfterSeconds] = useState<number | undefined>();
+  /**
+   * The buyer's email for the watermark (135.7, AC2) — **the server's, never the browser's.**
+   *
+   * `null` means "not resolved yet OR refused", and the load effect will not start a session while
+   * it is null. That is D2's fail-closed rule expressed as a gate rather than as a check that could
+   * be forgotten: a film cannot reach `play()` without attribution because it cannot reach
+   * `startSession` without attribution.
+   */
+  const [buyerEmail, setBuyerEmail] = useState<string | null>(null);
+  /**
+   * Playback position, once per second, for the watermark's corner cycle (AC3/D5).
+   *
+   * ⚠ Deliberately NOT the existing `onPositionChange` effect below. That one is gated on the
+   * optional `onPositionChange` prop, **which the sale page does not pass** — reusing it would have
+   * left the watermark frozen in one corner in exactly the shipping configuration, which is the
+   * same trap 135.6's round-4 `seeked` listener had to avoid.
+   */
+  const [playbackSeconds, setPlaybackSeconds] = useState(0);
   // Lazy initialiser, so the very first render already carries the persisted cap and the
   // dropdown never disagrees with the player. Safe to touch storage during render here: this
   // component is mounted with `ssr: false`, so it only ever renders in a browser.
@@ -282,6 +322,52 @@ export default function StreamPlayer({
   const [availableHeights, setAvailableHeights] = useState<number[]>([]);
   /** Bumped to force a full re-acquire + re-load from the retry button. */
   const [attempt, setAttempt] = useState(0);
+
+  // ── Resolve the buyer's identity, server-side, BEFORE any session is acquired (135.7) ──────
+  //
+  // AC2: the string must come from `GET /auth/me` and never from `localStorage`.
+  // ⚠ `authApi.getCurrentUser()` is called DIRECTLY and NOT `authApi.refreshUser()`, which wraps
+  // the same call and then writes the result into `localStorage` — using that would seed the
+  // watermark's own value into precisely the store AC2's tamper test exists to rule out.
+  //
+  // Re-runs on `attempt`, so the buyer's Retry re-resolves identity too. Without that, a transient
+  // failure would be permanent for the life of the tab — the shape of 135.6's round-3 defect.
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      for (let tries = 0; ; tries += 1) {
+        const response = await authApi.getCurrentUser();
+        if (cancelled) return;
+
+        const email = response.data?.email;
+        if (email) {
+          setBuyerEmail(email);
+          return;
+        }
+
+        // A definitive denial. Refuse now; retrying cannot change the answer.
+        const status = response.error?.statusCode;
+        if (status === 401 || status === 403) break;
+
+        // Transient (network, 5xx, or a 200 with no email): bounded retry with backoff.
+        if (tries >= MAX_IDENTITY_RETRIES) break;
+        await new Promise((r) => setTimeout(r, IDENTITY_RETRY_BASE_MS * 2 ** tries));
+        if (cancelled) return;
+      }
+
+      if (cancelled) return;
+      // Fail closed, through 135.6's existing panel rather than a new state (D2). `notEntitled`
+      // is the honest one: we could not establish who this buyer is, so we cannot attribute the
+      // film to her — and its copy already says "we can't find your purchase, sign in".
+      setBuyerEmail(null);
+      setState("notEntitled");
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [attempt]);
 
   const clearBufferingTimers = useCallback(() => {
     bufferingTimersRef.current.forEach(clearTimeout);
@@ -366,6 +452,18 @@ export default function StreamPlayer({
     unmountedRef.current = false;
     let cancelled = false;
     let player: ShakaPlayer | null = null;
+
+    // ⚠ NO IDENTITY, NO SESSION — 135.7's D2 fail-closed rule, enforced as a GATE (AC2, AC5).
+    //
+    // Returning here rather than checking later is deliberate on two counts. It means a film can
+    // never reach `play()` unattributed, because it cannot reach `startSession` unattributed. And
+    // it means a refused buyer never takes a DEVICE LEASE — 135.5's leases have no release
+    // endpoint and expire on a TTL, so acquiring one for playback we are about to refuse would
+    // burn a slot the buyer then has to wait out on her other device.
+    //
+    // The identity effect above owns the panel in this case; do not set state here or the two
+    // would race and the honest `notEntitled` copy could be overwritten by `starting`.
+    if (!buyerEmail) return;
 
     (async () => {
       setState("starting");
@@ -769,7 +867,46 @@ export default function StreamPlayer({
     // still reconfigures the live player through `applyQualityCap` and must never tear down and
     // re-acquire the lease. If a future edit reintroduces a suppression here, treat it as a
     // question about that lease rather than as a lint formality.
-  }, [transferId, fileId, resumeAtSeconds, attempt, clearBufferingTimers, startHeartbeat]);
+    // `buyerEmail` is a dependency because the gate above reads it: the effect must re-run once
+    // identity resolves, or the film would never start on the happy path. It only ever transitions
+    // null -> address once per attempt, so this adds no extra load or teardown cycle.
+  }, [
+    transferId,
+    fileId,
+    resumeAtSeconds,
+    attempt,
+    buyerEmail,
+    clearBufferingTimers,
+    startHeartbeat,
+  ]);
+
+  // ── Playback position for the watermark's corner cycle (135.7, AC3/D5) ─────────────────────
+  //
+  // Once a second, like the sibling effect below, because `timeupdate` fires 4-66x/s and the cycle
+  // only turns every 30s. NOT gated on `onPositionChange`: that prop is optional and the sale page
+  // does not pass one, so gating it would freeze the watermark in a single corner in exactly the
+  // shipping configuration — and a mark that never moves is croppable, which is the whole point of
+  // AC3. Paused playback simply stops firing `timeupdate`, which is how D5's "halt on pause" falls
+  // out for free rather than needing a paused flag.
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    let lastWhole = -1;
+    const onTimeUpdate = () => {
+      const whole = Math.floor(video.currentTime);
+      if (whole !== lastWhole) {
+        lastWhole = whole;
+        setPlaybackSeconds(whole);
+      }
+    };
+
+    video.addEventListener("timeupdate", onTimeUpdate);
+    return () => video.removeEventListener("timeupdate", onTimeUpdate);
+    // Re-attached per attempt because the retry path replaces the media element's source; the
+    // listener is on the element, which survives, but re-running keeps `lastWhole` from carrying a
+    // stale second across a reload.
+  }, [attempt, buyerEmail]);
 
   // ── A manual seek invalidates the progress baseline (G3 round 4) ───────────────────────
   //
@@ -880,16 +1017,33 @@ export default function StreamPlayer({
     <div className="w-full">
       <div className="relative w-full overflow-hidden rounded bg-black">
         {/*
-          D5 — the watermark overlay slot. `StreamWatermarkOverlay` is story 135.7 and Phase 2;
-          this story composes the slot and renders nothing into it. `pointer-events-none` is set
-          here rather than by the future occupant so that an overlay added later cannot swallow
-          the native transport controls by forgetting it.
+          D5 — the watermark overlay slot, NOW OCCUPIED by story 135.7.
+
+          135.6 composed this slot and rendered nothing into it, deliberately setting
+          `pointer-events-none` here rather than leaving it to the future occupant, so that an
+          overlay added later could not swallow the native transport controls by forgetting it.
+          135.7 is that occupant, and the precaution paid: the overlay inherits the property rather
+          than having to remember it.
+
+          It stays a slot rather than becoming the overlay: the wrapper is what guarantees
+          `pointer-events-none` and the z-index over the video surface, and it sits INSIDE the
+          container fullscreen is requested on, which is what makes AC7 (survives fullscreen) true
+          without any fullscreen-specific code.
+
+          Rendered only when identity resolved — and it cannot be otherwise, because the load
+          effect refuses to start a session without `buyerEmail`. So there is no state in which a
+          film is playing and this is absent; the `&&` is belt-and-braces for a future edit that
+          loosens the gate, not a live branch.
         */}
         <div
           data-slot="stream-watermark"
           className="pointer-events-none absolute inset-0 z-10"
           aria-hidden="true"
-        />
+        >
+          {buyerEmail && (
+            <StreamWatermarkOverlay email={buyerEmail} playbackSeconds={playbackSeconds} />
+          )}
+        </div>
 
         <video
           ref={videoRef}

@@ -47,3 +47,10 @@ export { default as ReuseTransferModal } from './ReuseTransferModal';
 // `PlaybackStatePanel` carries no such weight and exports normally.
 export { default as PlaybackStatePanel } from './PlaybackStatePanel';
 export type { PlaybackState, PlaybackStatePanelProps } from './PlaybackStatePanel';
+
+// `StreamWatermarkOverlay` (story 135.7) is safe to export here for the same reason as
+// `PlaybackStatePanel`: it pulls in no media library, so it adds nothing to the edge bundle. Its
+// ONLY render site is inside `StreamPlayer` — AC8 turns on that being true, because mounting it on
+// the free trailer would put a buyer's identity in front of a signed-out visitor.
+export { default as StreamWatermarkOverlay, maskEmail } from './StreamWatermarkOverlay';
+export type { StreamWatermarkOverlayProps } from './StreamWatermarkOverlay';
