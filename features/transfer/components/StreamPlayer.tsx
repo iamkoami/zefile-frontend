@@ -52,6 +52,7 @@ import { authApi } from "@/services/auth-api";
 import {
   streamApi,
   STREAM_ERROR_CODES,
+  STREAM_PROGRESS_INTERVAL_SECONDS,
   type StreamSessionResponse,
 } from "@/services/stream-api";
 import PlaybackStatePanel, {
@@ -953,6 +954,87 @@ export default function StreamPlayer({
     video.addEventListener("seeked", onSeeked);
     return () => video.removeEventListener("seeked", onSeeked);
   }, []);
+
+  // ── Playback telemetry (story 135.8) ───────────────────────────────────────────────────
+  //
+  // ⚠ THIS IS WHAT MAKES `POST /stream/events` REACHABLE. 135.8 shipped the endpoint and the
+  // client contract but deliberately wired no caller, on the assumption that 135.6 would supply
+  // the timer — and 135.6 had ALREADY SHIPPED a week earlier, so nobody ever did. Found at G3.
+  // Without this effect the whole buyer-observed half of the log is empty in production while
+  // every backend check passes, which is the orphan class the Reachability Gate exists for.
+  //
+  // Fire-and-forget on purpose: `streamApi` swallows every failure. A buyer who paid for a film
+  // must never see an error about our bookkeeping, and a 429 here costs a resume position, not a
+  // viewing (D8).
+  //
+  // Gated on `buyerEmail` for the same reason the load effect is: no identity, no session, so
+  // nothing to attribute an event to.
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !buyerEmail) return;
+
+    let startedSent = false;
+    let completedSent = false;
+    let lastProgressAt = -Infinity;
+
+    const base = () => ({ transferId, fileId });
+
+    const onPlaying = () => {
+      if (startedSent) return;
+      startedSent = true;
+      void streamApi.recordEvent({ ...base(), eventType: "STREAM_STARTED" });
+    };
+
+    const onTimeUpdate = () => {
+      const seconds = Math.floor(video.currentTime);
+      // The cadence is the SERVER's contract, not a local preference — see the constant. Driven
+      // off playback position rather than a wall clock so a paused film stops reporting, exactly
+      // as the watermark cycle does.
+      if (seconds - lastProgressAt < STREAM_PROGRESS_INTERVAL_SECONDS) return;
+      lastProgressAt = seconds;
+      void streamApi.recordEvent({
+        ...base(),
+        eventType: "STREAM_PROGRESS",
+        positionSeconds: seconds,
+      });
+    };
+
+    const onEnded = () => {
+      if (completedSent) return;
+      completedSent = true;
+      // `recordFinalEvent` — keepalive, because "did she finish it" is the question 135.9 asks and
+      // the tab may be closing on the same gesture.
+      void streamApi.recordFinalEvent({
+        ...base(),
+        eventType: "STREAM_COMPLETED",
+        positionSeconds: Math.floor(video.duration || video.currentTime),
+      });
+    };
+
+    // A buyer who closes the tab mid-film has still watched what she watched. Sent as a final
+    // PROGRESS rather than a COMPLETED — claiming completion she did not reach would corrupt the
+    // one signal 135.9 reads.
+    const onPageHide = () => {
+      if (completedSent || !startedSent) return;
+      void streamApi.recordFinalEvent({
+        ...base(),
+        eventType: "STREAM_PROGRESS",
+        positionSeconds: Math.floor(video.currentTime),
+      });
+    };
+
+    video.addEventListener("playing", onPlaying);
+    video.addEventListener("timeupdate", onTimeUpdate);
+    video.addEventListener("ended", onEnded);
+    window.addEventListener("pagehide", onPageHide);
+
+    return () => {
+      video.removeEventListener("playing", onPlaying);
+      video.removeEventListener("timeupdate", onTimeUpdate);
+      video.removeEventListener("ended", onEnded);
+      window.removeEventListener("pagehide", onPageHide);
+    };
+  }, [transferId, fileId, buyerEmail, attempt]);
 
   // ── Position (D3, the client half of AC7) ──────────────────────────────────────────────
   //
