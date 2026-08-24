@@ -4,8 +4,14 @@
  * StreamWatermarkOverlay — the buyer's identity, on the film, for the whole film (story 135.7).
  *
  * ── WHAT MOUNTS THIS ──────────────────────────────────────────────────────────────────────────
- * `StreamPlayer` only, into its `data-slot="stream-watermark"` element, which sits INSIDE the
- * container fullscreen is requested on so the mark survives entering fullscreen (AC7).
+ * `StreamPlayer` only, into its `data-slot="stream-watermark"` element.
+ *
+ * ⚠ IT DOES NOT SURVIVE FULLSCREEN, AND AN EARLIER VERSION OF THIS COMMENT CLAIMED IT DID.
+ * The slot is a SIBLING of `<video>`, and the video carries native `controls` (135.6's D7), so the
+ * browser's fullscreen button fullscreens the VIDEO ELEMENT — whose fullscreen layer does not
+ * composite sibling DOM. Measured with a screenshot, because in fullscreen the mark keeps a
+ * non-zero bounding box and `getBoundingClientRect` therefore reports it as fine: it measures
+ * layout, not paint. AC7 is not met; see the Reachability Proof in the story for the PO decision.
  *
  * It must never be mounted anywhere else. In particular it must NOT be mounted on the free
  * trailer (AC8): a signed-out visitor has no identity, and the trailer already carries the

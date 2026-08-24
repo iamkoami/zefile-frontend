@@ -1026,9 +1026,22 @@ export default function StreamPlayer({
           than having to remember it.
 
           It stays a slot rather than becoming the overlay: the wrapper is what guarantees
-          `pointer-events-none` and the z-index over the video surface, and it sits INSIDE the
-          container fullscreen is requested on, which is what makes AC7 (survives fullscreen) true
-          without any fullscreen-specific code.
+          `pointer-events-none` and the z-index over the video surface.
+
+          ⚠ AC7 IS NOT SATISFIED, AND AN EARLIER VERSION OF THIS COMMENT ASSERTED THAT IT WAS.
+          The overlay is a SIBLING of `<video>`, not a child, and the video carries NATIVE
+          `controls` (135.6's D7, forced by `loadShaka()` loading the UI-less build). So the
+          browser's own fullscreen button calls `requestFullscreen()` on the VIDEO ELEMENT, and a
+          video-element fullscreen layer does not composite sibling DOM.
+
+          Measured, because the obvious check cannot see it: in fullscreen the mark is still in the
+          DOM with a non-zero bounding box, so `getBoundingClientRect` reports it as fine —
+          it measures LAYOUT, not PAINT. A screenshot shows the film filling the viewport with no
+          mark in any corner. It reappears on exit.
+
+          Not fixed here: D6 forbids removing the fullscreen control to force the overlay to
+          survive. This is a conflict between 135.6's D7 and this story's AC7, and it is the PO's
+          call — see the Dev Agent Record.
 
           Rendered only when identity resolved — and it cannot be otherwise, because the load
           effect refuses to start a session without `buyerEmail`. So there is no state in which a
