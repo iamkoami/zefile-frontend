@@ -5,6 +5,19 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.71.0] - 2026-08-25
+
+### Added
+
+- **Come back to a film you bought and the page now says so.** It tells you the film is yours, that your access lasts as long as it stays published, and gives you a button straight into watching it — instead of the purchase button and price it used to show everyone. If your sign-in has simply run out, it says exactly that and offers to sign you back in. Nothing on any of those screens says buy, pay or again, in English or French, and no price appears at all. Someone who has not bought the film sees the page exactly as before. (`StreamAccessBanner`, `lib/stream/access-state.ts`)
+- **If the film has been taken down, the page says when your access ended and why**, rather than quietly looking like you never bought it.
+
+### Fixed
+
+- **You could be shown a purchase button for a film you had already paid for.** The page worked out whether you were signed in from something kept in the browser that goes out of date, and when it could not confirm with the server it assumed you had never bought anything. It now treats not being able to ask as not knowing — which is the difference between showing you your film and offering to sell it to you a second time.
+- **Opening the link in your receipt a second time no longer says the sale has expired and offers to sell you the film again.** That screen was reached through a check that only makes sense for downloadable files, and a film has none. Download transfers still behave exactly as they did.
+- **Signing back in now takes you straight to your film.** The page used to come back carrying the answer it had worked out while you were still signed out, so someone who had just signed in successfully could be asked to sign in again, or shown a purchase button for a film they own.
+
 ## [1.70.0] - 2026-08-24
 
 ### Added
