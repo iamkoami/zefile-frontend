@@ -19,6 +19,19 @@ import React, {
 import StepIndicator from "@/components/shared/StepIndicator";
 import { useParams, useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
+/**
+ * Story 135.11 — the returning-buyer surface, and the pure resolver that decides which of its
+ * states to show. A plain static import, unlike the `StreamPlayer` dynamic import below: neither
+ * of these pulls in a media library, so they add nothing to the edge bundle.
+ */
+import StreamAccessBanner from "@/features/transfer/components/StreamAccessBanner";
+import {
+  hasOwnershipHint,
+  rememberOwnershipHint,
+  resolveStreamAccessState,
+  type PurchaseCheckOutcome,
+  type StreamAccessState,
+} from "@/lib/stream/access-state";
 import {
   Lock,
   SmartphoneDevice,
@@ -366,6 +379,7 @@ export default function TransferLandingPage() {
   // Page state
   const [pageState, setPageState] = useState<PageState>("loading");
   const [transfer, setTransfer] = useState<TransferDto | null>(null);
+  const isStreamTransfer = transfer?.deliveryMode === "stream";
 
   // Unified branding: cookie (custom domain) > API senderBranding > default
   const { isBranded, activeBranding } = useCustomBranding(
@@ -580,6 +594,109 @@ export default function TransferLandingPage() {
   const [saleBuyerEmail, setSaleBuyerEmail] = useState("");
   const [saleEmailChecked, setSaleEmailChecked] = useState(false);
   const [saleHasPurchase, setSaleHasPurchase] = useState(false);
+
+  /**
+   * Story 135.11 — which of the four returning-buyer states this page is in.
+   *
+   * `'visitor'` is the correct initial value for EVERY page, including a stream page an owner is
+   * about to load: until the purchase check answers, we have not been told she owns anything, and
+   * the download page never leaves this value at all. The Buy button and the standalone price are
+   * both gated on it, so an owner sees the purchase action for as long as the check is in flight —
+   * which is the same fraction of a second the button already takes to appear today.
+   */
+  const [streamAccessState, setStreamAccessState] =
+    useState<StreamAccessState>("visitor");
+  /**
+   * When a revoked entitlement ended, for the `ended` banner. `null` until 136.4 ships a writer
+   * for `entitlement_revoked_at` — see the `[~] PARTIAL` note on AC5.
+   */
+  const [streamAccessEndedAt, setStreamAccessEndedAt] = useState<string | null>(
+    null,
+  );
+
+  /**
+   * Story 135.11 — ask the server what this buyer owns, and resolve which state to render.
+   *
+   * ── THE ONE THING THIS FUNCTION EXISTS TO GET RIGHT (Finding 1) ─────────────────────────
+   *
+   * A failed or 401 check means UNKNOWN. It does not mean "she has not bought it".
+   *
+   * The page used to swallow the outcome with `.catch(() => {})` and leave `saleHasPurchase`
+   * false, while `isAuthenticated` — a `localStorage` read taken once on mount and never
+   * revalidated — stayed true. A buyer whose refresh cookie had lapsed was therefore shown a
+   * purchase button with the price beside it and no route back to the film she had paid for.
+   * That was live, and it needed no streaming to happen.
+   *
+   * So `hasLiveSession` is derived from the OUTCOME of this call and never from `isAuthenticated`
+   * (D2): a 2xx proves the JWT was accepted, anything else proves nothing either way.
+   *
+   * ⚠ SHORT-CODE, NOT THE ROUTE PARAM. The route param carries the `z-` prefix when a buyer
+   * arrives through a short link; the API-supplied `transfer.shortCode` never does. Callers pass
+   * the latter, as `claimSaleDownloadToken` already does for the same reason.
+   *
+   * Takes its inputs as ARGUMENTS rather than reading component state: the load effect calls it
+   * before `transfer` has been committed, so `isStreamTransfer` does not exist yet at that point.
+   */
+  const refreshStreamAccess = useCallback(
+    async (
+      saleShortCode: string,
+      isStream: boolean,
+      canAsk: boolean,
+    ): Promise<void> => {
+      // The download sale page must be byte-identical after this story (AC4). It never leaves
+      // 'visitor' and never issues a request from here.
+      if (!isStream) {
+        setStreamAccessState("visitor");
+        return;
+      }
+
+      let purchaseCheck: PurchaseCheckOutcome = "unavailable";
+      let accessEnded = false;
+      let endedAt: string | null = null;
+
+      if (canAsk) {
+        try {
+          const res = await transferApi.checkPurchase(saleShortCode);
+          if (res.data) {
+            // A 2xx. The session is real, and this answer is authoritative in both directions.
+            purchaseCheck = res.data.hasPurchase ? "owned" : "not-owned";
+            accessEnded = res.data.streamAccess === "ended";
+            endedAt = res.data.streamAccessEndedAt ?? null;
+          }
+          // No `else`. A 401, a 429, a 5xx — every one of them leaves `purchaseCheck` at
+          // 'unavailable', which is the whole point. Do not add a branch that maps any of
+          // them to 'not-owned'.
+        } catch {
+          // Network failure. Also unknown. Also not "she does not own it".
+        }
+      }
+
+      const state = resolveStreamAccessState({
+        isStream: true,
+        hasLiveSession: purchaseCheck !== "unavailable",
+        purchaseCheck,
+        accessEnded,
+        hasOwnershipHint: hasOwnershipHint(saleShortCode),
+      });
+
+      // Record ownership for the next visit, once the server has confirmed it (D3). This is what
+      // lets an expired session still be recognised as a returning buyer rather than a stranger.
+      if (purchaseCheck === "owned") {
+        rememberOwnershipHint(saleShortCode);
+      }
+
+      setStreamAccessEndedAt(endedAt);
+      setStreamAccessState(state);
+
+      // Keep the legacy flag in step so the Buy button's DOWNLOAD clause, which this story does
+      // not touch, keeps behaving exactly as it does today.
+      if (purchaseCheck === "owned") {
+        setSaleHasPurchase(true);
+        setSaleEmailChecked(true);
+      }
+    },
+    [],
+  );
   const [saleOtpSent, setSaleOtpSent] = useState(false);
   const [saleOtp, setSaleOtp] = useState("");
   const [saleCheckingEmail, setSaleCheckingEmail] = useState(false);
@@ -861,6 +978,32 @@ export default function TransferLandingPage() {
             // Signed-in only: the backend answers this from the JWT, for the
             // caller's own email, so it discloses nothing about anyone else.
             const loggedInEmail = getCurrentUserEmail();
+
+            /**
+             * Story 135.11 — the STREAM branch resolves the returning-buyer state and stops here.
+             *
+             * `refreshStreamAccess` replaces the whole `checkPurchase` block below for a film, and
+             * that is the point rather than a shortcut: the block below ends in `.catch(() => {})`,
+             * which turns "I could not ask" into "she has not bought it" (Finding 1) and shows a
+             * paid buyer a Buy button. The download branch keeps it byte-for-byte (AC4).
+             *
+             * It runs even when nobody is signed in — `canAsk` false. An anonymous load is exactly
+             * the AC2 case: the session has lapsed, `handleAuthFailure` has cleared the stored
+             * user, and the ownership hint is the only thing left that knows this browser has
+             * already paid for this film.
+             */
+            if (isStreamSalePage) {
+              if (loggedInEmail) {
+                setSaleBuyerEmail(loggedInEmail);
+              }
+              void refreshStreamAccess(
+                response.data.shortCode,
+                true,
+                !!loggedInEmail,
+              );
+              return;
+            }
+
             if (loggedInEmail) {
               setSaleBuyerEmail(loggedInEmail);
               transferApi.checkPurchase(response.data.shortCode).then((checkRes) => {
@@ -869,29 +1012,19 @@ export default function TransferLandingPage() {
                   setSaleEmailChecked(true);
 
                   /**
-                   * Story 135.2, Finding 7 / AC9 — DO NOT auto-fire recovery on a stream page.
+                   * ⚠ THIS WHOLE BLOCK IS THE DOWNLOAD PATH ONLY, AND MUST STAY THAT WAY.
                    *
-                   * This branch was effectively unreachable on a stream sale before this story,
-                   * because a stream buyer was anonymous and `getCurrentUserEmail()` was empty.
-                   * Signing the buyer in makes it fire on EVERY reload for every returning
-                   * buyer: an unrequested OTP email, plus a code field asking for something
-                   * their live session already makes unnecessary.
+                   * Story 135.2 suppressed the auto-fire below for stream with an early return
+                   * here, and named the reason: recovery sends an unrequested OTP email and hands
+                   * back a DOWNLOAD token, which is meaningless for a film. It called itself a
+                   * suppression rather than the returning-buyer experience and left that to 135.11.
                    *
-                   * The UX specification names that exact shape as the most damaging defect the
-                   * feature could ship (ux-design-stream-playback.md:753-757) — a returning
-                   * buyer "must not be asked to re-verify if her session is alive".
-                   *
-                   * Recovery is also the WRONG flow here on its own terms: it returns a DOWNLOAD
-                   * token, and a stream transfer has nothing to download.
-                   *
-                   * This is a SUPPRESSION, not the returning-buyer experience. The access
-                   * banner, resume position and "you already own this" surface are Story 135.11.
-                   * Do not build them here. The download branch below is untouched (AC9).
+                   * Story 135.11 replaced the guard with a branch above: a stream sale resolves
+                   * through `refreshStreamAccess` and never reaches this callback at all. The
+                   * early return was removed because it had become unreachable, NOT because the
+                   * rule relaxed — re-routing a stream sale back through here would re-create both
+                   * defects at once (the unrequested email, and Finding 1's swallowed 401 below).
                    */
-                  if (isStreamSalePage) {
-                    return;
-                  }
-
                   // Auto-send OTP for logged-in users with existing purchase
                   transferApi.recoverPurchase(response.data!.shortCode, loggedInEmail).then((recoverRes) => {
                     if (recoverRes.data?.otpSent) {
@@ -928,7 +1061,7 @@ export default function TransferLandingPage() {
     if (shortCode && transferId) {
       loadTransfer();
     }
-  }, [shortCode, transferId, t]);
+  }, [shortCode, transferId, t, refreshStreamAccess]);
 
   /**
    * Story 143.1 — exchange a settled payment reference for the buyer's download token.
@@ -1018,9 +1151,53 @@ export default function TransferLandingPage() {
       // Same unmount guard as the mobile-money effect below — both call the same async claim,
       // and applying the pattern to only one of them is how it rots.
       if (!isMountedRef.current) return;
-      setPageState(claimed ? "sale-ready" : "sale-expired");
+
+      if (claimed) {
+        setPageState("sale-ready");
+        return;
+      }
+
+      /**
+       * Story 135.11 (AC5) — A STREAM TRANSFER MUST NEVER REACH `sale-expired`.
+       *
+       * That state renders `publicSale.buyAgain` on a green credit-card button — "Buy again" /
+       * "Acheter à nouveau" — and this path is REACHABLE for a film today, which is why this
+       * branch exists rather than an assertion that it cannot happen:
+       *
+       *   `downloadTokenPlain` is a ONE-TIME read. `verifySaleAndGetToken` nulls it after the
+       *   first successful call. A buyer who re-opens the `?ref=…` link in her receipt — the
+       *   single likeliest thing a returning buyer does — gets "Download token has already been
+       *   retrieved", the claim returns false, and she is shown "expired" plus an invitation to
+       *   pay for the film again. She is a paying customer with live access.
+       *
+       * A film has nothing to download, so a failed DOWNLOAD-token claim says nothing whatsoever
+       * about whether she owns it. Ask the question that actually applies instead, and let the
+       * answer choose the state: an owner gets the access banner, and the rare buyer whose
+       * payment genuinely did not settle gets the ordinary purchase action rather than a dead end.
+       *
+       * The download path keeps `sale-expired` exactly as it was (AC4) — for a download sale the
+       * token IS the access, so failing to claim it really does mean the link is spent.
+       */
+      if (isStreamTransfer) {
+        setPageState("sale-preview");
+        void refreshStreamAccess(
+          transfer?.shortCode ?? shortCode,
+          true,
+          !!getCurrentUserEmail(),
+        );
+        return;
+      }
+
+      setPageState("sale-expired");
     });
-  }, [transfer, shortCode, searchParams, claimSaleDownloadToken]);
+  }, [
+    transfer,
+    shortCode,
+    searchParams,
+    claimSaleDownloadToken,
+    isStreamTransfer,
+    refreshStreamAccess,
+  ]);
 
   /**
    * Story 143.1 — the mobile-money half of the same thing.
@@ -1483,6 +1660,33 @@ export default function TransferLandingPage() {
       if (isStreamSale) {
         setIsAuthenticated(true);
         setSaleBuyerEmail(customerEmail);
+
+        /**
+         * Story 135.11 (AC3) — re-ask who this buyer is now that she has a real session.
+         *
+         * Without this the page returns to `sale-preview` carrying the state it resolved while
+         * she was signed OUT, so a returning owner who just signed back in would be shown the
+         * Buy button for a film she already owns — one tap from paying twice. That is the exact
+         * journey AC3 names, and the whole reason the sign-in framing above is worth showing.
+         *
+         * She may equally be a first-time buyer who has just verified her email, in which case
+         * this answers 'not-owned' and the purchase action is what appears. One call, both
+         * outcomes, decided by the server rather than by which branch we guessed.
+         *
+         * ⚠ AWAITED, AND ORDERED BEFORE THE STATE RESET BELOW. It was fire-and-forget, and G3
+         * round 2 caught what that cost: the identity block is gated on `streamAccessState`, which
+         * is still `owner-signed-out` until this call resolves. Flipping to `sale-preview` first —
+         * and resetting `emailSubmitted` on the way — re-rendered that block as a PRISTINE,
+         * EMPTY sign-in form, so a buyer who had just signed in successfully was told to sign in
+         * again for the length of a network round trip. That is the story's own defect, on the
+         * one criterion (AC3) never walked in a browser.
+         *
+         * Awaiting costs nothing visible: `isLoading` is still true here, so the OTP form holds
+         * its existing "verifying" state for the same window it was already holding it. The reset
+         * and the page flip then happen once, with a resolved answer in hand.
+         */
+        await refreshStreamAccess(transfer.shortCode, true, true);
+
         setEmailSubmitted(false);
         setOtpValue("");
         setPageState("sale-preview");
@@ -2237,7 +2441,16 @@ export default function TransferLandingPage() {
   // `pending`, `processing` and `failed` collapse into ONE buyer-facing state. A buyer cannot act
   // on a packaging failure, the creator can and already has a retry button (134.7), and naming it
   // leaks the creator's operational state to a stranger.
-  const isStreamTransfer = transfer?.deliveryMode === "stream";
+  /**
+   * Story 135.11 — MOVED UP from below the trailer helpers, and the position is load-bearing.
+   *
+   * The post-payment redirect effect must branch on delivery mode and therefore must name this in
+   * its dependency array. A dependency array is evaluated DURING RENDER, so a `const` declared
+   * several hundred lines further down is in its temporal dead zone at that point and the page
+   * would crash with a ReferenceError — while the effect BODY, which runs after render, would
+   * have been perfectly fine. Moving the declaration is the honest fix; re-deriving
+   * `deliveryMode === "stream"` at the second site is the P1 drift this epic exists to prevent.
+   */
   const isStreamNotReady = isStreamTransfer && transfer?.streamStatus !== "ready";
 
   // The free trailer (SD-FR6) is the 20-second watermarked clip, and it is NOT guaranteed to
@@ -2280,6 +2493,27 @@ export default function TransferLandingPage() {
     () => (transfer?.files ?? [])[0] ?? null,
     [transfer],
   );
+
+  /**
+   * Story 135.11 (D3) — record that THIS BROWSER owns THIS FILM, once the purchase has landed.
+   *
+   * Keyed on the page reaching `sale-ready`, which is the one state both settlement paths end in:
+   * the gateway redirect and the mobile-money poll. Writing it at either call site instead would
+   * mean two writes that drift, and mobile money — the dominant method in these markets — is the
+   * one that would be forgotten, because it is the path that has no redirect to notice.
+   *
+   * What this buys the buyer: on her next visit, if her session has lapsed, the page recognises
+   * her as an owner and asks her to SIGN BACK IN rather than showing her a purchase button. The
+   * server cannot answer that question for an anonymous caller without becoming an enumeration
+   * oracle (Finding 2), so this hint is the only thing that knows.
+   *
+   * It holds no email, no token and no id, and it grants nothing — see `access-state.ts`.
+   */
+  useEffect(() => {
+    if (pageState === "sale-ready" && isStreamTransfer && transfer?.shortCode) {
+      rememberOwnershipHint(transfer.shortCode);
+    }
+  }, [pageState, isStreamTransfer, transfer?.shortCode]);
   const [trailerUrl, setTrailerUrl] = useState<string | null>(null);
   const [trailerFailed, setTrailerFailed] = useState(false);
 
@@ -3982,6 +4216,44 @@ export default function TransferLandingPage() {
                     without being asked. `playsInline` because iOS Safari otherwise takes the clip
                     fullscreen the moment it plays, which is the modal interruption the UX spec
                     rejects. No autoplay — Flow A has the buyer choosing to watch. */}
+                {/* ═══ Story 135.11 — THE RETURNING BUYER ═══════════════════════════════
+                    ⚠ THIS IS THE ONLY THING IN EITHER REPOSITORY THAT RENDERS
+                    `StreamAccessBanner`. Remove this branch and the component is an orphan that
+                    passes lint, types and every other check perfectly, because nothing ever mounts
+                    it — the failure mode `.claude/CLAUDE.md` records three separate times.
+
+                    It sits ABOVE the trailer and the terms, where the purchase action's own
+                    context begins, so the first thing a returning buyer reads is that the film is
+                    already hers. `role="status"` and not `alert` lives inside the component.
+
+                    `owner-signed-out` is deliberately NOT here: it has no banner. It reframes the
+                    identity block further down instead, because the thing that state needs is a
+                    working sign-in form, and this page already has one. A banner saying "sign in"
+                    above a separate box that does the signing in is two surfaces for one job. */}
+                {(streamAccessState === "owner-active" ||
+                  streamAccessState === "owner-ended") && (
+                  <StreamAccessBanner
+                    state={
+                      streamAccessState === "owner-active" ? "active" : "ended"
+                    }
+                    endsAt={streamAccessEndedAt}
+                    /* No `onWatch` in the ended state — there is nothing left to play, and a
+                       button that opens a player which immediately refuses her with
+                       STREAM_ENTITLEMENT_REVOKED is a worse answer than no button.
+
+                       `sale-ready` is where `StreamPlayer` is already mounted. Reusing that state
+                       rather than mounting a second player here is the check-before-creating rule:
+                       one mount site, one place where a playback session and a device lease are
+                       opened. The film file it needs is `transfer.files[0]`, which this page
+                       already holds. */
+                    onWatch={
+                      streamAccessState === "owner-active" && streamFilmFile
+                        ? () => setPageState("sale-ready")
+                        : undefined
+                    }
+                  />
+                )}
+
                 {isStreamTransfer && hasTrailer && (
                   <div className="mb-4">
                     <p className="text-xs font-medium text-gray-400 dark:text-[oklch(0.50_0_0)] mb-2">
@@ -4048,11 +4320,22 @@ export default function TransferLandingPage() {
                         Suppressed while the film is being prepared: 134.8's prepared-state block
                         already carries the price in that state and this story leaves that block
                         untouched (AC5). The buyer sees the price exactly once either way. */}
-                    {priceDisplay && !isStreamNotReady && (
-                      <p className="text-lg font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mt-3">
-                        {priceDisplay}
-                      </p>
-                    )}
+                    {/* Story 135.11 (AC1, AC2, AC7) — and NEVER to a buyer who already owns the
+                        film. Finding 5(a): this element is the reason gating the Buy button alone
+                        is not enough. It is a separate <p>, it was added precisely because hiding
+                        the Buy button once removed the price from the page entirely, and an owner
+                        shown a price is being invited to wonder whether she has to pay again.
+
+                        A visitor still sees it exactly as before — fee-model principle 1 requires
+                        the buyer to see the total before committing, so this must not become
+                        conditional on anything a first-time buyer can fail. */}
+                    {priceDisplay &&
+                      !isStreamNotReady &&
+                      streamAccessState === "visitor" && (
+                        <p className="text-lg font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mt-3">
+                          {priceDisplay}
+                        </p>
+                      )}
                   </div>
                 )}
 
@@ -4105,17 +4388,78 @@ export default function TransferLandingPage() {
                     Hidden while the film is being prepared: 134.8 already hides the Buy button
                     then, and asking someone to confirm their email for a film they cannot buy
                     either way is a request with no payoff. */}
-                {!isAuthenticated && isStreamTransfer && !isStreamNotReady && (
+                {/* Story 135.11 (AC2) — this block now serves TWO buyers, with the same form and
+                    two different sentences above it.
+
+                    A first-time buyer reads "One quick step before you buy". A RETURNING OWNER
+                    whose session has lapsed must never read that: `identityTitle` and
+                    `identityReason` both contain a purchase verb in both languages ("before you
+                    buy" / "avant l'achat"), and showing them to someone who has already paid is
+                    the single highest-risk copy decision in the feature
+                    (`ux-design-stream-playback.md:902-904`). She reads that the film is already
+                    hers and that her session simply ran out.
+
+                    Same form, same handlers, same OTP — only the framing changes. That is
+                    deliberate: the flow underneath is `authApi.requestOTP` / `verifyOTP`, the
+                    IDENTITY flow, which is the only OTP a stream sale page may run. The RECOVERY
+                    flow (`buy/recover`) returns a download token for a film that has nothing to
+                    download, and 135.2 already removed it from this page. Do not bring it back
+                    for this state — "she needs to prove her email" is exactly the reasoning that
+                    would, and it is wrong here for the same reason it was wrong there.
+
+                    ⚠ THE GATE IS `!isAuthenticated || owner-signed-out`, AND THE SECOND HALF IS
+                    NOT REDUNDANT. Found in this story's G3 round 2, as the direct consequence of
+                    fixing round 1.
+
+                    `isAuthenticated` is React state read from `localStorage` ONCE at mount. When a
+                    session has died, whether it is `true` here is a RACE: `handleAuthFailure`
+                    clears the stored user, and if it wins that race the value is `false`, but if
+                    the page mounts first the value stays `true` forever — the state is never
+                    re-derived.
+
+                    On the `true` side of that race, `!isAuthenticated` hides this block. Round 1
+                    correctly removed the Buy button from that same screen. Together they left a
+                    returning owner with NO BANNER (this state deliberately has none), no purchase
+                    action and no email field — nothing at all. Verified in a browser: the only
+                    controls left on the page were the site header and "Report this transfer".
+
+                    That is Finding 1's real harm — no route back to the film she paid for —
+                    reappearing through the fix for Finding 1's symptom. Removing a misleading
+                    affordance is only half the job; the honest one has to take its place, and it
+                    cannot be gated on the very value we already know is unreliable.
+
+                    So the gate is written as the two states that actually want an email field,
+                    rather than as a negation of the unreliable value:
+
+                      owner-signed-out              → show, in the SIGN-IN framing (any auth value)
+                      visitor AND not authenticated → show, in the PURCHASE framing (135.2)
+                      owner-active / owner-ended    → never, in either framing
+                      visitor AND authenticated     → never (135.2: she goes straight to Buy)
+
+                    Phrasing it positively also closes an edge the `!isAuthenticated ||` form left
+                    open: a buyer holding a valid cookie whose `localStorage` had been cleared
+                    resolves to `owner-active` with `isAuthenticated === false`, and would have been
+                    shown "One quick step before you buy" directly beneath a banner telling her the
+                    film is already hers — a purchase verb on an owner surface, which AC7 forbids
+                    outright. */}
+                {isStreamTransfer &&
+                  !isStreamNotReady &&
+                  (streamAccessState === "owner-signed-out" ||
+                    (streamAccessState === "visitor" && !isAuthenticated)) && (
                   <div className="mb-4 border border-gray-200 dark:border-[oklch(0.30_0_0)] rounded p-5">
                     <p className="font-semibold text-[#171717] dark:text-[oklch(0.91_0_0)] text-sm mb-1">
-                      {tStreamSale("identityTitle")}
+                      {streamAccessState === "owner-signed-out"
+                        ? tStreamSale("accessSignedOutTitle")
+                        : tStreamSale("identityTitle")}
                     </p>
                     {/* One sentence, stated as a benefit. NOT "verify your identity" and not
                         "for security reasons" — ux-design-stream-playback.md:208 names framing
                         verification as suspicion of the buyer as the failure mode at exactly
                         this step. */}
                     <p className="text-sm text-gray-600 dark:text-[oklch(0.65_0_0)] mb-3">
-                      {tStreamSale("identityReason")}
+                      {streamAccessState === "owner-signed-out"
+                        ? tStreamSale("accessSignedOutBody")
+                        : tStreamSale("identityReason")}
                     </p>
 
                     <form onSubmit={handleEmailConfirm}>
@@ -4375,9 +4719,30 @@ export default function TransferLandingPage() {
                     reasoning 134.8 recorded for the not-ready state.
 
                     The download condition is left exactly as it was (AC6). */}
+                {/* Story 135.11 (AC1, AC2, AC4) — the stream clause REPLACES ONE TERM, and keeps
+                    the other. It was `isAuthenticated && !saleHasPurchase`.
+
+                    `!saleHasPurchase` is the broken half and is gone: it treats a swallowed 401 as
+                    "she never bought it", which is Finding 1 and is what showed a paying buyer a
+                    purchase button. `streamAccessState === "visitor"` replaces it — the single
+                    question "does this page have any reason to think she owns the film", answered
+                    in `lib/stream/access-state.ts` where it can actually be read.
+
+                    ⚠ `isAuthenticated` STAYS, and dropping it is a regression that G3 caught in
+                    this story's first round. It is NOT part of the ownership question — it is
+                    story 135.2's SEQUENCING requirement (AC1/AC5): a stream buyer confirms who
+                    she is BEFORE she is offered a purchase, because an unverified email cannot
+                    bind a decryption key, support a concurrency cap, or make a watermark name
+                    anybody. Without it a brand-new anonymous visitor gets the green Buy button
+                    rendered beside the "confirm your email first" box — two competing calls to
+                    action, and a checkout the backend then refuses with STREAM_IDENTITY_REQUIRED.
+
+                    The two terms answer different questions and neither subsumes the other.
+
+                    The DOWNLOAD clause is untouched, character for character (AC4). */}
                 {!isStreamNotReady &&
                 (isStreamTransfer
-                  ? isAuthenticated && !saleHasPurchase
+                  ? isAuthenticated && streamAccessState === "visitor"
                   : (saleEmailChecked && !saleHasPurchase) ||
                     (isAuthenticated && !saleHasPurchase)) ? (
                   <button

@@ -331,6 +331,24 @@ export interface VerifyTransferOtpResponse {
   };
 }
 
+/**
+ * Story 135.11 — `streamAccess` is present for STREAM transfers only.
+ *
+ * `hasPurchase` answers "did you pay". `streamAccess` answers whether that purchase STILL grants
+ * access, and the two stopped being the same question once a buyer's entitlement could be revoked.
+ * `undefined` on every download sale, whose response is byte-identical to what shipped before.
+ *
+ * ⚠ `hasPurchase: true` with `streamAccess: 'ended'` is a real and deliberate combination: she did
+ * buy the film, and her access has since been withdrawn. Anything gating a purchase action on
+ * `!hasPurchase` therefore stays correct — which is the point.
+ */
+export interface CheckPurchaseResponse {
+  hasPurchase: boolean;
+  streamAccess?: 'active' | 'ended';
+  /** ISO timestamp, present only with `streamAccess: 'ended'`. Formatted in the browser's locale. */
+  streamAccessEndedAt?: string;
+}
+
 export class TransferApi {
   /**
    * Create a new transfer
@@ -532,6 +550,7 @@ export class TransferApi {
     );
   }
 
+
   /**
    * Check whether the signed-in user has already purchased a public sale transfer.
    *
@@ -540,8 +559,10 @@ export class TransferApi {
    * to probe whether someone else bought a transfer. Signed-out buyers should use
    * recoverPurchase() instead, which proves ownership by OTP.
    */
-  async checkPurchase(shortCode: string): Promise<ApiResponse<{ hasPurchase: boolean }>> {
-    return apiClient.post<{ hasPurchase: boolean }>(
+  async checkPurchase(
+    shortCode: string,
+  ): Promise<ApiResponse<CheckPurchaseResponse>> {
+    return apiClient.post<CheckPurchaseResponse>(
       `/transfers/${shortCode}/buy/check`,
       {},
     );

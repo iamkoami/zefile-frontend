@@ -3328,6 +3328,16 @@
     "playerQualityLabel": "Quality",
     "playerQualityAuto": "Auto",
     "playerQualityCap": "Up to {height}p",
-    "playerQualityHint": "Cap the quality to use less mobile data."
+    "playerQualityHint": "Cap the quality to use less mobile data.",
+    "accessBannerLabel": "Your access to this film",
+    "accessActiveTitle": "This film is yours.",
+    "accessActiveBody": "Your access stays for as long as the film is published. The creator's subscription doesn't change that.",
+    "accessWatch": "Watch the film",
+    "accessSignedOutTitle": "This film is already yours.",
+    "accessSignedOutBody": "Your session just ran out — that's all. Sign back in with your email and the film is right here.",
+    "accessExpiringTitle": "This film is coming down.",
+    "accessExpiringBody": "You can keep watching until {date}.",
+    "accessEndedTitle": "Your access to this film has ended.",
+    "accessEndedBody": "It ended on {date}, when the creator took the film down. Get in touch if that looks wrong."
   }
 }
