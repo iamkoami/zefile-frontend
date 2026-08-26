@@ -5,6 +5,13 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.71.1] - 2026-08-26
+
+### Fixed
+
+- **The button under the verification code did nothing when you clicked it.** No error, no spinner, no explanation — on both the email and the WhatsApp code screens. Pressing Enter always worked, which is exactly why nobody caught it: the field shows your six digits neatly spaced as "123 456", and the browser was quietly refusing to accept that space. Clicking now does what Enter has always done. (`app/downloads/[transferId]/[shortCode]/page.tsx`)
+- **The same fault was sitting dormant on the sign-in code screen** and has been headed off there too, before anyone could run into it.
+
 ## [1.71.0] - 2026-08-25
 
 ### Added
