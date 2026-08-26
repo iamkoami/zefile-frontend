@@ -5,6 +5,12 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.71.2] - 2026-08-26
+
+### Fixed
+
+- **The custom domain field had a validation rule that never worked properly.** Depending on your browser it either did nothing at all — letting obvious nonsense through to the next check — or it quietly refused to accept a perfectly good domain that happened to have a stray space on the end, which is exactly what you get when you copy one out of an email. The field now relies on the check that was already doing the real work, the one that shows you a message explaining what's wrong. (`features/account/components/CustomDomainPanel.tsx`)
+
 ## [1.71.1] - 2026-08-26
 
 ### Fixed
