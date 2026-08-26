@@ -5,6 +5,14 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.71.3] - 2026-08-26
+
+### Fixed
+
+- **Buy a film with mobile money and the page now takes you to the film.** It told you the film was yours and that this was where you'd watch it, and then showed you nothing to watch — the player only ever appeared on the screen you land on after paying by card. Reloading was the only way through, and nothing on the page said so. Mobile money now ends up on the same screen as every other payment method, with the film ready to play. (`app/downloads/[transferId]/[shortCode]/page.tsx`)
+- **And the film stays on screen.** Two seconds after a payment cleared, the page moved you on to the ordinary download screen. That is right for files and wrong for a film: the player disappeared just as it arrived, leaving a download button that could never work, because a film is streamed and there is nothing to download. Films now stay on the screen that plays them. Downloads are unchanged.
+- **A film can no longer land on the "this link has expired" screen.** It was already out of reach there, but if it ever happened that screen offered to sell you the film a second time. A film is now sent to the returning-buyer view added in 1.71.0, which knows it is already yours.
+
 ## [1.71.2] - 2026-08-26
 
 ### Fixed
