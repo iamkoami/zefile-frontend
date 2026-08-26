@@ -3719,7 +3719,17 @@ export default function TransferLandingPage() {
                             ref={otpInputRef}
                             type="text"
                             inputMode="numeric"
-                            pattern="[0-9]*"
+                            /* MUST allow the space. The value is displayed grouped as "123 456"
+                               for readability, and `pattern` is an HTML5 CONSTRAINT, not a hint —
+                               `[0-9]*` fails against the rendered value, so the browser silently
+                               refuses to submit the form and no request is ever made. Measured by
+                               story 144.49 on this very input: the button was enabled, the click
+                               landed, `submit` never fired and ZERO requests went out — while
+                               Enter, which bypasses native validation through the onKeyDown
+                               handler below, sent verify-otp from the same field on the same
+                               value. That asymmetry is the whole bug; do not "tidy" the space
+                               back out. */
+                            pattern="[0-9 ]*"
                             value={otpValue.length <= 3 ? otpValue : `${otpValue.slice(0, 3)} ${otpValue.slice(3)}`}
                             onChange={(e) => {
                               const value = e.target.value.replace(/\D/g, "").replace(/\s/g, "");
@@ -3830,7 +3840,17 @@ export default function TransferLandingPage() {
                             ref={otpInputRef}
                             type="text"
                             inputMode="numeric"
-                            pattern="[0-9]*"
+                            /* MUST allow the space. The value is displayed grouped as "123 456"
+                               for readability, and `pattern` is an HTML5 CONSTRAINT, not a hint —
+                               `[0-9]*` fails against the rendered value, so the browser silently
+                               refuses to submit the form and no request is ever made. Measured by
+                               story 144.49 on this very input: the button was enabled, the click
+                               landed, `submit` never fired and ZERO requests went out — while
+                               Enter, which bypasses native validation through the onKeyDown
+                               handler below, sent verify-otp from the same field on the same
+                               value. That asymmetry is the whole bug; do not "tidy" the space
+                               back out. */
+                            pattern="[0-9 ]*"
                             value={otpValue.length <= 3 ? otpValue : `${otpValue.slice(0, 3)} ${otpValue.slice(3)}`}
                             onChange={(e) => {
                               const value = e.target.value.replace(/\D/g, "").replace(/\s/g, "");

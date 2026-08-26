@@ -120,7 +120,16 @@ const OTPVerification: React.FC<OTPVerificationProps> = ({
         <input
           type="text"
           inputMode="numeric"
-          pattern="[0-9]*"
+          /* MUST allow the space: `formatOTPDisplay` renders the value grouped as "123 456",
+             and `pattern` is an HTML5 CONSTRAINT validated against that rendered value, not a
+             hint. `[0-9]*` therefore fails once six digits are entered.
+             LATENT, NOT LIVE, TODAY: constraint validation only runs on FORM SUBMISSION, and
+             this component has no <form> — the button below is onClick and Enter is handled by
+             onKeyDown, so nothing ever evaluates it. It is fixed here because wrapping this
+             field and its button in a <form> is the correct accessibility refactor, and doing
+             that with `[0-9]*` in place would silently break the primary sign-in OTP the way
+             story 144.49 measured on the download page. */
+          pattern="[0-9 ]*"
           value={formatOTPDisplay(otpCode)}
           onChange={(e) => {
             const value = e.target.value.replace(/\D/g, "").replace(/\s/g, "");
