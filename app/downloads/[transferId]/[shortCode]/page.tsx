@@ -885,6 +885,37 @@ export default function TransferLandingPage() {
       paymentCompletedRef.current = true;
       // Mark transfer as paid locally so UI reflects payment status
       setTransfer((prev) => (prev ? { ...prev, isPaid: true } : prev));
+
+      /**
+       * Story 145.13 (G3 round 1, Critical) — A PUBLIC-SALE STREAM BUYER MUST NOT BE SWEPT HERE.
+       *
+       * This unconditional two-second hand-off to `"ready"` is the ordinary paid-download ending,
+       * and it is WRONG for a film in two compounding ways:
+       *
+       *   1. `"ready"` is the generic download screen. Its primary button resolves to
+       *      `handleDownload` once `isPaid` is true (set on the line above), and every download
+       *      mint point carries `@StreamGuarded` and 403s a non-sender on a stream transfer. So the
+       *      buyer lands on a screen whose only action cannot succeed.
+       *   2. It fires two seconds AFTER this story's transition has already moved her to
+       *      `sale-ready` and mounted `StreamPlayer`. The player therefore appears and is then
+       *      torn down — which reads as a crash, and is a worse answer than never showing it.
+       *
+       * It is deterministic, not a race: `onSuccess` fires exactly once on a terminal SUCCESS
+       * (`usePaymentStatus.ts:143-146`), and `stopPolling()` clears only the poll-retry timer
+       * (`usePaymentStatus.ts:101-107`) — it has no reference to this timeout and cannot cancel it.
+       *
+       * NOT SCHEDULED rather than cancelled later: a timeout nobody holds a handle to is exactly
+       * how this defect stayed invisible, and adding a second handle to chase it would repeat the
+       * shape. The download rails — ordinary paid downloads AND public-sale downloads — are
+       * deliberately untouched and keep this hand-off exactly as it was.
+       *
+       * ⚠ Found at G3 by a reviewer reading OUTWARD from the diff. This story's own current-state
+       * pass enumerated the writers of `sale-expired` and `sale-ready` and never asked the wider
+       * question — who else writes `pageState` at all? `grep -n 'setPageState("ready")'` returns
+       * nine call sites and would have shown it in one command.
+       */
+      if (transfer?.isPublicSales && isStreamTransfer) return;
+
       setTimeout(() => {
         setPageState("ready");
       }, 2000);
@@ -2502,6 +2533,17 @@ export default function TransferLandingPage() {
    * mean two writes that drift, and mobile money — the dominant method in these markets — is the
    * one that would be forgotten, because it is the path that has no redirect to notice.
    *
+   * ⚠ STORY 145.13 — THAT SENTENCE WAS AN ASSUMPTION, AND IT WAS FALSE WHEN WRITTEN. Mobile money
+   * did NOT end in `sale-ready`: it settled on `payment-prompt` and stayed there. Enumerate the
+   * transitions into `sale-ready` and they are the gateway redirect, the recovery OTP, and
+   * 135.11's own Watch button — the mobile-money poll is not among them. So this hint was never
+   * written for exactly the buyer the paragraph above says it matters most for, and her next
+   * signed-out visit offered her a Buy button for a film she already owned.
+   *
+   * It is true NOW, because 145.13 added the transition rather than a second write here. The
+   * reasoning above was right; only the premise was wrong. Do not add a second call site to
+   * "fix" this — that is the drift this comment correctly warns against.
+   *
    * What this buys the buyer: on her next visit, if her session has lapsed, the page recognises
    * her as an owner and asks her to SIGN BACK IN rather than showing her a purchase button. The
    * server cannot answer that question for an anonymous caller without becoming an enumeration
@@ -2514,6 +2556,102 @@ export default function TransferLandingPage() {
       rememberOwnershipHint(transfer.shortCode);
     }
   }, [pageState, isStreamTransfer, transfer?.shortCode]);
+
+  /**
+   * ═══ Story 145.13 — THE MOBILE-MONEY BUYER MUST LAND ON THE PLAYER ═══════════════
+   *
+   * `payment-prompt` is where mobile money settles: `handleSalePaymentInitiated` sends that rail
+   * here and only card/redirect to `sale-processing` → `sale-ready`. On success it renders IN
+   * PLACE, and for a stream it printed `streamSale.purchasedBody` — "this page is where you'll
+   * watch it" — above a screen with no player, no Watch control and (correctly, per 135.3) no
+   * download button. A buyer who had just paid was left with a promise and nothing to act on. Her
+   * only escape was a reload, which nothing on the screen suggested.
+   *
+   * THIS TRANSITION, NOT A SECOND PLAYER. `sale-ready` is the one place in either repository that
+   * mounts `StreamPlayer` (see the guard at that branch). Mounting a second one here would be two
+   * places opening a playback session and a device lease — the duplication the check-before-
+   * creating rule forbids, and the one 135.11 already declined to make for the same reason.
+   *
+   * IT ALSO CLOSES A SECOND DEFECT, which is why it is one effect and not two. 135.11's D3 comment
+   * above claims `sale-ready` is "the one state both settlement paths end in: the gateway redirect
+   * and the mobile-money poll". That was NOT true — enumerate the transitions into `sale-ready`
+   * and mobile money is not among them — so `rememberOwnershipHint` never ran for a mobile-money
+   * buyer, and a signed-out return would offer her a Buy button for a film she already owns. The
+   * hint effect above is keyed on `sale-ready`, so reaching it here makes the comment true rather
+   * than adding a second write that could drift.
+   *
+   * `isPublicSales` is REQUIRED, not decoration: `payment-prompt` is reachable from the ordinary
+   * paid-download flow too, and `POST /stream/sessions` authorises off a settled `SaleSession`.
+   * A non-sale payment has none, so the player would refuse a buyer we had just sent to it.
+   *
+   * `streamFilmFile` is REQUIRED for the same reason the mount is: `sale-ready` renders the player
+   * only when it is present, so transitioning without it swaps one empty screen for another.
+   *
+   * The DOWNLOAD rail is untouched and must stay that way — it needs this screen's token-claim
+   * progress lines and its download button, neither of which exists on `sale-ready`.
+   */
+  useEffect(() => {
+    if (pageState !== "payment-prompt") return;
+    if (pollingStatus !== "success") return;
+    if (!transfer?.isPublicSales) return;
+    if (!isStreamTransfer) return;
+    if (!streamFilmFile) return;
+
+    setPageState("sale-ready");
+  }, [
+    pageState,
+    pollingStatus,
+    transfer?.isPublicSales,
+    isStreamTransfer,
+    streamFilmFile,
+  ]);
+
+  /**
+   * ═══ Story 145.13 — `sale-expired` IS NOT A STATE A FILM CAN BE IN ═══════════════
+   *
+   * The `sale-expired` render is now gated `!isStreamTransfer`, so a stream that somehow reached
+   * this state would render `return null` — a blank page. This effect is what makes that a single
+   * frame instead of a dead end: it routes her to `sale-preview`, where 135.11's access banner
+   * gives the correct answer and offers a working Watch action.
+   *
+   * WHY THIS EXISTS AT ALL, GIVEN NOTHING CAN REACH IT TODAY. 135.11 (AC5) put an early return
+   * ahead of the file's only `setPageState("sale-expired")` call, so a film cannot land here as
+   * the code stands. But the thing this protects against is severe and specific: `sale-expired`
+   * renders `sale.downloadExpiredHint` and a green **Buy again** at whoever sees it, and doing
+   * that to a paying owner is the defect the epic names as the worst this feature could ship
+   * ("I paid but it is asking me to pay again"). It has already been shipped once, and caught at
+   * 135.3's G3 round 2. A second, independent mechanism costs six lines.
+   *
+   * ⚠ IT WARNS BECAUSE A SILENT GUARD IS INDISTINGUISHABLE FROM A DEAD ONE. Unreachable code
+   * passes lint, types and every other check in this project perfectly — that is the failure mode
+   * `.claude/CLAUDE.md` records three separate times. If this ever fires, someone has added a
+   * second `sale-expired` setter without 135.11's guard, and this line is the only thing that
+   * would say so.
+   *
+   * Deliberately mirrors the divert at the redirect-callback effect above rather than inventing a
+   * second recovery: same target state, same `refreshStreamAccess` call, same arguments.
+   */
+  useEffect(() => {
+    if (pageState !== "sale-expired") return;
+    if (!isStreamTransfer) return;
+
+    console.warn(
+      "[145.13] A stream transfer reached `sale-expired`, which 135.11 (AC5) should make " +
+        "unreachable. Routing to `sale-preview`. A second unguarded setter has been added.",
+    );
+    setPageState("sale-preview");
+    void refreshStreamAccess(
+      transfer?.shortCode ?? shortCode,
+      true,
+      !!getCurrentUserEmail(),
+    );
+  }, [
+    pageState,
+    isStreamTransfer,
+    transfer?.shortCode,
+    shortCode,
+    refreshStreamAccess,
+  ]);
   const [trailerUrl, setTrailerUrl] = useState<string | null>(null);
   const [trailerFailed, setTrailerFailed] = useState(false);
 
@@ -3186,14 +3324,34 @@ export default function TransferLandingPage() {
                 <div className="text-center mb-4">
                   {isSuccess ? (
                     <>
+                      {/*
+                        Story 145.13 — a stream shows TRANSITIONAL copy here, never the purchase
+                        confirmation.
+
+                        This screen printed `purchasedTitle`/`purchasedBody` — "The film is yours"
+                        and "this page is where you'll watch it" — and then had no player, no Watch
+                        control and (correctly, per 135.3) no download button. The effect added by
+                        this story now moves a settled stream purchase on to `sale-ready`, where
+                        the player actually is, so this branch is only ever the frame or two before
+                        that transition lands.
+
+                        It must not use the purchase-confirmation copy for those frames. "This page
+                        is where you'll watch it" is FALSE of this page — the promise is the defect,
+                        not the timing — and a settled state flashing before a settled state reads
+                        as a glitch. `playerStarting*` says what is actually happening, and it is
+                        the same pair the player itself shows while a session opens, so the two
+                        frames read as one continuous action rather than two screens.
+
+                        Reused keys, both languages already: no new copy for a transitional state.
+                      */}
                       <h1 className="text-xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-2">
                         {isStreamTransfer
-                          ? tStreamSale("purchasedTitle")
+                          ? tStreamSale("playerStartingTitle")
                           : tPayment("paymentSuccessful")}
                       </h1>
                       <p className="text-sm text-gray-600 dark:text-[oklch(0.65_0_0)]">
                         {isStreamTransfer
-                          ? tStreamSale("purchasedBody")
+                          ? tStreamSale("playerStartingBody")
                           : t("readyToDownload")}
                       </p>
                     </>
@@ -5093,7 +5251,7 @@ export default function TransferLandingPage() {
   }
 
   // ──── Public Sale: Expired Token ───────────────────────────────────────
-  if (pageState === "sale-expired" && transfer) {
+  if (pageState === "sale-expired" && transfer && !isStreamTransfer) {
     return (
       <div className="min-h-screen bg-white dark:bg-[oklch(0.19_0_0)]">
         <ToastContainer />
@@ -5138,49 +5296,41 @@ export default function TransferLandingPage() {
                 Caught at G3 round 2. The earlier sweep looked for DOWNLOAD affordances and missed
                 this one because it is a PURCHASE affordance.
 
-                135.11 owns the full returning-buyer surface; this is the bounded, honest version:
-                say they own it, offer no purchase.
+                Story 145.13 — THAT GATE IS NOW ON THE STATE, NOT ON THE COPY. This branch no
+                longer renders for a stream at all (`!isStreamTransfer` in the condition above),
+                and the effect that owns the redirect sends any film reaching this state to
+                `sale-preview` instead. The reason is that 135.11 shipped the RIGHT answer for a
+                returning buyer — an access banner with a working Watch action — so keeping a
+                second, bounded "you own this" surface here meant maintaining two versions of one
+                message, on a branch no one could reach to notice them drifting apart.
+
+                So the copy below is plain download copy again, as it was before 135.3, and it is
+                correct for the only transfer that can now see it.
               */}
               <div className="ze-upload-panel text-center">
                 <div className="flex flex-col items-center mb-6">
-                  <div
-                    className={`w-16 h-16 rounded-full flex items-center justify-center ${
-                      isStreamTransfer
-                        ? "bg-green-100 dark:bg-green-900/30"
-                        : "bg-yellow-100 dark:bg-yellow-900/30"
-                    }`}
-                  >
-                    {isStreamTransfer ? (
-                      <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
-                    ) : (
-                      <WarningCircle className="w-8 h-8 text-yellow-600 dark:text-yellow-400" />
-                    )}
+                  <div className="w-16 h-16 rounded-full flex items-center justify-center bg-yellow-100 dark:bg-yellow-900/30">
+                    <WarningCircle className="w-8 h-8 text-yellow-600 dark:text-yellow-400" />
                   </div>
                 </div>
                 <h1 className="text-xl font-bold text-[#171717] dark:text-[oklch(0.91_0_0)] mb-2">
-                  {isStreamTransfer
-                    ? tStreamSale("purchasedTitle")
-                    : tSale("downloadExpired")}
+                  {tSale("downloadExpired")}
                 </h1>
                 <p className="text-sm text-gray-500 dark:text-[oklch(0.65_0_0)] mb-6">
-                  {isStreamTransfer
-                    ? tStreamSale("purchasedBody")
-                    : tSale("downloadExpiredHint")}
+                  {tSale("downloadExpiredHint")}
                 </p>
 
-                {!isStreamTransfer && (
-                  <button
-                    onClick={() => {
-                      setSaleDownloadToken(null);
-                      saleVerifyAttemptedRef.current = false;
-                      setPageState("sale-preview");
-                    }}
-                    className="w-full px-6 py-3.5 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors flex items-center justify-center gap-2"
-                  >
-                    <CreditCard className="w-5 h-5" />
-                    {tSale("buyAgain")}
-                  </button>
-                )}
+                <button
+                  onClick={() => {
+                    setSaleDownloadToken(null);
+                    saleVerifyAttemptedRef.current = false;
+                    setPageState("sale-preview");
+                  }}
+                  className="w-full px-6 py-3.5 bg-[#87E64B] text-[#171717] font-bold rounded hover:bg-[#78d43f] transition-colors flex items-center justify-center gap-2"
+                >
+                  <CreditCard className="w-5 h-5" />
+                  {tSale("buyAgain")}
+                </button>
               </div>
             </div>
           </div>
