@@ -372,7 +372,19 @@ const CustomDomainPanel: React.FC = () => {
               value={domainInput}
               onChange={(e) => handleDomainInputChange(e.target.value)}
               placeholder="files.yourdomain.com"
-              pattern="^(?!:\/\/)([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$"
+              /* NO `pattern` HERE, DELIBERATELY — do not reinstate it. `DOMAIN_RE` above is the
+                 validator: it runs on change AND on submit, trims correctly, and shows a message
+                 the user can actually read. The attribute that used to sit here was
+                 character-identical to it and was broken in two OPPOSITE directions depending on
+                 which flag the browser compiles `pattern` with. HTML5 compiles it as `^(?:…)$`:
+                 under `v` (unicodeSets, current Chrome) the trailing unescaped `-` in
+                 `[a-zA-Z0-9-]` is reserved for set-difference, so it did not compile AT ALL and
+                 the browser ignored it — "!!!! not a domain !!!!" validated clean. Under `u` it
+                 DID compile, and rejected a domain pasted with a trailing space while this
+                 component's own JS accepted it (it tests `.trim()` but stores the value
+                 untrimmed) — enabled button, click does nothing, no explanation. Escaping the
+                 hyphen "fixes" the compile and makes that silent block UNIVERSAL, which is worse
+                 than either state. Story 144.53. */
               className={`flex-1 px-4 py-3 border rounded text-sm text-[#171717] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#171717] focus:border-transparent ${
                 domainError ? "border-red-300" : "border-gray-200"
               }`}

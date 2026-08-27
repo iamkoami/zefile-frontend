@@ -52,6 +52,7 @@ import { authApi } from "@/services/auth-api";
 import {
   streamApi,
   STREAM_ERROR_CODES,
+  STREAM_PROGRESS_INTERVAL_SECONDS,
   type StreamSessionResponse,
 } from "@/services/stream-api";
 import PlaybackStatePanel, {
@@ -150,6 +151,15 @@ const MAX_IDENTITY_RETRIES = 2;
 const IDENTITY_RETRY_BASE_MS = 800;
 
 /** Per session, per film. D4: not a user preference, no backend field, no migration. */
+/**
+ * Minimum real time between two `STREAM_PROGRESS` emissions (story 135.8, G3 round 3 hazard).
+ *
+ * The 30-second cadence is measured in PLAYBACK time, which a seek resets — so on its own it puts
+ * no ceiling on how often a scrubbing buyer reports. This does, in wall time, and it is deliberately
+ * far below the cadence so ordinary viewing never touches it.
+ */
+const MIN_EMIT_SPACING_MS = 5_000;
+
 const qualityCapStorageKey = (transferId: string) => `zefile:stream-quality:${transferId}`;
 
 /**
@@ -953,6 +963,131 @@ export default function StreamPlayer({
     video.addEventListener("seeked", onSeeked);
     return () => video.removeEventListener("seeked", onSeeked);
   }, []);
+
+  // ── Playback telemetry (story 135.8) ───────────────────────────────────────────────────
+  //
+  // ⚠ THIS IS WHAT MAKES `POST /stream/events` REACHABLE. 135.8 shipped the endpoint and the
+  // client contract but deliberately wired no caller, on the assumption that 135.6 would supply
+  // the timer — and 135.6 had ALREADY SHIPPED a week earlier, so nobody ever did. Found at G3.
+  // Without this effect the whole buyer-observed half of the log is empty in production while
+  // every backend check passes, which is the orphan class the Reachability Gate exists for.
+  //
+  // Fire-and-forget on purpose: `streamApi` swallows every failure. A buyer who paid for a film
+  // must never see an error about our bookkeeping, and a 429 here costs a resume position, not a
+  // viewing (D8).
+  //
+  // Gated on `buyerEmail` for the same reason the load effect is: no identity, no session, so
+  // nothing to attribute an event to.
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !buyerEmail) return;
+
+    let startedSent = false;
+    let completedSent = false;
+    let lastProgressAt = -Infinity;
+    // ⚠ A WALL-CLOCK FLOOR, ADDED BECAUSE THE `seeked` RESET ABOVE CREATED A NEW HAZARD.
+    //
+    // The position cadence alone is unbounded under SCRUBBING: every `seeked` discards the
+    // baseline, so the next `timeupdate` emits — measured at 12 seeks producing 7 events, ~48/min
+    // sustained, against a budget of 60/min PER IP. Per-IP is the part that bites: an office or
+    // cyber café behind one NAT shares that counter, so ONE buyer dragging the scrubber could
+    // throttle everybody else's telemetry at the same address.
+    //
+    // 5 s bounds the worst case to ~12/min while leaving the 30 s cadence untouched (30 ≫ 5) and
+    // costing a rewind at most 5 s of delay before its landing position is recorded.
+    let lastEmitAtMs = -Infinity;
+
+    const base = () => ({ transferId, fileId });
+
+    const onPlaying = () => {
+      if (startedSent) return;
+      startedSent = true;
+      void streamApi.recordEvent({ ...base(), eventType: "STREAM_STARTED" });
+    };
+
+    const onTimeUpdate = () => {
+      const seconds = Math.floor(video.currentTime);
+      // The cadence is the SERVER's contract, not a local preference — see the constant. Driven
+      // off playback position rather than a wall clock so a paused film stops reporting, exactly
+      // as the watermark cycle does.
+      //
+      // ⚠ THIS COMPARISON ASSUMES THE PLAYHEAD ONLY MOVES FORWARD, which is why `onSeeked` below
+      // exists. Without it a backward seek leaves `lastProgressAt` in the future, every subsequent
+      // delta is negative, and the film reports NOTHING until playback organically climbs back
+      // past the stale baseline — measured at ~38 minutes of silence for a buyer at 2350 s who
+      // rewinds to 60 s.
+      if (seconds - lastProgressAt < STREAM_PROGRESS_INTERVAL_SECONDS) return;
+      // Two gates, and they bound different things: the one above is the SERVER's cadence contract
+      // in playback time, this one is a rate floor in real time. A seek resets the first and must
+      // not be able to bypass the second.
+      if (Date.now() - lastEmitAtMs < MIN_EMIT_SPACING_MS) return;
+      lastProgressAt = seconds;
+      lastEmitAtMs = Date.now();
+      void streamApi.recordEvent({
+        ...base(),
+        eventType: "STREAM_PROGRESS",
+        positionSeconds: seconds,
+      });
+    };
+
+    const onEnded = () => {
+      if (completedSent) return;
+      completedSent = true;
+      // `recordFinalEvent` — keepalive, because "did she finish it" is the question 135.9 asks and
+      // the tab may be closing on the same gesture.
+      void streamApi.recordFinalEvent({
+        ...base(),
+        eventType: "STREAM_COMPLETED",
+        positionSeconds: Math.floor(video.duration || video.currentTime),
+      });
+    };
+
+    // A buyer who closes the tab mid-film has still watched what she watched. Sent as a final
+    // PROGRESS rather than a COMPLETED — claiming completion she did not reach would corrupt the
+    // one signal 135.9 reads.
+    const onPageHide = () => {
+      if (completedSent || !startedSent) return;
+      void streamApi.recordFinalEvent({
+        ...base(),
+        eventType: "STREAM_PROGRESS",
+        positionSeconds: Math.floor(video.currentTime),
+      });
+    };
+
+    // ⚠ A SEEK DISCARDS THE CADENCE BASELINE — G3 round 2, and the THIRD time this bug class has
+    // been fixed in this file.
+    //
+    // `lastRenewalPositionRef` two effects above learned it at 135.6's round 4 and its comment says
+    // why in plain text. This effect was written nine lines below that comment and did not apply
+    // the pattern. Reset rather than interpret: `-Infinity` makes the next `timeupdate` report
+    // immediately at the new position, which restarts the cadence AND records where the buyer
+    // actually landed — better for the resume reader than waiting 30 s to find out.
+    //
+    // ⚠ AND WHO ELSE SEEKS — round 5's lesson, answered rather than inherited. Under Cloudflare a
+    // credential renewal calls `player.load(url, currentTime)`, which fires `seeked` too. That is
+    // HARMLESS here, and the difference from round 5 is the point: there, discarding a baseline
+    // made a give-up budget unreachable; here it costs at most one extra STREAM_PROGRESS per
+    // renewal (hourly), carrying a real position, against a 60/min budget. So this listener is
+    // deliberately NOT filtered by `programmaticSeekTargetRef` — over-reporting costs nothing,
+    // under-reporting costs a silent film.
+    const onSeeked = () => {
+      lastProgressAt = -Infinity;
+    };
+
+    video.addEventListener("playing", onPlaying);
+    video.addEventListener("timeupdate", onTimeUpdate);
+    video.addEventListener("ended", onEnded);
+    video.addEventListener("seeked", onSeeked);
+    window.addEventListener("pagehide", onPageHide);
+
+    return () => {
+      video.removeEventListener("playing", onPlaying);
+      video.removeEventListener("timeupdate", onTimeUpdate);
+      video.removeEventListener("ended", onEnded);
+      video.removeEventListener("seeked", onSeeked);
+      window.removeEventListener("pagehide", onPageHide);
+    };
+  }, [transferId, fileId, buyerEmail, attempt]);
 
   // ── Position (D3, the client half of AC7) ──────────────────────────────────────────────
   //

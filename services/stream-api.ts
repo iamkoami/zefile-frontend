@@ -73,6 +73,44 @@ export interface StreamManifestCredential {
   expiresAt: string;
 }
 
+/**
+ * The three event types a CLIENT may report (story 135.8).
+ *
+ * The server knows seven. The other four are statements it makes about what it did — a key issued,
+ * a key refused, a device turned away, an entitlement revoked — and posting one of those from here
+ * returns 403. That is not tidiness: 135.9 decides refunds by reading this table, so a client that
+ * could assert `KEY_DENIED` could manufacture the evidence for its own refund.
+ */
+export type ClientPlaybackEventType =
+  | 'STREAM_STARTED'
+  | 'STREAM_PROGRESS'
+  | 'STREAM_COMPLETED';
+
+export interface RecordPlaybackEventInput {
+  transferId: string;
+  eventType: ClientPlaybackEventType;
+  fileId?: string;
+  /** Whole seconds. Floor it — the server column is an integer. */
+  positionSeconds?: number;
+}
+
+/**
+ * How often to report `STREAM_PROGRESS`, in seconds (story 135.8, D5).
+ *
+ * ⚠ THIS NUMBER IS PART OF THE SERVER CONTRACT, not a client preference, and it is owned by 135.8
+ * because 135.8 owns the limit it has to fit under.
+ *
+ * `POST /stream/events` is rate limited to **60/min PER IP**, not per user — Nest's throttler
+ * tracker cannot see `request.user`. The target market shares addresses: an office or a cyber café
+ * behind one NAT is many buyers on one counter. At 30 seconds a single player sends about 2/min
+ * (a start, progress, a completion), so a dozen buyers behind one address still sit well inside the
+ * budget. Halving this to 15 seconds would halve how many people can watch from one office before
+ * the platform starts refusing their telemetry.
+ *
+ * 135.6 owns the timer that fires on this cadence. This is only the number.
+ */
+export const STREAM_PROGRESS_INTERVAL_SECONDS = 30;
+
 export const streamApi = {
   /**
    * Take one of the two device slots for this film (Story 135.5).
@@ -159,5 +197,52 @@ export const streamApi = {
    */
   async retryPackaging(transferId: string): Promise<ApiResponse<RetryPackagingResponse>> {
     return apiClient.post<RetryPackagingResponse>(`/stream/transfers/${transferId}/repackage`, {});
+  },
+
+  /**
+   * Record a playback event (story 135.8).
+   *
+   * ⚠ FIRE AND FORGET. The promise is returned so a caller CAN await it, but nothing should:
+   * failures are swallowed here and surfaced to nobody. A 429, a 403, a dead network — the film
+   * keeps playing and the resume position simply stops advancing. **Telemetry is not the product**,
+   * and a buyer who paid for a film must never see an error about our bookkeeping (D8).
+   *
+   * ⚠ ONLY THREE TYPES ARE ACCEPTED by the server: `STREAM_STARTED`, `STREAM_PROGRESS`,
+   * `STREAM_COMPLETED`. The other four are statements the SERVER makes about what it did, and
+   * posting one returns 403 — deliberately, because 135.9 decides refunds by reading this table
+   * and a client that could assert `KEY_DENIED` could manufacture its own refund evidence.
+   *
+   * The server observes the IP and user agent and resolves the purchase from the session; there is
+   * no field for any of them here, and adding one would be a forgery surface.
+   */
+  async recordEvent(input: RecordPlaybackEventInput): Promise<void> {
+    try {
+      await apiClient.post('/stream/events', input);
+    } catch {
+      // Deliberately empty. See the doc comment: nothing about telemetry reaches the buyer.
+    }
+  },
+
+  /**
+   * The same, for the LAST event before the tab goes away (story 135.8, D6).
+   *
+   * `keepalive: true` is what lets the request outlive the document — without it the browser
+   * cancels an in-flight fetch on unload and `STREAM_COMPLETED` is lost precisely when it matters,
+   * because "did she finish the film" is the question 135.9 asks.
+   *
+   * ⚠ NOT `navigator.sendBeacon`, and this is a real constraint rather than a preference: the
+   * endpoint sits behind the global CSRF guard, `sendBeacon` cannot set a header, so it could only
+   * work if the route were exempted. It is not, and it must not be — a `@SkipCsrf()` here would
+   * open a write endpoint to cross-site forgery to save one API call.
+   *
+   * ⚠ `keepalive` caps the body at 64 KB. Irrelevant at four small fields, and stated so nobody
+   * grows this payload into that limit without knowing it is there.
+   */
+  async recordFinalEvent(input: RecordPlaybackEventInput): Promise<void> {
+    try {
+      await apiClient.post('/stream/events', input, { keepalive: true });
+    } catch {
+      // Deliberately empty — same reasoning as `recordEvent`.
+    }
   },
 };

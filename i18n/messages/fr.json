@@ -3328,6 +3328,16 @@
     "playerQualityLabel": "Qualité",
     "playerQualityAuto": "Auto",
     "playerQualityCap": "Jusqu'à {height}p",
-    "playerQualityHint": "Limitez la qualité pour consommer moins de données mobiles."
+    "playerQualityHint": "Limitez la qualité pour consommer moins de données mobiles.",
+    "accessBannerLabel": "Votre accès à ce film",
+    "accessActiveTitle": "Ce film est à vous.",
+    "accessActiveBody": "Votre accès reste valable tant que le film est en ligne. L'abonnement du créateur n'y change rien.",
+    "accessWatch": "Regarder le film",
+    "accessSignedOutTitle": "Ce film est déjà à vous.",
+    "accessSignedOutBody": "Votre session a simplement expiré. Reconnectez-vous avec votre e-mail et le film est là.",
+    "accessExpiringTitle": "Ce film va être retiré.",
+    "accessExpiringBody": "Vous pouvez le regarder jusqu'au {date}.",
+    "accessEndedTitle": "Votre accès à ce film est terminé.",
+    "accessEndedBody": "Il a pris fin le {date}, quand le créateur a retiré le film. Écrivez-nous si cela vous semble être une erreur."
   }
 }

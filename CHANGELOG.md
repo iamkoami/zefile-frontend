@@ -5,6 +5,53 @@ All notable changes to the ZeFile Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.71.3] - 2026-08-26
+
+### Fixed
+
+- **Buy a film with mobile money and the page now takes you to the film.** It told you the film was yours and that this was where you'd watch it, and then showed you nothing to watch — the player only ever appeared on the screen you land on after paying by card. Reloading was the only way through, and nothing on the page said so. Mobile money now ends up on the same screen as every other payment method, with the film ready to play. (`app/downloads/[transferId]/[shortCode]/page.tsx`)
+- **And the film stays on screen.** Two seconds after a payment cleared, the page moved you on to the ordinary download screen. That is right for files and wrong for a film: the player disappeared just as it arrived, leaving a download button that could never work, because a film is streamed and there is nothing to download. Films now stay on the screen that plays them. Downloads are unchanged.
+- **A film can no longer land on the "this link has expired" screen.** It was already out of reach there, but if it ever happened that screen offered to sell you the film a second time. A film is now sent to the returning-buyer view added in 1.71.0, which knows it is already yours.
+
+## [1.71.2] - 2026-08-26
+
+### Fixed
+
+- **The custom domain field had a validation rule that never worked properly.** Depending on your browser it either did nothing at all — letting obvious nonsense through to the next check — or it quietly refused to accept a perfectly good domain that happened to have a stray space on the end, which is exactly what you get when you copy one out of an email. The field now relies on the check that was already doing the real work, the one that shows you a message explaining what's wrong. (`features/account/components/CustomDomainPanel.tsx`)
+
+## [1.71.1] - 2026-08-26
+
+### Fixed
+
+- **The button under the verification code did nothing when you clicked it.** No error, no spinner, no explanation — on both the email and the WhatsApp code screens. Pressing Enter always worked, which is exactly why nobody caught it: the field shows your six digits neatly spaced as "123 456", and the browser was quietly refusing to accept that space. Clicking now does what Enter has always done. (`app/downloads/[transferId]/[shortCode]/page.tsx`)
+- **The same fault was sitting dormant on the sign-in code screen** and has been headed off there too, before anyone could run into it.
+
+## [1.71.0] - 2026-08-25
+
+### Added
+
+- **Come back to a film you bought and the page now says so.** It tells you the film is yours, that your access lasts as long as it stays published, and gives you a button straight into watching it — instead of the purchase button and price it used to show everyone. If your sign-in has simply run out, it says exactly that and offers to sign you back in. Nothing on any of those screens says buy, pay or again, in English or French, and no price appears at all. Someone who has not bought the film sees the page exactly as before. (`StreamAccessBanner`, `lib/stream/access-state.ts`)
+- **If the film has been taken down, the page says when your access ended and why**, rather than quietly looking like you never bought it.
+
+### Fixed
+
+- **You could be shown a purchase button for a film you had already paid for.** The page worked out whether you were signed in from something kept in the browser that goes out of date, and when it could not confirm with the server it assumed you had never bought anything. It now treats not being able to ask as not knowing — which is the difference between showing you your film and offering to sell it to you a second time.
+- **Opening the link in your receipt a second time no longer says the sale has expired and offers to sell you the film again.** That screen was reached through a check that only makes sense for downloadable files, and a film has none. Download transfers still behave exactly as they did.
+- **Signing back in now takes you straight to your film.** The page used to come back carrying the answer it had worked out while you were still signed out, so someone who had just signed in successfully could be asked to sign in again, or shown a purchase button for a film they own.
+
+## [1.70.0] - 2026-08-24
+
+### Added
+
+- **The player can now report what it saw.** The groundwork for picking a film up where you left off, and for settling a refund on whether the film actually played. It reports three things and nothing else — that a film started, that it is still going, and that it finished — and it says nothing about you beyond which film. If any of it fails, it fails silently: the film keeps playing and you never see an error about our record-keeping, because your film is the product and our bookkeeping is not. The player itself starts using this in a later release. (`services/stream-api.ts`)
+
+### Note on versioning
+
+- **1.69.0 was published in error and contains nothing.** A version bump ran twice against this
+  repository during the 1.70.0 release, producing an empty release between 1.68.0 and this one. The
+  tag is left in place rather than deleted — a published tag that someone may already have fetched
+  is worse removed than explained. There is no 1.69.0 content because there was never any.
+
 ## [1.68.0] - 2026-08-24
 
 ### Added

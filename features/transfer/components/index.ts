@@ -54,3 +54,9 @@ export type { PlaybackState, PlaybackStatePanelProps } from './PlaybackStatePane
 // the free trailer would put a buyer's identity in front of a signed-out visitor.
 export { default as StreamWatermarkOverlay, maskEmail } from './StreamWatermarkOverlay';
 export type { StreamWatermarkOverlayProps } from './StreamWatermarkOverlay';
+
+// `StreamAccessBanner` (story 135.11). Safe here for the same reason as the two above: it pulls in
+// no media library and adds nothing to the edge bundle. Its only render site is the sale page's
+// `sale-preview` block, where it replaces the purchase action for a buyer who already owns the film.
+export { default as StreamAccessBanner } from './StreamAccessBanner';
+export type { StreamAccessBannerProps, StreamAccessBannerState } from './StreamAccessBanner';
